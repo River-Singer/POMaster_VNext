@@ -317,6 +317,7 @@ pomaster finalize status/replay-adjudicate/run TASK.* # status = 纯读派生当
 pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
 pomaster record gate-run/claim/verification/requalify
+pomaster task reassess-baseline TASK.* # 任务影响面变化 / 相关基线合法变更后重评估 baseline 依赖范围（--lanes 或 --baseline-target/--baseline-exclude；--reason --by 必填；同事务写 ADVANCE，列出需 requalify 的验收 claim）
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>

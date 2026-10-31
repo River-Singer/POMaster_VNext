@@ -482,6 +482,16 @@ export type TransactionOp =
        */
       readonly op: "supersede_claim";
       readonly requalify: ClaimRequalifyInput;
+    }
+  | {
+      /**
+       * reassess_baseline_scope（V2-7；台账 VX-WRITE-02）：重写任务正文 payload.baseline_dependencies
+       * （声明形态由 CLI baseline 面校验——kernel 只要求对象与 task_object 在册），rev 推进。
+       * 由 CLI `task reassess-baseline` 与 record_advance（锚 task_baseline_scope）同事务编排。
+       */
+      readonly op: "reassess_baseline_scope";
+      readonly task: GovernedId;
+      readonly declaration: Readonly<Record<string, unknown>>;
     };
 
 /** supersede_claim 输入（V2-8）。 */

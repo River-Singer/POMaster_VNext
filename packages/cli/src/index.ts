@@ -296,6 +296,7 @@ import { runExecutionAudit } from "./execution-audit.js";
 import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordRequalify, runRecordVerification } from "./record.js";
+import { runTaskReassessBaseline } from "./task-baseline.js";
 import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
@@ -809,6 +810,8 @@ export type {
   CompactMalformedEntry,
 } from "./compact.js";
 export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordRequalify, runRecordVerification } from "./record.js";
+export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-baseline.js";
+export type { TaskReassessBaselineInput, TaskReassessBaselineResult, ReassessAffectedClaim } from "./task-baseline.js";
 export type {
   RecordGateRunInput,
   RecordGateRunValueInput,
@@ -1583,6 +1586,38 @@ export function createProgram(
         command: "baseline confirm",
         outcome,
         asJson: opts.json === true,
+      });
+    });
+
+  // —— 任务级写面（V2-7）：baseline 依赖范围重评估 ——
+  const taskCommand = program
+    .command("task")
+    .description("任务对象的受控写面：reassess-baseline = 重评估任务 baseline 依赖范围（V2-7）");
+  taskCommand
+    .command("reassess-baseline")
+    .description(
+      "重评估任务 baseline 依赖范围（V2-7）：以当前确认记录为快照重写 TASK 正文 payload.baseline_dependencies（相关 / 排除可同时调整），同事务写 ADVANCE（锚 task_baseline_scope；affected_ids = 任务 + 新范围下证据早于相关变化的验收 claim）。ACCEPT 回执不受影响（V2-9 指纹剥离该字段）；证据资格不洗白——列出的 claim 走 record requalify / record verification。错误码：BASELINE_SCOPE_REASSESS_DIRTY（新相关目标漂移或在途批）/ BASELINE_SCOPE_UNAVAILABLE / BASELINE_SCOPE_INCOMPLETE / OBJECT_NOT_FOUND / ADVANCE_INVALID（默认身份、占位理由或旧锚对不上链尾）",
+    )
+    .argument("<task>", "目标 TASK.*")
+    .option("--lanes <lanes>", "按 lane 生成新范围（frontend,backend,data,platform；逗号分隔或重复；platform 只在显式列出时相关；与 --baseline-target/--baseline-exclude 二选一）", collectValues)
+    .option("--baseline-target <baseline/path>", "任务相关的确认资产（可重复；须与 --baseline-exclude 共同覆盖全部确认资产）", collectValues)
+    .option("--baseline-exclude <baseline/path>", "任务明确不相关的确认资产（可重复）", collectValues)
+    .requiredOption("--reason <text>", "任务影响面为何变化（非占位）")
+    .requiredOption("--by <type>:<name>", "发起人（ADVANCE actor；须为显式身份，CLI 默认身份被拒）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, opts, command) => {
+      const outcome = await runTaskReassessBaseline(resolveDir(command), {
+        task,
+        reason: opts.reason as string,
+        by: opts.by as string,
+        ...(opts.lanes !== undefined ? { lanes: opts.lanes as string[] } : {}),
+        ...(opts.baselineTarget !== undefined ? { baselineTargets: opts.baselineTarget as string[] } : {}),
+        ...(opts.baselineExclude !== undefined ? { baselineExclusions: opts.baselineExclude as string[] } : {}),
+      });
+      record({
+        command: "task reassess-baseline",
+        outcome,
+        asJson: command.opts().json === true,
       });
     });
 

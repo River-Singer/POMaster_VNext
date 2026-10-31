@@ -791,6 +791,10 @@
         "layer": "L1",
         "domain": "permit_evidence"
       },
+      "packages/cli/tests/task-reassess-baseline.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/gauntlet-lite/test/typecheck-lint-adapter.spec.ts": {
         "layer": "L1"
       },

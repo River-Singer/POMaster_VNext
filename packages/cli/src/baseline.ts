@@ -3093,7 +3093,7 @@ export async function baselineGateAssessment(
     errors.push({
       code: "BASELINE_DRIFT",
       message: `任务相关 baseline 资产在范围确认后重新确认或发生变化：${historicalRelated.join(", ")}——任务声明的历史 digest 已失效`,
-      hint: "重新评估任务 baseline_dependencies，或在相关基线稳定后重新验证证据；不能用无关文件的 Owner ack 覆盖相关变化。",
+      hint: "相关基线已合法变更：pomaster task reassess-baseline <TASK> --lanes <…> --reason <…> --by <type:name> 重评估范围（同事务写 ADVANCE），再按输出对受影响 claim 走 record requalify；不能用无关文件的 Owner ack 覆盖相关变化。",
     });
   }
   if (currentRelated.length > 0) {
@@ -3114,7 +3114,7 @@ export async function baselineGateAssessment(
     warnings.push({
       code: "BASELINE_DRIFT_OUT_OF_SCOPE",
       message: `baseline 漂移落在任务明确排除的资产上，未阻断本任务：${currentExcluded.map((mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`).join("、")}`,
-      hint: "该变化仍保留在全局 baseline/status 观察面；若任务影响面扩大，请更新 baseline_dependencies 并重新评估。",
+      hint: "该变化仍保留在全局 baseline/status 观察面；若任务影响面扩大，用 pomaster task reassess-baseline <TASK> 重评估范围。",
     });
   }
   if (excludedPending.length > 0) {

@@ -1086,6 +1086,9 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
     case "supersede_claim":
       applySupersedeClaim(workspace, op);
       break;
+    case "reassess_baseline_scope":
+      applyReassessBaselineScope(workspace, op);
+      break;
   }
 }
 
@@ -2348,6 +2351,41 @@ function applySupersedeClaim(
   }
   row.evidence_summary = recomputeEvidenceSummary(workspace, subjectId);
   workspace.changedObjectIds.add(subjectId);
+  workspace.anyChange = true;
+}
+
+// —— reassess_baseline_scope（V2-7；VX-WRITE-02） ——
+
+function applyReassessBaselineScope(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "reassess_baseline_scope" }>,
+): void {
+  const { paths } = workspace;
+  const id = parseIdOrWrap(op.task as string, "reassess_baseline_scope.task");
+  const row = (workspace.working.objects as RawRow[]).find((candidate) => candidate.id === id);
+  if (row === undefined) {
+    throw new GovernanceError("OBJECT_NOT_FOUND", `任务不在索引：${id}`, "核对 TASK 引用；先 promote 出该任务", { id });
+  }
+  if (row.kind !== "task_object") {
+    throw new GovernanceError("SCHEMA_INVALID", `${id} 不是 task_object（kind=${String(row.kind)}）`, "baseline 依赖范围只挂在任务正文上", { id });
+  }
+  if (!isPlainRecord(op.declaration)) {
+    throw new GovernanceError("SCHEMA_INVALID", "reassess_baseline_scope.declaration 须为对象", "由 CLI baseline reassess 生成完整声明", { id });
+  }
+  const body = readBodyFor(paths, workspace.bodyOverlay, row);
+  if (body === null) {
+    throw new GovernanceError("REF_INTEGRITY_VIOLATION", `任务正文缺失：${String(row.body_ref)}`, "正文层与索引层必须成对存在（A1）；从 git 恢复正文", { id });
+  }
+  const payload = isPlainRecord(body.payload) ? body.payload : {};
+  if (JSON.stringify(payload.baseline_dependencies ?? null) === JSON.stringify(op.declaration)) return; // 零变化
+  body.payload = { ...payload, baseline_dependencies: op.declaration };
+  const newRev = (row.rev as number) + 1;
+  body.rev = newRev;
+  row.rev = newRev;
+  workspace.files.set(rowBodyPath(paths, row.body_ref as string), `${JSON.stringify(body, null, 2)}\n`);
+  workspace.bodyOverlay.set(id, body);
+  row.body_sha256 = sha256OfCanonical(body);
+  workspace.changedObjectIds.add(id);
   workspace.anyChange = true;
 }
 

@@ -130,7 +130,7 @@ export async function readEvidenceQualificationRequirement(
   }
   const assessment = declared?.ok ? await baselineGateAssessment(rootDir, declared.declaration) : undefined;
   if (assessment !== undefined && assessment.errors.length > 0) {
-    throw new GovernanceError("SCHEMA_INVALID", assessment.errors.map((error) => error.message).join("; "), "Reassess the task baseline dependencies before verifying evidence.");
+    throw new GovernanceError("SCHEMA_INVALID", assessment.errors.map((error) => error.message).join("; "), "Reassess the task baseline scope first: pomaster task reassess-baseline <TASK> --lanes <…> --reason <…> --by <type:name>.");
   }
   const scope = declared?.ok && confirmation.kind === "record-valid" && assessment?.errors.length === 0
     ? {

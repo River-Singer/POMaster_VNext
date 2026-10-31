@@ -22,12 +22,13 @@ import {
   latestAdvanceFor,
   listAdvanceRecords,
   listRetirements,
+  loadTruthIndex,
   pathsOf,
   readRetirementLedger,
   type Store,
   type VnextAnchor,
 } from "@pomaster/kernel";
-import { makeStore } from "./helpers.js";
+import { makeStore, pageEnvelope } from "./helpers.js";
 
 const OWNER = "human:owner";
 const REASON = "基线 Layers 取值变更后重新验证 CLM-0001";
@@ -304,5 +305,44 @@ describe("record_advance：退役台账", () => {
       "retirements[2].last_anchor.last_verified_file_sha256 is required for missing_retired",
     ]);
     expect(advanceFiles(root)).toEqual([]);
+  });
+});
+
+describe("reassess_baseline_scope：任务 baseline 依赖范围重写（V2-7；VX-WRITE-02）", () => {
+  const declaration = { baseline_at_seq: 0, relevant_targets: ["baseline/frontend/architecture.md"], excluded_targets: [], digests: {} };
+  const taskEnvelope = {
+    id: "TASK.REASSESS",
+    kind: "task_object",
+    axisProfile: "task_default",
+    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+    titleZh: "范围重评估",
+    authority: { owner: "BUSINESS_OWNER", delegates: [] },
+    origin: "natural",
+    payload: { intent: "重评估", class_scan_result: { scope: "tasks/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-0001" } },
+  };
+  async function bodyOf(store: Store): Promise<Record<string, unknown>> {
+    const row = (await loadTruthIndex(store)).objects.find((candidate) => candidate.id === "TASK.REASSESS");
+    return JSON.parse(readFileSync(join(pathsOf(store).pomasterDir, row?.bodyRef ?? "missing"), "utf8")) as Record<string, unknown>;
+  }
+
+  it("重写 payload.baseline_dependencies、rev 推进；同声明重放零变化；非任务 / 缺席对象被拒", async () => {
+    const { store } = await makeStore();
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: taskEnvelope as never }] });
+    const before = await bodyOf(store);
+    await applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "TASK.REASSESS" as never, declaration }] });
+    const after = await bodyOf(store);
+    expect((after.payload as Record<string, unknown>).baseline_dependencies).toEqual(declaration);
+    expect((after.payload as Record<string, unknown>).intent).toBe("重评估");
+    expect(after.rev).toBe((before.rev as number) + 1);
+
+    const journalBefore = readJournal(store).length;
+    await applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "TASK.REASSESS" as never, declaration }] });
+    expect(readJournal(store).length).toBe(journalBefore);
+
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    await expect(applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "PAGE.DASHBOARD" as never, declaration }] }))
+      .rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    await expect(applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "TASK.NOPE" as never, declaration }] }))
+      .rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
   });
 });
