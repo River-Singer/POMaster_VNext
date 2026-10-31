@@ -604,7 +604,7 @@ async function qualifyClaimEvidence(
           error: {
             code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
             message: `${claimRef} 证据未通过源码新鲜度判定（W2-FR05）：${run.ref}（run 面）→ ${judgment.state}——${judgment.reason}`,
-            hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run），经独立验证流重新挂证（record verification）后重跑 closeout；source 未知不能 fresh。",
+            hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run）；claim 已判定时先 pomaster record requalify --clm <CLM> --by <type:name> --reason <text> 取得后继 CLM，再由另一主体 record verification 挂新证据后重跑 closeout；source 未知不能 fresh。",
           },
         };
       }
@@ -1053,7 +1053,7 @@ export async function runCloseout(
             push(false, verdict, `${finding.ref} → ${finding.verdict}`, {
               code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
               message: `acceptance[${index}] 映射的 ${claimRef} 证据未通过资格判定：${finding.ref}（${finding.surface} 面）→ ${finding.verdict}——${finding.reason}`,
-              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据，经独立验证流重新挂证（record verification）后重跑 closeout。",
+              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——在当前确认基线/有效许可/当前 gate_def 下重新产出证据；claim 已判定时先 pomaster record requalify --clm <CLM> --by <type:name> --reason <text> 取得后继 CLM（旧判定不改写），再由另一主体 record verification 挂新证据后重跑 closeout。",
             });
           }
           continue;

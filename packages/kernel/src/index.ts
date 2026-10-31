@@ -470,7 +470,32 @@ export type TransactionOp =
        */
       readonly op: "record_advance";
       readonly record: AdvanceRecordInput;
+    }
+  | {
+      /**
+       * supersede_claim：已判定 claim 的再判定入口（VNext 优化 V2-8；台账 VX-WRITE-01 / 04）。
+       * A3 一次性判定保留（O5）：旧 CLM 文件逐字节不动；新建后继 CLM（UNVERIFIED，主体 /
+       * 断言 / 验收序号沿用，asserted_by = 发起人），subject 对象 payload.acceptance[i].claim
+       * 由旧 CLM 重绑到后继（同事务、rev 推进）。目标未判定 / 已被取代 →
+       * SCHEMA_INVALID + details.reason_code CLAIM_REQUALIFY_TARGET_INVALID。取代关系由同事务
+       * 的 record_advance（退役 claim_superseded）留痕——CLI `record requalify` 编排。
+       */
+      readonly op: "supersede_claim";
+      readonly requalify: ClaimRequalifyInput;
     };
+
+/** supersede_claim 输入（V2-8）。 */
+export interface ClaimRequalifyInput {
+  /** 被取代的已判定 claim（VERIFIED / PARTIALLY_VERIFIED / REJECTED）。 */
+  readonly clm: string;
+  /** 后继 CLM id（调用方分配；须未入账）。 */
+  readonly successor: string;
+  /** 发起人（后继 claim 的 asserted_by——独立验证须由另一主体完成，D20）。 */
+  readonly by: Actor;
+  readonly reason: string;
+  /** 后继 claim 的初始证据引用（可空——先立后证）。 */
+  readonly evidenceRefs?: readonly string[];
+}
 
 /** record_advance 输入（vnext-legal-advance §3.2）。 */
 export interface AdvanceRecordInput {

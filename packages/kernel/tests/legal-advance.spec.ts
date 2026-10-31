@@ -429,7 +429,11 @@ describe("truth-object-body 语义指纹（ACCEPT 修订指纹，V2-9 消费）"
     permits_active: ["PERMIT-0001"],
     evidence_refs: [{ ref: "CLM-0001" }],
     sources: [{ type: "owner_directive", ref: "docs/prd.md", captured_by: "agent:claude/session-1" }],
-    payload: { scope: ["list"], baseline_dependencies: { relevant_targets: ["frontend/architecture.md"] } },
+    payload: {
+      scope: ["list"],
+      acceptance: [{ criterion: "列表分页正确", claim: "CLM-0001" }],
+      baseline_dependencies: { relevant_targets: ["frontend/architecture.md"] },
+    },
   };
   const governanceOnly = {
     ...envelope,
@@ -438,10 +442,14 @@ describe("truth-object-body 语义指纹（ACCEPT 修订指纹，V2-9 消费）"
     permits_active: [],
     evidence_refs: [{ ref: "CLM-0001" }, { ref: "CLM-0002" }],
     sources: [{ type: "owner_directive", ref: "docs/prd.md", captured_by: "human:owner" }],
-    payload: { scope: ["list"], baseline_dependencies: { relevant_targets: [], excluded_targets: ["x"] } },
+    payload: {
+      scope: ["list"],
+      acceptance: [{ criterion: "列表分页正确", claim: "CLM-0002" }],
+      baseline_dependencies: { relevant_targets: [], excluded_targets: ["x"] },
+    },
   };
 
-  it("v2：只动治理状态（rev / axes / 许可 / 证据挂载 / 采集人 / baseline 依赖）→ 指纹不变", () => {
+  it("v2：只动治理状态（rev / axes / 许可 / 证据挂载 / 采集人 / baseline 依赖 / 验收 claim 重绑）→ 指纹不变", () => {
     expect(semanticFingerprint("truth-object-body", governanceOnly, { version: 2 }))
       .toBe(semanticFingerprint("truth-object-body", envelope, { version: 2 }));
   });
@@ -452,6 +460,7 @@ describe("truth-object-body 语义指纹（ACCEPT 修订指纹，V2-9 消费）"
       { ...envelope, payload: { ...envelope.payload, scope: ["list", "detail"] } },
       { ...envelope, sources: [{ ...envelope.sources[0], ref: "docs/prd-v2.md" }] },
       { ...envelope, title_zh: "订单列表（新）" },
+      { ...envelope, payload: { ...envelope.payload, acceptance: [{ criterion: "列表分页与排序正确", claim: "CLM-0001" }] } },
     ]) {
       expect(semanticFingerprint("truth-object-body", changed, { version: 2 })).not.toBe(fp);
     }

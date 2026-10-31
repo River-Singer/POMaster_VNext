@@ -32,6 +32,7 @@
  *   通过者随入账事务落 journal 注记（canonical 07 形态 FROZEN，绑定不住 run 记录本体）；
  *   不声明时信封零变化（与现状逐字节一致）。
  */
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import {
   type ClaimRecordInput,
@@ -47,10 +48,15 @@ import {
   type RunSourceSnapshot,
   GovernanceError,
   applyTransaction,
+  buildAdvance,
+  buildRejudge,
+  digestValue,
   artifactRefsToSnake,
   createStore,
   gateResultToSnake,
+  latestAdvanceFor,
   loadTruthIndex,
+  pathsOf,
   qualifyEvidenceBatch,
   type EvidenceArtifactRefInput,
 } from "@pomaster/kernel";
@@ -845,6 +851,166 @@ function replayRevOf(targetBytes: string, fallback: number): number {
 // ============================================================
 // record verification（独立验证流的判定回写——W2 生产入口）
 // ============================================================
+
+// ============================================================
+// record requalify（V2-8；VX-WRITE-01 / 04）
+// ============================================================
+
+export interface RecordRequalifyInput {
+  /** 被取代的已判定 claim（CLM-[0-9]+）。 */
+  readonly clm: string;
+  /** 发起人 --by <type>:<name>（后继 claim 的 asserted_by；ADVANCE actor——须为显式身份）。 */
+  readonly by: string;
+  readonly reason: string;
+  /** 后继 claim 的初始证据（可重复；GRN-n）。 */
+  readonly evidence?: readonly string[];
+}
+
+export interface RecordRequalifyResult {
+  readonly clm: string;
+  readonly successor: string | null;
+  readonly change: "REQUALIFIED" | null;
+  readonly applied_seq: number | null;
+  readonly subject: string | null;
+  readonly advance: string | null;
+}
+
+/**
+ * 已判定 claim 的再判定（`pomaster record requalify`）：A3 一次性判定不动（O5），改走
+ * 后继 CLM——一个事务内完成 ① supersede_claim（后继 UNVERIFIED claim + 验收绑定重绑）
+ * ② record_advance（锚 claim_verification、退役 claim_superseded：谁、为什么、旧判定指纹）。
+ * 之后由另一主体对后继走 record verification（D20 主体分离照旧）。
+ */
+export async function runRecordRequalify(
+  rootDir: string,
+  input: RecordRequalifyInput,
+): Promise<CommandOutcome<RecordRequalifyResult>> {
+  const command = "record requalify";
+  const empty: RecordRequalifyResult = { clm: input.clm, successor: null, change: null, applied_seq: null, subject: null, advance: null };
+  const fail = (error: CliError): CommandOutcome<RecordRequalifyResult> =>
+    failOutcome<RecordRequalifyResult>(command, empty, [error], [`${command}: FAILED — ${error.code}\n  hint: ${error.hint}`]);
+  if (!CLM_FILE_PATTERN.test(`${input.clm}.json`)) {
+    return fail({ code: "SCHEMA_INVALID", message: `--clm 词形非法（须 CLM-[0-9]+）：${input.clm}`, hint: "目标是已判定的既有 CLM（evidence/claims/CLM-*.json）。" });
+  }
+  const by = parseActorArgv(input.by);
+  if ("error" in by) return fail({ ...by.error, message: `--by 词形非法：${input.by}` });
+  if (typeof input.reason !== "string" || input.reason.trim().length === 0) {
+    return fail({ code: "SCHEMA_INVALID", message: "--reason 必填（写清旧判定为何不再成立）", hint: "如：--reason \"frontend/architecture.md 的 Layers 取值已变更\"" });
+  }
+  for (const ref of input.evidence ?? []) {
+    if (!/^GRN-[0-9]+$/.test(ref)) {
+      return fail({ code: "SCHEMA_INVALID", message: `--evidence 须为 GRN-n：${ref}`, hint: "后继 claim 的初始证据是 gate 运行记录；也可先立后证，验证时再挂。" });
+    }
+  }
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return fail(initialized.error);
+
+  const claimsDir = claimsDirPath(rootDir);
+  const claimPath = `${claimsDir}/${input.clm}.json`;
+  let bytes: string;
+  try {
+    bytes = readFileSync(claimPath, "utf8");
+  } catch {
+    return fail({ code: "CLAIM_NOT_FOUND", message: `目标 claim 不在 claims 平面：${claimPath}`, hint: "再判定只针对已入账、已判定的 CLM。" });
+  }
+  let old: Record<string, unknown>;
+  try {
+    old = JSON.parse(bytes) as Record<string, unknown>;
+  } catch (err) {
+    return fail({ code: EVIDENCE_MALFORMED_CODE, message: `既有 claim 文件无法解析：${String(err)}`, hint: "从 git 恢复该证据文件后重试。" });
+  }
+  const subject = (old.subject as { object_id?: unknown } | undefined)?.object_id;
+  const verification = (old.verification ?? {}) as { verdict?: unknown; at_seq?: unknown };
+  if (typeof subject !== "string") {
+    return fail({ code: EVIDENCE_MALFORMED_CODE, message: `${input.clm} 缺 subject.object_id`, hint: "从 git 恢复该证据文件后重试。" });
+  }
+
+  let store: Store;
+  try {
+    store = await createStore(rootDir);
+  } catch (err) {
+    return fail(err instanceof GovernanceError ? governanceErrorToCliError(err) : { code: "KERNEL_ERROR", message: String(err), hint: "store 打开失败。" });
+  }
+  const successor = allocateEvidenceRef(claimsDir, "CLM");
+  // 锚：subject 对象上绑定该 CLM 的验收条目（同一条目的再判定链共用一个锚 ref）。
+  const index = await acceptanceIndexOf(store, subject, input.clm);
+  const ref = index === null ? `${subject}#${input.clm}` : `${subject}#acceptance[${index}]`;
+  const anchor = (clm: string) => ({ kind: "claim_verification" as const, ref, digest: digestValue({ clm }), version: 1 });
+  const evidenceRefs = [
+    `evidence/claims/${input.clm}.json#sha256=${createHash("sha256").update(bytes, "utf8").digest("hex")}`,
+    ...(input.evidence ?? []).map((grn) => {
+      const runPath = `${runsDirPath(rootDir)}/${grn}.json`;
+      return existsSync(runPath)
+        ? `evidence/runs/${grn}.json#sha256=${createHash("sha256").update(readFileSync(runPath, "utf8"), "utf8").digest("hex")}`
+        : `command:record requalify --evidence ${grn}`;
+    }),
+  ];
+  const actor = `${by.actor.actorType}:${by.actor.actor}`;
+  const advance = buildAdvance({
+    basis: "explicit-evidence",
+    actor,
+    reason: input.reason,
+    evidenceRefs,
+    evidenceSha256: digestValue([...evidenceRefs].sort()),
+    oldAnchor: anchor(input.clm),
+    newAnchor: anchor(successor),
+    affectedIds: [input.clm, successor, subject],
+    rejudge: buildRejudge([{ gate: "vnext.claim.requalify", findings: [{ clm: input.clm, verdict: verification.verdict ?? null }] }]),
+  });
+  let appliedSeq: number;
+  try {
+    const result = await applyTransaction(store, {
+      note: `record requalify ${input.clm} → ${successor}`,
+      ops: [
+        {
+          op: "supersede_claim",
+          requalify: { clm: input.clm, successor, by: by.actor, reason: input.reason, ...(input.evidence !== undefined ? { evidenceRefs: input.evidence } : {}) },
+        },
+        {
+          op: "record_advance",
+          record: {
+            advance,
+            actor,
+            reason: input.reason,
+            retirements: [
+              {
+                id: input.clm,
+                kind: "claim_superseded",
+                reason: input.reason,
+                actor,
+                replacement_id: successor,
+                last_anchor: { clm: input.clm, verdict: verification.verdict ?? null, at_seq: typeof verification.at_seq === "number" ? verification.at_seq : null },
+              },
+            ],
+          },
+        },
+      ],
+    });
+    appliedSeq = result.appliedSeq;
+  } catch (err) {
+    return fail(err instanceof GovernanceError ? governanceErrorToCliError(err) : { code: "KERNEL_ERROR", message: err instanceof Error ? err.message : String(err), hint: "查看 docs/kernel-api.md record_advance / supersede_claim。" });
+  }
+  const advanceId = latestAdvanceFor(pathsOf(store), "claim_verification", ref)?.adv ?? null;
+  const result: RecordRequalifyResult = { clm: input.clm, successor, change: "REQUALIFIED", applied_seq: appliedSeq, subject, advance: advanceId };
+  return okOutcome(command, result, [
+    `record requalify → ${input.clm} 由 ${successor} 取代（UNVERIFIED；${subject}${index === null ? "" : ` acceptance[${index}]`} 已重绑；${advanceId ?? "ADVANCE"} 留痕）`,
+    `  下一步：在当前基线 / 源码上重新产出证据，由另一主体验证后继：pomaster record verification --clm ${successor} --verifier <type>:<name> --evidence <GRN-n>`,
+  ]);
+}
+
+async function acceptanceIndexOf(store: Store, subject: string, clm: string): Promise<number | null> {
+  try {
+    const index = await loadTruthIndex(store);
+    const row = index.objects.find((candidate) => candidate.id === subject);
+    if (row === undefined) return null;
+    const body = JSON.parse(readFileSync(`${pathsOf(store).pomasterDir}/${row.bodyRef}`, "utf8")) as { payload?: { acceptance?: unknown } };
+    const acceptance = Array.isArray(body.payload?.acceptance) ? body.payload.acceptance : [];
+    const found = acceptance.findIndex((entry) => typeof entry === "object" && entry !== null && (entry as { claim?: unknown }).claim === clm);
+    return found < 0 ? null : found;
+  } catch {
+    return null;
+  }
+}
 
 export interface RecordVerificationInput {
   /** 目标 claim（CLM-[0-9]+；须已在 claims 平面且 verification.verdict=UNVERIFIED）。 */

@@ -295,7 +295,7 @@ import {
 import { runExecutionAudit } from "./execution-audit.js";
 import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
-import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
+import { runRecordClaim, runRecordGateRun, runRecordRequalify, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
@@ -808,7 +808,7 @@ export type {
   CompactClaimEntry,
   CompactMalformedEntry,
 } from "./compact.js";
-export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordVerification } from "./record.js";
+export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordRequalify, runRecordVerification } from "./record.js";
 export type {
   RecordGateRunInput,
   RecordGateRunValueInput,
@@ -2305,6 +2305,30 @@ export function createProgram(
       });
       record({
         command: "record claim",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  recordCommand
+    .command("requalify")
+    .description(
+      "已判定 claim 的再判定（V2-8）：旧 CLM 逐字节不动（A3 一次性判定保留），新建后继 CLM（UNVERIFIED）并把 subject 的验收绑定重绑到后继；同事务写 ADVANCE（锚 claim_verification）与退役台账 claim_superseded。之后由另一主体对后继走 record verification。错误码：CLAIM_NOT_FOUND / SCHEMA_INVALID（CLAIM_REQUALIFY_TARGET_INVALID：目标未判定或已被取代）/ ADVANCE_INVALID（默认身份或占位理由）",
+    )
+    .requiredOption("--clm <CLM-n>", "被取代的已判定 claim")
+    .requiredOption("--by <type>:<name>", "发起人（后继 claim 的 asserted_by；须为显式身份，CLI 默认身份被拒）")
+    .requiredOption("--reason <text>", "旧判定为何不再成立（非占位）")
+    .option("--evidence <GRN-n>", "后继 claim 的初始证据（可重复；可先立后证）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runRecordRequalify(resolveDir(command), {
+        clm: opts.clm as string,
+        by: opts.by as string,
+        reason: opts.reason as string,
+        ...(opts.evidence !== undefined ? { evidence: opts.evidence as string[] } : {}),
+      });
+      record({
+        command: "record requalify",
         outcome,
         asJson: command.opts().json === true,
       });

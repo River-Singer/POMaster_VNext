@@ -36,7 +36,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore, sha256OfCanonical } from "@pomaster/kernel";
-import { acceptRevisionFingerprint, runCloseout, type CloseoutResult } from "@pomaster/cli";
+import { acceptRevisionFingerprint, runCloseout, runRecordRequalify, runRecordVerification, type CloseoutResult } from "@pomaster/cli";
 
 let root: string;
 
@@ -489,5 +489,76 @@ describe("ACCEPT 语义修订指纹（V2-9；VX-WRITE-05）", () => {
     expect(acceptRevisionFingerprint({ ...body, rev: 9, axes: { lifecycle: "SUPERSEDED" }, evidence_refs: [{ ref: "CLM-0001" }] })).toBe(fp);
     expect(acceptRevisionFingerprint({ ...body, payload: { ...body.payload, baseline_dependencies: { b: 2 } } })).toBe(fp);
     expect(acceptRevisionFingerprint({ ...body, payload: { ...body.payload, intent: "导出 Excel" } })).not.toBe(fp);
+  });
+});
+
+describe("record requalify：已判定 claim 走后继 CLM（V2-8；VX-WRITE-01 / 04）", () => {
+  const claimsDir = (): string => join(root, ".pomaster", "evidence", "claims");
+  const claimJson = (clm: string): Record<string, unknown> => JSON.parse(readFileSync(join(claimsDir(), `${clm}.json`), "utf8")) as Record<string, unknown>;
+  const acceptanceClaim = (): unknown => ((taskBodyJson().payload as { acceptance: { claim: string }[] }).acceptance[0] ?? {}).claim;
+
+  it("VERIFIED 的 CLM 再判定：旧文件逐字节不变，后继 UNVERIFIED 并重绑验收；另一主体验证后继后 closeout COMPLETED（≤3 条命令）", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedDecisionGraph("idea-requalify", [{ decisionId: "DECISION.REQ_SCOPE", answer: "ACCEPT", outcomeBinding: { task_ref: "TASK.T0001" } }]);
+    const oldBytes = readFileSync(join(claimsDir(), "CLM-0001.json"), "utf8");
+
+    const requalified = await runRecordRequalify(root, { clm: "CLM-0001", by: "human:owner", reason: "基线 Layers 取值变更，原判定依据过期" });
+    expect(requalified.errors).toEqual([]);
+    expect(requalified.result).toMatchObject({ clm: "CLM-0001", successor: "CLM-0002", change: "REQUALIFIED", subject: "TASK.T0001", advance: "ADV-0001" });
+    expect(readFileSync(join(claimsDir(), "CLM-0001.json"), "utf8")).toBe(oldBytes);
+    const successor = claimJson("CLM-0002");
+    expect(successor).toMatchObject({
+      clm: "CLM-0002",
+      subject: { object_id: "TASK.T0001" },
+      assertion: claimFixture().assertion,
+      asserted_by: { actor_type: "human", actor: "owner" },
+      verification: { verdict: "UNVERIFIED" },
+    });
+    expect(acceptanceClaim()).toBe("CLM-0002");
+    const ledger = JSON.parse(readFileSync(join(root, ".pomaster", "state", "retirements.json"), "utf8")) as { entries: Record<string, unknown>[] };
+    expect(ledger.entries).toEqual([
+      expect.objectContaining({ id: "CLM-0001", kind: "claim_superseded", replacement_id: "CLM-0002", last_anchor: { clm: "CLM-0001", verdict: "VERIFIED", at_seq: 3 } }),
+    ]);
+
+    const blocked = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(blocked.ok).toBe(false); // 后继尚未验证
+
+    const verified = await runRecordVerification(root, { clm: "CLM-0002", verifier: "tool:verifier@2.0.0", method: "recompute", evidence: ["GRN-0001"] });
+    expect(verified.errors).toEqual([]);
+    expect(verified.result.verification).toBe("VERIFIED");
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors).toEqual([]);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+
+  it("目标未判定 / 已被取代 → CLAIM_REQUALIFY_TARGET_INVALID 零写入；缺 reason / 坏 --by → SCHEMA_INVALID", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    expect((await runRecordRequalify(root, { clm: "CLM-0001", by: "human:owner", reason: "基线变更" })).ok).toBe(true);
+    const before = snapshot();
+    const again = await runRecordRequalify(root, { clm: "CLM-0001", by: "human:owner", reason: "再来一次" });
+    expect(again.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(again.errors[0]?.message).toContain("已被 CLM-0002 取代");
+    const unadjudicated = await runRecordRequalify(root, { clm: "CLM-0002", by: "human:owner", reason: "尚未判定" });
+    expect(unadjudicated.errors[0]?.message).toContain("尚未判定");
+    expect(snapshot()).toEqual(before);
+    expect((await runRecordRequalify(root, { clm: "CLM-0002", by: "human:owner", reason: " " })).errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect((await runRecordRequalify(root, { clm: "CLM-0002", by: "owner", reason: "x" })).errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect((await runRecordRequalify(root, { clm: "CLM-0009", by: "human:owner", reason: "x" })).errors[0]?.code).toBe("CLAIM_NOT_FOUND");
+  });
+
+  it("后继验证后可再次再判定：同一验收条目的 ADVANCE 成链（ADV-0002 的旧锚 = ADV-0001 的新锚）", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    expect((await runRecordRequalify(root, { clm: "CLM-0001", by: "human:owner", reason: "第一次基线变更" })).ok).toBe(true);
+    expect((await runRecordVerification(root, { clm: "CLM-0002", verifier: "tool:verifier@2.0.0", method: "recompute", evidence: ["GRN-0001"] })).ok).toBe(true);
+    const second = await runRecordRequalify(root, { clm: "CLM-0002", by: "human:owner", reason: "第二次基线变更" });
+    expect(second.errors).toEqual([]);
+    expect(second.result).toMatchObject({ successor: "CLM-0003", advance: "ADV-0002" });
+    expect(acceptanceClaim()).toBe("CLM-0003");
   });
 });

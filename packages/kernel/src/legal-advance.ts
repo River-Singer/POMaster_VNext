@@ -137,8 +137,8 @@ const DEFAULT_ACTOR_VALUES: ReadonlySet<string> = new Set([
 /**
  * 路径语法：`.` 分隔键，`*` 匹配一个键，`**` 任意深度（含零层），`[]` 列表元素。
  * 前五个 profile 与 Python 逐字一致（parity）；`truth-object-body` 是 VNext 的 ACCEPT
- * 修订指纹（V2-9 消费）：剥离修订号、状态轴、活跃许可、证据挂载、来源采集人与任务的
- * baseline 依赖声明——这些是治理状态，不是对象内容。
+ * 修订指纹（V2-9 消费）：剥离修订号、状态轴、活跃许可、证据挂载、来源采集人、任务的
+ * baseline 依赖声明与验收条目的 claim 绑定（V2-8 再判定重绑）——这些是治理状态，不是对象内容。
  */
 export const PROFILES: Readonly<Record<string, Readonly<Record<number, readonly string[]>>>> = {
   "frontend-artifact": {
@@ -180,7 +180,10 @@ export const PROFILES: Readonly<Record<string, Readonly<Record<number, readonly 
   },
   "truth-object-body": {
     1: [],
-    2: ["rev", "axes", "permits_active", "evidence_refs", "sources[].captured_by", "payload.baseline_dependencies"],
+    2: [
+      "rev", "axes", "permits_active", "evidence_refs", "sources[].captured_by",
+      "payload.baseline_dependencies", "payload.acceptance[].claim",
+    ],
   },
 };
 

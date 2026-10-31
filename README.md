@@ -316,7 +316,7 @@ pomaster control-data-flow analyze [--report-only] # Vue SFC / React TSX 控件�
 pomaster finalize status/replay-adjudicate/run TASK.* # status = 纯读派生当前 VERIFY/REPLAY/CLAIM/ACCEPT/CLOSEOUT 阶段；replay-adjudicate = 独立复盘主体签发内容寻址回执（--execution-id AGX-* --reviewed-by agent:name --review-range <range> --plan-fingerprint sha256:* --verdict allow-closeout）；run = 可重入收口（--verification-execution-id AGX-* --verifier agent:name --review-range <range> [--replay-receipt sha256:*]），独立/人工边界显式 pending
 pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
-pomaster record gate-run/claim/verification
+pomaster record gate-run/claim/verification/requalify
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>

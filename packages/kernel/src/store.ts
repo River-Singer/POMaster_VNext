@@ -1083,6 +1083,9 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
     case "record_advance":
       applyRecordAdvance(workspace, op);
       break;
+    case "supersede_claim":
+      applySupersedeClaim(workspace, op);
+      break;
   }
 }
 
@@ -2238,6 +2241,113 @@ function applyRecordGateRun(
     `${paths.runsDir}/${run.grn}.json`,
     `${JSON.stringify(record, null, 2)}\n`,
   );
+  workspace.anyChange = true;
+}
+
+// —— supersede_claim（V2-8；VX-WRITE-01 / 04） ——
+
+function requalifyRejected(message: string, hint: string, details: UnknownRecord = {}): GovernanceError {
+  return new GovernanceError("SCHEMA_INVALID", message, hint, { reason_code: "CLAIM_REQUALIFY_TARGET_INVALID", ...details });
+}
+
+function applySupersedeClaim(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "supersede_claim" }>,
+): void {
+  const { paths } = workspace;
+  const input = op.requalify;
+  for (const [key, value] of [["clm", input.clm], ["successor", input.successor]] as const) {
+    if (typeof value !== "string" || !/^CLM-[0-9]+$/.test(value)) {
+      throw new GovernanceError("SCHEMA_INVALID", `supersede_claim.${key} 词形非法（须 CLM-[0-9]+）：${String(value)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { [key]: value });
+    }
+  }
+  if (input.successor === input.clm) {
+    throw requalifyRejected("后继 CLM 不能与被取代 CLM 相同", "后继由调用方按现有最大序号 +1 分配");
+  }
+  if (typeof input.reason !== "string" || input.reason.trim().length === 0) {
+    throw new GovernanceError("SCHEMA_INVALID", "supersede_claim 必须带 reason", "写清旧判定为何不再成立（如：相关 baseline 取值已变更）", {});
+  }
+  const oldPath = `${paths.claimsDir}/${input.clm}.json`;
+  const oldText = workspace.files.get(oldPath) ?? readText(oldPath);
+  if (oldText === null || oldText === undefined) {
+    throw new GovernanceError("CLAIM_NOT_FOUND", `被取代的 claim 不存在：${input.clm}`, "核对 CLM 引用（evidence/claims/）", { clm: input.clm });
+  }
+  let old: UnknownRecord;
+  try {
+    old = JSON.parse(oldText) as UnknownRecord;
+  } catch (error) {
+    throw new GovernanceError("SCHEMA_INVALID", `claim 文件无法解析：${input.clm}`, "从 git 恢复该证据文件", { clm: input.clm, cause: String(error) });
+  }
+  const verification = isPlainRecord(old.verification) ? old.verification : {};
+  const verdict = verification.verdict;
+  if (typeof verdict !== "string" || !ADJUDICATED_CLAIM_VERDICTS.has(verdict)) {
+    throw requalifyRejected(
+      `claim ${input.clm} 尚未判定（verdict=${String(verdict)}），不需要再判定`,
+      "未判定的 claim 直接走独立验证流：pomaster record verification --clm <CLM> …",
+      { clm: input.clm, verdict: verdict ?? null },
+    );
+  }
+  const ledgerPath = retirementsPathOf(paths);
+  const queuedLedger = workspace.files.get(ledgerPath);
+  const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
+  if (isRetired(ledger.entries, "claim_superseded", input.clm)) {
+    const successor = ledger.entries.find((entry) => entry.kind === "claim_superseded" && entry.id === input.clm)?.replacement_id ?? null;
+    throw requalifyRejected(
+      `claim ${input.clm} 已被 ${String(successor)} 取代`,
+      `对当前有效的后继再判定：pomaster record requalify --clm ${String(successor)} …`,
+      { clm: input.clm, successor },
+    );
+  }
+  const successorPath = `${paths.claimsDir}/${input.successor}.json`;
+  if (workspace.files.has(successorPath) || readText(successorPath) !== null) {
+    throw new GovernanceError("EVIDENCE_ALREADY_EXISTS", `后继 CLM 已存在：${input.successor}`, "按现有最大序号 +1 重新分配后继 id", { successor: input.successor });
+  }
+  const subject = isPlainRecord(old.subject) ? old.subject : {};
+  const subjectId = typeof subject.object_id === "string" ? subject.object_id : null;
+  const objects = workspace.working.objects as RawRow[];
+  const row = subjectId === null ? undefined : objects.find((candidate) => candidate.id === subjectId);
+  if (subjectId === null || row === undefined) {
+    throw new GovernanceError("OBJECT_NOT_FOUND", `claim ${input.clm} 的 subject 对象不在索引：${String(subjectId)}`, "先恢复 subject 对象再再判定", { clm: input.clm });
+  }
+  const typedRefs = (input.evidenceRefs ?? []).map((ref) => typedEvidenceRef(ref, "supersede_claim.requalify.evidenceRefs[]"));
+  const record: UnknownRecord = {
+    record_type: "claim",
+    clm: input.successor,
+    subject,
+    is_fixture: old.is_fixture === true,
+    assertion: old.assertion,
+    asserted_by: { actor_type: input.by.actorType, actor: input.by.actor, self_attested: input.by.selfAttested },
+    verification: {
+      verdict: "UNVERIFIED",
+      recomputed_by: { actor_type: "kernel", actor: "pomaster-kernel", self_attested: false },
+    },
+    evidence_refs: typedRefs,
+    rev: workspace.nextSeq,
+    notes_md: `取代 ${input.clm}（${verdict}）：${input.reason}`,
+  };
+  workspace.files.set(successorPath, `${JSON.stringify(record, null, 2)}\n`);
+
+  // 验收绑定重绑：subject 正文 payload.acceptance[i].claim === 旧 CLM → 后继（同事务、rev 推进）。
+  const body = readBodyFor(paths, workspace.bodyOverlay, row);
+  const payload = body !== null && isPlainRecord(body.payload) ? body.payload : null;
+  const acceptance = payload !== null && Array.isArray(payload.acceptance) ? payload.acceptance : [];
+  let rebound = 0;
+  for (const entry of acceptance) {
+    if (isPlainRecord(entry) && entry.claim === input.clm) {
+      entry.claim = input.successor;
+      rebound += 1;
+    }
+  }
+  if (body !== null && rebound > 0) {
+    const newRev = (row.rev as number) + 1;
+    body.rev = newRev;
+    row.rev = newRev;
+    workspace.files.set(rowBodyPath(paths, row.body_ref as string), `${JSON.stringify(body, null, 2)}\n`);
+    workspace.bodyOverlay.set(subjectId, body);
+    row.body_sha256 = sha256OfCanonical(body);
+  }
+  row.evidence_summary = recomputeEvidenceSummary(workspace, subjectId);
+  workspace.changedObjectIds.add(subjectId);
   workspace.anyChange = true;
 }
 
