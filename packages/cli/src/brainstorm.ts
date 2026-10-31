@@ -110,6 +110,7 @@ import {
 } from "@pomaster/kernel";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { acceptRevisionFingerprint } from "./closeout.js";
 import { runMaintain } from "./maintain.js";
 import { allocateEvidenceRef } from "./evidence.js";
 import {
@@ -1599,6 +1600,49 @@ export interface BrainstormDecideInput {
   readonly baselineLanes?: readonly string[];
 }
 
+/**
+ * `--outcome-revision current` 解析（V2-9）：绑定 task 当前正文的语义修订指纹。须同时给
+ * --outcome-task（closeout 以 task 正文对账）；task 未登记 / 正文不可读 → 显式失败。
+ */
+async function currentAcceptRevision(
+  rootDir: string,
+  taskRef: string | undefined,
+): Promise<{ readonly fingerprint: string } | { readonly error: CliError }> {
+  if (taskRef === undefined) {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: "--outcome-revision current 须与 --outcome-task 同给（语义修订指纹取自绑定 task 的当前正文）",
+        hint: "pomaster brainstorm decide <id> --answer <DECISION.*> --accept --outcome-task <TASK.*> --outcome-revision current",
+      },
+    };
+  }
+  const paths = buildStorePaths(rootDir);
+  try {
+    const index = JSON.parse(await readFile(paths.indexPath, "utf8")) as { objects?: { id?: unknown; body_ref?: unknown }[] };
+    const row = (index.objects ?? []).find((candidate) => candidate.id === taskRef);
+    if (row === undefined || typeof row.body_ref !== "string") {
+      return {
+        error: {
+          code: "OBJECT_NOT_FOUND",
+          message: `--outcome-revision current：task 未登记 ${taskRef}`,
+          hint: "先 promote 出该 TASK，再记录成果 ACCEPT。",
+        },
+      };
+    }
+    const body: unknown = JSON.parse(await readFile(join(paths.pomasterDir, ...row.body_ref.split("/")), "utf8"));
+    return { fingerprint: acceptRevisionFingerprint(body) };
+  } catch (err) {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `--outcome-revision current：读取 ${taskRef} 正文失败：${err instanceof Error ? err.message : String(err)}`,
+        hint: "truth 索引与正文由 kernel 事务维护；从 git 恢复后重试。",
+      },
+    };
+  }
+}
+
 /** decision-graph.json + decision-inputs.json 装载结果（形态闸在装载层，畸形显式拒）。 */
 type DecisionGraphLoad =
   | { readonly ok: true; readonly graph: DecisionGraph; readonly inputs: DecisionInputsFile }
@@ -2231,17 +2275,27 @@ export async function runBrainstormDecide(
         : input.unknown === true
           ? "UNKNOWN"
           : "DEFER";
+    // V2-9：--outcome-revision current = 绑定 task 当前正文的语义修订指纹（之后的状态迁移 /
+    // 证据挂载 / baseline 依赖回填不使回执失效；正文语义变化才失效）。
+    let outcomeRevision = input.outcomeRevision;
+    if (outcomeRevision === "current") {
+      const resolved = await currentAcceptRevision(rootDir, input.outcomeTask);
+      if ("error" in resolved) {
+        return fail(resolved.error, ["brainstorm decide --answer: FAILED — --outcome-revision current 无法解析"]);
+      }
+      outcomeRevision = resolved.fingerprint;
+    }
     // SP-W1-a：成果绑定构造（词形判卷在 kernel resolveDecision——fail-closed 透传为
     // DECISION_RESOLVE_OUTCOME_BINDING_INVALID；answer=ACCEPT 时绑定可选，强制在消费端）。
     const outcomeBinding: DecisionOutcomeBinding | undefined =
       input.outcomeTask !== undefined ||
       input.outcomeChange !== undefined ||
-      input.outcomeRevision !== undefined
+      outcomeRevision !== undefined
         ? {
             ...(input.outcomeTask !== undefined ? { task_ref: input.outcomeTask } : {}),
             ...(input.outcomeChange !== undefined ? { change_ref: input.outcomeChange } : {}),
-            ...(input.outcomeRevision !== undefined
-              ? { revision_fingerprint: input.outcomeRevision }
+            ...(outcomeRevision !== undefined
+              ? { revision_fingerprint: outcomeRevision }
               : {}),
           }
         : undefined;

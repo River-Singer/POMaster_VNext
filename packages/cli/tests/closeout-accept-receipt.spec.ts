@@ -36,7 +36,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore, sha256OfCanonical } from "@pomaster/kernel";
-import { runCloseout, type CloseoutResult } from "@pomaster/cli";
+import { acceptRevisionFingerprint, runCloseout, type CloseoutResult } from "@pomaster/cli";
 
 let root: string;
 
@@ -201,6 +201,22 @@ function taskBodyFingerprint(): string {
   const hit = found.find((file) => readFileSync(file, "utf8").includes("TASK.T0001"));
   if (hit === undefined) throw new Error("task body not found");
   return sha256OfCanonical(JSON.parse(readFileSync(hit, "utf8")) as unknown);
+}
+
+function taskBodyJson(): Record<string, unknown> {
+  const objectsDir = join(root, ".pomaster", "truth", "objects");
+  const found: string[] = [];
+  const walk = (current: string): void => {
+    for (const item of readdirSync(current, { withFileTypes: true })) {
+      const child = join(current, item.name);
+      if (item.isDirectory()) walk(child);
+      else found.push(child);
+    }
+  };
+  walk(objectsDir);
+  const hit = found.find((file) => readFileSync(file, "utf8").includes("TASK.T0001"));
+  if (hit === undefined) throw new Error("task body not found");
+  return JSON.parse(readFileSync(hit, "utf8")) as Record<string, unknown>;
 }
 
 function taskEvidenceAxis(): unknown {
@@ -427,5 +443,51 @@ describe("closeout 有效 ACCEPT 回执闸（W1 R1-1：机器验证通过 ≠ �
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+  });
+});
+
+describe("ACCEPT 语义修订指纹（V2-9；VX-WRITE-05）", () => {
+  async function transitionTask(patch: Record<string, string>): Promise<void> {
+    const store = await createStore(root);
+    await applyTransaction(store, { ops: [{ op: "transition_object", id: "TASK.T0001", patch, reasonShort: "状态推进" } as never] });
+  }
+
+  it("ACCEPT 记录语义指纹后，任务只发生状态迁移（rev / axes 变化）→ 回执仍有效，COMPLETED", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedDecisionGraph("idea-v2", [
+      { decisionId: "DECISION.V2_SCOPE", answer: "ACCEPT", outcomeBinding: { task_ref: "TASK.T0001", revision_fingerprint: acceptRevisionFingerprint(taskBodyJson()) } },
+    ]);
+    const bodyBefore = taskBodyFingerprint();
+    await transitionTask({ change: "CHALLENGED" });
+    await transitionTask({ change: "STABLE" });
+    expect(taskBodyFingerprint()).not.toBe(bodyBefore); // body_sha256（v1）已变
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors).toEqual([]);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+
+  it("同样的状态迁移下，v1 回执（body_sha256）照旧失效——旧算法不被新算法洗白", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedDecisionGraph("idea-v1", [
+      { decisionId: "DECISION.V1_SCOPE", answer: "ACCEPT", outcomeBinding: { task_ref: "TASK.T0001", revision_fingerprint: taskBodyFingerprint() } },
+    ]);
+    await transitionTask({ change: "CHALLENGED" });
+    await transitionTask({ change: "STABLE" });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors.map((error) => error.code)).toEqual(["CLOSEOUT_ACCEPT_STALE"]);
+    expect(outcome.errors[0]?.hint).toContain("--outcome-revision current");
+  });
+
+  it("acceptRevisionFingerprint：正文语义字段变化 → 指纹变化；治理状态字段变化 → 不变", () => {
+    const body = { id: "TASK.T0001", rev: 2, axes: { lifecycle: "CURRENT" }, payload: { intent: "导出 CSV", baseline_dependencies: { a: 1 } }, evidence_refs: [] };
+    const fp = acceptRevisionFingerprint(body);
+    expect(fp).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(acceptRevisionFingerprint({ ...body, rev: 9, axes: { lifecycle: "SUPERSEDED" }, evidence_refs: [{ ref: "CLM-0001" }] })).toBe(fp);
+    expect(acceptRevisionFingerprint({ ...body, payload: { ...body.payload, baseline_dependencies: { b: 2 } } })).toBe(fp);
+    expect(acceptRevisionFingerprint({ ...body, payload: { ...body.payload, intent: "导出 Excel" } })).not.toBe(fp);
   });
 });

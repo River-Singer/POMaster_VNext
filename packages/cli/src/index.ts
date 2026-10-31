@@ -821,6 +821,7 @@ export type {
 export {
   runCloseout,
   scanAcceptReceiptStatus,
+  acceptRevisionFingerprint,
   ACCEPT_RECEIPT_SCAN_STATUSES,
 } from "./closeout.js";
 export type {
@@ -2725,7 +2726,7 @@ export function createProgram(
     .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
     .option("--outcome-task <id>", "SP-W1-a 成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的覆盖判定载体；只随 --answer）")
     .option("--outcome-change <id>", "SP-W1-a 成果绑定 change_ref（间绑 task payload.implements_change；只随 --answer）")
-    .option("--outcome-revision <sha256:…>", "SP-W1-a 消费端对账指纹（sha256:<64hex>；与对象行 body_sha256 全等——内容漂移旧 ACCEPT 失效）")
+    .option("--outcome-revision <current|sha256:…>", "SP-W1-a 消费端对账指纹：current = 绑定 task 当前正文的语义修订指纹（V2-9，状态迁移 / 证据挂载不使回执失效）；或显式 sha256:<64hex>（与对象行 body_sha256 全等）——内容漂移后旧 ACCEPT 失效")
     .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
     .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")

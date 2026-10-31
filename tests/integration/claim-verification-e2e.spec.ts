@@ -184,6 +184,8 @@ describe("W2 正向链：record claim → record verification → closeout 全�
       "--answer", "DECISION.VERIF_SCOPE",
       "--accept",
       "--outcome-task", "TASK.VERIF_CHAIN",
+      // V2-9：语义修订指纹——之后的 claim 挂证据 / 施断状态迁移不使回执失效。
+      "--outcome-revision", "current",
     ]);
     expect(decideAnswer.code).toBe(0);
 
