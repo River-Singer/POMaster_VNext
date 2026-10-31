@@ -207,10 +207,20 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
   按 lane 生成 `baseline_dependencies`（所选 lane 的确认资产为相关、其余为排除；platform 只在
   显式列出时相关），或用 `--baseline-target` / `--baseline-exclude` 逐文件划分。声明了范围的
   任务只在相关资产变化时证据失效；未声明范围的任务 `--ready` 给 `BASELINE_SCOPE_UNDECLARED`
-  warning，其证据以「任一资产内容最近一次变化」（max `target_seq`）为切点；
+  warning，其证据以「任一资产内容最近一次变化」（max `target_seq`）为切点；相关资产经治理通路
+  合法变更或任务影响面变化后，`pomaster task reassess-baseline <TASK> --lanes … --reason … --by …`
+  以当前确认快照重写范围（V2-7；新相关资产须无漂移、无在途批），再按输出对受影响 claim 走
+  `record requalify`；
+- 不适用的确认资产（V2-6）：`pomaster baseline retire <target> --not-applicable --reason <text>
+  --by human:<owner>` 由 Owner 把它退出确认分母——confirm 不再读它、不因它的 unknowns 键阻塞，
+  漂移判定、`--lanes` 划分与列全校验都只算有效资产；退役写 kernel 退役台账
+  （`state/retirements.json`）并留 ADVANCE。重新适用时 `pomaster baseline unretire <target>`：
+  退役期间文件变过或退役前从未确认过 → 判漂移，经 `--change` / `--ack-drifted` 重确认；已声明
+  范围但未覆盖它的任务判 `BASELINE_SCOPE_MALFORMED`，须 `task reassess-baseline`。在途变更批里的
+  资产须先终结批再退役；已退役 lane 的 `stack.yaml` 拒绝 `baseline set`（`BASELINE_TARGET_RETIRED`）；
 - `pomaster doctor` / `pomaster status` 呈现确认态（未确认/已确认/已漂移）+ 未销账
-  unknowns 计数 + 漂移文件清单（`--json` 字段 `baseline_confirmation`；纯读呈现不改
-  ok 语义）。
+  unknowns 计数 + 漂移文件清单 + 已退役资产清单（`--json` 字段 `baseline_confirmation`，
+  `retired_targets` 非空时在座；纯读呈现不改 ok 语义）。
 
 ## baseline 栈预置草案
 

@@ -5,7 +5,8 @@
  * 平面（kernel state 平面，不进 truth-index、不进 content_digest——steering-log /
  * exception-ledger 同款侧车）：
  * - state/advances/ADV-<n>.json  不可变：一次合法推进一份（谁、为什么、证据、新旧锚、复判结论）；
- * - state/retirements.json       append-only：显式、可归属的「这条记录不在了」决定。
+ * - state/retirements.json       append-only：显式、可归属的「这条记录不在了」决定；撤销退役
+ *                                 （V2-6 `baseline unretire`）以 reinstatements 条目追加，历史不改写。
  *
  * 写入面唯一：kernel 事务 op `record_advance`（store.ts applyRecordAdvance），提交后
  * journal 追加 `ADVANCE_RECORDED`。本模块只放读 API 与 store 写路径共用的纯计算
@@ -56,6 +57,8 @@ export interface AdvanceRecord {
   /** vnext-legal-advance §3.2 的 ADVANCE 段原样（buildAdvance 产物）。 */
   readonly advance: Readonly<Record<string, unknown>>;
   readonly retirement_ids: readonly string[];
+  /** 同批撤销退役的条目 id（V2-6；缺席 = 无）。 */
+  readonly reinstatement_ids?: readonly string[];
 }
 
 /** 退役台账条目 = 契约条目 + 归属（由哪次 ADVANCE、在哪个 seq 记下）。 */
@@ -70,9 +73,21 @@ export interface RetirementLedgerEntry {
   readonly at_seq: number;
 }
 
+/** 撤销退役条目（V2-6）：同 (kind, id) 的退役条数 > 撤销条数 = 当前仍在退役。 */
+export interface ReinstatementLedgerEntry {
+  readonly id: string;
+  readonly kind: RetirementKind;
+  readonly reason: string;
+  readonly actor: string;
+  readonly adv: string;
+  readonly at_seq: number;
+}
+
 export interface RetirementLedgerFile {
   readonly version: typeof RETIREMENT_LEDGER_VERSION;
   readonly entries: readonly RetirementLedgerEntry[];
+  /** 撤销退役（V2-6）：append-only；缺席 = 空（存量台账零迁移）。 */
+  readonly reinstatements?: readonly ReinstatementLedgerEntry[];
 }
 
 function corrupt(path: string, detail: string): GovernanceError {
@@ -194,6 +209,15 @@ export function parseRetirementLedger(path: string, text: string): RetirementLed
       throw corrupt(path, "条目缺 id / kind");
     }
   }
+  const reinstatements = value["reinstatements"];
+  if (reinstatements !== undefined) {
+    if (!Array.isArray(reinstatements)) throw corrupt(path, "reinstatements 须为数组");
+    for (const entry of reinstatements) {
+      if (!isRecord(entry) || typeof entry["id"] !== "string" || typeof entry["kind"] !== "string") {
+        throw corrupt(path, "撤销条目缺 id / kind");
+      }
+    }
+  }
   return value as unknown as RetirementLedgerFile;
 }
 
@@ -201,7 +225,30 @@ export function listRetirements(paths: StorePaths, filter: { readonly kind?: Ret
   return readRetirementLedger(paths).entries.filter((entry) => filter.kind === undefined || entry.kind === filter.kind);
 }
 
-/** 同一 (kind, id) 是否已在台账（重复退役拒绝；撤销退役随 V2-6 以显式条目追加）。 */
-export function isRetired(entries: readonly RetirementLedgerEntry[], kind: string, id: string): boolean {
-  return entries.some((entry) => entry.kind === kind && entry.id === id);
+/**
+ * 同一 (kind, id) 当前是否在退役：退役条数 > 撤销条数（V2-6：撤销以 reinstatements 追加，
+ * 退役 / 撤销交替出现由写路径保证）。在退役时重复退役被拒；不在退役时撤销被拒。
+ */
+export function isRetired(
+  ledger: Pick<RetirementLedgerFile, "entries" | "reinstatements">,
+  kind: string,
+  id: string,
+): boolean {
+  const retired = ledger.entries.filter((entry) => entry.kind === kind && entry.id === id).length;
+  const reinstated = (ledger.reinstatements ?? []).filter((entry) => entry.kind === kind && entry.id === id).length;
+  return retired > reinstated;
+}
+
+/** 当前在退役的条目（每个 (kind, id) 取最近一次退役条目；已撤销的不在内）。 */
+export function listActiveRetirements(
+  paths: StorePaths,
+  filter: { readonly kind?: RetirementKind } = {},
+): RetirementLedgerEntry[] {
+  const ledger = readRetirementLedger(paths);
+  const latest = new Map<string, RetirementLedgerEntry>();
+  for (const entry of ledger.entries) {
+    if (filter.kind !== undefined && entry.kind !== filter.kind) continue;
+    latest.set(`${entry.kind}\u0000${entry.id}`, entry);
+  }
+  return [...latest.values()].filter((entry) => isRetired(ledger, entry.kind, entry.id));
 }

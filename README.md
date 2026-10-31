@@ -293,7 +293,7 @@ pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
-pomaster baseline set/confirm   # set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
+pomaster baseline set/confirm/retire/unretire   # retire/unretire = Owner 把确认目标标为不适用 / 恢复（--not-applicable --reason --by human:<owner>；ADVANCE 留痕，退役目标不进确认/漂移/范围分母）；set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
 
 # ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
 pomaster brainstorm start/question-gate/status/decide/promote

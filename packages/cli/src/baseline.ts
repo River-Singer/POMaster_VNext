@@ -227,7 +227,7 @@
 import { writeFile } from "node:fs/promises";
 import type { TruthIndex } from "@pomaster/kernel";
 import { load as loadYaml } from "js-yaml";
-import { GovernanceError, createStore, loadTruthIndex, sha256OfCanonical, sha256OfUtf8 } from "@pomaster/kernel";
+import { GovernanceError, buildStorePaths, createStore, listActiveRetirements, loadTruthIndex, sha256OfCanonical, sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
 import { casSwapFile, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
@@ -977,6 +977,7 @@ function stackValueResolvedAt(
 function computeBlockingSet(
   ledger: UnknownLedgerParse,
   stackValues: ReadonlyMap<BaselineLane, ReadonlyMap<string, string>>,
+  retired: ReadonlySet<string> = new Set(),
 ): BaselineBlockingJudgement {
   if (ledger.damage !== null) return { ok: false, detail: ledger.damage };
   const blocking = new Set<string>();
@@ -985,6 +986,8 @@ function computeBlockingSet(
   for (const entry of ledger.entries) {
     counts[entry.applicability] += 1;
     rowWordForms.add(entry.wordForm);
+    // 已退役（不适用）目标上的未知键不阻塞（V2-6：目标整体不在确认分母内）。
+    if (retired.has(entry.wordForm.split(":")[0] ?? entry.wordForm)) continue;
     if (
       entry.structured &&
       entry.applicability !== "BLOCKING" &&
@@ -995,6 +998,7 @@ function computeBlockingSet(
     blocking.add(entry.wordForm);
   }
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     for (const key of STACK_KEYS[lane]) {
       const wordForm = unknownsWordForm(lane, key);
       if (rowWordForms.has(wordForm)) continue; // 在册键由台账行分支判卷（settled = 行删除 ∧ 值回填）
@@ -1742,6 +1746,14 @@ export async function runBaselineSet(
       input,
     );
   }
+  if (readRetiredBaselineTargets(rootDir).includes(baselineStackTarget(lane))) {
+    return failBaselineSet(
+      "BASELINE_TARGET_RETIRED",
+      `${baselineStackTarget(lane)} 已退役（不适用）——不在确认分母内，不接受选型写入`,
+      `该 lane 重新适用时先 pomaster baseline unretire ${baselineStackTarget(lane)} --reason <text> --by human:<owner>，再写入。`,
+      input,
+    );
+  }
   // —— R1 并发安全（ADR-21）：读-判卷-计算-提交整链文件级 CAS 事务重试环——
   // 认领到并发新世代（contended）→ 确定性退避后整链重读重算（新鲜盘面上重放
   // 全部判卷闸）；耗尽 → BASELINE_WRITE_CONFLICT 显式冲突（禁静默丢写）。串行
@@ -1926,9 +1938,14 @@ export type BaselineDependencyValidation =
 
 const SHA256_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 
-/** Validate the task-scoped baseline contract without interpreting free text. */
+/**
+ * Validate the task-scoped baseline contract without interpreting free text.
+ * 划分须覆盖全部有效确认目标（V2-6：已退役目标可缺席，也可留在旧声明里——不参与判卷）；
+ * digests 快照仍逐目标齐全（确认记录对退役目标沿用确认锚 / 哨兵）。
+ */
 export function validateBaselineDependencyDeclaration(
   value: unknown,
+  retired: readonly string[] = [],
 ): BaselineDependencyValidation {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return { ok: false, details: ["baseline_dependencies 须为对象"] };
@@ -1958,7 +1975,7 @@ export function validateBaselineDependencyDeclaration(
   const allTargets = [...relevantTargets, ...excludedTargets];
   const duplicates = allTargets.filter((target, index) => allTargets.indexOf(target) !== index);
   const unknownTargets = allTargets.filter((target) => !BASELINE_CONFIRM_TARGETS.includes(target));
-  const missingTargets = BASELINE_CONFIRM_TARGETS.filter((target) => !allTargets.includes(target));
+  const missingTargets = effectiveBaselineTargets(retired).filter((target) => !allTargets.includes(target));
   if (duplicates.length > 0) details.push(`baseline 依赖分组重复目标：${[...new Set(duplicates)].join(", ")}`);
   if (unknownTargets.length > 0) details.push(`baseline 依赖分组含未知目标：${[...new Set(unknownTargets)].join(", ")}`);
   if (missingTargets.length > 0) details.push(`baseline 依赖分组未覆盖目标（仍属未评估）：${missingTargets.join(", ")}`);
@@ -1990,13 +2007,14 @@ export function buildBaselineDependencyDeclaration(
   record: BaselineConfirmedRecord,
   relevantTargets: readonly string[],
   excludedTargets: readonly string[],
+  retired: readonly string[] = [],
 ): BaselineDependencyValidation {
   return validateBaselineDependencyDeclaration({
     baseline_at_seq: record.at_seq,
     relevant_targets: [...relevantTargets],
     excluded_targets: [...excludedTargets],
     digests: record.digests,
-  });
+  }, retired);
 }
 
 /** 手改声明记录（ADR-17）：note 必填单行；files = ack 确认时点的漂移文件清单。 */
@@ -2390,12 +2408,25 @@ interface ConfirmSnapshot {
 /** 确认资产清单（25 文件，ADR-20）的现盘快照（原始字节 + 规范化摘要）；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
 async function computeConfirmDigests(
   rootDir: string,
+  retired: ReadonlySet<string> = new Set(),
+  previous?: BaselineConfirmedRecord,
 ): Promise<({ readonly ok: true } & ConfirmSnapshot) | { readonly ok: false; readonly error: CliError }> {
   const digests: Record<string, string> = {};
   const normalized: Record<string, string> = {};
   const authority: Record<string, string> = {};
   const texts: Record<string, string> = {};
   for (const target of BASELINE_CONFIRM_TARGETS) {
+    if (retired.has(target)) {
+      // 已退役目标（V2-6）：不读文件、不要求在座。上一记录的确认锚原样沿用（Owner 确认过的
+      // 内容）；从未确认过 → 退役哨兵（永不等于真实文件，撤销退役后必经重确认）。
+      const sentinel = retiredTargetSentinel(target);
+      const carried = previous?.digests[target];
+      digests[target] = carried ?? sentinel;
+      normalized[target] = carried !== undefined ? (previous?.normalized?.[target] ?? sentinel) : sentinel;
+      authority[target] = carried !== undefined ? (previous?.authority?.[target] ?? sentinel) : sentinel;
+      texts[target] = "";
+      continue;
+    }
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       return { ok: false, error: baselineFileError(target, file) };
@@ -2455,16 +2486,63 @@ export function baselineTargetSeq(record: BaselineConfirmedRecord): Readonly<Rec
 export const BASELINE_SCOPE_LANES = ["frontend", "backend", "data", "platform"] as const;
 export type BaselineScopeLane = (typeof BASELINE_SCOPE_LANES)[number];
 
-/** lane 集 → 相关 / 排除确认目标（二者划分全部确认目标）。 */
-export function baselineTargetsForLanes(lanes: readonly BaselineScopeLane[]): {
+/**
+ * lane 集 → 相关 / 排除确认目标（二者划分全部有效确认目标）。已退役目标（V2-6）两边都不列：
+ * 撤销退役后旧声明因未覆盖该目标而判 BASELINE_SCOPE_MALFORMED，迫使任务重评估（fail-closed）。
+ */
+export function baselineTargetsForLanes(
+  lanes: readonly BaselineScopeLane[],
+  retired: readonly string[] = [],
+): {
   readonly relevant: readonly string[];
   readonly excluded: readonly string[];
 } {
   const selected = new Set(lanes);
-  const relevant = BASELINE_CONFIRM_TARGETS.filter((target) =>
+  const effective = effectiveBaselineTargets(retired);
+  const relevant = effective.filter((target) =>
     BASELINE_SCOPE_LANES.some((lane) => selected.has(lane) && target.startsWith(`baseline/${lane}/`)),
   );
-  return { relevant, excluded: BASELINE_CONFIRM_TARGETS.filter((target) => !relevant.includes(target)) };
+  return { relevant, excluded: effective.filter((target) => !relevant.includes(target)) };
+}
+
+// ============================================================
+// 确认目标不适用退役（V2-6；台账 VX-WRITE-06）
+// ============================================================
+
+/** 退役台账种类（kernel RETIREMENT_KINDS 之一）。 */
+export const BASELINE_TARGET_RETIREMENT_KIND = "baseline_target_not_applicable" as const;
+
+/** 已退役目标的确认哨兵摘要（从未在退役前确认过的目标；永不等于真实文件内容）。 */
+function retiredTargetSentinel(target: string): string {
+  return sha256OfUtf8(`pomaster:baseline-target-retired:${target}`);
+}
+
+/** lane 的 stack.yaml 确认目标词形。 */
+function baselineStackTarget(lane: BaselineLane): string {
+  return `baseline/${lane}/stack.yaml`;
+}
+
+/**
+ * 当前已退役（不适用）的确认目标，按确认清单序（V2-6）。台账缺席 = 空；台账损坏 = 空——
+ * 更严方向（目标照常进确认 / 漂移 / 范围分母），kernel 写路径另对损坏台账 fail-closed。
+ */
+export function readRetiredBaselineTargets(rootDir: string): readonly string[] {
+  let retired: ReadonlySet<string>;
+  try {
+    retired = new Set(
+      listActiveRetirements(buildStorePaths(rootDir), { kind: BASELINE_TARGET_RETIREMENT_KIND }).map((entry) => entry.id),
+    );
+  } catch {
+    return [];
+  }
+  return BASELINE_CONFIRM_TARGETS.filter((target) => retired.has(target));
+}
+
+/** 有效确认目标 = 全部确认目标 − 已退役。 */
+export function effectiveBaselineTargets(retired: readonly string[]): readonly string[] {
+  if (retired.length === 0) return BASELINE_CONFIRM_TARGETS;
+  const set = new Set(retired);
+  return BASELINE_CONFIRM_TARGETS.filter((target) => !set.has(target));
 }
 
 // ============================================================
@@ -2594,11 +2672,15 @@ export async function runBaselineConfirm(
     return failBaselineConfirm(error.code, error.message, error.hint, -1);
   }
   const unknownsRemaining = countUnknownEntries(manifestFile.text);
+  // 已退役（不适用）目标（V2-6）：不进阻塞集、不读文件、不计漂移。
+  const retiredTargets = readRetiredBaselineTargets(rootDir);
+  const retired = new Set(retiredTargets);
   // —— 2. 前提判卷：阻塞集（P-C1/ADR-18——settled/exempt/blocking 公式单一实现，
   //      双重销账契约不变；台账双词形解析，形状损坏显式 INVALID_STATE 禁静默）——
   const ledger = parseUnknownLedger(manifestFile.text);
   const stackValuesByLane = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     const stackRelative = baselineStackRelative(lane);
     const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
     if (stackFile.kind !== "ok") {
@@ -2616,7 +2698,7 @@ export async function runBaselineConfirm(
     }
     stackValuesByLane.set(lane, parse.parsed.values);
   }
-  const blockingJudgement = computeBlockingSet(ledger, stackValuesByLane);
+  const blockingJudgement = computeBlockingSet(ledger, stackValuesByLane, retired);
   if (!blockingJudgement.ok) {
     return failBaselineConfirm(
       "INVALID_STATE",
@@ -2643,13 +2725,14 @@ export async function runBaselineConfirm(
       unknownsRemaining,
     );
   }
-  // —— 3. 快照：25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）——
-  const snapshot = await computeConfirmDigests(rootDir);
+  // —— 3. 快照：25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照；已退役目标沿用
+  //      上一确认锚或记退役哨兵——V2-6）——
+  const existing = parseConfirmedBlock(manifestFile.text);
+  const snapshot = await computeConfirmDigests(rootDir, retired, existing.kind === "ok" ? existing.record : undefined);
   if (!snapshot.ok) {
     return failBaselineConfirm(snapshot.error.code, snapshot.error.message, snapshot.error.hint, unknownsRemaining);
   }
   // —— 4. 分叉：初次确认 vs 三态重确认（ADR-16/17）——
-  const existing = parseConfirmedBlock(manifestFile.text);
   if (existing.kind !== "ok") {
     // 初次确认（含损坏块修复）：任何通道旗标都未被消费 → 诚实拒绝静默旗标。
     if (input.change !== undefined) {
@@ -2679,7 +2762,10 @@ export async function runBaselineConfirm(
   }
   const record = existing.record;
   const judgements = new Map(
-    BASELINE_CONFIRM_TARGETS.map((target) => [target, judgeBaselineTargetText(record, target, snapshot.texts[target] ?? "")]),
+    BASELINE_CONFIRM_TARGETS.map((target) => [
+      target,
+      retired.has(target) ? "match" : judgeBaselineTargetText(record, target, snapshot.texts[target] ?? ""),
+    ]),
   );
   const mismatched = BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "drift");
   const bytesOnly = new Set(BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "bytes-only"));
@@ -2883,6 +2969,8 @@ export type BaselineConfirmationRead =
       readonly bytes_only: readonly string[];
       /** 文本变而权威面不变的目标（补充节 / 填写指引 / 草案节；V2-5）——不计漂移，呈现为 warning。 */
       readonly supplement: readonly string[];
+      /** 已退役（不适用）目标（V2-6）：不读文件、不计漂移；按确认清单序。 */
+      readonly retired: readonly string[];
       readonly state: "confirmed" | "pending-change" | "drifted";
     };
 
@@ -2914,7 +3002,8 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
   const mismatches: { target: string; note: "缺席" | "不可读" | null }[] = [];
   const bytesOnly: string[] = [];
   const supplement: string[] = [];
-  for (const target of BASELINE_CONFIRM_TARGETS) {
+  const retired = readRetiredBaselineTargets(rootDir);
+  for (const target of effectiveBaselineTargets(retired)) {
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       mismatches.push({ target, note: file.kind === "absent" ? "缺席" : "不可读" });
@@ -2926,18 +3015,19 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
     else if (judgement === "supplement") supplement.push(target);
   }
   const pending = parsed.record.pending;
+  // 在途批只在与有效目标相交时生效（V2-6：退役目标上的批条目不阻断）。
   const pendingBatchFiles = new Set(
-    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry).filter((target) => !retired.includes(target)),
   );
   const state: "confirmed" | "pending-change" | "drifted" =
-    pending === undefined
+    pending === undefined || pendingBatchFiles.size === 0
       ? mismatches.length > 0
         ? "drifted"
         : "confirmed"
       : mismatches.every((mismatch) => pendingBatchFiles.has(mismatch.target))
         ? "pending-change"
         : "drifted";
-  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, bytes_only: bytesOnly, supplement, state };
+  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, bytes_only: bytesOnly, supplement, retired, state };
 }
 
 /**
@@ -2968,7 +3058,7 @@ export async function baselineGateAssessment(
   dependency?: BaselineDependencyDeclaration,
 ): Promise<BaselineGateAssessment> {
   if (dependency !== undefined) {
-    const validation = validateBaselineDependencyDeclaration(dependency);
+    const validation = validateBaselineDependencyDeclaration(dependency, readRetiredBaselineTargets(rootDir));
     if (!validation.ok) {
       return {
         errors: [
@@ -3074,7 +3164,8 @@ export async function baselineGateAssessment(
     return { errors: [], warnings: bytesOnlyWarnings };
   }
 
-  const relevant = new Set(dependency.relevant_targets);
+  // 已退役目标（V2-6）不参与任务判卷：旧声明里列为相关也不再计入。
+  const relevant = new Set(dependency.relevant_targets.filter((target) => !read.retired.includes(target)));
   const excluded = new Set(dependency.excluded_targets);
   const warnings: CliWarning[] = [...bytesOnlyWarnings];
   const errors: CliError[] = [];
@@ -3084,7 +3175,7 @@ export async function baselineGateAssessment(
   const currentRelated = read.mismatches.filter((mismatch) => relevant.has(mismatch.target));
   const currentExcluded = read.mismatches.filter((mismatch) => excluded.has(mismatch.target));
   const pendingTargets = new Set(
-    (read.record.pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+    (read.record.pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry).filter((target) => !read.retired.includes(target)),
   );
   const relatedPending = [...pendingTargets].filter((target) => relevant.has(target));
   const excludedPending = [...pendingTargets].filter((target) => excluded.has(target));
@@ -3166,6 +3257,8 @@ export interface BaselineConfirmationPresentation {
   readonly pending_change?: { readonly change_ref: string; readonly batch: readonly string[] };
   /** 手改声明（ADR-17）：记录持 ack 段时呈现——上次确认为 Owner 手改声明。 */
   readonly ack?: { readonly note: string; readonly files: readonly string[] };
+  /** 已退役（不适用）目标（V2-6）：非空时呈现（确认 / 漂移 / 阻塞分母之外）。 */
+  readonly retired_targets?: readonly string[];
 }
 
 /**
@@ -3183,13 +3276,15 @@ export async function readBaselineBlockingPresentation(
 }> {
   const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
   if (manifestFile.kind !== "ok") return { remaining: null };
+  const retired = new Set(readRetiredBaselineTargets(rootDir));
   const stackValues = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     const loaded = await loadLaneStackValues(rootDir, lane);
     if (!loaded.ok) return { remaining: null };
     stackValues.set(lane, loaded.values);
   }
-  const judgement = computeBlockingSet(parseUnknownLedger(manifestFile.text), stackValues);
+  const judgement = computeBlockingSet(parseUnknownLedger(manifestFile.text), stackValues, retired);
   if (!judgement.ok) return { remaining: null };
   return { remaining: judgement.blocking.length, applicability_summary: judgement.applicability_counts };
 }
@@ -3211,12 +3306,14 @@ export async function readBaselineConfirmationPresentation(
       : {}),
   };
   if (read.kind === "record-invalid") {
+    const retired = readRetiredBaselineTargets(rootDir);
     return {
       state: "unconfirmed",
       unknowns_remaining: read.unknowns_remaining,
       ...blockingFields,
       at_seq: null,
       drifted_files: [],
+      ...(retired.length > 0 ? { retired_targets: retired } : {}),
     };
   }
   const driftedFiles = read.mismatches.map(
@@ -3232,14 +3329,17 @@ export async function readBaselineConfirmationPresentation(
       ? { pending_change: { change_ref: read.record.pending.change_ref, batch: read.record.pending.batch } }
       : {}),
     ...(read.record.ack !== undefined ? { ack: read.record.ack } : {}),
+    ...(read.retired.length > 0 ? { retired_targets: read.retired } : {}),
   };
 }
 
 /** 确认态呈现 human 行词形（doctor/status 共用——单一实现禁两套口径漂移）。 */
 export function baselineConfirmationHumanLine(presentation: BaselineConfirmationPresentation): string {
+  const retired = presentation.retired_targets ?? [];
   const unknowns =
     `unknowns remaining: ${presentation.unknowns_remaining}` +
-    (presentation.blocking_remaining === null ? "（阻塞 不可判）" : `（阻塞 ${presentation.blocking_remaining}）`);
+    (presentation.blocking_remaining === null ? "（阻塞 不可判）" : `（阻塞 ${presentation.blocking_remaining}）`) +
+    (retired.length > 0 ? `；已退役（不适用）${retired.length} 个目标：${retired.join("、")}` : "");
   if (presentation.state === "confirmed") {
     const ackNote =
       presentation.ack !== undefined

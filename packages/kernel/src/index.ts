@@ -518,6 +518,11 @@ export interface AdvanceRecordInput {
   readonly currentAnchor?: VnextAnchor;
   /** 同批退役条目（vnext lane 五种）。 */
   readonly retirements?: readonly Readonly<Record<string, unknown>>[];
+  /**
+   * 同批撤销退役（V2-6；`baseline unretire`）：`{id, kind}`，目标须当前在退役；台账以
+   * reinstatements 追加（actor / reason 取事件值），历史退役条目不改写。
+   */
+  readonly reinstatements?: readonly Readonly<Record<string, unknown>>[];
 }
 
 export interface Transaction {
@@ -1439,8 +1444,10 @@ export {
   latestAdvanceFor,
   readRetirementLedger,
   listRetirements,
+  listActiveRetirements,
+  isRetired,
 } from "./advances.js";
-export type { AdvanceRecord, AdvanceFilter, RetirementLedgerEntry, RetirementLedgerFile } from "./advances.js";
+export type { AdvanceRecord, AdvanceFilter, ReinstatementLedgerEntry, RetirementLedgerEntry, RetirementLedgerFile } from "./advances.js";
 
 // ============================================================
 // 源码证据新鲜度合同与唯一比较核（W2-FR05 · 09-27 PRD）

@@ -93,9 +93,10 @@ import {
   readRetirementLedger,
   retirementsPathOf,
   type AdvanceRecord,
+  type ReinstatementLedgerEntry,
   type RetirementLedgerEntry,
 } from "./advances.js";
-import { validateAdvance, validateRetirements, type RetirementKind } from "./legal-advance.js";
+import { LANE_RETIREMENT_KINDS, validateAdvance, validateRetirements, type RetirementKind } from "./legal-advance.js";
 import { loadSourcesRegistry } from "./sources.js";
 import type {
   AxesBlock,
@@ -2293,7 +2294,7 @@ function applySupersedeClaim(
   const ledgerPath = retirementsPathOf(paths);
   const queuedLedger = workspace.files.get(ledgerPath);
   const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
-  if (isRetired(ledger.entries, "claim_superseded", input.clm)) {
+  if (isRetired(ledger, "claim_superseded", input.clm)) {
     const successor = ledger.entries.find((entry) => entry.kind === "claim_superseded" && entry.id === input.clm)?.replacement_id ?? null;
     throw requalifyRejected(
       `claim ${input.clm} 已被 ${String(successor)} 取代`,
@@ -2457,15 +2458,37 @@ function applyRecordAdvance(
   const queuedLedger = workspace.files.get(ledgerPath);
   const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
   entries.forEach((entry, index) => {
-    if (typeof entry.id === "string" && typeof entry.kind === "string" && isRetired(ledger.entries, entry.kind, entry.id)) {
+    if (typeof entry.id === "string" && typeof entry.kind === "string" && isRetired(ledger, entry.kind, entry.id)) {
       retirementErrors.push(`retirements[${index}] ${entry.kind} ${entry.id} is already retired`);
     }
+  });
+  // 撤销退役（V2-6）：条目 {id, kind}；目标须当前在退役；actor / reason 取事件值。
+  const reinstatements = input.reinstatements ?? [];
+  const reinstatedSeen = new Set<string>();
+  reinstatements.forEach((entry, index) => {
+    const where = `reinstatements[${index}]`;
+    const id = isPlainRecord(entry) && typeof entry.id === "string" && /^\S+$/.test(entry.id) ? entry.id : null;
+    const kind = isPlainRecord(entry) && typeof entry.kind === "string" ? entry.kind : null;
+    if (id === null) {
+      retirementErrors.push(`${where}.id must be a non-empty token`);
+      return;
+    }
+    if (kind === null || !(LANE_RETIREMENT_KINDS.vnext as readonly string[]).includes(kind)) {
+      retirementErrors.push(`${where}.kind must be one of the vnext retirement kinds`);
+      return;
+    }
+    if (reinstatedSeen.has(`${kind}\u0000${id}`)) {
+      retirementErrors.push(`${where}.id is duplicated: ${id}`);
+      return;
+    }
+    reinstatedSeen.add(`${kind}\u0000${id}`);
+    if (!isRetired(ledger, kind, id)) retirementErrors.push(`${where} ${kind} ${id} is not retired`);
   });
   if (retirementErrors.length > 0) {
     throw advanceRejected(
       "RETIREMENT_INVALID",
       `record_advance 退役条目不合格（${retirementErrors.length} 项）：${retirementErrors.join("；")}`,
-      "退役条目须写明 id / kind（vnext lane 五种）/ 非占位 reason / 与事件一致的 actor / 种类要求的 last_anchor 键；已退役的同一条目不重复退役（本事务零落盘）",
+      "退役条目须写明 id / kind（vnext lane 五种）/ 非占位 reason / 与事件一致的 actor / 种类要求的 last_anchor 键；已退役的同一条目不重复退役，撤销只针对当前在退役的条目（本事务零落盘）",
       { errors: retirementErrors },
     );
   }
@@ -2473,6 +2496,7 @@ function applyRecordAdvance(
   const adv = nextAdvanceId(paths, pending.map((record) => record.adv));
   const atSeq = workspace.nextSeq;
   const retirementIds = entries.map((entry) => String(entry.id));
+  const reinstatementIds = reinstatements.map((entry) => String(entry.id));
   const record: AdvanceRecord = {
     record_type: ADVANCE_RECORD_TYPE,
     adv,
@@ -2481,9 +2505,10 @@ function applyRecordAdvance(
     reason: input.reason,
     advance: advance as UnknownRecord,
     retirement_ids: retirementIds,
+    ...(reinstatementIds.length > 0 ? { reinstatement_ids: reinstatementIds } : {}),
   };
   workspace.files.set(advancePathOf(paths, adv), `${JSON.stringify(record, null, 2)}\n`);
-  if (entries.length > 0) {
+  if (entries.length > 0 || reinstatements.length > 0) {
     const appended: RetirementLedgerEntry[] = entries.map((entry) => ({
       id: String(entry.id),
       kind: entry.kind as RetirementKind,
@@ -2494,9 +2519,26 @@ function applyRecordAdvance(
       adv,
       at_seq: atSeq,
     }));
+    const reinstated: ReinstatementLedgerEntry[] = reinstatements.map((entry) => ({
+      id: String(entry.id),
+      kind: entry.kind as RetirementKind,
+      reason: input.reason,
+      actor: input.actor,
+      adv,
+      at_seq: atSeq,
+    }));
+    const allReinstatements = [...(ledger.reinstatements ?? []), ...reinstated];
     workspace.files.set(
       ledgerPath,
-      `${JSON.stringify({ version: RETIREMENT_LEDGER_VERSION, entries: [...ledger.entries, ...appended] }, null, 2)}\n`,
+      `${JSON.stringify(
+        {
+          version: RETIREMENT_LEDGER_VERSION,
+          entries: [...ledger.entries, ...appended],
+          ...(allReinstatements.length > 0 ? { reinstatements: allReinstatements } : {}),
+        },
+        null,
+        2,
+      )}\n`,
     );
   }
   const affected = (advance as UnknownRecord).affected_ids;
@@ -2509,6 +2551,7 @@ function applyRecordAdvance(
       ref,
       affected_ids: Array.isArray(affected) ? affected : [],
       retirement_ids: retirementIds,
+      ...(reinstatementIds.length > 0 ? { reinstatement_ids: reinstatementIds } : {}),
       actor: input.actor,
     }),
   );

@@ -124,7 +124,9 @@ export async function readEvidenceQualificationRequirement(
 ): Promise<EvidenceQualificationRequirement> {
   const paths = buildStorePaths(rootDir);
   const confirmation = await readBaselineConfirmation(rootDir);
-  const declared = dependency === undefined ? undefined : validateBaselineDependencyDeclaration(dependency);
+  const declared = dependency === undefined
+    ? undefined
+    : validateBaselineDependencyDeclaration(dependency, confirmation.kind === "record-valid" ? confirmation.retired : []);
   if (declared !== undefined && !declared.ok) {
     throw new GovernanceError("SCHEMA_INVALID", declared.details.join("; "), "Repair the task baseline dependency declaration.");
   }
@@ -134,7 +136,8 @@ export async function readEvidenceQualificationRequirement(
   }
   const scope = declared?.ok && confirmation.kind === "record-valid" && assessment?.errors.length === 0
     ? {
-        relevant_targets: declared.declaration.relevant_targets,
+        // 已退役目标（V2-6）不参与范围判定。
+        relevant_targets: declared.declaration.relevant_targets.filter((target) => !confirmation.retired.includes(target)),
         declared_inputs: { at_seq: declared.declaration.baseline_at_seq, digests: declared.declaration.digests },
         current_inputs: { at_seq: confirmation.record.at_seq, digests: confirmation.record.digests },
       }

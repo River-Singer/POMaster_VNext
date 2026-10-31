@@ -122,6 +122,7 @@ import {
   baselineTargetsForLanes,
   buildBaselineDependencyDeclaration,
   readBaselineConfirmation,
+  readRetiredBaselineTargets,
   validateBaselineDependencyDeclaration,
   type BaselineDependencyDeclaration,
   type BaselineScopeLane,
@@ -1094,7 +1095,7 @@ export async function runBrainstormPromote(
     }
   }
   if (contract.baseline_dependencies !== undefined) {
-    const baseline = validateBaselineDependencyDeclaration(contract.baseline_dependencies);
+    const baseline = validateBaselineDependencyDeclaration(contract.baseline_dependencies, readRetiredBaselineTargets(rootDir));
     if (!baseline.ok) {
       return fail(
         {
@@ -2497,17 +2498,14 @@ export async function runBrainstormDecide(
         { state: currentState, decisions_total: graph.decisions.length },
       );
     }
-    const partition = baselineTargetsForLanes(laneTokens as BaselineScopeLane[]);
-    baselineTargets = partition.relevant;
-    baselineExclusions = partition.excluded;
   }
   let baselineScopeWarning = false;
-  if (baselineTargets.length === 0 && baselineExclusions.length === 0) {
+  if (laneTokens.length === 0 && baselineTargets.length === 0 && baselineExclusions.length === 0) {
     // 未声明范围：任何确认资产的变化都会让本任务的证据重新待评估（V2-4 提示，不阻断）。
     const confirmation = await readBaselineConfirmation(rootDir);
     baselineScopeWarning = confirmation.kind === "record-valid";
   }
-  if (baselineTargets.length > 0 || baselineExclusions.length > 0) {
+  if (laneTokens.length > 0 || baselineTargets.length > 0 || baselineExclusions.length > 0) {
     const confirmation = await readBaselineConfirmation(rootDir);
     if (confirmation.kind !== "record-valid" || confirmation.state !== "confirmed") {
       return fail(
@@ -2520,10 +2518,17 @@ export async function runBrainstormDecide(
         { state: currentState, decisions_total: graph.decisions.length },
       );
     }
+    if (laneTokens.length > 0) {
+      // 已退役（不适用）目标（V2-6）两边都不列。
+      const partition = baselineTargetsForLanes(laneTokens as BaselineScopeLane[], confirmation.retired);
+      baselineTargets = partition.relevant;
+      baselineExclusions = partition.excluded;
+    }
     const baseline = buildBaselineDependencyDeclaration(
       confirmation.record,
       baselineTargets,
       baselineExclusions,
+      confirmation.retired,
     );
     if (!baseline.ok) {
       return fail(

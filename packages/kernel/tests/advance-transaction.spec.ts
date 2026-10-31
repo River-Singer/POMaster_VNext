@@ -21,6 +21,8 @@ import {
   digestValue,
   latestAdvanceFor,
   listAdvanceRecords,
+  isRetired,
+  listActiveRetirements,
   listRetirements,
   loadTruthIndex,
   pathsOf,
@@ -57,7 +59,13 @@ function section(oldAnchor: VnextAnchor, newAnchor: VnextAnchor, overrides: Reco
 async function record(
   store: Store,
   advance: Record<string, unknown>,
-  extra: { actor?: string; reason?: string; currentAnchor?: VnextAnchor; retirements?: Record<string, unknown>[] } = {},
+  extra: {
+    actor?: string;
+    reason?: string;
+    currentAnchor?: VnextAnchor;
+    retirements?: Record<string, unknown>[];
+    reinstatements?: Record<string, unknown>[];
+  } = {},
 ) {
   return applyTransaction(store, {
     ops: [
@@ -69,6 +77,7 @@ async function record(
           reason: extra.reason ?? REASON,
           ...(extra.currentAnchor !== undefined ? { currentAnchor: extra.currentAnchor } : {}),
           ...(extra.retirements !== undefined ? { retirements: extra.retirements } : {}),
+          ...(extra.reinstatements !== undefined ? { reinstatements: extra.reinstatements } : {}),
         },
       },
     ],
@@ -344,5 +353,56 @@ describe("reassess_baseline_scope：任务 baseline 依赖范围重写（V2-7；
       .rejects.toMatchObject({ code: "SCHEMA_INVALID" });
     await expect(applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "TASK.NOPE" as never, declaration }] }))
       .rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+  });
+});
+
+describe("record_advance：撤销退役（V2-6 reinstatements）", () => {
+  const notApplicable = {
+    id: "baseline/backend/stack.yaml",
+    kind: "baseline_target_not_applicable",
+    reason: "纯前端项目，后端由 BaaS 提供",
+    actor: OWNER,
+    last_anchor: { target: "baseline/backend/stack.yaml", authority_digest: null },
+  };
+  const reinstate = { id: "baseline/backend/stack.yaml", kind: "baseline_target_not_applicable" };
+
+  it("退役 → 撤销 → 再退役交替：台账只追加，isRetired / listActiveRetirements 取当前态；记录与 journal 带 reinstatement_ids", async () => {
+    const { store } = await makeStore();
+    const paths = pathsOf(store);
+    await record(store, section(anchor("on"), anchor("off")), { retirements: [notApplicable] });
+    expect(listActiveRetirements(paths).map((entry) => entry.id)).toEqual(["baseline/backend/stack.yaml"]);
+
+    const second = await record(store, section(anchor("off"), anchor("on2")), { reinstatements: [reinstate] });
+    const ledger = readRetirementLedger(paths);
+    expect(ledger.entries).toHaveLength(1);
+    expect(ledger.reinstatements).toEqual([{ ...reinstate, reason: REASON, actor: OWNER, adv: "ADV-0002", at_seq: second.appliedSeq }]);
+    expect(isRetired(ledger, reinstate.kind, reinstate.id)).toBe(false);
+    expect(listActiveRetirements(paths)).toEqual([]);
+    expect(latestAdvanceFor(paths, "claim_verification", "CLM-0001")?.reinstatement_ids).toEqual([reinstate.id]);
+    const events = readJournal(store).filter((line) => line.type === "ADVANCE_RECORDED");
+    expect(events[0]).not.toHaveProperty("reinstatement_ids");
+    expect(events[1]?.reinstatement_ids).toEqual([reinstate.id]);
+
+    await record(store, section(anchor("on2"), anchor("off2")), { retirements: [notApplicable] });
+    expect(readRetirementLedger(paths).entries).toHaveLength(2);
+    expect(listActiveRetirements(paths, { kind: "baseline_target_not_applicable" }).map((entry) => entry.adv)).toEqual(["ADV-0003"]);
+  });
+
+  it("撤销未退役条目 / 同批重复 / 词形外种类 → RETIREMENT_INVALID，整事务零落盘", async () => {
+    const { store, root } = await makeStore();
+    const notRetired = await rejection(() => record(store, section(anchor("v1"), anchor("v2")), { reinstatements: [reinstate] }));
+    expect(notRetired.details).toMatchObject({ reason_code: "RETIREMENT_INVALID" });
+    expect((notRetired.details as { errors: string[] }).errors).toEqual([
+      "reinstatements[0] baseline_target_not_applicable baseline/backend/stack.yaml is not retired",
+    ]);
+    await record(store, section(anchor("v1"), anchor("v2")), { retirements: [notApplicable] });
+    const malformed = await rejection(() =>
+      record(store, section(anchor("v2"), anchor("v3")), { reinstatements: [reinstate, reinstate, { id: "x", kind: "missing_retired" }] }));
+    expect((malformed.details as { errors: string[] }).errors).toEqual([
+      "reinstatements[1].id is duplicated: baseline/backend/stack.yaml",
+      "reinstatements[2].kind must be one of the vnext retirement kinds",
+    ]);
+    expect(advanceFiles(root)).toEqual(["ADV-0001.json"]);
+    expect(readRetirementLedger(pathsOf(store)).reinstatements).toBeUndefined();
   });
 });

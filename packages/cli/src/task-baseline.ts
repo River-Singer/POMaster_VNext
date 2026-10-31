@@ -221,6 +221,7 @@ export async function runTaskReassessBaseline(
   ];
   let relevant = [...(input.baselineTargets ?? [])];
   let excluded = [...(input.baselineExclusions ?? [])];
+  let lanePartition: BaselineScopeLane[] | null = null;
   if (laneTokens.length > 0) {
     const unknownLanes = laneTokens.filter((lane) => !(BASELINE_SCOPE_LANES as readonly string[]).includes(lane));
     if (unknownLanes.length > 0 || relevant.length > 0 || excluded.length > 0) {
@@ -230,9 +231,7 @@ export async function runTaskReassessBaseline(
         hint: `--lanes 取值 ${BASELINE_SCOPE_LANES.join(" | ")}（逗号分隔或重复给出）；逐文件精确划分改用 --baseline-target + --baseline-exclude。`,
       });
     }
-    const partition = baselineTargetsForLanes(laneTokens as BaselineScopeLane[]);
-    relevant = [...partition.relevant];
-    excluded = [...partition.excluded];
+    lanePartition = laneTokens as BaselineScopeLane[];
   } else if (relevant.length === 0 && excluded.length === 0) {
     return fail({
       code: "SCHEMA_INVALID",
@@ -253,12 +252,18 @@ export async function runTaskReassessBaseline(
       hint: "先完成 pomaster baseline confirm；缺席、不可读或损坏的确认记录不能作为任务范围快照。",
     });
   }
-  const built = buildBaselineDependencyDeclaration(confirmation.record, relevant, excluded);
+  if (lanePartition !== null) {
+    // 已退役（不适用）目标（V2-6）两边都不列。
+    const partition = baselineTargetsForLanes(lanePartition, confirmation.retired);
+    relevant = [...partition.relevant];
+    excluded = [...partition.excluded];
+  }
+  const built = buildBaselineDependencyDeclaration(confirmation.record, relevant, excluded, confirmation.retired);
   if (!built.ok) {
     return fail({
       code: "BASELINE_SCOPE_INCOMPLETE",
       message: `新范围未完整覆盖确认资产：${built.details.join("；")}`,
-      hint: `--baseline-target/--baseline-exclude 必须共同覆盖全部 ${String(BASELINE_CONFIRM_TARGETS.length)} 个确认资产；未评估项不能按无关处理。`,
+      hint: `--baseline-target/--baseline-exclude 必须共同覆盖全部 ${String(BASELINE_CONFIRM_TARGETS.length - confirmation.retired.length)} 个有效确认资产（已退役目标可不列）；未评估项不能按无关处理。`,
     });
   }
   const declaration = built.declaration;

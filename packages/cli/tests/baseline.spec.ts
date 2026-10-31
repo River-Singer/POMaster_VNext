@@ -881,7 +881,7 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
     expect(human.join("\n")).toContain("pomaster baseline set --lane <frontend|backend>");
   });
 
-  it("baseline set 命令面：正向 exit 0；非法 lane --json exit 1 SCHEMA_INVALID；注册表 baseline 子命令恰 set", async () => {
+  it("baseline set 命令面：正向 exit 0；非法 lane --json exit 1 SCHEMA_INVALID；注册表 baseline 子命令恰 set/confirm/retire/unretire（retire/unretire = V2-6）", async () => {
     await runInit(dir);
     const lines: string[] = [];
     const code = await runCli(
@@ -910,7 +910,7 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
 
     const program = createProgram();
     const baselineCommand = program.commands.find((command) => command.name() === "baseline");
-    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set", "confirm"]);
+    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set", "confirm", "retire", "unretire"]);
   });
 
   it("baseline confirm 命令面：未销账完 exit 1 BASELINE_UNKNOWNS_REMAINING；全销账 exit 0 CONFIRMED；--json 信封词形", async () => {

@@ -297,6 +297,7 @@ import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordRequalify, runRecordVerification } from "./record.js";
 import { runTaskReassessBaseline } from "./task-baseline.js";
+import { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
 import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
@@ -811,6 +812,8 @@ export type {
 } from "./compact.js";
 export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordRequalify, runRecordVerification } from "./record.js";
 export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-baseline.js";
+export { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
+export type { BaselineRetireInput, BaselineUnretireInput, BaselineRetireResult } from "./baseline-retire.js";
 export type { TaskReassessBaselineInput, TaskReassessBaselineResult, ReassessAffectedClaim } from "./task-baseline.js";
 export type {
   RecordGateRunInput,
@@ -1587,6 +1590,40 @@ export function createProgram(
         outcome,
         asJson: opts.json === true,
       });
+    });
+
+  baseline
+    .command("retire")
+    .description(
+      "确认目标不适用退役（V2-6）：Owner 决定该目标对本项目不适用——写退役台账（baseline_target_not_applicable）+ ADVANCE（锚 baseline_target，ref <target>#applicability）。此后 confirm 不再读它、不因它的未知键阻塞，漂移判定与任务范围划分不再计入；status/doctor 呈现已退役清单。前提：目标不在在途变更批。错误码：SCHEMA_INVALID（未知目标 / 缺 --not-applicable / --by 非 human:）/ BASELINE_NOT_CONFIRMED（在途批）/ ADVANCE_INVALID（占位理由）",
+    )
+    .argument("<target>", "确认目标（如 baseline/backend/stack.yaml）")
+    .option("--not-applicable", "退役种类：对本项目不适用（必给）")
+    .requiredOption("--reason <text>", "为什么不适用（非占位）")
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (target: string, opts, command) => {
+      const outcome = await runBaselineRetire(resolveDir(command), {
+        target,
+        reason: opts.reason as string,
+        by: opts.by as string,
+        ...(opts.notApplicable === true ? { notApplicable: true } : {}),
+      });
+      record({ command: "baseline retire", outcome, asJson: command.opts().json === true });
+    });
+
+  baseline
+    .command("unretire")
+    .description(
+      "撤销确认目标退役（V2-6）：台账追加撤销条目（历史不改写）+ 同链 ADVANCE。目标重新进入确认分母——退役期间文件变过或从未确认过则判漂移，走 baseline confirm 治理通路；已声明范围但未覆盖该目标的任务须 task reassess-baseline。错误码：SCHEMA_INVALID / ADVANCE_INVALID",
+    )
+    .argument("<target>", "已退役的确认目标")
+    .requiredOption("--reason <text>", "为什么重新适用（非占位）")
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (target: string, opts, command) => {
+      const outcome = await runBaselineUnretire(resolveDir(command), { target, reason: opts.reason as string, by: opts.by as string });
+      record({ command: "baseline unretire", outcome, asJson: command.opts().json === true });
     });
 
   // —— 任务级写面（V2-7）：baseline 依赖范围重评估 ——
