@@ -193,6 +193,11 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
     `BASELINE_BYTES_ONLY_CHANGE` warning；`normalized` 段缺席的旧记录按 BOM / 换行变体判同，
     下一次真实确认时补写。重确认时只有字节变化的目标沿用旧摘要，任务的 baseline 依赖快照
     不因此失效。git autocrlf 克隆的基线文件照常可读写（解析去 BOM 与行尾 `\r`，改写保持原换行）；
+  - 文本变而权威面不变也不计漂移（V2-5，O7 口径）：确认记录另存 `authority` 权威面摘要——md
+    只取各 H2 节内的取值与 Owner 正文，去掉文件头说明、`- 填写指引:` 行、PRESET-DRAFT 草案节、
+    `## 补充…` 节；yaml 取解析后的键值（注释与键序无关）。只动了这些部分 →
+    `BASELINE_SUPPLEMENT_CHANGED` warning，不推进 `target_seq`、不要求重确认。给 Agent 的补充说明
+    写在文件里任意位置的 `## 补充` 节下即可；要改确认过的取值仍在对应 H2 节内修改并走治理通路；
 - 确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象
   须在册且 lifecycle 合法，kernel 校验）写入后记录转 pending-change，`pomaster baseline
   confirm --change <同一 CHANGE-id>` 终结变更批；未经登记的手改出现漂移时，重确认须二选一：
@@ -215,8 +220,9 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
 - 草案内容逐条溯源到已锚定的主题文档与 overlay（`- 源:` 行标注 `.pomaster` 路径 + 节锚）；
 - 纯加法追加、`起步值:UNKNOWN` 骨架字节零改动；栈维度未销账的 lane 保持纯 UNKNOWN
   （缺席诚实）；
-- draft-once（在座零触碰），Owner 可改；`baseline confirm` 时草案随整文件 digest 烙印，
-  确认后改动即 `BASELINE_DRIFT` 走治理通路；
+- draft-once（在座零触碰），Owner 可改；草案节不计入基线权威面（V2-5，O7）：确认后改草案只给
+  `BASELINE_SUPPLEMENT_CHANGED` warning，要让某条草案成为基线须把取值写进对应 H2 节的
+  「起步值」行，H2 取值的改动照常 `BASELINE_DRIFT` 走治理通路；
 - 业务实体/接口/数据模型零预置（New Entity Gate 词形在册）。
 
 ## init 之后的消费面（session / status / alerts / doctor）
