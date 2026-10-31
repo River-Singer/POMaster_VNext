@@ -5,15 +5,22 @@
  * resolved_bindings verbatim, executes obligations serially, and records each GRN
  * through recordGateRunValue so kernel record_gate_run stays the sole write path.
  */
+import { createHash } from "node:crypto";
 import {
   EXECUTION_ID_PATTERN,
   GovernanceError,
   PLAN_CAPABILITY_GATE_NAMES,
+  applyTransaction,
   assertExecutionAttachable,
   assertRunSourceSnapshot,
+  buildAdvance,
+  buildRejudge,
   buildStorePaths,
   compareSourceSnapshots,
   createStore,
+  digestValue,
+  hexOf,
+  latestAdvanceFor,
   persistEvidenceArtifact,
   readExecutionRecordById,
   sha256OfCanonical,
@@ -38,7 +45,7 @@ import { allocateEvidenceRef } from "./evidence.js";
 import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { runDiagnose, type DiagnoseResult } from "./diagnose.js";
 import { detectBrowserLegAvailable, runPlanCompile, type PlanCompileInput } from "./plan.js";
-import { governanceErrorToCliError } from "./permit.js";
+import { governanceErrorToCliError, parseActorArgv } from "./permit.js";
 import { runRecordGateRunValue } from "./record.js";
 import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 import { runsDirPath } from "./store-layout.js";
@@ -67,6 +74,15 @@ export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
    * final_stable（编排器语义），本入参显式声明供 worker/编排两侧区分归属。
    */
   readonly verificationPurpose?: EvidencePurposeValue;
+  /**
+   * 定向重验（V2-10；台账 VX-WRITE-04）：同 AGX 复用之外，跨 AGX 沿用仍新鲜的 passed GRN——
+   * 来源执行与本执行同角色、同任务（或未绑任务），GRN 带源码快照且窗口 fresh、产出时相关面
+   * 与当前一致，非 worker_local；其余义务在本 AGX 下重跑。全部 passed 且确有跨 AGX 沿用时写
+   * ADVANCE（锚 source_snapshot，ref `<task>#plan-cohort@<AGX>`），finalize cohort 凭它补齐。
+   */
+  readonly requalify?: boolean;
+  /** --by <type>:<name>：requalify 的 ADVANCE actor（显式身份）。 */
+  readonly by?: string;
 }
 
 export interface PlanRunRow {
@@ -79,6 +95,8 @@ export interface PlanRunRow {
   readonly grn: string;
   readonly verdict: string;
   readonly diagnosis: DiagnoseResult | null;
+  /** 跨 AGX 沿用的来源执行（V2-10 requalify；本 AGX 产出 / 同 AGX 复用的行无此键）。 */
+  readonly carried_from?: string;
 }
 
 export interface PlanDiagnosisEnvelope {
@@ -102,6 +120,8 @@ export interface PlanRunResult {
   readonly partial: boolean;
   readonly rows: readonly PlanRunRow[];
   readonly diagnostics: readonly PlanDiagnosisEnvelope[];
+  /** requalify 写下的 cohort ADVANCE（V2-10；未 requalify 无此键，无跨 AGX 沿用 = null）。 */
+  readonly advance?: string | null;
 }
 
 function empty(input: PlanRunInput): PlanRunResult {
@@ -252,6 +272,73 @@ function findRecordedObligation(rootDir: string, executionId: string, taskRef: s
   return null;
 }
 
+/**
+ * 终验 cohort 义务键（finalize requiredPlanKeys / latestPlanCohort 同构）：无场景 =
+ * `<acceptance>\0<gate>`；带场景 = `<acceptance>\0<scenario>\0<gate>`。
+ */
+export function planCohortKey(acceptanceRef: string, scenarioRef: string | null, gate: string): string {
+  return scenarioRef === null || scenarioRef === "" ? `${acceptanceRef}\0${gate}` : `${acceptanceRef}\0${scenarioRef}\0${gate}`;
+}
+
+/** requalify cohort ADVANCE 的锚 ref（V2-10）：每个验证 AGX 一条链。 */
+export function planCohortAnchorRef(taskRef: string, executionId: string): string {
+  return `${taskRef}#plan-cohort@${executionId}`;
+}
+
+/** cohort 摘要（ADVANCE 新锚 digest；finalize 以同式复算核对）。 */
+export function planCohortDigest(fingerprint: string, cohort: Readonly<Record<string, string>>): string {
+  return digestValue({ fingerprint, cohort });
+}
+
+/**
+ * 跨 AGX 沿用候选（V2-10 requalify）：与 findRecordedObligation 同一身份标记（acceptance /
+ * scenario / plan fingerprint / binding id + fingerprint、passed、CDF runtime 绑定核验），另加：
+ * 来源 AGX ≠ 本 AGX、来源执行在册且同角色、任务一致（或未绑任务）、非 worker_local、
+ * **必须带源码快照**（无快照不可判新鲜，不跨 AGX 沿用）且窗口 fresh、产出时相关面与当前一致。
+ */
+function findCarriedObligation(rootDir: string, executionId: string, role: string, taskRef: string, acceptanceRef: string, scenarioRef: string | null, binding: ToolBindingRecord, fingerprint: string, currentSource: EvidenceSourceSnapshot | undefined): { grn: string; executionId: string } | null {
+  if (currentSource === undefined) return null;
+  try {
+    const dir = runsDirPath(rootDir);
+    const paths = buildStorePaths(rootDir);
+    const markers = [
+      `acceptance_ref=${acceptanceRef}`,
+      ...(scenarioRef !== null ? [`scenario_ref=${scenarioRef}`] : []),
+      `inputs_fingerprint=${fingerprint}`,
+      `${BINDING_ANNOTATION_PREFIX}${binding.id}`,
+      `binding_fingerprint=${bindingFingerprint(binding)}`,
+    ];
+    for (const file of readdirSync(dir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).sort().reverse()) {
+      const row = JSON.parse(readFileSync(join(dir, file), "utf8")) as Record<string, unknown>;
+      const source = row["execution_id"];
+      if (typeof source !== "string" || source === executionId || row["evidence_purpose"] === "worker_local") continue;
+      const result = ((row["gate_result"] as Record<string, unknown> | undefined)?.["result"] as Record<string, unknown> | undefined);
+      const scope = result?.["scope"] as Record<string, unknown> | undefined;
+      const note = scope?.["note"];
+      const noteFields = typeof note === "string" ? note.split("；") : [];
+      if (result?.["subject_id"] !== taskRef || !markers.every((marker) => noteFields.includes(marker)) || result["verdict"] !== "passed") continue;
+      if (scenarioRef === null && noteFields.some((field) => field.startsWith("scenario_ref="))) continue;
+      const sourceExecution = readExecutionRecordById(paths, source);
+      if (sourceExecution === null || sourceExecution.role !== role || (sourceExecution.task_id !== null && sourceExecution.task_id !== taskRef)) continue;
+      if (binding.gate === "CONTROL_DATA_FLOW_RUNTIME") {
+        const bindingOutcome = verifyEvidenceBinding({ runRecordPath: join(dir, file), evidenceDir: paths.evidenceDir });
+        if (!bindingOutcome.bound) continue;
+      }
+      const snapshot = row["source_snapshot"];
+      if (snapshot === undefined) continue;
+      try {
+        assertRunSourceSnapshot(snapshot);
+        if (snapshot.window.state !== "fresh") continue;
+        if (compareSourceSnapshots(snapshot.after, currentSource).state !== "fresh") continue;
+      } catch {
+        continue;
+      }
+      return { grn: file.slice(0, -5), executionId: source };
+    }
+  } catch { /* absence means execute normally */ }
+  return null;
+}
+
 /** Serial plan execution; stops dispatch after the first fatal execution/recording error. */
 export async function runPlanRun(
   rootDir: string,
@@ -265,10 +352,24 @@ export async function runPlanRun(
       hint: "使用 beginExecution 已登记的 AGX-<4位年份>-<序号> 身份。",
     });
   }
+  let requalifyActor: string | null = null;
+  if (input.requalify === true) {
+    const by = input.by === undefined ? null : parseActorArgv(input.by);
+    if (by === null || "error" in by) {
+      return fail(input, result, {
+        code: "SCHEMA_INVALID",
+        message: by === null ? "--requalify 须同时给出 --by <type>:<name>（跨 AGX 沿用写 ADVANCE，须显式身份）" : `--by 词形非法：${String(input.by)}`,
+        hint: `pomaster plan run --task ${input.taskRef} --execution-id ${input.executionId} --requalify --by <type>:<name>`,
+      });
+    }
+    requalifyActor = `${by.actor.actorType}:${by.actor.actor}`;
+  }
+  let executionRole: string | null = null;
   try {
     const paths = buildStorePaths(rootDir);
     assertExecutionAttachable(paths, input.executionId);
     const execution = readExecutionRecordById(paths, input.executionId);
+    executionRole = execution?.role ?? null;
     if (execution !== null && execution.task_id !== null && execution.task_id !== input.taskRef) {
       return fail(input, result, {
         code: "EXECUTION_TASK_MISMATCH",
@@ -395,6 +496,13 @@ export async function runPlanRun(
     if (previous !== null) {
       rowByIndex.set(obligationIndex, { acceptance_ref: obligation.item.acceptance_ref, scenario_ref: obligation.item.scenario_ref ?? null, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
       continue;
+    }
+    if (requalifyActor !== null && executionRole !== null) {
+      const carried = findCarriedObligation(rootDir, input.executionId, executionRole, input.taskRef, obligation.item.acceptance_ref, obligation.item.scenario_ref ?? null, binding, compiled.result.inputs_fingerprint, sourceBefore);
+      if (carried !== null) {
+        rowByIndex.set(obligationIndex, { acceptance_ref: obligation.item.acceptance_ref, scenario_ref: obligation.item.scenario_ref ?? null, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: carried.grn, verdict: "passed", diagnosis: null, carried_from: carried.executionId });
+        continue;
+      }
     }
     needing.push({ index: obligationIndex, item: obligation.item, binding });
   }
@@ -581,9 +689,17 @@ export async function runPlanRun(
   const rows = rowsSoFar();
   const passed = rows.filter((row) => row.verdict === "passed").length;
   result = { ...result, recorded: rows.length, passed, partial: false, rows };
+  let advanceLine: string | null = null;
+  if (requalifyActor !== null) {
+    const recordedAdvance = await recordRequalifiedCohort(rootDir, input, requalifyActor, compiled.result.inputs_fingerprint, rows);
+    if ("error" in recordedAdvance) return fail(input, result, recordedAdvance.error, { phase: "gate_recording", kind: "runner_error" });
+    result = { ...result, advance: recordedAdvance.adv };
+    advanceLine = recordedAdvance.line;
+  }
   const human = [
     `plan run → ${passed}/${rows.length} REQUIRED obligations passed（task=${input.taskRef}, execution=${input.executionId}）`,
-    ...rows.map((row) => `  ${row.verdict.padEnd(15)} ${row.acceptance_ref} · ${row.capability} · ${row.binding_id} · ${row.grn}`),
+    ...rows.map((row) => `  ${row.verdict.padEnd(15)} ${row.acceptance_ref} · ${row.capability} · ${row.binding_id} · ${row.grn}${row.carried_from !== undefined ? `（沿用 ${row.carried_from}）` : ""}`),
+    ...(advanceLine !== null ? [advanceLine] : []),
     "  GRN 已逐项 append-only 入账；本命令不创建 claim、不 independent verify、不 closeout。",
   ];
   if (passed === rows.length && rows.length > 0) return okOutcome("plan run", result, human);
@@ -597,4 +713,68 @@ export async function runPlanRun(
     })),
     human,
   );
+}
+
+/**
+ * requalify 的 cohort ADVANCE（V2-10）：全部义务 passed 且确有跨 AGX 沿用时，把本次 cohort
+ * （义务键 → GRN）记为锚 source_snapshot / ref `<task>#plan-cohort@<AGX>` 的新状态；证据引用 =
+ * cohort 内每个 GRN 文件的 sha256（文件 append-only，finalize 逐个复核）。与链尾相同 = 不重写。
+ */
+async function recordRequalifiedCohort(
+  rootDir: string,
+  input: PlanRunInput,
+  actor: string,
+  fingerprint: string,
+  rows: readonly PlanRunRow[],
+): Promise<{ readonly adv: string | null; readonly line: string | null } | { readonly error: CliError }> {
+  const carried = rows.filter((row) => row.carried_from !== undefined);
+  if (carried.length === 0) return { adv: null, line: "  requalify：无跨 AGX 沿用（全部义务在本 AGX 下产出或复用），不写 ADVANCE。" };
+  if (rows.some((row) => row.verdict !== "passed")) {
+    return { adv: null, line: `  requalify：沿用 ${String(carried.length)} 项，但仍有非 passed 义务——cohort 未成立，不写 ADVANCE（修复后重跑）。` };
+  }
+  const cohort: Record<string, string> = {};
+  for (const row of rows) cohort[planCohortKey(row.acceptance_ref, row.scenario_ref, row.gate)] = row.grn;
+  const ref = planCohortAnchorRef(input.taskRef, input.executionId);
+  const digest = planCohortDigest(fingerprint, cohort);
+  try {
+    const store = await createStore(rootDir);
+    const paths = buildStorePaths(rootDir);
+    const tail = latestAdvanceFor(paths, "source_snapshot", ref);
+    const tailAnchor = tail?.advance["new_anchor"] as Record<string, unknown> | undefined;
+    if (tailAnchor !== undefined && typeof tailAnchor["digest"] === "string" && hexOf(tailAnchor["digest"]) === digest) {
+      return { adv: tail?.adv ?? null, line: `  requalify：cohort 与 ${tail?.adv ?? "链尾"} 相同，不重写 ADVANCE。` };
+    }
+    const runsDir = runsDirPath(rootDir);
+    const evidenceRefs = [...new Set(rows.map((row) => row.grn))].sort().map((grn) =>
+      `evidence/runs/${grn}.json#sha256=${createHash("sha256").update(readFileSync(join(runsDir, `${grn}.json`))).digest("hex")}`);
+    const rerun = rows.filter((row) => row.carried_from === undefined).map((row) => row.grn);
+    const reason = `源码快照定向重验：${input.executionId} 沿用 ${String(carried.length)} 项仍新鲜的 passed 证据（${[...new Set(carried.map((row) => row.carried_from as string))].join("、")}），本 AGX 产出 / 复用 ${String(rerun.length)} 项`;
+    const advance = buildAdvance({
+      basis: "explicit-evidence",
+      actor,
+      reason,
+      evidenceRefs,
+      evidenceSha256: digestValue([...evidenceRefs].sort()),
+      oldAnchor: tailAnchor !== undefined
+        ? { ...tailAnchor }
+        : { kind: "source_snapshot", ref, digest: digestValue(null), version: 1 },
+      newAnchor: { kind: "source_snapshot", ref, digest, version: 1 },
+      affectedIds: [input.taskRef, ...rerun],
+      rejudge: buildRejudge([
+        {
+          gate: "vnext.plan.requalify",
+          findings: [{ fingerprint, cohort, carried: Object.fromEntries(carried.map((row) => [row.grn, row.carried_from as string])) }],
+        },
+      ]),
+    });
+    await applyTransaction(store, { note: `plan run --requalify ${input.taskRef} ${input.executionId}`, ops: [{ op: "record_advance", record: { advance, actor, reason } }] });
+    const adv = latestAdvanceFor(paths, "source_snapshot", ref)?.adv ?? null;
+    return { adv, line: `  requalify：沿用 ${String(carried.length)} 项跨 AGX 证据，cohort 记入 ${adv ?? "ADVANCE"}（锚 source_snapshot ${ref}）。` };
+  } catch (error) {
+    return {
+      error: error instanceof GovernanceError
+        ? governanceErrorToCliError(error)
+        : { code: "KERNEL_ERROR", message: error instanceof Error ? error.message : String(error), hint: "cohort ADVANCE 写入失败；已入账 GRN 保持 append-only，修复后重跑 --requalify。" },
+    };
+  }
 }

@@ -2517,8 +2517,11 @@ export function createProgram(
     .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
     .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
     .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
+    .option("--requalify", "定向重验（V2-10）：只重跑源码已变或缺失的义务，仍新鲜的 passed 证据跨 AGX 沿用并写 ADVANCE")
+    .option("--by <type:name>", "--requalify 的 ADVANCE actor（缺省取 --verifier）")
     .option("--json", "machine-readable JSON output")
     .action(async (taskId: string, opts, command) => {
+      const by = (opts.by as string | undefined) ?? (opts.verifier as string | undefined);
       record({ command: "finalize run", outcome: await runFinalize(resolveDir(command), {
         taskRef: taskId,
         executionId: opts.verificationExecutionId as string,
@@ -2528,6 +2531,8 @@ export function createProgram(
         changed: opts.changed as string[] | undefined,
         consumers: opts.consumer as string[] | undefined,
         faces: opts.face as string[] | undefined,
+        ...(opts.requalify === true ? { requalify: true } : {}),
+        ...(by !== undefined ? { by } : {}),
       }), asJson: command.optsWithGlobals().json === true });
     });
 
@@ -3195,9 +3200,13 @@ export function createProgram(
     .option("--profile <word>", "信息性：governance_profile 自报")
     .option("--note <text>", "信息性注记")
     .option("--diagnose-on-failure", "对已入账且 verdict=failed 的 GRN 运行只读 diagnose")
+    .option("--requalify", "定向重验（V2-10）：除同 AGX 复用外，跨 AGX 沿用仍新鲜的 passed GRN（来源执行同角色、带源码快照且与当前一致），只重跑其余义务；全绿且确有沿用时写 ADVANCE（锚 source_snapshot）供 finalize cohort 补齐")
+    .option("--by <type:name>", "--requalify 必填：ADVANCE actor（显式身份）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runPlanRun(resolveDir(command), {
+        ...(opts.requalify === true ? { requalify: true } : {}),
+        ...(opts.by !== undefined ? { by: opts.by as string } : {}),
         taskRef: opts.task as string,
         executionId: opts.executionId as string,
         changed: opts.changed as string[] | undefined,

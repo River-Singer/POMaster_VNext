@@ -1199,7 +1199,7 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     render: (s) => ({
       beat: "⑤",
       command: `pomaster plan run --task ${firstTaskOr(s, "<TASK.*>")} --execution-id <verification-AGX>`,
-      reason: `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY 主链；验证身份须按既有独立性合同登记，不能把实现交接当作通过证明`,
+      reason: `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY 主链；验证身份须按既有独立性合同登记，不能把实现交接当作通过证明；此前已有验证证据时加 --requalify --by <type:name> 只重跑源码已变或缺失的义务（V2-10）`,
     }),
   },
   {

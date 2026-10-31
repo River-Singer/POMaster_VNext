@@ -404,7 +404,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "",
   "# ⑤ VERIFY —— 验证计划编译与执行 / 失败诊断 / 控件数据流审计 / 证据入账",
   "pomaster plan compile --task <TASK.*>",
-  "pomaster plan run --task <TASK.*> --execution-id <AGX-n> [--diagnose-on-failure]",
+  "pomaster plan run --task <TASK.*> --execution-id <AGX-n> [--diagnose-on-failure] [--requalify --by <type:name>]",
   "pomaster control-data-flow analyze [--report-only]",
   "pomaster finalize status/run <TASK.*> # 自动推进机器步骤；独立 verification / replay / Human ACCEPT 边界显式 pending",
   "pomaster check --fast",

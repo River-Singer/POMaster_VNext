@@ -66,7 +66,7 @@ gate 运行结果走 `record gate-run` 产 **GRN 回执**入 evidence 平面；c
 
 ### ⑤ 计划驱动验证 + 控件数据流审计
 
-- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；所有前检阻塞和非绿 GRN 都进入 `pomaster.plan-diagnosis/v1`，原始 error code / 七态 verdict 保持不变。
+- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；所有前检阻塞和非绿 GRN 都进入 `pomaster.plan-diagnosis/v1`，原始 error code / 七态 verdict 保持不变。`--requalify --by <type:name>` 做定向重验：仍新鲜的 passed 证据（同角色 AGX、源码快照与当前一致）跨 AGX 沿用，只重跑源码已变或缺失的义务，并以 ADVANCE 记下跨 AGX 的 cohort 供 finalize 复核。
 - `pomaster control-data-flow analyze` 对 **Vue SFC 与 React TSX** 做受限 AST 数据链审计，追踪 `control → event → handler → state/effect → readback → feedback`，输出逐段源码锚和 `proven / broken / unknown` 结论。
 - `control_data_flow` 自动展开 `CONTROL_DATA_FLOW` 与 `CONTROL_DATA_FLOW_RUNTIME`。runtime 腿在启动工具前校验声明式 probe manifest，只允许 `READ_ONLY` 或隔离 fixture 且带 cleanup 的 `INTERACTIVE_REVERSIBLE`；规范 trace 内容寻址后绑定独立 GRN。
 - `pomaster finalize status/run` 是可重入的一键闭环入口：自动推进机器验证；`status` 从当前 GRN cohort、runtime artifact、replay、claim、ACCEPT 与 Task 派生真实阶段；在独立 verification 或 Human ACCEPT 处返回机器可读 pending，补齐后重放同一命令，由既有 closeout 五闸决定唯一完成态。
