@@ -841,16 +841,27 @@ export type {
   NormalizedField,
   NormalizedAdminExposure,
   NormalizedPublicExposure,
+  NormalizedSurface,
+  SurfaceDecision,
   ArchetypeCatalogEntry,
 } from "./scaffold-spec.js";
 export {
   SCAFFOLD_SURFACE_KEYS,
   SURFACE_PROFILES,
+  SURFACE_DECISION_SLOTS,
+  SURFACE_DECISION_SLOT_SPECS,
   PUBLIC_ACCESS_LEVELS,
   FIELD_CLASSIFICATIONS,
   CLASSIFICATION_TREATMENTS,
 } from "./scaffold-surfaces.js";
-export type { SurfaceProfile, ScaffoldSurfaceKey, FieldClassification, PublicAccessLevel } from "./scaffold-surfaces.js";
+export type {
+  SurfaceProfile,
+  ScaffoldSurfaceKey,
+  SurfaceDecisionSlot,
+  SurfaceDecisionSlotSpec,
+  FieldClassification,
+  PublicAccessLevel,
+} from "./scaffold-surfaces.js";
 export type { BaselineRetireInput, BaselineUnretireInput, BaselineRetireResult } from "./baseline-retire.js";
 export type { TaskReassessBaselineInput, TaskReassessBaselineResult, ReassessAffectedClaim } from "./task-baseline.js";
 export type {
@@ -2648,7 +2659,7 @@ export function createProgram(
   scaffold
     .command("validate")
     .description(
-      "校验领域规格（YAML / JSON）并输出归一化摘要：表名、类名、admin / public 两个面的路径、操作、字段、权限码、分页档。只读；错误码：SPEC_UNREADABLE / SPEC_SCHEMA_UNSUPPORTED / SPEC_SHAPE / SPEC_UNKNOWN_KEY / SPEC_IDENTIFIER / SPEC_DUPLICATE / SPEC_RESERVED_FIELD / SPEC_FIELD_TYPE / SPEC_CONSTRAINT / SPEC_ARCHETYPE_UNKNOWN / SPEC_ARCHETYPE_SLOT / SPEC_SURFACE / SPEC_OPERATION / SPEC_EXPOSURE_FIELD / SPEC_PUBLIC_ACCESS / SPEC_PUBLIC_FIELD_FORBIDDEN / SPEC_VISIBILITY / SPEC_ENTITY_UNEXPOSED / SPEC_PAGE_WITHOUT_ADMIN / SPEC_CATALOG_UNAVAILABLE",
+      "校验领域规格（YAML / JSON）并输出归一化摘要：表名、类名、admin / public 两个面的路径、操作、字段、权限码、分页档，以及每个面还没定的项目决策位（登录方式、会话形态、凭据管理、合规定级——框架不替项目选，定了写进 surfaces.<面>.decisions）。只读；错误码：SPEC_UNREADABLE / SPEC_SCHEMA_UNSUPPORTED / SPEC_SHAPE / SPEC_UNKNOWN_KEY / SPEC_IDENTIFIER / SPEC_DUPLICATE / SPEC_RESERVED_FIELD / SPEC_FIELD_TYPE / SPEC_CONSTRAINT / SPEC_ARCHETYPE_UNKNOWN / SPEC_ARCHETYPE_SLOT / SPEC_SURFACE / SPEC_OPERATION / SPEC_EXPOSURE_FIELD / SPEC_PUBLIC_ACCESS / SPEC_PUBLIC_FIELD_FORBIDDEN / SPEC_VISIBILITY / SPEC_ENTITY_UNEXPOSED / SPEC_PAGE_WITHOUT_ADMIN / SPEC_CATALOG_UNAVAILABLE",
     )
     .argument("<spec>", "领域规格文件（相对路径按 --dir 解析）")
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")

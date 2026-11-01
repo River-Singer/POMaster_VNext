@@ -8,6 +8,7 @@
  * - 部署面纪律：用户侧只暴露 public 分级字段，个人信息只在 access: owner 下给本人，写操作只许 owner，
  *   owner 要求 ownership: user；管理侧每个操作派生权限码；
  * - 两个部署面的默认档与 catalog 原型卡对得上（分页模式、审计档、系统列）；
+ * - 登录方式、会话形态、凭据管理、合规定级是项目决策位：框架不给缺省答案，规格可记录，未定的呈现出来；
  * - CLI：只读、不要求 init，--json 信封与退出码。
  */
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -29,7 +30,13 @@ import {
   type ArchetypeCatalogEntry,
   type DomainSpecValidation,
 } from "../src/scaffold-spec.js";
-import { CLASSIFICATION_TREATMENTS, SCAFFOLD_SURFACE_KEYS, SURFACE_PROFILES } from "../src/scaffold-surfaces.js";
+import {
+  CLASSIFICATION_TREATMENTS,
+  SCAFFOLD_SURFACE_KEYS,
+  SURFACE_DECISION_SLOTS,
+  SURFACE_DECISION_SLOT_SPECS,
+  SURFACE_PROFILES,
+} from "../src/scaffold-surfaces.js";
 import { runCli, runScaffoldValidate } from "@pomaster/cli";
 
 const SAMPLE_PATH = fileURLToPath(new URL("../scaffold/examples/fleet.domain-spec.yaml", import.meta.url));
@@ -85,7 +92,8 @@ describe("样例规格：车队管理 / 车型主数据", () => {
     expect(result.ok).toBe(true);
     const spec = result.spec!;
     expect(spec.app).toEqual({ key: "fleet", name_zh: "车队管理", java_package: "com.example.fleet" });
-    expect(spec.surfaces).toEqual({ admin: { base_path: "/admin/api/v1" }, public: { base_path: "/api/v1" } });
+    expect(spec.surfaces.admin?.base_path).toBe("/admin/api/v1");
+    expect(spec.surfaces.public?.base_path).toBe("/api/v1");
     const model = spec.entities[0]!;
     expect(model.table).toBe("vehicle_model");
     expect(model.class_name).toBe("VehicleModel");
@@ -211,6 +219,47 @@ describe("属主实体（ownership: user）", () => {
   });
 });
 
+describe("项目决策位（登录方式、会话形态、凭据管理、合规定级）", () => {
+  it("样例规格没记录任何决策：四个位都呈现为待定，不算错也不算警告", () => {
+    const result = validate(sample());
+    expect(result.issues).toEqual([]);
+    for (const surface of ["admin", "public"] as const) {
+      const normalized = result.spec!.surfaces[surface]!;
+      expect(normalized.open_decisions).toEqual([...SURFACE_DECISION_SLOTS]);
+      expect(Object.values(normalized.decisions).every((decision) => decision === null)).toBe(true);
+    }
+  });
+
+  it("记录了的决策进归一化结果，其余仍待定", () => {
+    const spec = sample();
+    spec["surfaces"]["admin"] = {
+      decisions: {
+        authentication: { choice: "企业 SSO（OIDC）", ref: "ADR-0007" },
+        compliance: { choice: "等保三级" },
+      },
+    };
+    const admin = validate(spec).spec!.surfaces.admin!;
+    expect(admin.decisions.authentication).toEqual({ choice: "企业 SSO（OIDC）", ref: "ADR-0007" });
+    expect(admin.decisions.compliance).toEqual({ choice: "等保三级", ref: null });
+    expect(admin.open_decisions).toEqual(["session", "credential_policy"]);
+  });
+
+  const bad: Array<[string, unknown, string, string]> = [
+    ["未知决策位", { login_ui: { choice: "x" } }, "SPEC_UNKNOWN_KEY", "surfaces.admin.decisions.login_ui"],
+    ["决策不是映射", { session: "cookie" }, "SPEC_SHAPE", "surfaces.admin.decisions.session"],
+    ["choice 为空", { session: { choice: "" } }, "SPEC_SHAPE", "surfaces.admin.decisions.session.choice"],
+    ["ref 不是字符串", { session: { choice: "服务端会话", ref: 7 } }, "SPEC_SHAPE", "surfaces.admin.decisions.session.ref"],
+    ["决策里有未知键", { session: { choice: "服务端会话", ttl: 30 } }, "SPEC_UNKNOWN_KEY", "surfaces.admin.decisions.session.ttl"],
+  ];
+  for (const [title, decisions, code, path] of bad) {
+    it(`${title} → ${code}`, () => {
+      const spec = sample();
+      spec["surfaces"]["admin"] = { decisions };
+      expectError(spec, code, path);
+    });
+  }
+});
+
 describe("坏规格逐项拒绝（闭世界、带路径与路标）", () => {
   const cases: Array<[string, (spec: Spec) => void, string, string]> = [
     ["schema 版本不对", (s) => { s["schema"] = "pomaster.domain-spec/v0"; }, "SPEC_SCHEMA_UNSUPPORTED", "schema"],
@@ -267,6 +316,24 @@ describe("坏规格逐项拒绝（闭世界、带路径与路标）", () => {
     ["默认排序用 text 字段", (s) => { entity(s)["default_sort"] = { field: "description" }; }, "SPEC_CONSTRAINT", "default_sort.field"],
     ["实体键重复", (s) => { s["entities"].push(JSON.parse(JSON.stringify(entity(s)))); }, "SPEC_DUPLICATE", "entities[1].key"],
     ["布尔约束写成字符串", (s) => { field(s, "name")["required"] = "yes"; }, "SPEC_SHAPE", "fields[1].required"],
+    ["敏感个人信息不能 unique（加密存储）", (s) => { field(s, "business_code")["classification"] = "sensitive_pii"; }, "SPEC_CONSTRAINT", "fields[0].unique"],
+    ["敏感个人信息不能 searchable", (s) => { field(s, "name")["classification"] = "sensitive_pii"; }, "SPEC_CONSTRAINT", "fields[1].searchable"],
+    [
+      "敏感个人信息不能作默认排序",
+      (s) => {
+        field(s, "seats")["classification"] = "sensitive_pii";
+        entity(s)["exposure"]["public"]["fields"] = ["business_code", "name"];
+        entity(s)["default_sort"] = { field: "seats" };
+      },
+      "SPEC_CONSTRAINT",
+      "default_sort.field",
+    ],
+    [
+      "敏感个人信息不能作可见性条件",
+      (s) => { field(s, "status")["classification"] = "sensitive_pii"; field(s, "status")["searchable"] = false; },
+      "SPEC_VISIBILITY",
+      "visible_when.field",
+    ],
   ];
 
   for (const [title, mutate, code, path] of cases) {
@@ -333,36 +400,41 @@ describe("两个部署面的默认档", () => {
     expect(Object.keys(SURFACE_PROFILES).sort()).toEqual(["admin", "public"]);
   });
 
-  it("两侧都是会话 Cookie + CSRF（令牌不进浏览器），Cookie 带 __Host- 前缀且两侧不同名", () => {
-    const { admin, public: pub } = SURFACE_PROFILES;
-    for (const profile of [admin, pub]) {
-      expect(profile.session.cookie_name.startsWith("__Host-")).toBe(true);
-      expect(profile.session.cookie_same_site).toBe("Strict");
-      expect(profile.session.csrf).toBe("spring_security_spa");
+  it("默认档只放框架层约束，不替项目选登录方式、会话形态、凭据策略（D-S5）", () => {
+    for (const profile of Object.values(SURFACE_PROFILES)) {
+      expect(Object.keys(profile).sort()).toEqual([
+        "abuse", "audience_zh", "audit", "authorization", "caching", "default_base_path",
+        "frontend", "key", "management", "network_zh", "pagination", "sources", "title_zh",
+      ]);
       expect(profile.audit.retention_days_min).toBeGreaterThanOrEqual(180);
       expect(profile.sources.length).toBeGreaterThan(0);
       for (const source of profile.sources) expect(source.url.startsWith("https://")).toBe(true);
     }
-    expect(admin.session.cookie_name).not.toBe(pub.session.cookie_name);
   });
 
-  it("管理侧：企业 OIDC + MFA、30 分钟无操作超时、RBAC、严格审计、OFFSET、不缓存、管理端口绑内网", () => {
+  it("项目决策位：四个位都有要回答的问题和参考材料，没有缺省答案", () => {
+    expect([...SURFACE_DECISION_SLOTS]).toEqual(["authentication", "session", "credential_policy", "compliance"]);
+    for (const slot of SURFACE_DECISION_SLOTS) {
+      const spec = SURFACE_DECISION_SLOT_SPECS[slot];
+      expect(spec.key).toBe(slot);
+      expect(spec.question_zh.length).toBeGreaterThan(0);
+      expect(spec.references.length).toBeGreaterThan(0);
+      expect(Object.keys(spec).sort()).toEqual(["key", "question_zh", "references", "title_zh"]);
+    }
+  });
+
+  it("管理侧：RBAC 权限码 + 数据范围钩子、严格审计、OFFSET、不缓存、管理端口绑内网", () => {
     const admin = SURFACE_PROFILES.admin;
-    expect(admin.authentication).toEqual({ source: "enterprise_oidc", assurance: "AAL2", mfa: "required", phishing_resistant_option: true });
-    expect(admin.session.idle_timeout_minutes).toBe(30);
-    expect(admin.session.absolute_timeout_hours).toBe(12);
-    expect(admin.authorization.model).toBe("rbac_permission_codes");
+    expect(admin.authorization).toEqual({ model: "rbac_permission_codes", data_scope_hook: true });
     expect(admin.audit.writes).toBe("strict");
     expect(admin.pagination.mode).toBe("OFFSET");
     expect(admin.caching.api_default).toBe("no_store");
     expect(admin.management.bind).toBe("internal");
   });
 
-  it("用户侧：客户身份、按 IP + 用户限流、页长上限更小、KEYSET 不返回总数、管理端口只绑本机", () => {
+  it("用户侧：访问档授权、按 IP + 用户限流、页长上限更小、KEYSET 不返回总数、管理端口只绑本机", () => {
     const pub = SURFACE_PROFILES.public;
-    expect(pub.authentication.source).toBe("customer_identity");
-    expect(pub.authentication.mfa).toBe("step_up");
-    expect(pub.session.absolute_timeout_hours).toBeLessThanOrEqual(24 * 30);
+    expect(pub.authorization).toEqual({ model: "access_levels", data_scope_hook: false });
     expect(pub.abuse.rate_limit).toBe("per_ip_and_user");
     expect(pub.abuse.max_page_size).toBeLessThan(SURFACE_PROFILES.admin.abuse.max_page_size);
     expect(pub.pagination).toEqual({ mode: "KEYSET", default_page_size: 20, total_count: "never" });
@@ -459,6 +531,7 @@ describe("CLI：pomaster scaffold validate", () => {
       ["public", "/api/v1", 2],
     ]);
     expect(envelope.result.normalized.entities[0].exposure.public.fields).not.toContain("cost_price");
+    expect(envelope.result.surfaces[0].open_decisions).toEqual([...SURFACE_DECISION_SLOTS]);
     expect(existsSync(join(dir, ".pomaster"))).toBe(false);
   });
 
@@ -469,6 +542,7 @@ describe("CLI：pomaster scaffold validate", () => {
     expect(out).toContain("admin  /admin/api/v1/vehicle-models");
     expect(out).toContain("fleet:vehicle_model:create");
     expect(out).toContain("KEYSET(business_code, id)");
+    expect(out).toContain("待项目决定：登录方式与认证强度、会话与令牌形态、口令与凭据管理、合规定级");
   });
 
   it("坏规格：exit 1，errors 带 code 与路标，人读输出逐条列出", async () => {

@@ -23,10 +23,13 @@ import {
   FIELD_CLASSIFICATIONS,
   PUBLIC_ACCESS_LEVELS,
   SCAFFOLD_SURFACE_KEYS,
+  SURFACE_DECISION_SLOTS,
+  SURFACE_DECISION_SLOT_SPECS,
   SURFACE_PROFILES,
   type FieldClassification,
   type PublicAccessLevel,
   type ScaffoldSurfaceKey,
+  type SurfaceDecisionSlot,
 } from "./scaffold-surfaces.js";
 
 export const DOMAIN_SPEC_SCHEMA = "pomaster.domain-spec/v1";
@@ -201,8 +204,22 @@ export interface NormalizedEntity {
 export interface NormalizedDomainSpec {
   readonly schema: typeof DOMAIN_SPEC_SCHEMA;
   readonly app: { readonly key: string; readonly name_zh: string; readonly java_package: string };
-  readonly surfaces: Readonly<Partial<Record<ScaffoldSurfaceKey, { readonly base_path: string }>>>;
+  readonly surfaces: Readonly<Partial<Record<ScaffoldSurfaceKey, NormalizedSurface>>>;
   readonly entities: readonly NormalizedEntity[];
+}
+
+/** 项目在规格里记录的决策（框架不替项目选；未记录 = null，harness 呈现为待定）。 */
+export interface SurfaceDecision {
+  readonly choice: string;
+  /** 决策依据的引用（ADR、会议纪要、DECISION.* 对象等），可选。 */
+  readonly ref: string | null;
+}
+
+export interface NormalizedSurface {
+  readonly base_path: string;
+  readonly decisions: Readonly<Record<SurfaceDecisionSlot, SurfaceDecision | null>>;
+  /** 还没记录的决策位（按 SURFACE_DECISION_SLOTS 顺序）。 */
+  readonly open_decisions: readonly SurfaceDecisionSlot[];
 }
 
 export interface DomainSpecValidation {
@@ -412,7 +429,7 @@ function validateSurfaces(c: Collector, raw: unknown): NormalizedDomainSpec["sur
     );
     return null;
   }
-  const out: Partial<Record<ScaffoldSurfaceKey, { base_path: string }>> = {};
+  const out: Partial<Record<ScaffoldSurfaceKey, NormalizedSurface>> = {};
   let ok = true;
   for (const [key, value] of Object.entries(raw)) {
     const path = `surfaces.${key}`;
@@ -428,7 +445,7 @@ function validateSurfaces(c: Collector, raw: unknown): NormalizedDomainSpec["sur
       continue;
     }
     const body = (value ?? {}) as UnknownRecord;
-    checkKeys(c, body, ["base_path"], path);
+    checkKeys(c, body, ["base_path", "decisions"], path);
     let basePath = SURFACE_PROFILES[surface].default_base_path;
     if (body["base_path"] !== undefined) {
       if (typeof body["base_path"] !== "string" || !BASE_PATH_PATTERN.test(body["base_path"])) {
@@ -438,7 +455,16 @@ function validateSurfaces(c: Collector, raw: unknown): NormalizedDomainSpec["sur
         basePath = body["base_path"];
       }
     }
-    out[surface] = { base_path: basePath };
+    const decisions = validateDecisions(c, body["decisions"], `${path}.decisions`);
+    if (decisions === null) {
+      ok = false;
+      continue;
+    }
+    out[surface] = {
+      base_path: basePath,
+      decisions,
+      open_decisions: SURFACE_DECISION_SLOTS.filter((slot) => decisions[slot] === null),
+    };
   }
   if (out.admin !== undefined && out.public !== undefined && out.admin.base_path === out.public.base_path) {
     c.error(
@@ -448,6 +474,57 @@ function validateSurfaces(c: Collector, raw: unknown): NormalizedDomainSpec["sur
       "管理侧与用户侧是两个应用、两个入口，路径要能区分（缺省 /admin/api/v1 与 /api/v1）。",
     );
     ok = false;
+  }
+  return ok ? out : null;
+}
+
+/**
+ * 项目决策位（D-S5）：登录方式、会话形态、凭据管理、合规定级由项目具体问题具体分析，
+ * 框架不给缺省答案。规格里可以先不写（呈现为待定），写了就必须是非空的 choice。
+ */
+function validateDecisions(
+  c: Collector,
+  raw: unknown,
+  path: string,
+): Record<SurfaceDecisionSlot, SurfaceDecision | null> | null {
+  const out = Object.fromEntries(SURFACE_DECISION_SLOTS.map((slot) => [slot, null])) as Record<
+    SurfaceDecisionSlot,
+    SurfaceDecision | null
+  >;
+  if (raw === undefined || raw === null) return out;
+  if (!isRecord(raw)) {
+    c.error("SPEC_SHAPE", path, "decisions 必须是映射", `键取 ${SURFACE_DECISION_SLOTS.join(" / ")}，值写 { choice, ref? }。`);
+    return null;
+  }
+  checkKeys(c, raw, SURFACE_DECISION_SLOTS, path);
+  let ok = true;
+  for (const slot of SURFACE_DECISION_SLOTS) {
+    const value = raw[slot];
+    if (value === undefined || value === null) continue;
+    const slotPath = `${path}.${slot}`;
+    if (!isRecord(value)) {
+      c.error(
+        "SPEC_SHAPE",
+        slotPath,
+        `决策「${SURFACE_DECISION_SLOT_SPECS[slot].title_zh}」必须是映射`,
+        "写 { choice: 已定的方案, ref: 依据（可选） }；还没定就先不写这个键。",
+      );
+      ok = false;
+      continue;
+    }
+    checkKeys(c, value, ["choice", "ref"], slotPath);
+    const choice = requireString(c, value, "choice", slotPath);
+    const ref = value["ref"];
+    if (ref !== undefined && (typeof ref !== "string" || ref.trim().length === 0)) {
+      c.error("SPEC_SHAPE", `${slotPath}.ref`, "ref 必须是非空字符串", "写决策依据的引用（ADR 路径、DECISION.* 编号等），没有就删掉。");
+      ok = false;
+      continue;
+    }
+    if (choice === null) {
+      ok = false;
+      continue;
+    }
+    out[slot] = { choice, ref: typeof ref === "string" ? ref : null };
   }
   return ok ? out : null;
 }
@@ -851,6 +928,20 @@ function validateField(c: Collector, raw: unknown, path: string): NormalizedFiel
     }
   }
 
+  // 敏感个人信息加密存储：密文上不能建唯一约束、不能检索（盲索引留给后续切片）。
+  if (classification === "sensitive_pii") {
+    for (const [constraint, enabled] of [["unique", unique], ["searchable", searchable]] as const) {
+      if (enabled) {
+        c.error(
+          "SPEC_CONSTRAINT",
+          `${path}.${constraint}`,
+          `敏感个人信息字段不能 ${constraint}`,
+          "sensitive_pii 加密存储，密文上无法建唯一约束或检索；确需按它查重 / 查找时先降为 pii，或等后续切片的盲索引。",
+        );
+      }
+    }
+  }
+
   const errorsAfter = c.issues.filter((issue) => issue.severity === "error").length;
   if (errorsAfter > errorsBefore || key === null || nameZh === null || type === null) {
     return null;
@@ -1029,13 +1120,13 @@ function validateDefaultSort(
     target !== undefined &&
     (target.system
       ? ["id", "created_at", "updated_at"].includes(target.key)
-      : SORTABLE_TYPES.includes(target.type as DomainFieldType));
+      : SORTABLE_TYPES.includes(target.type as DomainFieldType) && target.classification !== "sensitive_pii");
   if (!sortable) {
     c.error(
       "SPEC_CONSTRAINT",
       `${path}.field`,
       `「${field}」不能作默认排序字段`,
-      "排序字段须是本实体的 string / int / long / decimal / date / datetime / enum 字段，或 id / created_at / updated_at。",
+      "排序字段须是本实体的 string / int / long / decimal / date / datetime / enum 字段（敏感个人信息加密存储，不能排序），或 id / created_at / updated_at。",
     );
     return null;
   }
@@ -1372,6 +1463,15 @@ function validateVisibleWhen(
   const target = ex.fields.find((candidate) => candidate.key === field);
   // 字段声明了但自身没通过校验：那条错误已报，这里不重复报。
   if (target === undefined && ex.declaredKeys.has(field)) return null;
+  if (target !== undefined && target.classification === "sensitive_pii") {
+    c.error(
+      "SPEC_VISIBILITY",
+      `${path}.field`,
+      `「${field}」是敏感个人信息，加密存储，不能作可见性条件`,
+      "可见性条件要写进每条查询的 WHERE；用 status 这类非敏感枚举字段。",
+    );
+    return null;
+  }
   if (target === undefined || target.type !== "enum" || target.values === undefined) {
     c.error(
       "SPEC_VISIBILITY",

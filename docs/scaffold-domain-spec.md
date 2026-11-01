@@ -14,14 +14,35 @@ pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.
 | | `admin` 管理侧（内网 / B 端） | `public` 用户侧（外网 / C 端） |
 |---|---|---|
 | 缺省根路径 | `/admin/api/v1` | `/api/v1` |
-| 认证 | 企业 OIDC，MFA 必选 | 客户身份（短信 / 社交登录），敏感操作升级 |
-| 会话 | 会话 Cookie `__Host-ADMIN_SID`，无操作 30 分钟、绝对 12 小时 | 会话 Cookie `__Host-PORTAL_SID`，记住我最长 30 天 |
 | 授权 | 每个操作一个权限码 `<app>:<entity>:<op>` | 访问档：`anonymous` / `authenticated` / `owner` |
 | 分页 | OFFSET，总数按实体开启（`count_total`） | KEYSET（排序键 + 主键），不返回总数 |
-| 审计 | 写操作严格档 | 安全事件 + 基础四字段 |
+| 审计 | 写操作严格档 | 写操作基础档 |
+| 防滥用 | 按用户限流，页长 ≤ 200 | 按 IP + 用户限流，页长 ≤ 50 |
+| 缓存 | 不缓存 | 匿名公开读可缓存 |
 | 运维端点 | 独立管理端口，绑内网地址 | 独立管理端口，只绑本机 |
 
-两侧浏览器都不持有令牌（会话 Cookie + Spring Security `csrf.spa()`）；内网不等于可信，管理侧同样完整认证授权。两个面生成为两个可独立部署的后端应用，管理功能不在用户侧应用里出现。完整默认档与来源见 `packages/cli/src/scaffold-surfaces.ts`。
+两个面生成为两个可独立部署的后端应用，管理功能不在用户侧应用里出现；内网不等于可信，管理侧同样每个接口认证授权。完整默认档与来源见 `packages/cli/src/scaffold-surfaces.ts`。
+
+### 项目决策位
+
+默认档只放框架层约束。下面四件事框架不替项目选，具体问题具体分析，定了写进规格 `surfaces.<面>.decisions`；没写的在 `scaffold validate` 摘要里列为「待项目决定」：
+
+| 决策位 | 要回答的问题 |
+|---|---|
+| `authentication` | 用户怎么登录（企业 SSO、短信验证码、社交登录、账号口令……）？要不要多因素？ |
+| `session` | 登录态放在哪里（服务端会话 Cookie / 令牌）？超时多少？CSRF 怎么防？ |
+| `credential_policy` | 自建口令还是交给身份提供方？长度、黑名单、失败锁定、更换策略？ |
+| `compliance` | 按什么合规要求建设（等保级别、个人信息影响评估、实名要求……）？ |
+
+```yaml
+surfaces:
+  admin:
+    decisions:
+      authentication: { choice: 企业 SSO（OIDC）, ref: ADR-0007 }   # ref 可选：决策依据
+      compliance: { choice: 等保三级 }
+```
+
+每个决策位都挂了参考材料（`SURFACE_DECISION_SLOT_SPECS[*].references`），只供参考，不是缺省答案。
 
 ## 结构
 
@@ -32,7 +53,7 @@ app:
   name_zh: 车队管理
   java_package: com.example.fleet # 点分小写，段名不能是 Java 保留字
 surfaces:                         # 至少一个；只有 admin / public
-  admin: {}
+  admin: {}                       # 可选 base_path、decisions（见上节）
   public: { base_path: /api/v1 }  # 可选覆盖根路径
 entities:
   - key: vehicle_model            # 小写 snake_case，≤ 40；即表名
@@ -76,7 +97,7 @@ entities:
 | `pii` | 仅 `access: owner` 给本人 | 脱敏 | 明文 | 脱敏 | 严格 |
 | `sensitive_pii` | 仅 `access: owner` 给本人 | 脱敏 | 加密 | 禁止 | 严格 |
 
-含 `sensitive_pii` 字段时给出警告：处理敏感个人信息前要做个人信息保护影响评估并取得单独同意。
+`sensitive_pii` 加密存储，所以不能 `unique` / `searchable`，不能作默认排序或可见性条件。含 `sensitive_pii` 字段时给出警告：处理敏感个人信息前要做个人信息保护影响评估并取得单独同意。
 
 ### 暴露规则
 

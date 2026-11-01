@@ -18,7 +18,12 @@ import {
   type DomainSpecIssue,
   type NormalizedDomainSpec,
 } from "./scaffold-spec.js";
-import { SURFACE_PROFILES, type ScaffoldSurfaceKey } from "./scaffold-surfaces.js";
+import {
+  SURFACE_DECISION_SLOT_SPECS,
+  SURFACE_PROFILES,
+  type ScaffoldSurfaceKey,
+  type SurfaceDecisionSlot,
+} from "./scaffold-surfaces.js";
 
 export interface ScaffoldValidateInput {
   /** 规格文件路径（相对路径按项目目录解析）。 */
@@ -33,6 +38,8 @@ export interface ScaffoldSurfaceSummary {
   readonly base_path: string;
   readonly entities: readonly string[];
   readonly endpoints: number;
+  /** 还没记录的项目决策位（登录方式、会话形态、凭据管理、合规定级；框架不替项目选）。 */
+  readonly open_decisions: readonly SurfaceDecisionSlot[];
 }
 
 export interface ScaffoldValidateResult {
@@ -74,6 +81,7 @@ function summarizeSurfaces(spec: NormalizedDomainSpec): ScaffoldSurfaceSummary[]
       base_path: declared.base_path,
       entities: exposed.map((entity) => entity.key),
       endpoints: exposed.reduce((sum, entity) => sum + (entity.exposure[surface]?.operations.length ?? 0), 0),
+      open_decisions: declared.open_decisions,
     });
   }
   return out;
@@ -96,6 +104,19 @@ function humanLines(result: ScaffoldValidateResult): string[] {
   lines.push(`应用：${spec.app.key}（${spec.app.name_zh}），Java 包 ${spec.app.java_package}`);
   for (const surface of result.surfaces) {
     lines.push(`部署面 ${surface.surface}：${surface.title_zh}，根路径 ${surface.base_path}，${surface.entities.length} 个实体、${surface.endpoints} 个端点`);
+    const decided = spec.surfaces[surface.surface]?.decisions;
+    if (decided !== undefined) {
+      for (const [slot, decision] of Object.entries(decided)) {
+        if (decision !== null) {
+          lines.push(`  已定 ${SURFACE_DECISION_SLOT_SPECS[slot as SurfaceDecisionSlot].title_zh}：${decision.choice}${decision.ref === null ? "" : `（${decision.ref}）`}`);
+        }
+      }
+    }
+    if (surface.open_decisions.length > 0) {
+      lines.push(
+        `  待项目决定：${surface.open_decisions.map((slot) => SURFACE_DECISION_SLOT_SPECS[slot].title_zh).join("、")}（框架不替项目选；定了写进 surfaces.${surface.surface}.decisions）`,
+      );
+    }
   }
   for (const entity of spec.entities) {
     lines.push(`实体 ${entity.key}（${entity.name_zh}）：表 ${entity.table}，类 ${entity.class_name}，${entity.fields.filter((field) => !field.system).length} 个业务字段`);
