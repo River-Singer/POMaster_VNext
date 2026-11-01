@@ -66,7 +66,7 @@ gate 运行结果走 `record gate-run` 产 **GRN 回执**入 evidence 平面；c
 
 ### ⑤ 计划驱动验证 + 控件数据流审计
 
-- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；所有前检阻塞和非绿 GRN 都进入 `pomaster.plan-diagnosis/v1`，原始 error code / 七态 verdict 保持不变。
+- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；所有前检阻塞和非绿 GRN 都进入 `pomaster.plan-diagnosis/v1`，原始 error code / 七态 verdict 保持不变。`--requalify --by <type:name>` 做定向重验：仍新鲜的 passed 证据（同角色 AGX、源码快照与当前一致）跨 AGX 沿用，只重跑源码已变或缺失的义务，并以 ADVANCE 记下跨 AGX 的 cohort 供 finalize 复核。
 - `pomaster control-data-flow analyze` 对 **Vue SFC 与 React TSX** 做受限 AST 数据链审计，追踪 `control → event → handler → state/effect → readback → feedback`，输出逐段源码锚和 `proven / broken / unknown` 结论。
 - `control_data_flow` 自动展开 `CONTROL_DATA_FLOW` 与 `CONTROL_DATA_FLOW_RUNTIME`。runtime 腿在启动工具前校验声明式 probe manifest，只允许 `READ_ONLY` 或隔离 fixture 且带 cleanup 的 `INTERACTIVE_REVERSIBLE`；规范 trace 内容寻址后绑定独立 GRN。
 - `pomaster finalize status/run` 是可重入的一键闭环入口：自动推进机器验证；`status` 从当前 GRN cohort、runtime artifact、replay、claim、ACCEPT 与 Task 派生真实阶段；在独立 verification 或 Human ACCEPT 处返回机器可读 pending，补齐后重放同一命令，由既有 closeout 五闸决定唯一完成态。
@@ -293,13 +293,13 @@ pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
-pomaster baseline set/confirm   # set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
+pomaster baseline set/confirm/retire/unretire   # retire/unretire = Owner 把确认目标标为不适用 / 恢复（--not-applicable --reason --by human:<owner>；ADVANCE 留痕，退役目标不进确认/漂移/范围分母）；set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
 
 # ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
 pomaster brainstorm start/question-gate/status/decide/promote
 
 # ② FRAMEWORK —— 许可签发/判卷/显式接管/台账
-pomaster permit issue/check/steal/list
+pomaster permit issue/check/steal/renew/widen/list
 
 # ③ PROJECTION —— 最小充分上下文投影（消费 confirmed baseline/tokens：确认态三态 + 25 资产 digest 摘要 +
 # spec 路由：spec-routing.json 声明协议元数据，context compile --stage/--trigger/--stack/--spec-ref 按任务选择协议并给命中理由——不全量注入）+
@@ -316,7 +316,8 @@ pomaster control-data-flow analyze [--report-only] # Vue SFC / React TSX 控件�
 pomaster finalize status/replay-adjudicate/run TASK.* # status = 纯读派生当前 VERIFY/REPLAY/CLAIM/ACCEPT/CLOSEOUT 阶段；replay-adjudicate = 独立复盘主体签发内容寻址回执（--execution-id AGX-* --reviewed-by agent:name --review-range <range> --plan-fingerprint sha256:* --verdict allow-closeout）；run = 可重入收口（--verification-execution-id AGX-* --verifier agent:name --review-range <range> [--replay-receipt sha256:*]），独立/人工边界显式 pending
 pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
-pomaster record gate-run/claim/verification
+pomaster record gate-run/claim/verification/requalify
+pomaster task reassess-baseline TASK.* # 任务影响面变化 / 相关基线合法变更后重评估 baseline 依赖范围（--lanes 或 --baseline-target/--baseline-exclude；--reason --by 必填；同事务写 ADVANCE，列出需 requalify 的验收 claim）
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>
@@ -353,7 +354,7 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/handoff/end/list/audit   # handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster execution begin/attach-permit/handoff/end/list/audit   # attach-permit = 给在途执行追加许可；handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster next-action [--task <TASK.*>] [--session-key <key>] --json   # 当前任务的必需 skill、动作、退出条件和阻断；多任务不默认取首项
 pomaster trace show/list
 pomaster checkpoint save/show   # Checkpoint 恢复引用快照（W4-S2；词形 SP 提案待追认）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，引用逐项存在性校验 fail-closed；state/checkpoints/ 分区档案面，零新 canonical kind 零 journal 事件，不自动创建；--ckpt 同号重放同内容幂等零写入/异内容显式冲突；非 git 工区 anchor absent 显式申报）+ show = 引用面纯读呈现；与 session attach --reconcile 分层组合——checkpoint=引用快照（保存时点），reconcile=新鲜度判定（恢复时点）

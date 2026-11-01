@@ -315,6 +315,10 @@
       "packages/gauntlet-lite/test/seed-mutant-library.spec.ts": {
         "layer": "L1"
       },
+      "packages/kernel/tests/advance-transaction.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/kernel/tests/analyzer-import-graph.spec.ts": {
         "layer": "L1"
       },
@@ -366,6 +370,10 @@
         "domain": "permit_evidence"
       },
       "packages/kernel/tests/execution.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/execution-attach-permit.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
       },
@@ -426,6 +434,10 @@
         "domain": "state_machine_pairs"
       },
       "packages/kernel/tests/ledger.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/legal-advance.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
       },
@@ -776,6 +788,14 @@
         "layer": "L1"
       },
       "packages/cli/tests/closeout-accept-receipt.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/task-reassess-baseline.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/baseline-retire.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
       },

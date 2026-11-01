@@ -151,6 +151,7 @@ import {
   readEvidenceQualificationRequirement,
   readRunQualificationView,
 } from "./evidence-qualification.js";
+import { semanticFingerprint } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
@@ -603,7 +604,7 @@ async function qualifyClaimEvidence(
           error: {
             code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
             message: `${claimRef} 证据未通过源码新鲜度判定（W2-FR05）：${run.ref}（run 面）→ ${judgment.state}——${judgment.reason}`,
-            hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run），经独立验证流重新挂证（record verification）后重跑 closeout；source 未知不能 fresh。",
+            hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run）；claim 已判定时先 pomaster record requalify --clm <CLM> --by <type:name> --reason <text> 取得后继 CLM，再由另一主体 record verification 挂新证据后重跑 closeout；source 未知不能 fresh。",
           },
         };
       }
@@ -626,24 +627,36 @@ async function qualifyClaimEvidence(
  * - task_ref 直绑 task id；change_ref 经 payload.implements_change 间绑；
  * - 无 outcome_binding 的 ACCEPT 是 Oracle 轮决议（B-3：两次 ACCEPT 语义靠绑定区分），
  *   不构成成果回执；
- * - 绑定携带 revision_fingerprint 时须与对象行 body_sha256（store 事务自动维护位，D24）
- *   全等——内容漂移后旧 ACCEPT 失效（防「内容变了旧 ACCEPT 仍生效」）；
+ * - 绑定携带 revision_fingerprint 时须与当前对象内容对得上——内容漂移后旧 ACCEPT 失效（防
+ *   「内容变了旧 ACCEPT 仍生效」）。两种写法（V2-9；VX-WRITE-05）：v1 = 对象行 body_sha256
+ *   （任何状态迁移都会变）；v2 = truth-object-body 语义指纹（acceptRevisionFingerprint——剥离
+ *   rev / axes / 许可 / 证据挂载 / 采集人 / baseline 依赖等治理状态）。回执指纹等于当前 v1 或
+ *   当前 v2 之一即有效；旧 v1 回执不会被 v2 洗白（两者空间不同，旧 v1 只与当前 v1 比）；
  * - 判卷分母诚实纪律同线：决策图 JSON 不可解析 / 结构畸形 → CLOSEOUT_ACCEPT_DAMAGED
  *   硬阻断（损坏文件可能正是被藏起来的 ACCEPT，禁静默跳过）；
  * - 存在指纹失配的覆盖回执（无其他有效回执）→ CLOSEOUT_ACCEPT_STALE（指向失效决议）；
  *   零有效回执 → CLOSEOUT_ACCEPT_MISSING（hint 带确切命令词形，C3 纪律）。
  */
+/**
+ * ACCEPT 修订指纹 v2（V2-9）：`sha256:` + truth-object-body/v2 语义指纹。对象只发生状态迁移
+ * （axes / rev）、挂证据、回填 baseline 依赖时不变；正文语义字段变化时改变。
+ */
+export function acceptRevisionFingerprint(body: unknown): string {
+  return `sha256:${semanticFingerprint("truth-object-body", body, { version: 2 })}`;
+}
+
 async function acceptReceiptGate(
   rootDir: string,
   target: GovernedId,
   implementsChange: string | null,
   bodySha256: string | null,
+  semanticRevision: string | null = null,
 ): Promise<{ readonly receipt: CloseoutAcceptReceipt } | { readonly error: CliError }> {
   const padsDir = discoveryScratchpadsDirPath(rootDir);
   const missingError: CliError = {
     code: "CLOSEOUT_ACCEPT_MISSING",
     message: `无有效 Human ACCEPT 回执覆盖对象 ${target}——机器验证已全绿，但机器验证通过 ≠ 成果已接受（W1 R1-1 / C-4）`,
-    hint: `决议并绑定成果：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task ${target}（或 --outcome-change <CHANGE.*> 间绑 implements_change；--outcome-revision sha256:… 可选对账指纹）。无绑定键的 ACCEPT 是 Oracle 轮决议（B-3），不构成成果回执。`,
+    hint: `决议并绑定成果：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task ${target}（或 --outcome-change <CHANGE.*> 间绑 implements_change；--outcome-revision current 可选：记录语义修订指纹，内容语义变化后回执失效）。无绑定键的 ACCEPT 是 Oracle 轮决议（B-3），不构成成果回执。`,
   };
   let padIds: string[];
   try {
@@ -708,7 +721,7 @@ async function acceptReceiptGate(
       const covered = (taskRef !== null && taskRef === target) || (changeRef !== null && changeRef === implementsChange);
       if (!covered) continue;
       const fingerprint = asString(binding.revision_fingerprint);
-      if (fingerprint !== null && fingerprint !== (bodySha256 ?? "")) {
+      if (fingerprint !== null && fingerprint !== (bodySha256 ?? "") && fingerprint !== (semanticRevision ?? "")) {
         staleDecisions.push(node.decision_id); // 内容漂移——该回执失效，继续找其他回执
         continue;
       }
@@ -720,7 +733,7 @@ async function acceptReceiptGate(
       error: {
         code: "CLOSEOUT_ACCEPT_STALE",
         message: `覆盖对象 ${target} 的 ACCEPT 回执已失效（决议 ${staleDecisions.join("、")} 的 revision_fingerprint 与当前对象内容摘要不符——内容漂移后旧 ACCEPT 失效）`,
-        hint: "内容变更后须重新决议：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task <TASK.*> --outcome-revision sha256:…（对账指纹 = 对象行 body_sha256）。",
+        hint: "内容变更后须重新决议：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task <TASK.*> --outcome-revision current（current = 语义修订指纹，之后的状态迁移 / 证据挂载不再使回执失效）。",
       },
     };
   }
@@ -759,8 +772,15 @@ export async function scanAcceptReceiptStatus(
   target: GovernedId,
   implementsChange: string | null,
   bodySha256: string | null,
+  body?: unknown,
 ): Promise<AcceptReceiptScan> {
-  const outcome = await acceptReceiptGate(rootDir, target, implementsChange, bodySha256);
+  const outcome = await acceptReceiptGate(
+    rootDir,
+    target,
+    implementsChange,
+    bodySha256,
+    body === undefined ? null : acceptRevisionFingerprint(body),
+  );
   if ("receipt" in outcome) {
     return { status: "present", receipt: outcome.receipt, error: null };
   }
@@ -1033,7 +1053,7 @@ export async function runCloseout(
             push(false, verdict, `${finding.ref} → ${finding.verdict}`, {
               code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
               message: `acceptance[${index}] 映射的 ${claimRef} 证据未通过资格判定：${finding.ref}（${finding.surface} 面）→ ${finding.verdict}——${finding.reason}`,
-              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据，经独立验证流重新挂证（record verification）后重跑 closeout。",
+              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——在当前确认基线/有效许可/当前 gate_def 下重新产出证据；claim 已判定时先 pomaster record requalify --clm <CLM> --by <type:name> --reason <text> 取得后继 CLM（旧判定不改写），再由另一主体 record verification 挂新证据后重跑 closeout。",
             });
           }
           continue;
@@ -1527,7 +1547,13 @@ export async function runCloseout(
   // 混算——先修机器可判项，回执缺口在其全绿后精确呈现。
   // ============================================================
 
-  const receiptOutcome = await acceptReceiptGate(rootDir, target, taskImplementsChange, row.bodySha256 ?? null);
+  const receiptOutcome = await acceptReceiptGate(
+    rootDir,
+    target,
+    taskImplementsChange,
+    row.bodySha256 ?? null,
+    acceptRevisionFingerprint(body),
+  );
   if ("error" in receiptOutcome) {
     const human = [
       `closeout ${target} → BLOCKED at ACCEPT 回执闸（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,

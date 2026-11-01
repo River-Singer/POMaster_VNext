@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -6,6 +7,8 @@ import {
   assertRunSourceSnapshot,
   buildStorePaths,
   createStore,
+  hexOf,
+  latestAdvanceFor,
   loadTruthIndex,
   persistEvidenceArtifact,
   readExecutionRecordById,
@@ -16,7 +19,7 @@ import {
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { runCloseout } from "./closeout.js";
-import { runPlanRun, type PlanDiagnosisEnvelope, type PlanRunInput } from "./plan-runner.js";
+import { planCohortAnchorRef, planCohortDigest, planCohortKey, runPlanRun, type PlanDiagnosisEnvelope, type PlanRunInput } from "./plan-runner.js";
 import { parseActorArgv } from "./permit.js";
 import { judgeRunSourceStability } from "./source-snapshot.js";
 import { runViewReview } from "./view.js";
@@ -120,7 +123,14 @@ export async function runFinalizeStatus(rootDir: string, input: FinalizeStatusIn
       reasons.push(`GRN 源码稳定性不合格（运行窗口漂移或证据产出后相关源码已变化；source 未知不能 fresh），终验不得复用该绿：${cohort.sourceUnstableKeys.map((key) => key.split("\0").join(" / ")).join("；")}`);
     }
     const reason = reasons.length > 0 ? reasons.join("；") : "当前 plan fingerprint 的 GRN 存在非 passed。";
-    const result = { ...common, stage: "VERIFY_BLOCKED" as const, next_actions: [{ actor: "implementer" as const, command: `pomaster finalize run ${input.taskRef} --verification-execution-id ${cohort.executionId ?? "<AGX-*>"} --review-range <git-range>`, reason }] };
+    // V2-10：源码快照过期 / 分母缺键时走定向重验——只重跑过期或缺失的义务，仍新鲜的 passed
+    // 证据（同角色 AGX）跨 AGX 沿用并以 ADVANCE 记下 cohort；已判定 claim 的证据随之过期时
+    // 再按 closeout 提示 record requalify。
+    const requalify = cohort.sourceUnstableKeys.length > 0 || cohort.missingKeys.length > 0;
+    const command = requalify
+      ? `pomaster plan run --task ${input.taskRef} --execution-id <verification-AGX> --requalify --by <type:name>`
+      : `pomaster finalize run ${input.taskRef} --verification-execution-id ${cohort.executionId ?? "<AGX-*>"} --review-range <git-range>`;
+    const result = { ...common, stage: "VERIFY_BLOCKED" as const, next_actions: [{ actor: "implementer" as const, command, reason: requalify ? `${reason}；定向重验只重跑过期 / 缺失义务，仍新鲜的证据跨 AGX 沿用（ADVANCE 记 cohort）` : reason }] };
     return okOutcome("finalize status", result, [`finalize ${input.taskRef} → VERIFY_BLOCKED`]);
   }
   const replay = latestReplayReceipt(rootDir, input.taskRef, cohort.fingerprint);
@@ -270,7 +280,50 @@ function cohortSourceUnstableKeys(rootDir: string, entries: readonly CohortEntry
   return unstable;
 }
 
-async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[]; sourceUnstableKeys: readonly string[]; workerLocalExcluded: number; finalEvidencePresent: boolean } | null> {
+/** GRN 记录的终验 cohort 键（note 的 acceptance_ref / scenario_ref + gate）。 */
+function cohortKeyOfRow(result: Record<string, unknown> | undefined): string {
+  const note = ((result?.["scope"] as Record<string, unknown> | undefined)?.["note"]);
+  const parts = typeof note === "string" ? note.split("；") : [];
+  const acceptance = parts.find((part) => part.startsWith("acceptance_ref="))?.slice("acceptance_ref=".length) ?? "";
+  const scenario = parts.find((part) => part.startsWith("scenario_ref="))?.slice("scenario_ref=".length) ?? "";
+  return planCohortKey(acceptance, scenario === "" ? null : scenario, String(result?.["gate"] ?? ""));
+}
+
+/**
+ * 跨 AGX cohort 链接（V2-10）：最新验证 AGX 的 requalify ADVANCE（锚 source_snapshot，ref
+ * `<task>#plan-cohort@<AGX>`）记下的 cohort。逐条复核：证据引用的 GRN 文件 sha256 与引用一致、
+ * 任务与 plan fingerprint 一致，按 note 复算义务键后 planCohortDigest 须等于新锚 digest——
+ * 任一不符 = 链接无效（不补齐，缺键照旧 VERIFY_BLOCKED）。无 ADVANCE = 无跨 AGX 补齐。
+ */
+function requalifiedCohortLink(rootDir: string, taskRef: string, executionId: string, fingerprint: string): CohortEntry[] {
+  try {
+    const paths = buildStorePaths(rootDir);
+    const advance = latestAdvanceFor(paths, "source_snapshot", planCohortAnchorRef(taskRef, executionId))?.advance;
+    const anchor = advance?.["new_anchor"] as Record<string, unknown> | undefined;
+    const refs = advance?.["evidence_refs"];
+    if (anchor === undefined || typeof anchor["digest"] !== "string" || !Array.isArray(refs)) return [];
+    const entries: CohortEntry[] = [];
+    const cohort: Record<string, string> = {};
+    for (const ref of refs) {
+      const match = typeof ref === "string" ? /^evidence\/runs\/(GRN-[0-9]+)\.json#sha256=([0-9a-f]{64})$/.exec(ref) : null;
+      if (match === null) return [];
+      const name = `${match[1] as string}.json`;
+      const bytes = readFileSync(join(paths.runsDir, name));
+      if (createHash("sha256").update(bytes).digest("hex") !== match[2]) return [];
+      const row = JSON.parse(bytes.toString("utf8")) as Record<string, unknown>;
+      const result = (row["gate_result"] as Record<string, unknown> | undefined)?.["result"] as Record<string, unknown> | undefined;
+      if (result?.["subject_id"] !== taskRef || planFingerprintOf(row) !== fingerprint) return [];
+      const key = cohortKeyOfRow(result);
+      cohort[key] = match[1] as string;
+      entries.push({ key, row, result: result ?? {}, name });
+    }
+    return planCohortDigest(fingerprint, cohort) === hexOf(anchor["digest"]) ? entries : [];
+  } catch {
+    return [];
+  }
+}
+
+async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; executionIds: readonly string[]; allPassed: boolean; missingKeys: readonly string[]; sourceUnstableKeys: readonly string[]; workerLocalExcluded: number; finalEvidencePresent: boolean } | null> {
   try {
     const runsDir = buildStorePaths(rootDir).runsDir;
     const rows = readdirSync(runsDir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).map((name) => {
@@ -303,6 +356,16 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
       }
       if (!latestByObligation.has(key)) latestByObligation.set(key, { key, row: entry.row, result: entry.result ?? {}, name: entry.name });
     }
+    // V2-10：最新 AGX 缺的义务键，只能由该 AGX 的 requalify ADVANCE 记下的跨 AGX 证据补齐
+    // （无 ADVANCE / 链接复核不过 = 不补齐——跨 AGX 拼 cohort 必须可归属）。
+    const executionIds = new Set<string>(typeof latest.row["execution_id"] === "string" ? [latest.row["execution_id"]] : []);
+    if (typeof latest.row["execution_id"] === "string") {
+      for (const carried of requalifiedCohortLink(rootDir, taskRef, latest.row["execution_id"], latest.fingerprint)) {
+        if (latestByObligation.has(carried.key) || carried.row["evidence_purpose"] === "worker_local") continue;
+        latestByObligation.set(carried.key, carried);
+        if (typeof carried.row["execution_id"] === "string") executionIds.add(carried.row["execution_id"]);
+      }
+    }
     const actual = new Set(latestByObligation.keys());
     const required = await requiredPlanKeys(rootDir, taskRef);
     const currentRows = [...latestByObligation.values()];
@@ -316,6 +379,7 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
     return {
       fingerprint: latest.fingerprint,
       executionId: typeof latest.row["execution_id"] === "string" ? latest.row["execution_id"] : null,
+      executionIds: [...executionIds].sort(),
       allPassed: currentRows.length > 0 && passedAndBound && required.size > 0 && missingKeys.length === 0 && sourceUnstableKeys.length === 0,
       missingKeys,
       sourceUnstableKeys,
@@ -397,7 +461,7 @@ export async function runFinalizeReplayAdjudicate(rootDir: string, input: Finali
   if (execution.task_id !== null && execution.task_id !== input.taskRef) return fail({ code: "EXECUTION_TASK_MISMATCH", message: `reviewer execution 已绑定其他 task：${execution.task_id}`, hint: `改用绑定 ${input.taskRef} 的独立 AGX。` });
   const current = await latestPlanCohort(rootDir, input.taskRef);
   if (current === null || current.fingerprint !== input.planFingerprint || !current.allPassed) return fail({ code: "REPLAY_PLAN_NOT_CURRENT", message: "所给 plan fingerprint 不是当前全 passed GRN cohort", hint: "先完成 finalize run 的机器验证，再用其返回的当前 fingerprint 签发 replay receipt。" });
-  if (current.executionId === input.executionId) return fail({ code: "REPLAY_REVIEWER_NOT_INDEPENDENT", message: "replay reviewer execution 与当前机器验证 cohort 使用同一 AGX", hint: "由独立复盘主体使用不同于机器验证 cohort 的 AGX 签发 replay receipt。" });
+  if (current.executionId === input.executionId || current.executionIds.includes(input.executionId)) return fail({ code: "REPLAY_REVIEWER_NOT_INDEPENDENT", message: "replay reviewer execution 与当前机器验证 cohort 使用同一 AGX", hint: "由独立复盘主体使用不同于机器验证 cohort（含 requalify 沿用证据的来源 AGX）的 AGX 签发 replay receipt。" });
   const claims = await mappedTaskClaimFacts(rootDir, input.taskRef);
   const collision = claims.find((claim) => claim.assertedBy === input.reviewedBy || claim.executionId === input.executionId);
   if (collision !== undefined) return fail({ code: "REPLAY_REVIEWER_NOT_INDEPENDENT", message: `${collision.clm} 的断言主体/执行身份与 replay reviewer 重合`, hint: "改用与 claim asserted_by 及 claim execution_id 分离的独立主体和 AGX。" });

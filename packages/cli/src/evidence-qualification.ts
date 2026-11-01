@@ -36,7 +36,7 @@ import {
 } from "@pomaster/kernel";
 import { CURRENT_GATE_DEFS } from "@pomaster/gauntlet-lite";
 import { GRN_FILE_PATTERN } from "./evidence.js";
-import { baselineGateAssessment, readBaselineConfirmation, validateBaselineDependencyDeclaration } from "./baseline.js";
+import { baselineGateAssessment, baselineTargetSeq, readBaselineConfirmation, validateBaselineDependencyDeclaration } from "./baseline.js";
 import { journalFilePath, POMASTER_DIR, toPosix } from "./store-layout.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -98,11 +98,17 @@ async function readInvalidationEvents(rootDir: string): Promise<EvidenceInvalida
         { line: index + 1, type },
       );
     }
+    // V2-1：permit 词形事件的 expired_at_seq（producer 既有字段）带入判定作时序切点；
+    // 形态非法的值不猜测——按缺席处理（判定回落事件 seq，方向更严）。
+    const expiredAtSeq = parsed.expired_at_seq;
     events.push({
       type: type as EvidenceInvalidationEvent["type"],
       seq,
       execution_id: asStringOrNull(parsed.execution_id),
       permit_ref: asStringOrNull(parsed.permit_ref),
+      ...(typeof expiredAtSeq === "number" && Number.isInteger(expiredAtSeq) && expiredAtSeq >= 0
+        ? { expired_at_seq: expiredAtSeq }
+        : {}),
     });
   }
   return events;
@@ -118,17 +124,20 @@ export async function readEvidenceQualificationRequirement(
 ): Promise<EvidenceQualificationRequirement> {
   const paths = buildStorePaths(rootDir);
   const confirmation = await readBaselineConfirmation(rootDir);
-  const declared = dependency === undefined ? undefined : validateBaselineDependencyDeclaration(dependency);
+  const declared = dependency === undefined
+    ? undefined
+    : validateBaselineDependencyDeclaration(dependency, confirmation.kind === "record-valid" ? confirmation.retired : []);
   if (declared !== undefined && !declared.ok) {
     throw new GovernanceError("SCHEMA_INVALID", declared.details.join("; "), "Repair the task baseline dependency declaration.");
   }
   const assessment = declared?.ok ? await baselineGateAssessment(rootDir, declared.declaration) : undefined;
   if (assessment !== undefined && assessment.errors.length > 0) {
-    throw new GovernanceError("SCHEMA_INVALID", assessment.errors.map((error) => error.message).join("; "), "Reassess the task baseline dependencies before verifying evidence.");
+    throw new GovernanceError("SCHEMA_INVALID", assessment.errors.map((error) => error.message).join("; "), "Reassess the task baseline scope first: pomaster task reassess-baseline <TASK> --lanes <…> --reason <…> --by <type:name>.");
   }
   const scope = declared?.ok && confirmation.kind === "record-valid" && assessment?.errors.length === 0
     ? {
-        relevant_targets: declared.declaration.relevant_targets,
+        // 已退役目标（V2-6）不参与范围判定。
+        relevant_targets: declared.declaration.relevant_targets.filter((target) => !confirmation.retired.includes(target)),
         declared_inputs: { at_seq: declared.declaration.baseline_at_seq, digests: declared.declaration.digests },
         current_inputs: { at_seq: confirmation.record.at_seq, digests: confirmation.record.digests },
       }
@@ -144,6 +153,8 @@ export async function readEvidenceQualificationRequirement(
   }
   return {
     baseline_at_seq: baselineAtSeq,
+    // 逐目标确认锚（V2-4）：未声明范围的证据以「任一目标内容最近一次变化」为切点。
+    ...(confirmation.kind === "record-valid" ? { baseline_target_seq: baselineTargetSeq(confirmation.record) } : {}),
     ...(scope !== undefined ? { baseline_scope: scope } : {}),
     invalidated_events: invalidatedEvents,
     execution_permits: executionPermits,

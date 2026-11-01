@@ -14,7 +14,7 @@ import { CATALOG_CHANGE_CLASS_VALUES, CATALOG_GOVERNANCE_PROFILE_VALUES } from "
 import { GovernanceError, governanceCodeForParseError, GovernedIdParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
 import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
-import { pathsOf, readCurrentSeq, readRawIndex, type StorePaths } from "./paths.js";
+import { pathsOf, readCurrentSeq, readJournalLines, readRawIndex, type StorePaths } from "./paths.js";
 
 /** 缺省 TTL：168 拍（C9 TTL 168h 的拍数映射；A4 禁墙钟，只按 seq 判定）。 */
 export const DEFAULT_TTL_BEATS = 168 as const;
@@ -88,6 +88,11 @@ export interface PermitBaselineSubject {
 export interface PermitBaseline {
   readonly at_seq: number;
   readonly subjects: Readonly<Record<string, PermitBaselineSubject | null>>;
+  /**
+   * 扩权（widenPermit，V2-2）追加对象的逐对象捕获拍：该对象的基线在扩权时刻捕获，
+   * reconcile 以此为该对象的 since 锚（缺席 = at_seq）。
+   */
+  readonly subject_at_seq?: Readonly<Record<string, number>>;
 }
 
 /**
@@ -366,12 +371,24 @@ function findPermit(
   return file.permits.find((permit) => permit.permit_ref === permitRef) ?? null;
 }
 
+/** journal 是否已有该许可、该到期点的 PERMIT_EXPIRED_OBSERVED（V2-1 去重判据）。 */
+function expiryAlreadyObserved(paths: StorePaths, permitRef: string, expiredAtSeq: number): boolean {
+  return readJournalLines(paths).some(
+    (event) =>
+      event.type === "PERMIT_EXPIRED_OBSERVED" &&
+      event.permit_ref === permitRef &&
+      event.expired_at_seq === expiredAtSeq,
+  );
+}
+
 /**
  * 校验写尝试是否在许可范围内。显式四态（docs/kernel-api.md §4）：
  * allowed / denied（outside_scope、policy_forbidden、delete_forbidden_supersede_only）/
  * expired / unknown_permit——禁止静默放行或静默拒绝。
  * 过期判定：currentSeq >= expiresAtSeq 即过期（边界拍不再有效）；过期时追加
- * PERMIT_EXPIRED_OBSERVED journal 事件（「过期→EXPIRED 事件，不静默」）。
+ * PERMIT_EXPIRED_OBSERVED journal 事件（「过期→EXPIRED 事件，不静默」）——同一许可的同一
+ * 到期点只记一次（V2-1 去重：journal 已有 (permit_ref, expired_at_seq) 观察事件即不再追加；
+ * 判卷器仍只写 journal，不改台账）。
  * delete 对 DENOMINATOR 一律 denied（delete_forbidden_supersede_only，C2/GAP-POM-001 免疫）。
  */
 export async function checkPermit(
@@ -396,12 +413,17 @@ export async function checkPermit(
     return { outcome: "unknown_permit" };
   }
   if (currentSeq >= permit.expires_at_seq) {
-    appendJournalLine(paths, {
-      type: "PERMIT_EXPIRED_OBSERVED",
-      seq: currentSeq,
-      permit_ref: permitRef,
-      expired_at_seq: permit.expires_at_seq,
-    });
+    // V2-1 去重：hook 每次 Edit 都会判卷，原实现每次都追加一行，journal 被刷屏。去重键 =
+    // (permit_ref, expired_at_seq)——续期（V2-2）后再次到期是新的到期点，照常记一次。
+    // 判卷器只写 journal（exec-guard「journal 之外零变化」契约不变）；已观察过 → 照旧返回 expired。
+    if (!expiryAlreadyObserved(paths, permitRef, permit.expires_at_seq)) {
+      appendJournalLine(paths, {
+        type: "PERMIT_EXPIRED_OBSERVED",
+        seq: currentSeq,
+        permit_ref: permitRef,
+        expired_at_seq: permit.expires_at_seq,
+      });
+    }
     return { outcome: "expired", expiredAtSeq: permit.expires_at_seq };
   }
   if (attempt.op === "delete") {
@@ -422,7 +444,7 @@ export async function checkPermit(
     return {
       outcome: "denied",
       reason: "outside_scope",
-      hint: "scope expansion 拒绝静默放行（D20/GOLDEN-L8-2）：把目标对象纳入 Permit 范围须回 FRAMEWORK LOCK 重审升级，不得旁路扩权",
+      hint: "scope expansion 拒绝静默放行（D20/GOLDEN-L8-2）：把目标对象纳入 Permit 范围须显式扩权（pomaster permit widen --permit <ref> --subject <id> --actor <type:name> --reason <text>，留痕）或回 FRAMEWORK LOCK 重审升级，不得旁路扩权",
     };
   }
   if (permit.scope.write_policy === "NONE") {
@@ -502,6 +524,208 @@ export async function stealPermit(
     reason,
   });
   return { outcome: "stolen", eventSeq: currentSeq };
+}
+
+// ============================================================
+// 续期 / 扩权（V2-2；台账 VX-WRITE-03 / VX-WRITE-07）
+// ============================================================
+
+export interface PermitRenewResult {
+  readonly permitRef: string;
+  readonly previousExpiresAtSeq: number;
+  readonly expiresAtSeq: number;
+  readonly eventSeq: number;
+}
+
+export interface PermitWidenResult {
+  readonly permitRef: string;
+  /** 本次新增的对象（已在范围内的不计；空 = 零变化、零事件）。 */
+  readonly addedSubjectIds: readonly GovernedId[];
+  readonly subjectIds: readonly GovernedId[];
+  readonly eventSeq: number | null;
+}
+
+function requireSeq(paths: StorePaths, store: Store): number {
+  const currentSeq = readCurrentSeq(paths);
+  if (currentSeq === null) {
+    throw new GovernanceError(
+      "NOT_CONFIGURED",
+      "store 未初始化（state/truth-index.json 缺失）",
+      "先跑 createStore(rootDir) 完成骨架初始化",
+      { rootDir: store.rootDir },
+    );
+  }
+  return currentSeq;
+}
+
+function requireReason(reason: string, verb: string): void {
+  if (typeof reason !== "string" || reason.trim().length === 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `${verb} 必须带 reason（许可范围 / 期限的每次变化都要可归属）`,
+      "写清为何需要变更许可：哪项工作超出了原期限 / 原范围",
+      {},
+    );
+  }
+}
+
+/**
+ * 在用许可（存在、未接管、未到期）。到期后的续期 / 扩权一律拒绝：到期之后的写入
+ * 不能靠事后续期变合法——走 permit steal 显式接管，再重新签发。
+ */
+function requireLivePermit(
+  file: PermitsFile,
+  permitRef: string,
+  currentSeq: number,
+  verb: "renew" | "widen" | "attach",
+): PermitRecord {
+  const permit = findPermit(file, permitRef);
+  if (permit === null || permit.stolen_at_seq !== null) {
+    throw new GovernanceError(
+      "PERMIT_NOT_FOUND",
+      `许可不存在或已被接管：${permitRef}`,
+      "核对 PERMIT.* 引用（state/permits.json）；已接管的许可不再可用，重新签发",
+      { permitRef },
+    );
+  }
+  if (currentSeq >= permit.expires_at_seq) {
+    throw new GovernanceError(
+      "PERMIT_EXPIRED",
+      `许可已到期（expires_at_seq=${permit.expires_at_seq}，current_seq=${currentSeq}），不能 ${verb}`,
+      "到期后的写入不能靠事后续期变合法：走 pomaster permit steal --permit <ref> --reason <text> 显式接管后重新签发",
+      {
+        permitRef,
+        expires_at_seq: permit.expires_at_seq,
+        current_seq: currentSeq,
+        reason_code: verb === "renew" ? "PERMIT_RENEW_EXPIRED" : verb === "widen" ? "PERMIT_WIDEN_EXPIRED" : "PERMIT_ATTACH_EXPIRED",
+      },
+    );
+  }
+  return permit;
+}
+
+function writePermitsFile(paths: StorePaths, file: PermitsFile): void {
+  executeWrites([
+    {
+      path: paths.permitsPath,
+      next: `${JSON.stringify(file, null, 2)}\n`,
+      original: captureOriginal(paths.permitsPath),
+    },
+  ]);
+}
+
+/**
+ * 续期（V2-2）：在用许可 expires_at_seq += beats，journal PERMIT_RENEWED（by / reason 留痕）。
+ * TTL 按事务拍计：一个任务自举就会用掉二十多拍，长任务需要续期而不是重新签发。
+ * 已产出的证据不受影响（证据资格的 permit 轴只看失效事件，续期不产生失效事件）。
+ */
+export async function renewPermit(
+  store: Store,
+  permitRef: string,
+  by: Actor,
+  reason: string,
+  beats: number = DEFAULT_TTL_BEATS,
+): Promise<PermitRenewResult> {
+  const paths = pathsOf(store);
+  const currentSeq = requireSeq(paths, store);
+  requireReason(reason, "renew");
+  if (!Number.isInteger(beats) || beats <= 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `续期拍数须为正整数（事件拍，禁墙钟）：${String(beats)}`,
+      "TTL 以事务拍计（A4/D2）；缺省 168 拍",
+      { beats },
+    );
+  }
+  const file = readPermitsFile(paths);
+  const permit = requireLivePermit(file, permitRef, currentSeq, "renew");
+  const previous = permit.expires_at_seq;
+  permit.expires_at_seq = previous + beats;
+  writePermitsFile(paths, file);
+  appendJournalLine(paths, {
+    type: "PERMIT_RENEWED",
+    seq: currentSeq,
+    permit_ref: permitRef,
+    previous_expires_at_seq: previous,
+    expires_at_seq: permit.expires_at_seq,
+    beats,
+    by: { actor_type: by.actorType, actor: by.actor },
+    reason,
+  });
+  return { permitRef, previousExpiresAtSeq: previous, expiresAtSeq: permit.expires_at_seq, eventSeq: currentSeq };
+}
+
+/**
+ * 扩权（V2-2）：在用许可的 scope 只追加对象（不删不改），新增对象在扩权时刻捕获基线
+ * （baseline.subjects + subject_at_seq），journal PERMIT_WIDENED。write_policy=NONE 的许可
+ * 不可扩权。全部已在范围内 → 零变化、零事件（eventSeq=null）。
+ */
+export async function widenPermit(
+  store: Store,
+  permitRef: string,
+  addSubjectIds: readonly string[],
+  by: Actor,
+  reason: string,
+): Promise<PermitWidenResult> {
+  const paths = pathsOf(store);
+  const currentSeq = requireSeq(paths, store);
+  requireReason(reason, "widen");
+  if (addSubjectIds.length === 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "widen 至少追加一个对象",
+      "--subject <governed-id> 可重复；scope 只增不减",
+      {},
+    );
+  }
+  const additions = addSubjectIds.map((id) => parseIdOrGovernanceError(id, "widen.subjectIds[]"));
+  const file = readPermitsFile(paths);
+  const permit = requireLivePermit(file, permitRef, currentSeq, "widen");
+  if (permit.scope.write_policy === "NONE") {
+    throw new GovernanceError(
+      "PERMIT_SCOPE_DENIED",
+      `许可 write_policy=NONE，不可扩权：${permitRef}`,
+      "NONE 策略的许可不授予写权；需要写入请走对应通道重新签发",
+      { permitRef, reason_code: "PERMIT_WIDEN_POLICY_NONE" },
+    );
+  }
+  const current = new Set(permit.scope.subject_ids);
+  const added = [...new Set(additions)].filter((id) => !current.has(id)).sort();
+  if (added.length === 0) {
+    return { permitRef, addedSubjectIds: [], subjectIds: [...permit.scope.subject_ids] as GovernedId[], eventSeq: null };
+  }
+  permit.scope.subject_ids = [...permit.scope.subject_ids, ...added];
+  if (permit.baseline !== null) {
+    const captured = captureBaseline(paths, currentSeq, added);
+    permit.baseline = {
+      at_seq: permit.baseline.at_seq,
+      subjects: { ...permit.baseline.subjects, ...captured.subjects },
+      subject_at_seq: {
+        ...(permit.baseline.subject_at_seq ?? {}),
+        ...Object.fromEntries(added.map((id) => [id, currentSeq])),
+      },
+    };
+  }
+  writePermitsFile(paths, file);
+  appendJournalLine(paths, {
+    type: "PERMIT_WIDENED",
+    seq: currentSeq,
+    permit_ref: permitRef,
+    added_subject_ids: added,
+    by: { actor_type: by.actorType, actor: by.actor },
+    reason,
+  });
+  return {
+    permitRef,
+    addedSubjectIds: added as GovernedId[],
+    subjectIds: [...permit.scope.subject_ids] as GovernedId[],
+    eventSeq: currentSeq,
+  };
+}
+
+/** 在用许可校验（attachPermit 复用：存在、未接管、未到期）。 */
+export function assertPermitLive(paths: StorePaths, permitRef: string, currentSeq: number): void {
+  requireLivePermit(readPermitsFile(paths), permitRef, currentSeq, "attach");
 }
 
 function appendJournalLine(paths: StorePaths, event: Record<string, unknown>): void {

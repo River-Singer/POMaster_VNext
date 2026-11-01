@@ -1993,6 +1993,7 @@ export async function runViewReview(
     resolved.target as GovernedId, // resolveRowTargetId 已过 A5 文法闸（parseGovernedId）
     implementsChange,
     asString(taskRow.body_sha256),
+    taskBodyResult.body,
   );
   const acceptReceipt: ViewReviewAcceptReceipt =
     receiptScan.status === "present" && receiptScan.receipt !== null

@@ -220,13 +220,14 @@ describe("studio generators · antdv 组件目录（71 组件族 story + S1 态�
   });
 });
 
-describe("studio generators · overlay 能力清单（18 族）", () => {
-  it("覆盖 18 族 stack，capability/requires/源指向在座", () => {
+describe("studio generators · overlay 能力清单（19 族）", () => {
+  it("覆盖 19 族 stack（B6H h5 18→19），capability/requires/源指向在座", () => {
     const out = tempRoot("ovl");
     try {
       const { count, slugs } = generateOverlayPages(out);
-      expect(count).toBe(18);
+      expect(count).toBe(19);
       expect(slugs).toContain("css");
+      expect(slugs).toContain("h5");
       expect(slugs).toContain("vue3");
       expect(slugs).toContain("spring-boot");
       for (const slug of slugs) {
@@ -311,9 +312,9 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const a = snapshotTree(first);
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      // 总文件数 = 41 + 71 + 18 + 1 + 1 + 1（六类页面分母：S5 增 Database Struct 占位分区；
+      // 总文件数 = 41 + 71 + 19 + 1 + 1 + 1（B6H 增 h5 overlay 页；六类页面分母：S5 增 Database Struct 占位分区；
       // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）。
-      expect(a.size).toBe(133);
+      expect(a.size).toBe(134);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;

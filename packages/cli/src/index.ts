@@ -280,7 +280,7 @@ import { runContextCompile, runContextExplain } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runPortabilityBootstrap, runPortabilityCheck } from "./portability.js";
 import { runCheckFast, runCheckGates } from "./check.js";
-import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
+import { runPermitCheck, runPermitIssue, runPermitList, runPermitRenew, runPermitSteal, runPermitWiden } from "./permit.js";
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
@@ -295,7 +295,9 @@ import {
 import { runExecutionAudit } from "./execution-audit.js";
 import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
-import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
+import { runRecordClaim, runRecordGateRun, runRecordRequalify, runRecordVerification } from "./record.js";
+import { runTaskReassessBaseline } from "./task-baseline.js";
+import { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
 import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
@@ -367,6 +369,7 @@ import {
   runResearchStart,
 } from "./research.js";
 import {
+  runExecutionAttachPermit,
   runExecutionBegin,
   runExecutionEnd,
   runExecutionHandoff,
@@ -444,6 +447,10 @@ export {
   unknownsWordForm,
   renderBaselineQuizHumanLine,
   baselineGateAssessment,
+  baselineTargetSeq,
+  baselineTargetsForLanes,
+  BASELINE_SCOPE_LANES,
+  normalizeBaselineText,
   buildBaselineDependencyDeclaration,
   readBaselineConfirmation,
   validateBaselineDependencyDeclaration,
@@ -751,6 +758,8 @@ export {
   runPermitIssue,
   runPermitCheck,
   runPermitSteal,
+  runPermitRenew,
+  runPermitWiden,
   runPermitList,
   PERMIT_WRITE_OPS,
   PERMIT_LIST_STATES,
@@ -801,7 +810,11 @@ export type {
   CompactClaimEntry,
   CompactMalformedEntry,
 } from "./compact.js";
-export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordVerification } from "./record.js";
+export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordRequalify, runRecordVerification } from "./record.js";
+export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-baseline.js";
+export { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
+export type { BaselineRetireInput, BaselineUnretireInput, BaselineRetireResult } from "./baseline-retire.js";
+export type { TaskReassessBaselineInput, TaskReassessBaselineResult, ReassessAffectedClaim } from "./task-baseline.js";
 export type {
   RecordGateRunInput,
   RecordGateRunValueInput,
@@ -814,6 +827,7 @@ export type {
 export {
   runCloseout,
   scanAcceptReceiptStatus,
+  acceptRevisionFingerprint,
   ACCEPT_RECEIPT_SCAN_STATUSES,
 } from "./closeout.js";
 export type {
@@ -1100,6 +1114,7 @@ export {
   runExecutionEnd,
   runExecutionHandoff,
   runExecutionList,
+  runExecutionAttachPermit,
   parseExecutionIdArgv,
   LOCK_BLOCKED,
 } from "./runtime.js";
@@ -1577,6 +1592,72 @@ export function createProgram(
       });
     });
 
+  baseline
+    .command("retire")
+    .description(
+      "确认目标不适用退役（V2-6）：Owner 决定该目标对本项目不适用——写退役台账（baseline_target_not_applicable）+ ADVANCE（锚 baseline_target，ref <target>#applicability）。此后 confirm 不再读它、不因它的未知键阻塞，漂移判定与任务范围划分不再计入；status/doctor 呈现已退役清单。前提：目标不在在途变更批。错误码：SCHEMA_INVALID（未知目标 / 缺 --not-applicable / --by 非 human:）/ BASELINE_NOT_CONFIRMED（在途批）/ ADVANCE_INVALID（占位理由）",
+    )
+    .argument("<target>", "确认目标（如 baseline/backend/stack.yaml）")
+    .option("--not-applicable", "退役种类：对本项目不适用（必给）")
+    .requiredOption("--reason <text>", "为什么不适用（非占位）")
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (target: string, opts, command) => {
+      const outcome = await runBaselineRetire(resolveDir(command), {
+        target,
+        reason: opts.reason as string,
+        by: opts.by as string,
+        ...(opts.notApplicable === true ? { notApplicable: true } : {}),
+      });
+      record({ command: "baseline retire", outcome, asJson: command.opts().json === true });
+    });
+
+  baseline
+    .command("unretire")
+    .description(
+      "撤销确认目标退役（V2-6）：台账追加撤销条目（历史不改写）+ 同链 ADVANCE。目标重新进入确认分母——退役期间文件变过或从未确认过则判漂移，走 baseline confirm 治理通路；已声明范围但未覆盖该目标的任务须 task reassess-baseline。错误码：SCHEMA_INVALID / ADVANCE_INVALID",
+    )
+    .argument("<target>", "已退役的确认目标")
+    .requiredOption("--reason <text>", "为什么重新适用（非占位）")
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (target: string, opts, command) => {
+      const outcome = await runBaselineUnretire(resolveDir(command), { target, reason: opts.reason as string, by: opts.by as string });
+      record({ command: "baseline unretire", outcome, asJson: command.opts().json === true });
+    });
+
+  // —— 任务级写面（V2-7）：baseline 依赖范围重评估 ——
+  const taskCommand = program
+    .command("task")
+    .description("任务对象的受控写面：reassess-baseline = 重评估任务 baseline 依赖范围（V2-7）");
+  taskCommand
+    .command("reassess-baseline")
+    .description(
+      "重评估任务 baseline 依赖范围（V2-7）：以当前确认记录为快照重写 TASK 正文 payload.baseline_dependencies（相关 / 排除可同时调整），同事务写 ADVANCE（锚 task_baseline_scope；affected_ids = 任务 + 新范围下证据早于相关变化的验收 claim）。ACCEPT 回执不受影响（V2-9 指纹剥离该字段）；证据资格不洗白——列出的 claim 走 record requalify / record verification。错误码：BASELINE_SCOPE_REASSESS_DIRTY（新相关目标漂移或在途批）/ BASELINE_SCOPE_UNAVAILABLE / BASELINE_SCOPE_INCOMPLETE / OBJECT_NOT_FOUND / ADVANCE_INVALID（默认身份、占位理由或旧锚对不上链尾）",
+    )
+    .argument("<task>", "目标 TASK.*")
+    .option("--lanes <lanes>", "按 lane 生成新范围（frontend,backend,data,platform；逗号分隔或重复；platform 只在显式列出时相关；与 --baseline-target/--baseline-exclude 二选一）", collectValues)
+    .option("--baseline-target <baseline/path>", "任务相关的确认资产（可重复；须与 --baseline-exclude 共同覆盖全部确认资产）", collectValues)
+    .option("--baseline-exclude <baseline/path>", "任务明确不相关的确认资产（可重复）", collectValues)
+    .requiredOption("--reason <text>", "任务影响面为何变化（非占位）")
+    .requiredOption("--by <type>:<name>", "发起人（ADVANCE actor；须为显式身份，CLI 默认身份被拒）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, opts, command) => {
+      const outcome = await runTaskReassessBaseline(resolveDir(command), {
+        task,
+        reason: opts.reason as string,
+        by: opts.by as string,
+        ...(opts.lanes !== undefined ? { lanes: opts.lanes as string[] } : {}),
+        ...(opts.baselineTarget !== undefined ? { baselineTargets: opts.baselineTarget as string[] } : {}),
+        ...(opts.baselineExclude !== undefined ? { baselineExclusions: opts.baselineExclude as string[] } : {}),
+      });
+      record({
+        command: "task reassess-baseline",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
   // —— CLI 自更新（F2）：缺省 --check 查 registry 比对版本；--yes 才执行全局安装 ——
   // 判卷纯本地（semver 比较）；registry 不可达 fail-closed 显式呈现，禁假报「已是最新」；
   // npm 执行面 stdio inherit 透传。--json 信封 {current, latest, updateAvailable, check}。
@@ -2044,6 +2125,54 @@ export function createProgram(
     });
 
   permit
+    .command("renew")
+    .description(
+      "续期在用许可：expires_at_seq += --beats（缺省 168）；到期 / 已接管的许可拒绝（PERMIT_EXPIRED / PERMIT_NOT_FOUND——到期后走 steal 再重签）；journal PERMIT_RENEWED",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用")
+    .requiredOption("--actor <type>:<name>", "续期主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "续期理由（非空必填）")
+    .option("--beats <n>", "续期拍数（正整数；缺省 168）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitRenew(resolveDir(command), {
+        permit: opts.permit as string,
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+        beats: opts.beats as string | undefined,
+      });
+      record({
+        command: "permit renew",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("widen")
+    .description(
+      "扩权在用许可：scope 只追加对象（新对象在扩权拍捕获基线）；到期 / 已接管 / write_policy=NONE 拒绝；全部已在范围 → NO_CHANGE 零写入；journal PERMIT_WIDENED",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用")
+    .requiredOption("--subject <governed-id>", "追加对象（closed-world governed id；可重复，≥1）", collectValues, [])
+    .requiredOption("--actor <type>:<name>", "扩权主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "扩权理由（非空必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitWiden(resolveDir(command), {
+        permit: opts.permit as string,
+        subjects: opts.subject as string[],
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+      });
+      record({
+        command: "permit widen",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
     .command("list")
     .description(
       "许可台账纯读呈现（事件链按类型折叠为 {count, first_seq, last_seq}——计数保留不吞没；--json 同 state 字节稳定）",
@@ -2254,6 +2383,30 @@ export function createProgram(
     });
 
   recordCommand
+    .command("requalify")
+    .description(
+      "已判定 claim 的再判定（V2-8）：旧 CLM 逐字节不动（A3 一次性判定保留），新建后继 CLM（UNVERIFIED）并把 subject 的验收绑定重绑到后继；同事务写 ADVANCE（锚 claim_verification）与退役台账 claim_superseded。之后由另一主体对后继走 record verification。错误码：CLAIM_NOT_FOUND / SCHEMA_INVALID（CLAIM_REQUALIFY_TARGET_INVALID：目标未判定或已被取代）/ ADVANCE_INVALID（默认身份或占位理由）",
+    )
+    .requiredOption("--clm <CLM-n>", "被取代的已判定 claim")
+    .requiredOption("--by <type>:<name>", "发起人（后继 claim 的 asserted_by；须为显式身份，CLI 默认身份被拒）")
+    .requiredOption("--reason <text>", "旧判定为何不再成立（非占位）")
+    .option("--evidence <GRN-n>", "后继 claim 的初始证据（可重复；可先立后证）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runRecordRequalify(resolveDir(command), {
+        clm: opts.clm as string,
+        by: opts.by as string,
+        reason: opts.reason as string,
+        ...(opts.evidence !== undefined ? { evidence: opts.evidence as string[] } : {}),
+      });
+      record({
+        command: "record requalify",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  recordCommand
     .command("verification")
     .description(
       "独立验证流的判定回写（W2 生产入口；D20 判定通路）：对既有 UNVERIFIED claim 施 VERIFIED 判定——单向一次性（A3 禁覆写已判定；已 VERIFIED/PARTIALLY_VERIFIED/REJECTED → NO_CHANGE exit 0 零写入回显既有判定，改判/回退不在射程）。回写走 kernel 唯一写权威 applyTransaction（verify_claim op：只替换 verification 块+合并 evidence_refs+推进 rev，其余字段逐字节保留）。错误码：CLAIM_NOT_FOUND（目标缺席）/ EVIDENCE_MALFORMED（损坏）/ SCHEMA_INVALID / VERIFICATION_EVIDENCE_EMPTY（07：空证据引用不得 VERIFIED）/ VOCAB_INVALID_VALUE（method 词表外）/ EXECUTION_NOT_FOUND",
@@ -2364,8 +2517,11 @@ export function createProgram(
     .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
     .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
     .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
+    .option("--requalify", "定向重验（V2-10）：只重跑源码已变或缺失的义务，仍新鲜的 passed 证据跨 AGX 沿用并写 ADVANCE")
+    .option("--by <type:name>", "--requalify 的 ADVANCE actor（缺省取 --verifier）")
     .option("--json", "machine-readable JSON output")
     .action(async (taskId: string, opts, command) => {
+      const by = (opts.by as string | undefined) ?? (opts.verifier as string | undefined);
       record({ command: "finalize run", outcome: await runFinalize(resolveDir(command), {
         taskRef: taskId,
         executionId: opts.verificationExecutionId as string,
@@ -2375,6 +2531,8 @@ export function createProgram(
         changed: opts.changed as string[] | undefined,
         consumers: opts.consumer as string[] | undefined,
         faces: opts.face as string[] | undefined,
+        ...(opts.requalify === true ? { requalify: true } : {}),
+        ...(by !== undefined ? { by } : {}),
       }), asJson: command.optsWithGlobals().json === true });
     });
 
@@ -2669,7 +2827,7 @@ export function createProgram(
     .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
     .option("--outcome-task <id>", "SP-W1-a 成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的覆盖判定载体；只随 --answer）")
     .option("--outcome-change <id>", "SP-W1-a 成果绑定 change_ref（间绑 task payload.implements_change；只随 --answer）")
-    .option("--outcome-revision <sha256:…>", "SP-W1-a 消费端对账指纹（sha256:<64hex>；与对象行 body_sha256 全等——内容漂移旧 ACCEPT 失效）")
+    .option("--outcome-revision <current|sha256:…>", "SP-W1-a 消费端对账指纹：current = 绑定 task 当前正文的语义修订指纹（V2-9，状态迁移 / 证据挂载不使回执失效）；或显式 sha256:<64hex>（与对象行 body_sha256 全等）——内容漂移后旧 ACCEPT 失效")
     .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
     .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
@@ -2678,6 +2836,7 @@ export function createProgram(
     .option("--decision-root <DECISION.*>", "当前增量的 Owner-confirmed Decision 根（可重复；按 depends_on 传递闭包判卷，图指纹变化后须重新确认）", collectValues)
     .option("--baseline-target <baseline/path>", "任务相关的 Owner-confirmed baseline 资产（可重复；须与 --baseline-exclude 共同覆盖全部确认资产）", collectValues)
     .option("--baseline-exclude <baseline/path>", "任务明确不相关的 baseline 资产（可重复；未列出的资产不会被静默视为无关）", collectValues)
+    .option("--lanes <lanes>", "按 lane 生成 baseline 依赖范围（frontend,backend,data,platform；逗号分隔或重复；platform 只在显式列出时相关；与 --baseline-target/--baseline-exclude 二选一）", collectValues)
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (discoveryId: string, opts, command) => {
       const outcome = await runBrainstormDecide(resolveDir(command), {
@@ -2705,6 +2864,7 @@ export function createProgram(
         ...(opts.decisionRoot !== undefined ? { decisionRoots: opts.decisionRoot as string[] } : {}),
         ...(opts.baselineTarget !== undefined ? { baselineTargets: opts.baselineTarget as string[] } : {}),
         ...(opts.baselineExclude !== undefined ? { baselineExclusions: opts.baselineExclude as string[] } : {}),
+        ...(opts.lanes !== undefined ? { baselineLanes: opts.lanes as string[] } : {}),
       });
       record({
         command: "brainstorm decide",
@@ -3040,9 +3200,13 @@ export function createProgram(
     .option("--profile <word>", "信息性：governance_profile 自报")
     .option("--note <text>", "信息性注记")
     .option("--diagnose-on-failure", "对已入账且 verdict=failed 的 GRN 运行只读 diagnose")
+    .option("--requalify", "定向重验（V2-10）：除同 AGX 复用外，跨 AGX 沿用仍新鲜的 passed GRN（来源执行同角色、带源码快照且与当前一致），只重跑其余义务；全绿且确有沿用时写 ADVANCE（锚 source_snapshot）供 finalize cohort 补齐")
+    .option("--by <type:name>", "--requalify 必填：ADVANCE actor（显式身份）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runPlanRun(resolveDir(command), {
+        ...(opts.requalify === true ? { requalify: true } : {}),
+        ...(opts.by !== undefined ? { by: opts.by as string } : {}),
         taskRef: opts.task as string,
         executionId: opts.executionId as string,
         changed: opts.changed as string[] | undefined,
@@ -4125,6 +4289,28 @@ export function createProgram(
       });
       record({
         command: "execution handoff",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("attach-permit")
+    .description(
+      "给在途执行追加许可（permit_ids 只增）：执行须未封口、尚无实现交接；许可须在用（未到期、未接管）；已挂载 → NO_CHANGE；journal EXECUTION_PERMIT_ATTACHED",
+    )
+    .argument("<execution-id>", "执行身份（AGX-<年份>-<序号>）")
+    .requiredOption("--permit <PERMIT.*>", "追加的许可引用")
+    .requiredOption("--actor <type>:<name>", "操作主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "追加理由（非空必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runExecutionAttachPermit(resolveDir(command), executionId, {
+        permit: opts.permit as string,
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+      });
+      record({
+        command: "execution attach-permit",
         outcome,
         asJson: command.opts().json === true,
       });

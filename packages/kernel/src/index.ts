@@ -43,6 +43,7 @@ import type {
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
+import type { VnextAnchor } from "./legal-advance.js";
 import type { EvidencePurposeValue, RunSourceSnapshot } from "./source-snapshot.js";
 import type { VerificationMethodValue } from "./store.js";
 
@@ -455,7 +456,74 @@ export type TransactionOp =
        */
       readonly op: "verify_claim";
       readonly claim: VerifyClaimInput;
+    }
+  | {
+      /**
+       * record_advance：合法推进的唯一写入面（VNext 优化 V1-4；vnext-legal-advance §2）。
+       * 判卷 = validateAdvance（vnext lane）：显式 actor / reason、证据引用与摘要、复判
+       * PASS、新锚 = currentAnchor（调用方按现状重算；缺席信 new_anchor）、旧锚 = 同
+       * (kind, ref) 链尾 ADVANCE 的 new_anchor（首段无前驱）。可同批追加退役条目
+       * （validateRetirements；同 (kind, id) 已退役拒绝）。不合格 → SCHEMA_INVALID +
+       * details.reason_code（ADVANCE_INVALID / ADVANCE_REJUDGE_FAILED / RETIREMENT_INVALID），
+       * 整事务零落盘。落盘 state/advances/ADV-<n>.json（不可变）+ state/retirements.json
+       * （append-only），提交后 journal ADVANCE_RECORDED。
+       */
+      readonly op: "record_advance";
+      readonly record: AdvanceRecordInput;
+    }
+  | {
+      /**
+       * supersede_claim：已判定 claim 的再判定入口（VNext 优化 V2-8；台账 VX-WRITE-01 / 04）。
+       * A3 一次性判定保留（O5）：旧 CLM 文件逐字节不动；新建后继 CLM（UNVERIFIED，主体 /
+       * 断言 / 验收序号沿用，asserted_by = 发起人），subject 对象 payload.acceptance[i].claim
+       * 由旧 CLM 重绑到后继（同事务、rev 推进）。目标未判定 / 已被取代 →
+       * SCHEMA_INVALID + details.reason_code CLAIM_REQUALIFY_TARGET_INVALID。取代关系由同事务
+       * 的 record_advance（退役 claim_superseded）留痕——CLI `record requalify` 编排。
+       */
+      readonly op: "supersede_claim";
+      readonly requalify: ClaimRequalifyInput;
+    }
+  | {
+      /**
+       * reassess_baseline_scope（V2-7；台账 VX-WRITE-02）：重写任务正文 payload.baseline_dependencies
+       * （声明形态由 CLI baseline 面校验——kernel 只要求对象与 task_object 在册），rev 推进。
+       * 由 CLI `task reassess-baseline` 与 record_advance（锚 task_baseline_scope）同事务编排。
+       */
+      readonly op: "reassess_baseline_scope";
+      readonly task: GovernedId;
+      readonly declaration: Readonly<Record<string, unknown>>;
     };
+
+/** supersede_claim 输入（V2-8）。 */
+export interface ClaimRequalifyInput {
+  /** 被取代的已判定 claim（VERIFIED / PARTIALLY_VERIFIED / REJECTED）。 */
+  readonly clm: string;
+  /** 后继 CLM id（调用方分配；须未入账）。 */
+  readonly successor: string;
+  /** 发起人（后继 claim 的 asserted_by——独立验证须由另一主体完成，D20）。 */
+  readonly by: Actor;
+  readonly reason: string;
+  /** 后继 claim 的初始证据引用（可空——先立后证）。 */
+  readonly evidenceRefs?: readonly string[];
+}
+
+/** record_advance 输入（vnext-legal-advance §3.2）。 */
+export interface AdvanceRecordInput {
+  /** ADVANCE 段（buildAdvance 产物）。 */
+  readonly advance: Readonly<Record<string, unknown>>;
+  /** 事件 actor：CLI 只取显式 --actor，不从会话身份自动填。 */
+  readonly actor: string;
+  readonly reason: string;
+  /** 调用方按现状重算的当前锚；缺席 = 以段内 new_anchor 为准。 */
+  readonly currentAnchor?: VnextAnchor;
+  /** 同批退役条目（vnext lane 五种）。 */
+  readonly retirements?: readonly Readonly<Record<string, unknown>>[];
+  /**
+   * 同批撤销退役（V2-6；`baseline unretire`）：`{id, kind}`，目标须当前在退役；台账以
+   * reinstatements 追加（actor / reason 取事件值），历史退役条目不改写。
+   */
+  readonly reinstatements?: readonly Readonly<Record<string, unknown>>[];
+}
 
 export interface Transaction {
   readonly ops: readonly TransactionOp[];
@@ -950,6 +1018,16 @@ export type StealResult =
  */
 export { stealPermit } from "./permits.js";
 
+/**
+ * 续期 / 扩权（V2-2；台账 VX-WRITE-03 / VX-WRITE-07）：仅在用许可（存在、未接管、
+ * 未到期——到期后 PERMIT_EXPIRED + details.reason_code，提示走 steal）。续期
+ * expires_at_seq += beats（journal PERMIT_RENEWED）；扩权 scope 只追加、新对象在扩权拍
+ * 捕获基线（journal PERMIT_WIDENED；write_policy=NONE 拒绝）。by / reason 必填留痕。
+ * PERMIT_RENEWED / PERMIT_WIDENED 为 kernel 局部词 TODO(vocab-pr)。
+ */
+export { renewPermit, widenPermit } from "./permits.js";
+export type { PermitRenewResult, PermitWidenResult } from "./permits.js";
+
 // ============================================================
 // Authority Precedence 机器面 + authority.json 读侧消费（09-04 Batch 1 R4/D3）
 // ============================================================
@@ -1295,6 +1373,83 @@ export type {
 } from "./evidence-qualification.js";
 
 // ============================================================
+// 合法推进判卷核（VNext 优化 V1-3 · vnext-legal-advance 契约）
+// ============================================================
+// 语义边界（legal-advance.ts 头注）：pomaster legal_advance.py 的 TS 移植——三分类
+// （TAMPER / LEGAL_CHANGE / UNDECIDABLE）、ADVANCE 段、按路径剥离的语义指纹、退役
+// 台账。纯函数，零 fs / store / 墙钟；Python lane 的返回值与错误文案逐字对拍
+// （tests/fixtures/legal-advance-parity.json，scripts/export-legal-advance-parity.py
+// 生成）。词形闭包 = kernel 局部词 TODO(vocab-pr)。本 PR 只落判卷核，写入面
+// （record_advance 事务 op）与 CLI 消费者随 Phase 2 接线。
+export {
+  ADVANCE_SCHEMA,
+  CHANGE_CLASSES,
+  ADVANCE_BASES,
+  BOUNDARY_KINDS,
+  ADVANCE_LANES,
+  FINGERPRINT_LAYERS,
+  DEFAULT_FINGERPRINT_VERSIONS,
+  ANCHOR_KINDS,
+  RETIREMENT_KINDS,
+  LANE_RETIREMENT_KINDS,
+  RETIREMENT_ANCHOR_KEYS,
+  REJUDGE_VERDICTS,
+  FIXED_MINIMAL_RULES,
+  PROFILES as SEMANTIC_FINGERPRINT_PROFILES,
+  LegalAdvanceError,
+  digestValue,
+  hexOf,
+  pyRepr,
+  stripPaths,
+  profilePatterns,
+  semanticFingerprint,
+  checkFingerprintVersions,
+  judgeBoundary,
+  judgeChange,
+  isDefaultActor,
+  buildRejudge,
+  buildAdvance,
+  anchorOf,
+  validateAdvance,
+  validateRetirements,
+} from "./legal-advance.js";
+export type {
+  ChangeClass,
+  AdvanceBasis,
+  BoundaryKind,
+  AdvanceLane,
+  FingerprintLayer,
+  AnchorKind,
+  RetirementKind,
+  RejudgeVerdict,
+  ChangeVerdict,
+  RejudgeGateInput,
+  VnextAnchor,
+  ValidateAdvanceContext,
+} from "./legal-advance.js";
+
+// 合法推进台账（V1-4）：state/advances/ADV-<n>.json（不可变）+ state/retirements.json
+// （append-only）。唯一写入面 = record_advance 事务 op；此处只导出读 API（StorePaths
+// 为参，pathsOf(store) 取）。ADV- 编号 / ADVANCE_RECORDED 事件 = kernel 局部词
+// TODO(vocab-pr)。
+export {
+  ADVANCE_RECORD_TYPE,
+  ADVANCE_RECORDED_EVENT,
+  ADVANCE_ID_RE,
+  RETIREMENT_LEDGER_VERSION,
+  advancesDirOf,
+  advancePathOf,
+  retirementsPathOf,
+  listAdvanceRecords,
+  latestAdvanceFor,
+  readRetirementLedger,
+  listRetirements,
+  listActiveRetirements,
+  isRetired,
+} from "./advances.js";
+export type { AdvanceRecord, AdvanceFilter, ReinstatementLedgerEntry, RetirementLedgerEntry, RetirementLedgerFile } from "./advances.js";
+
+// ============================================================
 // 源码证据新鲜度合同与唯一比较核（W2-FR05 · 09-27 PRD）
 // ============================================================
 // 语义边界（source-snapshot.ts 头注）：FR-05 相关源码面的可比基线合同——HEAD 出处锚 +
@@ -1432,6 +1587,7 @@ export {
   appendImplementationHandoff,
   assertImplementationHandoff,
   endExecution,
+  attachPermit,
   readExecutionRecordById,
   listExecutionRecords,
   allocateExecutionId,
@@ -1452,6 +1608,7 @@ export type {
   ImplementationHandoff,
   AppendImplementationHandoffInput,
   AppendImplementationHandoffResult,
+  AttachPermitResult,
 } from "./execution.js";
 
 // DEF-GATEKEEPER 触发观测器（P20-Commands；D 线 §5「同一 execution 既提 proposal

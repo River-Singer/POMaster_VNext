@@ -60,6 +60,7 @@ export const STACK_SEED_SLUGS: readonly string[] = [
   "antdesign",
   "css",
   "geist",
+  "h5",
   "java",
   "jpa",
   "kubernetes-ingress",

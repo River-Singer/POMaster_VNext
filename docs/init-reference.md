@@ -119,8 +119,9 @@ canonical 正文层为 `.pomaster/truth/objects/`；legacy `.pomaster/objects/` 
 
 - **缺失才写、在座零触碰**；
 - 播种件**不带生成标记**——项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖；
-- 播种分母 = **103 份内容文件** + manifest 单源：
-  - `specs/hard` 57：themes 21（20 主题 + 1 导航）/ stacks 18×2（后端 14 族 + 前端 4 族）；
+- 播种分母 = **105 份内容文件** + manifest 单源：
+  - `specs/hard` 59：themes 21（20 主题 + 1 导航）/ stacks 19×2（后端 14 族 + 前端 5 族：vue3 / antdesign / geist / css / h5）；
+    `h5`（H5 / 移动端适配，B6H 同步自 pomaster）只播种，VNext 尚无对应选型键，不进入绑定；
   - `specs/evidence` 20；
   - `baseline` 26（含 R3 增量 `frontend/design-tokens.yaml` 语义 token 合同）；
 - 已安装工作区的旧 FE/BE 平铺 spec 由 doctor / status 的 `legacy_specs_present` 检出呈现
@@ -180,18 +181,47 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
 
 `pomaster baseline confirm` 在 14 个 unknowns 全部销账后对基线做 Owner 确认施断：
 
-- `baseline/manifest.yaml` 写入 `confirmed` 确认记录（`at_seq` 时点锚 + 两个 `stack.yaml`
-  与两个 `architecture.md` 的 sha256 digest 快照）；
+- `baseline/manifest.yaml` 写入 `confirmed` 确认记录：`at_seq` 时点锚 + 全部 25 个确认资产
+  （两个 `stack.yaml`、22 份 lane md、`frontend/design-tokens.yaml`）的 sha256 digest 快照 +
+  `normalized` 规范化摘要 + `target_seq` 逐目标锚（V2-4：该目标内容最近一次在确认中变化的
+  seq；重确认只推进真实变化的目标，旧记录缺该段时全部按 `at_seq` 计）；
 - 已确认且 digest 无漂移时重复 confirm 幂等零写入（NO_CHANGE）；
 - **closeout 聚合单点消费确认态**：
   - baseline 未确认 → `BASELINE_NOT_CONFIRMED` 阻断；
   - 确认后任一快照目标与现盘 digest 不符（检出谁改了架构）→ `BASELINE_DRIFT` 阻断；
+  - 只有字节形态变化（BOM、CRLF / LF、行尾空白、末尾空行）不计漂移：确认记录同时存原始
+    字节摘要（`digests`）与规范化文本摘要（`normalized`，V2-3），前者不等而后者相等只给
+    `BASELINE_BYTES_ONLY_CHANGE` warning；`normalized` 段缺席的旧记录按 BOM / 换行变体判同，
+    下一次真实确认时补写。重确认时只有字节变化的目标沿用旧摘要，任务的 baseline 依赖快照
+    不因此失效。git autocrlf 克隆的基线文件照常可读写（解析去 BOM 与行尾 `\r`，改写保持原换行）；
+  - 文本变而权威面不变也不计漂移（V2-5，O7 口径）：确认记录另存 `authority` 权威面摘要——md
+    只取各 H2 节内的取值与 Owner 正文，去掉文件头说明、`- 填写指引:` 行、PRESET-DRAFT 草案节、
+    `## 补充…` 节；yaml 取解析后的键值（注释与键序无关）。只动了这些部分 →
+    `BASELINE_SUPPLEMENT_CHANGED` warning，不推进 `target_seq`、不要求重确认。给 Agent 的补充说明
+    写在文件里任意位置的 `## 补充` 节下即可；要改确认过的取值仍在对应 H2 节内修改并走治理通路；
 - 确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象
-  须在册且 lifecycle 合法，kernel 校验）允许写入并使确认记录失效，重确认前 closeout
-  恢复阻断；漂移后 `pomaster baseline confirm` 重新快照即治理通路终点；
+  须在册且 lifecycle 合法，kernel 校验）写入后记录转 pending-change，`pomaster baseline
+  confirm --change <同一 CHANGE-id>` 终结变更批；未经登记的手改出现漂移时，重确认须二选一：
+  `--change <CHANGE-id>`（治理通路）或 `--ack-drifted --note "<理由>"`（Owner 手改声明，journal
+  `BASELINE_ACK` 留痕）——裸重确认拒绝；
+- 任务的 baseline 依赖范围：`pomaster brainstorm decide <id> --ready … --lanes frontend[,backend,data,platform]`
+  按 lane 生成 `baseline_dependencies`（所选 lane 的确认资产为相关、其余为排除；platform 只在
+  显式列出时相关），或用 `--baseline-target` / `--baseline-exclude` 逐文件划分。声明了范围的
+  任务只在相关资产变化时证据失效；未声明范围的任务 `--ready` 给 `BASELINE_SCOPE_UNDECLARED`
+  warning，其证据以「任一资产内容最近一次变化」（max `target_seq`）为切点；相关资产经治理通路
+  合法变更或任务影响面变化后，`pomaster task reassess-baseline <TASK> --lanes … --reason … --by …`
+  以当前确认快照重写范围（V2-7；新相关资产须无漂移、无在途批），再按输出对受影响 claim 走
+  `record requalify`；
+- 不适用的确认资产（V2-6）：`pomaster baseline retire <target> --not-applicable --reason <text>
+  --by human:<owner>` 由 Owner 把它退出确认分母——confirm 不再读它、不因它的 unknowns 键阻塞，
+  漂移判定、`--lanes` 划分与列全校验都只算有效资产；退役写 kernel 退役台账
+  （`state/retirements.json`）并留 ADVANCE。重新适用时 `pomaster baseline unretire <target>`：
+  退役期间文件变过或退役前从未确认过 → 判漂移，经 `--change` / `--ack-drifted` 重确认；已声明
+  范围但未覆盖它的任务判 `BASELINE_SCOPE_MALFORMED`，须 `task reassess-baseline`。在途变更批里的
+  资产须先终结批再退役；已退役 lane 的 `stack.yaml` 拒绝 `baseline set`（`BASELINE_TARGET_RETIRED`）；
 - `pomaster doctor` / `pomaster status` 呈现确认态（未确认/已确认/已漂移）+ 未销账
-  unknowns 计数 + 漂移文件清单（`--json` 字段 `baseline_confirmation`；纯读呈现不改
-  ok 语义）。
+  unknowns 计数 + 漂移文件清单 + 已退役资产清单（`--json` 字段 `baseline_confirmation`，
+  `retired_targets` 非空时在座；纯读呈现不改 ok 语义）。
 
 ## baseline 栈预置草案
 
@@ -201,8 +231,9 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
 - 草案内容逐条溯源到已锚定的主题文档与 overlay（`- 源:` 行标注 `.pomaster` 路径 + 节锚）；
 - 纯加法追加、`起步值:UNKNOWN` 骨架字节零改动；栈维度未销账的 lane 保持纯 UNKNOWN
   （缺席诚实）；
-- draft-once（在座零触碰），Owner 可改；`baseline confirm` 时草案随整文件 digest 烙印，
-  确认后改动即 `BASELINE_DRIFT` 走治理通路；
+- draft-once（在座零触碰），Owner 可改；草案节不计入基线权威面（V2-5，O7）：确认后改草案只给
+  `BASELINE_SUPPLEMENT_CHANGED` warning，要让某条草案成为基线须把取值写进对应 H2 节的
+  「起步值」行，H2 取值的改动照常 `BASELINE_DRIFT` 走治理通路；
 - 业务实体/接口/数据模型零预置（New Entity Gate 词形在册）。
 
 ## init 之后的消费面（session / status / alerts / doctor）

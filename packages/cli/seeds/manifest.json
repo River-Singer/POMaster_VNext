@@ -94,6 +94,10 @@
       ".pomaster/specs/hard/stacks/css/css-system-overlay.md",
       ".pomaster/specs/hard/stacks/css/index.md"
     ],
+    "B6H": [
+      ".pomaster/specs/hard/stacks/h5/h5-mobile-overlay.md",
+      ".pomaster/specs/hard/stacks/h5/index.md"
+    ],
     "B7-THEME": [
       ".pomaster/specs/hard/themes/ai-generated-code.md",
       ".pomaster/specs/hard/themes/api-contract-and-error-semantics.md",
@@ -118,11 +122,11 @@
       ".pomaster/specs/hard/themes/value-semantics-and-domain-data.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记); B7-THEME 增量=scripts/seed_b7_theme.py(09-05-spec-thematic-reorg 第二阶段物化批:FE/BE 79 entry 退役删除(D3)+21 条主题/导航 entry 聚合 pin 形态(D6:source pin 指 seeds/aggregation-manifest.json,逐源 vendor sha256 在清单与主题 frontmatter x-aggregation 双面在册))",
+  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记); B7-THEME 增量=scripts/seed_b7_theme.py(09-05-spec-thematic-reorg 第二阶段物化批:FE/BE 79 entry 退役删除(D3)+21 条主题/导航 entry 聚合 pin 形态(D6:source pin 指 seeds/aggregation-manifest.json,逐源 vendor sha256 在清单与主题 frontmatter x-aggregation 双面在册)); B6H 增量=H5 / 移动端 overlay(pomaster@080f307 P7-1,manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账)",
   "denominator": {
-    "batch_scope": "B7-THEME（09-05-spec-thematic-reorg 第二阶段，Owner 裁定 D1-D8）：FE 45+index / BE 32+index 79 文件退役删除（D3 直接删除；已安装工作区并存窗口由 doctor/status legacy_specs_present 检出呈现），重组为 20 份主题文档 + 1 份导航文档（themes/ 单目录 21 文件——12 跨端 + 5 前端独占 + 2 后端独占；映射表 §2 逐文件唯一去向；内容行双向零差异机器自证）；主题 frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7）+ x-aggregation 逐源 sha256（D6，与卡 vendor_pin 同值）+ x-language-sections 语言节同步源（R-J 资产层唯一权威，注入面为逐字节副本；18 overlay 全挂点——B01 含 postgresql（OQ-8）、F01 含 css（D8））；导航文档承接两 index 路由表/激活基线/冲突优先级（D2）；B6c(stacks 28)/B6d/B6e/B6f/B6G 81 条在册——清单合并承载全量分母 102；R3/F-M1 增量=09-10-baseline-confirm-chain-governance R3（baseline/frontend/design-tokens.yaml 补位 B6D 批 25→26，手工增量登记，自指 pin；确认分母 24→25 同源——ADR-20），分母 102→103",
-    "planted": 103,
-    "planted_total": 103,
+    "batch_scope": "B7-THEME（09-05-spec-thematic-reorg 第二阶段，Owner 裁定 D1-D8）：FE 45+index / BE 32+index 79 文件退役删除（D3 直接删除；已安装工作区并存窗口由 doctor/status legacy_specs_present 检出呈现），重组为 20 份主题文档 + 1 份导航文档（themes/ 单目录 21 文件——12 跨端 + 5 前端独占 + 2 后端独占；映射表 §2 逐文件唯一去向；内容行双向零差异机器自证）；主题 frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7）+ x-aggregation 逐源 sha256（D6，与卡 vendor_pin 同值）+ x-language-sections 语言节同步源（R-J 资产层唯一权威，注入面为逐字节副本；18 overlay 全挂点——B01 含 postgresql（OQ-8）、F01 含 css（D8））；导航文档承接两 index 路由表/激活基线/冲突优先级（D2）；B6c(stacks 28)/B6d/B6e/B6f/B6G 81 条在册——清单合并承载全量分母 102；R3/F-M1 增量=09-10-baseline-confirm-chain-governance R3（baseline/frontend/design-tokens.yaml 补位 B6D 批 25→26，手工增量登记，自指 pin；确认分母 24→25 同源——ADR-20），分母 102→103；B6H 增量=H5 / 移动端 stack overlay 同步（pomaster P7-1 PM-SCF-03 新增 frontend-stack:h5，VNext 种子清单跟进——seeds.spec vendor 三面对账在宿主有 pomaster 平级目录时暴露漂移；手工增量登记，sha256 pin 由 seed-manifest.spec 双锚对账），分母 103→105",
+    "planted": 105,
+    "planted_total": 105,
     "batch_new": 21
   },
   "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f/B6G 起 stacks 前端族(vue3/antdesign/geist/css)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源);B7-THEME 起 themes 面（specs/hard/themes 单目录）为聚合文档通路——seed-once 语义不变,frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7 统一形态,info 性注记非执行语义）+ x-aggregation/x-language-sections 扩展键（D6 聚合 pin;R-J 语言节资产唯一权威、注入面副本）",
@@ -1186,6 +1190,28 @@
       "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/css/index.md",
       "source_sha256": "eb09e17e34b577df39889213194207a3335f151d7c0f6655fa2f6aca63f0dc63",
       "source_bytes": 372,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/h5/h5-mobile-overlay.md",
+      "asset": "specs/hard/stacks/h5/h5-mobile-overlay.md",
+      "seed_version": "B6H",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/h5/h5-mobile-overlay.md",
+      "source_sha256": "56934cea13389d038d0afc54738268c2bf1ca5b748e9e97b3a42c0fed809a0d6",
+      "source_bytes": 5064,
+      "porting_notes": [
+        "B6H 移植注记：本 overlay 为 H5 / 移动端适配 overlay（pomaster P7-1 PM-SCF-03，源 pomaster@080f307 components/frontend-hard-spec/assets/stacks/h5/；研究锚 2026-10-25 实抓在册）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期；vant 等版本位由项目实抓后记录，本 overlay 不写死）；随 stacks 全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线——VNext 尚无 H5 选型键，本批只播种不绑定（B6c 注记语义同源）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/h5/index.md",
+      "asset": "specs/hard/stacks/h5/index.md",
+      "seed_version": "B6H",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/h5/index.md",
+      "source_sha256": "6f8d516cc1fb4ef71761ce3636e405dfd3d6e6f2d9d08e95218754b4954bd08c",
+      "source_bytes": 477,
       "porting_notes": []
     },
     {

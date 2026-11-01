@@ -41,6 +41,7 @@ import {
   BASELINE_LANES,
   CHECKLIST_KEYS,
   STACK_KEYS,
+  baselineGateAssessment,
   baselineGateErrors,
   baselineStackRelative,
   collectStackAnswers,
@@ -387,7 +388,9 @@ describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
     expect(BASELINE_CONFIRM_TARGETS).toContain("baseline/frontend/design-tokens.yaml");
   });
 
-  it("确认前草案可自由改（gate 仅 NOT_CONFIRMED）；confirm 后改草案 → BASELINE_DRIFT 指名 architecture.md；ack 通道重确认恢复", async () => {
+  // 语义变更（V2-5 / O7，VX-INIT-07 棘轮例外登记）：原断言「confirm 后改草案 → BASELINE_DRIFT」——
+  // 草案节现不计入权威面，确认后改草案只给 BASELINE_SUPPLEMENT_CHANGED warning；改 H2 节取值仍漂移。
+  it("确认前草案可自由改（gate 仅 NOT_CONFIRMED）；confirm 后改草案不计漂移；改 H2 节取值 → BASELINE_DRIFT 指名 architecture.md；ack 通道重确认恢复", async () => {
     await initWithFullQuiz();
     // 确认前：草案自由修改不产生漂移语义（未确认态唯一阻塞码）。
     appendLineTo(".pomaster/baseline/backend/architecture.md", "- Owner 手改行（确认前自由修改）");
@@ -396,8 +399,16 @@ describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
     const confirmed = await runBaselineConfirm(dir);
     expect(confirmed.ok).toBe(true);
     expect(confirmed.result.change).toBe("CONFIRMED");
-    // 确认后：草案改动 → 既有 digest 快照检出（BASELINE_DRIFT——R-L 零改动）。
+    // 确认后：草案节改动（文件末尾即草案节）→ 不计漂移（草案非权威，V2-5）。
     appendLineTo(".pomaster/baseline/backend/architecture.md", "- Owner 确认后又改一行");
+    const supplement = await baselineGateAssessment(dir);
+    expect(supplement.errors).toEqual([]);
+    expect(supplement.warnings.map((warning) => warning.code)).toEqual(["BASELINE_SUPPLEMENT_CHANGED"]);
+    // 改 H2 节取值 → 既有快照检出（BASELINE_DRIFT）。
+    overwrite(
+      ".pomaster/baseline/backend/architecture.md",
+      read(".pomaster/baseline/backend/architecture.md").replace("- 起步值:UNKNOWN", "- 起步值:接口 / 应用 / 领域 / 基础设施四层"),
+    );
     const drifted = await baselineGateErrors(dir);
     expect(drifted.map((e) => e.code)).toEqual(["BASELINE_DRIFT"]);
     const presentation = await readBaselineConfirmationPresentation(dir);

@@ -30,7 +30,8 @@
  *   （0.5.0 审计修复批 1 ADR-16：set --change 不再移除记录而是记在途变更批）期间
  *   同样跳过——缺席草案的重生成先终结变更批或经确认记录重建（confirm 换代）。
  * - ADR-2a（N1 同源对账）：预置 face 集 == BASELINE_CONFIRM_TARGETS 的 md 子集
- *   （22 面）——「confirm 时本文件整体 digest 快照」的 G-B 声明以结构保证兑现
+ *   （22 面）——「confirm 时本文件在确认快照内」的 G-B 声明以结构保证兑现（V2-5 起草案节
+ *   不计入权威面，确认的是 H2 节取值）
  *   （模块载入即对账，face 漂移即抛错；测试另钉逐字清单）。
  * - ADR-3 内容 = 锚定编排非发明：每条草案逐条标注来源（已播种主题文档/overlay
  *   资产的节词形，.pomaster 盘面路径词形）；来源真实性由测试全量核验
@@ -75,12 +76,16 @@ export const PRESET_DRAFT_MARKER = "PRESET-DRAFT";
 export const PRESET_DRAFT_HEADING =
   "## 预置草案（PRESET-DRAFT — Owner 确认后成为基线）";
 
-/** 草案节头「非权威」声明（G-B/宪法 §7.1 NON-AUTHORITATIVE——确认前不作判卷基线）。 */
+/**
+ * 草案节头「非权威」声明（G-B/宪法 §7.1 NON-AUTHORITATIVE）。V2-5（O7 权威面口径）起草案节
+ * 不计入 baseline 权威面：确认的是各 H2 节取值，草案改动不触发漂移。
+ */
 export const PRESET_DRAFT_PREAMBLE =
-  "> 预置草案非权威——Owner 确认前不作为判卷基线（NON-AUTHORITATIVE）。" +
+  "> 预置草案非权威——不计入基线权威面（NON-AUTHORITATIVE）。" +
   "本节由 pomaster init 依栈选型生成，内容为已播种主题文档与 overlay 资产规则行的栈化编排" +
-  "（逐条标注来源，非发明新规范）；Owner 可就地修改；`pomaster baseline confirm` 时本文件" +
-  "整体 digest 快照烙印为基线。未列入草案的节保持起步值 UNKNOWN（缺席诚实——预置只覆盖有锚定源的面）。";
+  "（逐条标注来源，非发明新规范）；Owner 可就地修改，改动不触发 BASELINE_DRIFT。要让某条成为基线，" +
+  "把取值写进对应 H2 节的「起步值」行——`pomaster baseline confirm` 确认的是各 H2 节取值。" +
+  "未列入草案的节保持起步值 UNKNOWN（缺席诚实——预置只覆盖有锚定源的面）。";
 
 /** G-D 业务边界注记小节头（仅 data/* 五面在座——业务实体/接口/数据模型零预置）。 */
 export const PRESET_DRAFT_BUSINESS_NOTE_HEADING = "### 业务边界注记（G-D：业务不预设）";

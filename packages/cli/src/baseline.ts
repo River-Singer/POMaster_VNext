@@ -226,7 +226,8 @@
 
 import { writeFile } from "node:fs/promises";
 import type { TruthIndex } from "@pomaster/kernel";
-import { GovernanceError, createStore, loadTruthIndex, sha256OfUtf8 } from "@pomaster/kernel";
+import { load as loadYaml } from "js-yaml";
+import { GovernanceError, buildStorePaths, createStore, listActiveRetirements, loadTruthIndex, sha256OfCanonical, sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
 import { casSwapFile, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
@@ -406,6 +407,22 @@ function stripTrailingComment(rawValue: string): string {
 }
 
 /**
+ * 解析用行切分（V2-3）：去文件头 BOM、去每行行尾 \r——git autocrlf 克隆与编辑器加 BOM
+ * 的基线文件照常可解析。行号与原文 split("\n") 一一对应，写侧仍按原文行改写。
+ */
+function parseLines(text: string): string[] {
+  const body = text.startsWith("\uFEFF") ? text.slice(1) : text;
+  return body.split("\n").map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
+}
+
+/** 写侧整行替换：保留原行的 \r 行尾与首行 BOM（不把 CRLF 文件改成混合换行）。 */
+function replaceLinePreservingEol(lines: string[], index: number, content: string): void {
+  const original = lines[index] ?? "";
+  const bom = index === 0 && original.startsWith("\uFEFF") ? "\uFEFF" : "";
+  lines[index] = `${bom}${content}${original.endsWith("\r") ? "\r" : ""}`;
+}
+
+/**
  * stack.yaml 行级解析（顶层 `key: value` 形态；禁块标量与重复键——解析即 fail-closed
  * 不猜测）。expectedKeys 全在座是合法基线文件的结构契约（B6d 键集）。
  */
@@ -413,7 +430,7 @@ function parseStackYaml(
   text: string,
   expectedKeys: readonly string[],
 ): StackYamlParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const values = new Map<string, string>();
   const lineOf = new Map<string, number>();
   for (let i = 0; i < lines.length; i += 1) {
@@ -744,7 +761,7 @@ function leadingSpaces(line: string): number {
  * - confirmed 块区间零触碰（pending 批条目/ack 清单与台账同域——N3 区间排除沿用）。
  */
 function parseUnknownLedger(text: string): UnknownLedgerParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const block = confirmedBlockRange(lines);
   const entries: BaselineUnknownLedgerEntry[] = [];
   let damage: string | null = null;
@@ -960,6 +977,7 @@ function stackValueResolvedAt(
 function computeBlockingSet(
   ledger: UnknownLedgerParse,
   stackValues: ReadonlyMap<BaselineLane, ReadonlyMap<string, string>>,
+  retired: ReadonlySet<string> = new Set(),
 ): BaselineBlockingJudgement {
   if (ledger.damage !== null) return { ok: false, detail: ledger.damage };
   const blocking = new Set<string>();
@@ -968,6 +986,8 @@ function computeBlockingSet(
   for (const entry of ledger.entries) {
     counts[entry.applicability] += 1;
     rowWordForms.add(entry.wordForm);
+    // 已退役（不适用）目标上的未知键不阻塞（V2-6：目标整体不在确认分母内）。
+    if (retired.has(entry.wordForm.split(":")[0] ?? entry.wordForm)) continue;
     if (
       entry.structured &&
       entry.applicability !== "BLOCKING" &&
@@ -978,6 +998,7 @@ function computeBlockingSet(
     blocking.add(entry.wordForm);
   }
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     for (const key of STACK_KEYS[lane]) {
       const wordForm = unknownsWordForm(lane, key);
       if (rowWordForms.has(wordForm)) continue; // 在册键由台账行分支判卷（settled = 行删除 ∧ 值回填）
@@ -1336,7 +1357,7 @@ export async function applyStackAnswers(
     for (const answer of laneAnswers) {
       const lineIndex = parse.parsed.lineOf.get(answer.key);
       if (lineIndex === undefined) continue; // 键集闸在上游（问卷只产在册键）；防御性跳过
-      lines[lineIndex] = `${answer.key}: ${answer.value}`;
+      replaceLinePreservingEol(lines, lineIndex, `${answer.key}: ${answer.value}`);
       applied += 1;
       stackChanged = true;
     }
@@ -1577,7 +1598,7 @@ async function baselineSetAttempt(
         ),
       );
     }
-    lines[lineIndex] = `${input.key}: ${input.value}`;
+    replaceLinePreservingEol(lines, lineIndex, `${input.key}: ${input.value}`);
     nextStack = lines.join("\n");
     // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
     // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
@@ -1725,6 +1746,14 @@ export async function runBaselineSet(
       input,
     );
   }
+  if (readRetiredBaselineTargets(rootDir).includes(baselineStackTarget(lane))) {
+    return failBaselineSet(
+      "BASELINE_TARGET_RETIRED",
+      `${baselineStackTarget(lane)} 已退役（不适用）——不在确认分母内，不接受选型写入`,
+      `该 lane 重新适用时先 pomaster baseline unretire ${baselineStackTarget(lane)} --reason <text> --by human:<owner>，再写入。`,
+      input,
+    );
+  }
   // —— R1 并发安全（ADR-21）：读-判卷-计算-提交整链文件级 CAS 事务重试环——
   // 认领到并发新世代（contended）→ 确定性退避后整链重读重算（新鲜盘面上重放
   // 全部判卷闸）；耗尽 → BASELINE_WRITE_CONFLICT 显式冲突（禁静默丢写）。串行
@@ -1866,6 +1895,24 @@ export interface BaselineConfirmedRecord {
   readonly at_seq: number;
   /** 确认资产清单的 sha256 快照（sha256OfUtf8 同口径，词形 sha256:<hex>）。 */
   readonly digests: Readonly<Record<string, string>>;
+  /**
+   * 规范化文本摘要（V2-3，baseline-text/v2：去 BOM、CRLF→LF、去行尾空白、末尾单换行）。
+   * 原始字节摘要不等而规范化摘要相等 = 只有字节形态变了（autocrlf 克隆、编辑器加 BOM），
+   * 不计漂移。缺席 = 旧记录（下一次真实确认时补写）；旧记录按 BOM / 换行变体判同。
+   */
+  readonly normalized?: Readonly<Record<string, string>>;
+  /**
+   * 逐目标确认锚（V2-4；台账 VX-WRITE-01）：该目标内容最近一次在确认中发生变化的 seq。
+   * 重确认只推进真实变化的目标，其余沿用——改 platform 不再把 frontend 的锚一起推到当前。
+   * 缺席 = 旧记录，全部目标按 at_seq 计（行为不变，直到下一次确认）。
+   */
+  readonly target_seq?: Readonly<Record<string, number>>;
+  /**
+   * 权威面摘要（V2-5，baseline-authority/v1）：md 只取 H2 节内的取值与 Owner 正文（去文件头说明、
+   * 「填写指引」行、PRESET-DRAFT 节、`## 补充` 节）；yaml 取键值（去注释、键序无关）。文本变而
+   * 权威面不变 = 补充性改动，不计漂移。缺席 = 旧记录（下一次真实确认时补写）。
+   */
+  readonly authority?: Readonly<Record<string, string>>;
   /** 手改声明标记（ADR-17 通道 2）：在座 = 上次确认为 Owner 手改声明（ack 通道）。 */
   readonly ack?: BaselineAckRecord;
   /** 在途变更批（ADR-16）：在座 = 确认记录持 pending-change（同 ref 连改批）。 */
@@ -1891,9 +1938,14 @@ export type BaselineDependencyValidation =
 
 const SHA256_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 
-/** Validate the task-scoped baseline contract without interpreting free text. */
+/**
+ * Validate the task-scoped baseline contract without interpreting free text.
+ * 划分须覆盖全部有效确认目标（V2-6：已退役目标可缺席，也可留在旧声明里——不参与判卷）；
+ * digests 快照仍逐目标齐全（确认记录对退役目标沿用确认锚 / 哨兵）。
+ */
 export function validateBaselineDependencyDeclaration(
   value: unknown,
+  retired: readonly string[] = [],
 ): BaselineDependencyValidation {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return { ok: false, details: ["baseline_dependencies 须为对象"] };
@@ -1923,7 +1975,7 @@ export function validateBaselineDependencyDeclaration(
   const allTargets = [...relevantTargets, ...excludedTargets];
   const duplicates = allTargets.filter((target, index) => allTargets.indexOf(target) !== index);
   const unknownTargets = allTargets.filter((target) => !BASELINE_CONFIRM_TARGETS.includes(target));
-  const missingTargets = BASELINE_CONFIRM_TARGETS.filter((target) => !allTargets.includes(target));
+  const missingTargets = effectiveBaselineTargets(retired).filter((target) => !allTargets.includes(target));
   if (duplicates.length > 0) details.push(`baseline 依赖分组重复目标：${[...new Set(duplicates)].join(", ")}`);
   if (unknownTargets.length > 0) details.push(`baseline 依赖分组含未知目标：${[...new Set(unknownTargets)].join(", ")}`);
   if (missingTargets.length > 0) details.push(`baseline 依赖分组未覆盖目标（仍属未评估）：${missingTargets.join(", ")}`);
@@ -1955,13 +2007,14 @@ export function buildBaselineDependencyDeclaration(
   record: BaselineConfirmedRecord,
   relevantTargets: readonly string[],
   excludedTargets: readonly string[],
+  retired: readonly string[] = [],
 ): BaselineDependencyValidation {
   return validateBaselineDependencyDeclaration({
     baseline_at_seq: record.at_seq,
     relevant_targets: [...relevantTargets],
     excluded_targets: [...excludedTargets],
     digests: record.digests,
-  });
+  }, retired);
 }
 
 /** 手改声明记录（ADR-17）：note 必填单行；files = ack 确认时点的漂移文件清单。 */
@@ -1986,6 +2039,10 @@ const CONFIRMED_KEY_LINE = /^confirmed\s*:/;
 const TOP_LEVEL_KEY_LINE = /^[A-Za-z][A-Za-z0-9_-]*\s*:/;
 const AT_SEQ_LINE = /^\s+at_seq\s*:\s*([0-9]+)\s*$/;
 const DIGESTS_HEADER_LINE = /^\s+digests\s*:$/;
+const NORMALIZED_HEADER_LINE = /^\s+normalized\s*:$/;
+const TARGET_SEQ_HEADER_LINE = /^\s+target_seq\s*:$/;
+const AUTHORITY_HEADER_LINE = /^\s+authority\s*:$/;
+const TARGET_SEQ_LINE = /^\s+(\S+)\s*:\s*([0-9]+)\s*$/;
 const DIGEST_LINE = /^\s+(\S+)\s*:\s*(sha256:[0-9a-f]{64})\s*$/;
 // —— ADR-16/17 扩展段（pending-change / ack 手改声明）——
 const PENDING_HEADER_LINE = /^\s+pending\s*:\s*$/;
@@ -2017,18 +2074,21 @@ function isKnownBatchEntry(wordForm: string): boolean {
  * 判卷面「无有效确认记录」。
  */
 function parseConfirmedBlock(text: string): ConfirmedBlockParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const range = confirmedBlockRange(lines);
   if (range === null) return { kind: "absent" };
   const { start, end } = range;
   let atSeq: number | null = null;
   const digests = new Map<string, string>();
+  let normalized: Map<string, string> | null = null;
+  let targetSeq: Map<string, number> | null = null;
+  let authority: Map<string, string> | null = null;
   let changeRef: string | null = null;
   let batch: string[] | null = null;
   let ackNote: string | null = null;
   let ackFiles: string[] | null = null;
   // 段位跟踪：root = 段头之间；pending/ack 子段与其列表位由 header 行切入。
-  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" = "root";
+  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" | "normalized" | "target_seq" | "authority" = "root";
   for (let i = start + 1; i < end; i += 1) {
     const line = lines[i] ?? "";
     if (line.trim() === "" || line.startsWith("#")) continue;
@@ -2055,6 +2115,32 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     }
     if (DIGESTS_HEADER_LINE.test(line)) {
       section = "digests";
+      continue;
+    }
+    if (NORMALIZED_HEADER_LINE.test(line)) {
+      if (normalized !== null) return { kind: "damaged", detail: "normalized 段重复" };
+      normalized = new Map<string, string>();
+      section = "normalized";
+      continue;
+    }
+    if (AUTHORITY_HEADER_LINE.test(line)) {
+      if (authority !== null) return { kind: "damaged", detail: "authority 段重复" };
+      authority = new Map<string, string>();
+      section = "authority";
+      continue;
+    }
+    if (TARGET_SEQ_HEADER_LINE.test(line)) {
+      if (targetSeq !== null) return { kind: "damaged", detail: "target_seq 段重复" };
+      targetSeq = new Map<string, number>();
+      section = "target_seq";
+      continue;
+    }
+    if (section === "target_seq") {
+      const seqEntry = TARGET_SEQ_LINE.exec(line);
+      if (seqEntry === null) return { kind: "damaged", detail: `target_seq 段内不可识别行：${line.trim()}` };
+      const path = seqEntry[1] ?? "";
+      if ((targetSeq as Map<string, number>).has(path)) return { kind: "damaged", detail: `target_seq 条目重复：${path}` };
+      (targetSeq as Map<string, number>).set(path, Number.parseInt(seqEntry[2] ?? "", 10));
       continue;
     }
     if (section === "ack" || section === "ack-files") {
@@ -2119,8 +2205,9 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     const digestMatch = DIGEST_LINE.exec(line);
     if (digestMatch !== null) {
       const path = digestMatch[1] ?? "";
-      if (digests.has(path)) return { kind: "damaged", detail: `digest 条目重复：${path}` };
-      digests.set(path, digestMatch[2] ?? "");
+      const target = section === "normalized" ? (normalized as Map<string, string>) : section === "authority" ? (authority as Map<string, string>) : digests;
+      if (target.has(path)) return { kind: "damaged", detail: `${section === "normalized" || section === "authority" ? section : "digest"} 条目重复：${path}` };
+      target.set(path, digestMatch[2] ?? "");
       continue;
     }
     return { kind: "damaged", detail: `块内不可识别行：${line.trim()}` };
@@ -2129,6 +2216,23 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const missing = BASELINE_CONFIRM_TARGETS.filter((target) => !digests.has(target));
   if (missing.length > 0) {
     return { kind: "damaged", detail: `digest 快照缺目标：${missing.join(", ")}` };
+  }
+  if (normalized !== null) {
+    const normalizedMissing = BASELINE_CONFIRM_TARGETS.filter((target) => !(normalized as Map<string, string>).has(target));
+    if (normalizedMissing.length > 0) {
+      return { kind: "damaged", detail: `normalized 快照缺目标：${normalizedMissing.join(", ")}` };
+    }
+  }
+  if (authority !== null) {
+    const authorityMissing = BASELINE_CONFIRM_TARGETS.filter((target) => !(authority as Map<string, string>).has(target));
+    if (authorityMissing.length > 0) return { kind: "damaged", detail: `authority 快照缺目标：${authorityMissing.join(", ")}` };
+  }
+  if (targetSeq !== null) {
+    const seqMap = targetSeq as Map<string, number>;
+    const seqMissing = BASELINE_CONFIRM_TARGETS.filter((target) => !seqMap.has(target));
+    if (seqMissing.length > 0) return { kind: "damaged", detail: `target_seq 缺目标：${seqMissing.join(", ")}` };
+    const ahead = BASELINE_CONFIRM_TARGETS.filter((target) => (seqMap.get(target) as number) > atSeq);
+    if (ahead.length > 0) return { kind: "damaged", detail: `target_seq 超前于 at_seq：${ahead.join(", ")}` };
   }
   // —— 子段完整性：出现即须完整（fail-closed 禁半截 pending/ack）——
   if (changeRef !== null || batch !== null) {
@@ -2142,6 +2246,15 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const record: BaselineConfirmedRecord = {
     at_seq: atSeq,
     digests: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, digests.get(target) as string])),
+    ...(normalized !== null
+      ? { normalized: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (normalized as Map<string, string>).get(target) as string])) }
+      : {}),
+    ...(targetSeq !== null
+      ? { target_seq: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (targetSeq as Map<string, number>).get(target) as number])) }
+      : {}),
+    ...(authority !== null
+      ? { authority: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (authority as Map<string, string>).get(target) as string])) }
+      : {}),
     ...(changeRef !== null && batch !== null ? { pending: { change_ref: changeRef, batch } } : {}),
     ...(ackNote !== null && ackFiles !== null ? { ack: { note: ackNote, files: ackFiles } } : {}),
   };
@@ -2161,6 +2274,21 @@ function renderConfirmedBlock(record: BaselineConfirmedRecord): string {
   }
   lines.push("  digests:");
   lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${record.digests[target]}`));
+  if (record.normalized !== undefined) {
+    const normalized = record.normalized;
+    lines.push("  normalized:");
+    lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${normalized[target]}`));
+  }
+  if (record.authority !== undefined) {
+    const authority = record.authority;
+    lines.push("  authority:");
+    lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${authority[target]}`));
+  }
+  if (record.target_seq !== undefined) {
+    const targetSeq = record.target_seq;
+    lines.push("  target_seq:");
+    lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${targetSeq[target]}`));
+  }
   lines.push("");
   return lines.join("\n");
 }
@@ -2176,8 +2304,10 @@ function removeConfirmedBlock(text: string): string {
 /** confirmed 块 upsert（移除旧块后 EOF 追加新块；换行补齐——字节级最小改写）。 */
 function upsertConfirmedBlock(text: string, record: BaselineConfirmedRecord): string {
   const stripped = removeConfirmedBlock(text);
-  const block = renderConfirmedBlock(record);
-  return stripped.endsWith("\n") ? stripped + block : `${stripped}\n${block}`;
+  // CRLF manifest（autocrlf 克隆）按原换行渲染，不产出混合换行。
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const block = renderConfirmedBlock(record).replace(/\n/g, eol);
+  return stripped.endsWith("\n") ? stripped + block : `${stripped}${eol}${block}`;
 }
 
 /** 确认时点锚（truth-index generation.seq 轻量读；缺席/不可解析 → 0 诚实缺席）。 */
@@ -2192,19 +2322,227 @@ async function readGenerationSeq(rootDir: string): Promise<number> {
   }
 }
 
-/** 确认资产清单（25 文件，ADR-20）的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
+/**
+ * baseline-text/v2 规范化（V2-3；vnext-legal-advance §3.3）：去 BOM、CRLF / CR → LF、
+ * 去行尾空白（空格 / 制表符）、去末尾空行并以单个换行结尾（空文本 → 空串）。
+ */
+export function normalizeBaselineText(text: string): string {
+  const body = (text.startsWith("\uFEFF") ? text.slice(1) : text).replace(/\r\n?/g, "\n");
+  const lines = body.split("\n").map((line) => line.replace(/[ \t]+$/, ""));
+  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  return lines.length === 0 ? "" : `${lines.join("\n")}\n`;
+}
+
+/** 旧记录（无 normalized 段）的字节变体：BOM 有 / 无 × LF / CRLF——autocrlf 克隆与编辑器加 BOM 的形态。 */
+function encodingVariants(text: string): string[] {
+  const bare = text.startsWith("\uFEFF") ? text.slice(1) : text;
+  const lf = bare.replace(/\r\n/g, "\n");
+  const crlf = lf.replace(/\n/g, "\r\n");
+  return [...new Set([bare, lf, crlf, `\uFEFF${bare}`, `\uFEFF${lf}`, `\uFEFF${crlf}`])];
+}
+
+/**
+ * baseline-authority/v1 权威面文本（V2-5；O7）：
+ * - md：自第一个 H2 起逐节保留；`## 补充…` 节与标题含 PRESET-DRAFT 的节整节剔除；节内剔除
+ *   「- 填写指引:」行与空行。无 H2 的文件不做豁免（权威面 = 规范化全文）。
+ * - yaml：解析后的键值（canonical JSON，去注释、键序无关）；解析失败不做豁免。
+ */
+export function baselineAuthorityText(target: string, text: string): string {
+  const normalized = normalizeBaselineText(text);
+  if (target.endsWith(".yaml") || target.endsWith(".yml")) {
+    try {
+      return `yaml:${sha256OfCanonical(loadYaml(normalized) ?? null)}`;
+    } catch {
+      return normalized;
+    }
+  }
+  const lines = normalized.split("\n");
+  const first = lines.findIndex((line) => line.startsWith("## "));
+  if (first < 0) return normalized;
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of lines.slice(first)) {
+    if (line.startsWith("## ")) {
+      const heading = line.slice(3).trim();
+      skipping = heading.startsWith("补充") || heading.includes("PRESET-DRAFT");
+      if (!skipping) kept.push(line);
+      continue;
+    }
+    if (skipping || line.trim() === "" || /^\s*-\s*填写指引\s*[:：]/.test(line)) continue;
+    kept.push(line);
+  }
+  return kept.join("\n");
+}
+
+/**
+ * 单目标判卷：字节相等 match；只有字节形态变了 bytes-only；文本变而权威面不变 supplement
+ * （两者都不计漂移、不推进 target_seq）；其余 drift。
+ */
+export type BaselineTargetJudgement = "match" | "bytes-only" | "supplement" | "drift";
+
+export function judgeBaselineTargetText(
+  record: BaselineConfirmedRecord,
+  target: string,
+  text: string,
+): BaselineTargetJudgement {
+  const stored = record.digests[target];
+  if (sha256OfUtf8(text) === stored) return "match";
+  const normalized = record.normalized?.[target];
+  if (normalized !== undefined) {
+    if (sha256OfUtf8(normalizeBaselineText(text)) === normalized) return "bytes-only";
+  } else if (encodingVariants(text).some((variant) => sha256OfUtf8(variant) === stored)) {
+    return "bytes-only";
+  }
+  const authority = record.authority?.[target];
+  if (authority !== undefined && sha256OfUtf8(baselineAuthorityText(target, text)) === authority) return "supplement";
+  return "drift";
+}
+
+interface ConfirmSnapshot {
+  readonly digests: Readonly<Record<string, string>>;
+  readonly normalized: Readonly<Record<string, string>>;
+  readonly authority: Readonly<Record<string, string>>;
+  readonly texts: Readonly<Record<string, string>>;
+}
+
+/** 确认资产清单（25 文件，ADR-20）的现盘快照（原始字节 + 规范化摘要）；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
 async function computeConfirmDigests(
   rootDir: string,
-): Promise<{ readonly ok: true; readonly digests: Readonly<Record<string, string>> } | { readonly ok: false; readonly error: CliError }> {
+  retired: ReadonlySet<string> = new Set(),
+  previous?: BaselineConfirmedRecord,
+): Promise<({ readonly ok: true } & ConfirmSnapshot) | { readonly ok: false; readonly error: CliError }> {
   const digests: Record<string, string> = {};
+  const normalized: Record<string, string> = {};
+  const authority: Record<string, string> = {};
+  const texts: Record<string, string> = {};
   for (const target of BASELINE_CONFIRM_TARGETS) {
+    if (retired.has(target)) {
+      // 已退役目标（V2-6）：不读文件、不要求在座。上一记录的确认锚原样沿用（Owner 确认过的
+      // 内容）；从未确认过 → 退役哨兵（永不等于真实文件，撤销退役后必经重确认）。
+      const sentinel = retiredTargetSentinel(target);
+      const carried = previous?.digests[target];
+      digests[target] = carried ?? sentinel;
+      normalized[target] = carried !== undefined ? (previous?.normalized?.[target] ?? sentinel) : sentinel;
+      authority[target] = carried !== undefined ? (previous?.authority?.[target] ?? sentinel) : sentinel;
+      texts[target] = "";
+      continue;
+    }
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       return { ok: false, error: baselineFileError(target, file) };
     }
     digests[target] = sha256OfUtf8(file.text);
+    normalized[target] = sha256OfUtf8(normalizeBaselineText(file.text));
+    authority[target] = sha256OfUtf8(baselineAuthorityText(target, file.text));
+    texts[target] = file.text;
   }
-  return { ok: true, digests };
+  return { ok: true, digests, normalized, authority, texts };
+}
+
+/**
+ * 重确认写入的摘要：只有字节形态变化的目标沿用旧摘要（确认身份不因换行 / BOM 变化而变——
+ * 任务 baseline_dependencies 与证据基线快照里记的旧摘要继续有效）；其余目标取现盘快照。
+ */
+function reconfirmDigests(
+  previous: BaselineConfirmedRecord,
+  snapshot: ConfirmSnapshot,
+  carried: ReadonlyMap<string, "bytes-only" | "supplement">,
+  drifted: ReadonlySet<string>,
+  atSeq: number,
+): Pick<BaselineConfirmedRecord, "digests" | "normalized" | "authority" | "target_seq"> {
+  const previousSeq = baselineTargetSeq(previous);
+  return {
+    // 只有字节 / 补充性变化的目标沿用旧原始摘要（确认身份不变）；补充性变化另沿用旧规范化摘要，
+    // 使之后的判卷仍归 supplement 而不误报 bytes-only。
+    digests: Object.fromEntries(
+      BASELINE_CONFIRM_TARGETS.map((target) => [target, carried.has(target) ? previous.digests[target] : snapshot.digests[target]]),
+    ) as Record<string, string>,
+    normalized: Object.fromEntries(
+      BASELINE_CONFIRM_TARGETS.map((target) => [
+        target,
+        carried.get(target) === "supplement" ? (previous.normalized?.[target] ?? snapshot.normalized[target]) : snapshot.normalized[target],
+      ]),
+    ) as Record<string, string>,
+    authority: snapshot.authority,
+    // 逐目标锚（V2-4）：只推进内容真实变化（drift）的目标。
+    target_seq: Object.fromEntries(
+      BASELINE_CONFIRM_TARGETS.map((target) => [target, drifted.has(target) ? atSeq : Math.min(previousSeq[target] as number, atSeq)]),
+    ),
+  };
+}
+
+/** 逐目标确认锚（V2-4）：记录缺 target_seq 段（旧记录）→ 全部目标按 at_seq。 */
+export function baselineTargetSeq(record: BaselineConfirmedRecord): Readonly<Record<string, number>> {
+  return Object.fromEntries(
+    BASELINE_CONFIRM_TARGETS.map((target) => [target, record.target_seq?.[target] ?? record.at_seq]),
+  );
+}
+
+/**
+ * 任务 baseline 范围的 lane 词形（V2-4；kernel 局部词 TODO(vocab-pr)）：确认目标按目录
+ * 归 lane（baseline/<lane>/…；design-tokens 在 frontend 目录下随 frontend）。platform 只在
+ * 显式列出时相关（O6）。
+ */
+export const BASELINE_SCOPE_LANES = ["frontend", "backend", "data", "platform"] as const;
+export type BaselineScopeLane = (typeof BASELINE_SCOPE_LANES)[number];
+
+/**
+ * lane 集 → 相关 / 排除确认目标（二者划分全部有效确认目标）。已退役目标（V2-6）两边都不列：
+ * 撤销退役后旧声明因未覆盖该目标而判 BASELINE_SCOPE_MALFORMED，迫使任务重评估（fail-closed）。
+ */
+export function baselineTargetsForLanes(
+  lanes: readonly BaselineScopeLane[],
+  retired: readonly string[] = [],
+): {
+  readonly relevant: readonly string[];
+  readonly excluded: readonly string[];
+} {
+  const selected = new Set(lanes);
+  const effective = effectiveBaselineTargets(retired);
+  const relevant = effective.filter((target) =>
+    BASELINE_SCOPE_LANES.some((lane) => selected.has(lane) && target.startsWith(`baseline/${lane}/`)),
+  );
+  return { relevant, excluded: effective.filter((target) => !relevant.includes(target)) };
+}
+
+// ============================================================
+// 确认目标不适用退役（V2-6；台账 VX-WRITE-06）
+// ============================================================
+
+/** 退役台账种类（kernel RETIREMENT_KINDS 之一）。 */
+export const BASELINE_TARGET_RETIREMENT_KIND = "baseline_target_not_applicable" as const;
+
+/** 已退役目标的确认哨兵摘要（从未在退役前确认过的目标；永不等于真实文件内容）。 */
+function retiredTargetSentinel(target: string): string {
+  return sha256OfUtf8(`pomaster:baseline-target-retired:${target}`);
+}
+
+/** lane 的 stack.yaml 确认目标词形。 */
+function baselineStackTarget(lane: BaselineLane): string {
+  return `baseline/${lane}/stack.yaml`;
+}
+
+/**
+ * 当前已退役（不适用）的确认目标，按确认清单序（V2-6）。台账缺席 = 空；台账损坏 = 空——
+ * 更严方向（目标照常进确认 / 漂移 / 范围分母），kernel 写路径另对损坏台账 fail-closed。
+ */
+export function readRetiredBaselineTargets(rootDir: string): readonly string[] {
+  let retired: ReadonlySet<string>;
+  try {
+    retired = new Set(
+      listActiveRetirements(buildStorePaths(rootDir), { kind: BASELINE_TARGET_RETIREMENT_KIND }).map((entry) => entry.id),
+    );
+  } catch {
+    return [];
+  }
+  return BASELINE_CONFIRM_TARGETS.filter((target) => retired.has(target));
+}
+
+/** 有效确认目标 = 全部确认目标 − 已退役。 */
+export function effectiveBaselineTargets(retired: readonly string[]): readonly string[] {
+  if (retired.length === 0) return BASELINE_CONFIRM_TARGETS;
+  const set = new Set(retired);
+  return BASELINE_CONFIRM_TARGETS.filter((target) => !set.has(target));
 }
 
 // ============================================================
@@ -2334,11 +2672,15 @@ export async function runBaselineConfirm(
     return failBaselineConfirm(error.code, error.message, error.hint, -1);
   }
   const unknownsRemaining = countUnknownEntries(manifestFile.text);
+  // 已退役（不适用）目标（V2-6）：不进阻塞集、不读文件、不计漂移。
+  const retiredTargets = readRetiredBaselineTargets(rootDir);
+  const retired = new Set(retiredTargets);
   // —— 2. 前提判卷：阻塞集（P-C1/ADR-18——settled/exempt/blocking 公式单一实现，
   //      双重销账契约不变；台账双词形解析，形状损坏显式 INVALID_STATE 禁静默）——
   const ledger = parseUnknownLedger(manifestFile.text);
   const stackValuesByLane = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     const stackRelative = baselineStackRelative(lane);
     const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
     if (stackFile.kind !== "ok") {
@@ -2356,7 +2698,7 @@ export async function runBaselineConfirm(
     }
     stackValuesByLane.set(lane, parse.parsed.values);
   }
-  const blockingJudgement = computeBlockingSet(ledger, stackValuesByLane);
+  const blockingJudgement = computeBlockingSet(ledger, stackValuesByLane, retired);
   if (!blockingJudgement.ok) {
     return failBaselineConfirm(
       "INVALID_STATE",
@@ -2383,13 +2725,14 @@ export async function runBaselineConfirm(
       unknownsRemaining,
     );
   }
-  // —— 3. 快照：25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）——
-  const snapshot = await computeConfirmDigests(rootDir);
+  // —— 3. 快照：25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照；已退役目标沿用
+  //      上一确认锚或记退役哨兵——V2-6）——
+  const existing = parseConfirmedBlock(manifestFile.text);
+  const snapshot = await computeConfirmDigests(rootDir, retired, existing.kind === "ok" ? existing.record : undefined);
   if (!snapshot.ok) {
     return failBaselineConfirm(snapshot.error.code, snapshot.error.message, snapshot.error.hint, unknownsRemaining);
   }
   // —— 4. 分叉：初次确认 vs 三态重确认（ADR-16/17）——
-  const existing = parseConfirmedBlock(manifestFile.text);
   if (existing.kind !== "ok") {
     // 初次确认（含损坏块修复）：任何通道旗标都未被消费 → 诚实拒绝静默旗标。
     if (input.change !== undefined) {
@@ -2408,15 +2751,31 @@ export async function runBaselineConfirm(
         unknownsRemaining,
       );
     }
+    const initialSeq = await readGenerationSeq(rootDir);
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
+      at_seq: initialSeq,
       digests: snapshot.digests,
+      normalized: snapshot.normalized,
+      authority: snapshot.authority,
+      target_seq: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, initialSeq])),
     }, snapshot.digests, unknownsRemaining, undefined);
   }
   const record = existing.record;
-  const mismatched = BASELINE_CONFIRM_TARGETS.filter(
-    (target) => record.digests[target] !== snapshot.digests[target],
+  const judgements = new Map(
+    BASELINE_CONFIRM_TARGETS.map((target) => [
+      target,
+      retired.has(target) ? "match" : judgeBaselineTargetText(record, target, snapshot.texts[target] ?? ""),
+    ]),
   );
+  const mismatched = BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "drift");
+  const bytesOnly = new Set(BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "bytes-only"));
+  const supplement = new Set(BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "supplement"));
+  const carried = new Map<string, "bytes-only" | "supplement">([
+    ...[...bytesOnly].map((target) => [target, "bytes-only"] as const),
+    ...[...supplement].map((target) => [target, "supplement"] as const),
+  ]);
+  const reconfirmSeq = await readGenerationSeq(rootDir);
+  const rewritten = reconfirmDigests(record, snapshot, carried, new Set(mismatched), reconfirmSeq);
   const pending = record.pending;
   const pendingBatchFiles = new Set(
     (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
@@ -2453,7 +2812,7 @@ export async function runBaselineConfirm(
       at_seq: record.at_seq,
       digests: BASELINE_CONFIRM_TARGETS.map((target) => ({
         file: target,
-        sha256: snapshot.digests[target] as string,
+        sha256: record.digests[target] as string,
       })),
       unknowns_remaining: unknownsRemaining,
       files: [{ file: BASELINE_MANIFEST_RELATIVE, action: "unchanged" }],
@@ -2461,6 +2820,12 @@ export async function runBaselineConfirm(
     return okOutcome("baseline confirm", result, [
       `baseline confirm: NO_CHANGE（已确认且 digest 无漂移——幂等零写入；at_seq=${record.at_seq}）`,
       `  unchanged ${BASELINE_MANIFEST_RELATIVE}（confirmed 记录在座）`,
+      ...(bytesOnly.size > 0
+        ? [`  bytes-only（只有 BOM / 换行 / 行尾空白变化，不计漂移）：${[...bytesOnly].join("、")}`]
+        : []),
+      ...(supplement.size > 0
+        ? [`  supplement（只有补充节 / 填写指引 / 草案节变化，权威取值未变，不计漂移）：${[...supplement].join("、")}`]
+        : []),
       `  unknowns remaining: ${unknownsRemaining}`,
     ]);
   }
@@ -2495,9 +2860,9 @@ export async function runBaselineConfirm(
     }
     // 消费变更批 → 全量重快照（pending/ack 清除——本次确认通道 = 治理通路）。
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
-      digests: snapshot.digests,
-    }, snapshot.digests, unknownsRemaining, undefined);
+      at_seq: reconfirmSeq,
+      ...rewritten,
+    }, rewritten.digests, unknownsRemaining, undefined);
   }
   // —— state === "drifted"：三通道判卷（裸拒绝 / --change 覆盖 / --ack-drifted 声明）——
   if (input.change === undefined && input.ackDrifted !== true) {
@@ -2514,9 +2879,9 @@ export async function runBaselineConfirm(
       return failBaselineConfirm(changeError.code, changeError.message, changeError.hint, unknownsRemaining);
     }
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
-      digests: snapshot.digests,
-    }, snapshot.digests, unknownsRemaining, undefined);
+      at_seq: reconfirmSeq,
+      ...rewritten,
+    }, rewritten.digests, unknownsRemaining, undefined);
   }
   // —— 通道 2：Owner 手改声明（note 已过必配闸；journal 留痕先于 manifest 落盘）——
   const note = normalizeAckNote(input.note ?? "");
@@ -2528,7 +2893,7 @@ export async function runBaselineConfirm(
       unknownsRemaining,
     );
   }
-  const atSeq = await readGenerationSeq(rootDir);
+  const atSeq = reconfirmSeq;
   const journalError = await appendBaselineAckJournalEvent(rootDir, {
     seq: atSeq,
     drifted_files: [...mismatched],
@@ -2539,9 +2904,9 @@ export async function runBaselineConfirm(
   }
   return writeConfirmedRecord(rootDir, manifestFile.text, {
     at_seq: atSeq,
-    digests: snapshot.digests,
+    ...rewritten,
     ack: { note, files: [...mismatched] },
-  }, snapshot.digests, unknownsRemaining, { note, files: [...mismatched] });
+  }, rewritten.digests, unknownsRemaining, { note, files: [...mismatched] });
 }
 
 /** confirmed 块落盘 + CONFIRMED 信封（初次确认/三通道重确认共用同一写通路）。 */
@@ -2600,6 +2965,12 @@ export type BaselineConfirmationRead =
       readonly unknowns_remaining: number;
       /** 漂移目标（结构化：缺席/不可读带注记词——呈现层渲染）。 */
       readonly mismatches: readonly { readonly target: string; readonly note: "缺席" | "不可读" | null }[];
+      /** 只有字节形态变化的目标（BOM / 换行 / 行尾空白；V2-3）——不计漂移，呈现为 warning。 */
+      readonly bytes_only: readonly string[];
+      /** 文本变而权威面不变的目标（补充节 / 填写指引 / 草案节；V2-5）——不计漂移，呈现为 warning。 */
+      readonly supplement: readonly string[];
+      /** 已退役（不适用）目标（V2-6）：不读文件、不计漂移；按确认清单序。 */
+      readonly retired: readonly string[];
       readonly state: "confirmed" | "pending-change" | "drifted";
     };
 
@@ -2629,29 +3000,34 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
     };
   }
   const mismatches: { target: string; note: "缺席" | "不可读" | null }[] = [];
-  for (const target of BASELINE_CONFIRM_TARGETS) {
+  const bytesOnly: string[] = [];
+  const supplement: string[] = [];
+  const retired = readRetiredBaselineTargets(rootDir);
+  for (const target of effectiveBaselineTargets(retired)) {
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       mismatches.push({ target, note: file.kind === "absent" ? "缺席" : "不可读" });
       continue;
     }
-    if (sha256OfUtf8(file.text) !== parsed.record.digests[target]) {
-      mismatches.push({ target, note: null });
-    }
+    const judgement = judgeBaselineTargetText(parsed.record, target, file.text);
+    if (judgement === "drift") mismatches.push({ target, note: null });
+    else if (judgement === "bytes-only") bytesOnly.push(target);
+    else if (judgement === "supplement") supplement.push(target);
   }
   const pending = parsed.record.pending;
+  // 在途批只在与有效目标相交时生效（V2-6：退役目标上的批条目不阻断）。
   const pendingBatchFiles = new Set(
-    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry).filter((target) => !retired.includes(target)),
   );
   const state: "confirmed" | "pending-change" | "drifted" =
-    pending === undefined
+    pending === undefined || pendingBatchFiles.size === 0
       ? mismatches.length > 0
         ? "drifted"
         : "confirmed"
       : mismatches.every((mismatch) => pendingBatchFiles.has(mismatch.target))
         ? "pending-change"
         : "drifted";
-  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, state };
+  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, bytes_only: bytesOnly, supplement, retired, state };
 }
 
 /**
@@ -2682,7 +3058,7 @@ export async function baselineGateAssessment(
   dependency?: BaselineDependencyDeclaration,
 ): Promise<BaselineGateAssessment> {
   if (dependency !== undefined) {
-    const validation = validateBaselineDependencyDeclaration(dependency);
+    const validation = validateBaselineDependencyDeclaration(dependency, readRetiredBaselineTargets(rootDir));
     if (!validation.ok) {
       return {
         errors: [
@@ -2737,6 +3113,26 @@ export async function baselineGateAssessment(
     };
   }
 
+  const bytesOnlyWarnings: CliWarning[] = [
+    ...(read.bytes_only.length > 0
+      ? [
+          {
+            code: "BASELINE_BYTES_ONLY_CHANGE",
+            message: `baseline 资产只有字节形态变化（BOM / 换行 / 行尾空白），不计漂移：${read.bytes_only.join("、")}`,
+            hint: "常见于 git autocrlf 克隆或编辑器保存；内容未变，无需重确认。",
+          },
+        ]
+      : []),
+    ...(read.supplement.length > 0
+      ? [
+          {
+            code: "BASELINE_SUPPLEMENT_CHANGED",
+            message: `baseline 资产只有补充性内容变化（「## 补充」节 / 填写指引 / PRESET-DRAFT 草案节），权威取值未变，不计漂移：${read.supplement.join("、")}`,
+            hint: "补充节是给 Agent 的说明，不是确认过的决策；要改取值请在对应 H2 节内修改并走 baseline 治理通路（--change 或 --ack-drifted）。",
+          },
+        ]
+      : []),
+  ];
   if (dependency === undefined) {
     if (read.state === "pending-change") {
       return {
@@ -2762,15 +3158,16 @@ export async function baselineGateAssessment(
             hint: '重确认三通道取一：pomaster baseline confirm --change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）——裸重确认拒绝。',
           },
         ],
-        warnings: [],
+        warnings: bytesOnlyWarnings,
       };
     }
-    return { errors: [], warnings: [] };
+    return { errors: [], warnings: bytesOnlyWarnings };
   }
 
-  const relevant = new Set(dependency.relevant_targets);
+  // 已退役目标（V2-6）不参与任务判卷：旧声明里列为相关也不再计入。
+  const relevant = new Set(dependency.relevant_targets.filter((target) => !read.retired.includes(target)));
   const excluded = new Set(dependency.excluded_targets);
-  const warnings: CliWarning[] = [];
+  const warnings: CliWarning[] = [...bytesOnlyWarnings];
   const errors: CliError[] = [];
   const historicalRelated = BASELINE_CONFIRM_TARGETS.filter(
     (target) => relevant.has(target) && dependency.digests[target] !== read.record.digests[target],
@@ -2778,7 +3175,7 @@ export async function baselineGateAssessment(
   const currentRelated = read.mismatches.filter((mismatch) => relevant.has(mismatch.target));
   const currentExcluded = read.mismatches.filter((mismatch) => excluded.has(mismatch.target));
   const pendingTargets = new Set(
-    (read.record.pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+    (read.record.pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry).filter((target) => !read.retired.includes(target)),
   );
   const relatedPending = [...pendingTargets].filter((target) => relevant.has(target));
   const excludedPending = [...pendingTargets].filter((target) => excluded.has(target));
@@ -2787,7 +3184,7 @@ export async function baselineGateAssessment(
     errors.push({
       code: "BASELINE_DRIFT",
       message: `任务相关 baseline 资产在范围确认后重新确认或发生变化：${historicalRelated.join(", ")}——任务声明的历史 digest 已失效`,
-      hint: "重新评估任务 baseline_dependencies，或在相关基线稳定后重新验证证据；不能用无关文件的 Owner ack 覆盖相关变化。",
+      hint: "相关基线已合法变更：pomaster task reassess-baseline <TASK> --lanes <…> --reason <…> --by <type:name> 重评估范围（同事务写 ADVANCE），再按输出对受影响 claim 走 record requalify；不能用无关文件的 Owner ack 覆盖相关变化。",
     });
   }
   if (currentRelated.length > 0) {
@@ -2808,7 +3205,7 @@ export async function baselineGateAssessment(
     warnings.push({
       code: "BASELINE_DRIFT_OUT_OF_SCOPE",
       message: `baseline 漂移落在任务明确排除的资产上，未阻断本任务：${currentExcluded.map((mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`).join("、")}`,
-      hint: "该变化仍保留在全局 baseline/status 观察面；若任务影响面扩大，请更新 baseline_dependencies 并重新评估。",
+      hint: "该变化仍保留在全局 baseline/status 观察面；若任务影响面扩大，用 pomaster task reassess-baseline <TASK> 重评估范围。",
     });
   }
   if (excludedPending.length > 0) {
@@ -2860,6 +3257,8 @@ export interface BaselineConfirmationPresentation {
   readonly pending_change?: { readonly change_ref: string; readonly batch: readonly string[] };
   /** 手改声明（ADR-17）：记录持 ack 段时呈现——上次确认为 Owner 手改声明。 */
   readonly ack?: { readonly note: string; readonly files: readonly string[] };
+  /** 已退役（不适用）目标（V2-6）：非空时呈现（确认 / 漂移 / 阻塞分母之外）。 */
+  readonly retired_targets?: readonly string[];
 }
 
 /**
@@ -2877,13 +3276,15 @@ export async function readBaselineBlockingPresentation(
 }> {
   const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
   if (manifestFile.kind !== "ok") return { remaining: null };
+  const retired = new Set(readRetiredBaselineTargets(rootDir));
   const stackValues = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
+    if (retired.has(baselineStackTarget(lane))) continue;
     const loaded = await loadLaneStackValues(rootDir, lane);
     if (!loaded.ok) return { remaining: null };
     stackValues.set(lane, loaded.values);
   }
-  const judgement = computeBlockingSet(parseUnknownLedger(manifestFile.text), stackValues);
+  const judgement = computeBlockingSet(parseUnknownLedger(manifestFile.text), stackValues, retired);
   if (!judgement.ok) return { remaining: null };
   return { remaining: judgement.blocking.length, applicability_summary: judgement.applicability_counts };
 }
@@ -2905,12 +3306,14 @@ export async function readBaselineConfirmationPresentation(
       : {}),
   };
   if (read.kind === "record-invalid") {
+    const retired = readRetiredBaselineTargets(rootDir);
     return {
       state: "unconfirmed",
       unknowns_remaining: read.unknowns_remaining,
       ...blockingFields,
       at_seq: null,
       drifted_files: [],
+      ...(retired.length > 0 ? { retired_targets: retired } : {}),
     };
   }
   const driftedFiles = read.mismatches.map(
@@ -2926,14 +3329,17 @@ export async function readBaselineConfirmationPresentation(
       ? { pending_change: { change_ref: read.record.pending.change_ref, batch: read.record.pending.batch } }
       : {}),
     ...(read.record.ack !== undefined ? { ack: read.record.ack } : {}),
+    ...(read.retired.length > 0 ? { retired_targets: read.retired } : {}),
   };
 }
 
 /** 确认态呈现 human 行词形（doctor/status 共用——单一实现禁两套口径漂移）。 */
 export function baselineConfirmationHumanLine(presentation: BaselineConfirmationPresentation): string {
+  const retired = presentation.retired_targets ?? [];
   const unknowns =
     `unknowns remaining: ${presentation.unknowns_remaining}` +
-    (presentation.blocking_remaining === null ? "（阻塞 不可判）" : `（阻塞 ${presentation.blocking_remaining}）`);
+    (presentation.blocking_remaining === null ? "（阻塞 不可判）" : `（阻塞 ${presentation.blocking_remaining}）`) +
+    (retired.length > 0 ? `；已退役（不适用）${retired.length} 个目标：${retired.join("、")}` : "");
   if (presentation.state === "confirmed") {
     const ackNote =
       presentation.ack !== undefined

@@ -7,7 +7,8 @@
  *   表达 allow/deny（非 allow 一律非零，由 runCli 的 runs.every(ok) 规则统一收敛）。
  * - 严格是判卷器，不是写入器：不读、不写、不移动目标文件（context.file_path 只是
  *   回显，连路径存在性都不查）；不调 applyTransaction、不改 store 状态（唯一例外：
- *   checkPermit 对过期许可追加 PERMIT_EXPIRED_OBSERVED journal 事件——kernel 契约
+ *   checkPermit 对过期许可追加 PERMIT_EXPIRED_OBSERVED journal 事件（同一许可的同一到期点只记
+ *   一次，kernel 按 journal 去重，V2-1）——kernel 契约
  *   行为，设计 §1.5/§2.6 已披露，不在 CLI 预检去重）；判卷输入只有三元组
  *   (permit_ref, id, op)——文件内容盲（path→governed id 绑定解析归 harness 侧与
  *   未来 binding-table 砖，P0 不做、不冒充）。

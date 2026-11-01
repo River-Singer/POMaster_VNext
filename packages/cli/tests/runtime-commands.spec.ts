@@ -25,6 +25,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   attachSession,
   beginExecution,
+  issuePermit,
   listSessionRecords,
   pathsOf,
   readExecutionRecordById,
@@ -32,6 +33,7 @@ import {
   type Store,
 } from "@pomaster/kernel";
 import {
+  runExecutionAttachPermit,
   runExecutionBegin,
   runExecutionEnd,
   runExecutionHandoff,
@@ -564,3 +566,43 @@ function unitHashSuffix(): string {
   const hex = digest.startsWith("sha256:") ? digest.slice("sha256:".length) : digest;
   return hex.slice(0, 6);
 }
+
+describe("execution attach-permit（V2-2；VX-WRITE-07）", () => {
+  it("在途执行追加许可 → ATTACHED；重复 → NO_CHANGE；封口后 → EXECUTION_ALREADY_ENDED", async () => {
+    const permit = await issuePermit(store, {
+      subjectIds: ["PAGE.DASHBOARD" as never],
+      requestedBy: { actorType: "human", actor: "owner", selfAttested: false },
+    });
+    const begun = await runExecutionBegin(root, { role: "implementer", runtime: "claude-code", identityKind: "interactive" });
+    const executionId = begun.result.execution_id;
+    const attached = await runExecutionAttachPermit(root, executionId, {
+      permit: permit.permitRef,
+      actor: "human:owner",
+      reason: "导出功能需要仪表盘写权",
+    });
+    expect(attached.ok).toBe(true);
+    expect(attached.result).toEqual({
+      execution_id: executionId,
+      permit_ref: permit.permitRef,
+      change: "ATTACHED",
+      permit_ids: [permit.permitRef],
+      event_seq: 0,
+    });
+    expect(readExecutionRecordById(pathsOf(store), executionId)?.permit_ids).toEqual([permit.permitRef]);
+    const again = await runExecutionAttachPermit(root, executionId, { permit: permit.permitRef, actor: "human:owner", reason: "重复" });
+    expect(again.result.change).toBe("NO_CHANGE");
+    await runExecutionEnd(root, executionId);
+    const ended = await runExecutionAttachPermit(root, executionId, { permit: permit.permitRef, actor: "human:owner", reason: "补挂" });
+    expect(ended.ok).toBe(false);
+    expect(ended.errors[0]?.code).toBe("EXECUTION_ALREADY_ENDED");
+  });
+
+  it("词形 / actor / reason 前置校验 fail-closed", async () => {
+    const badId = await runExecutionAttachPermit(root, "AGX-1", { permit: "PERMIT.X.1", actor: "human:owner", reason: "x" });
+    expect(badId.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const badActor = await runExecutionAttachPermit(root, "AGX-2026-00001", { permit: "PERMIT.X.1", actor: "owner", reason: "x" });
+    expect(badActor.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const noReason = await runExecutionAttachPermit(root, "AGX-2026-00001", { permit: "PERMIT.X.1", actor: "human:owner", reason: "" });
+    expect(noReason.errors[0]?.code).toBe("SCHEMA_INVALID");
+  });
+});

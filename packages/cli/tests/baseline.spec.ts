@@ -91,7 +91,8 @@ import {
   type StackAnswer,
 } from "@pomaster/cli";
 import { seedsRootCandidates } from "../src/seed-manifest.js";
-import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET } from "../src/baseline.js";
+import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET, baselineAuthorityText, baselineTargetSeq, baselineTargetsForLanes, normalizeBaselineText } from "../src/baseline.js";
+import { PRESET_DRAFT_HEADING } from "../src/baseline-preset.js";
 import { readDesignTokens } from "../src/baseline-tokens.js";
 import { INTERACTIVE_BACKSPACE_KEY } from "../src/interactive-keys.js";
 import type { CliError } from "../src/envelope.js";
@@ -880,7 +881,7 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
     expect(human.join("\n")).toContain("pomaster baseline set --lane <frontend|backend>");
   });
 
-  it("baseline set 命令面：正向 exit 0；非法 lane --json exit 1 SCHEMA_INVALID；注册表 baseline 子命令恰 set", async () => {
+  it("baseline set 命令面：正向 exit 0；非法 lane --json exit 1 SCHEMA_INVALID；注册表 baseline 子命令恰 set/confirm/retire/unretire（retire/unretire = V2-6）", async () => {
     await runInit(dir);
     const lines: string[] = [];
     const code = await runCli(
@@ -909,7 +910,7 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
 
     const program = createProgram();
     const baselineCommand = program.commands.find((command) => command.name() === "baseline");
-    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set", "confirm"]);
+    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set", "confirm", "retire", "unretire"]);
   });
 
   it("baseline confirm 命令面：未销账完 exit 1 BASELINE_UNKNOWNS_REMAINING；全销账 exit 0 CONFIRMED；--json 信封词形", async () => {
@@ -2329,5 +2330,306 @@ describe("P-C1 阻塞集确认契约（unknowns 台账双词形 + confirm 阻塞
     const outcome = await runBaselineConfirm(dir);
     expect(outcome.ok).toBe(true);
     expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// baseline 摘要 v2：只有字节形态变化不计漂移（V2-3；VX-WRITE-06）
+// ============================================================
+
+describe("baseline 摘要 v2：BOM / 换行 / 行尾空白不计漂移（V2-3）", () => {
+  const ARCH = "baseline/frontend/architecture.md";
+  const STACK = "baseline/frontend/stack.yaml";
+  const archPath = (): string => join(dir, ".pomaster", ARCH);
+  const stackPath = (): string => join(dir, ".pomaster", STACK);
+  const rewrite = (path: string, transform: (text: string) => string): void => {
+    writeFileSync(path, transform(readFileSync(path, "utf8")), "utf8");
+  };
+  /** 去掉 confirmed 块里 V2-3 起新增的 normalized / authority 段，模拟之前写下的旧记录。 */
+  const stripNormalizedSection = (): void => {
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    let lines = readFileSync(manifest, "utf8").split("\n");
+    for (const header of ["  normalized:", "  authority:"]) {
+      const start = lines.indexOf(header);
+      expect(start).toBeGreaterThan(0);
+      let end = start + 1;
+      while (end < lines.length && /^\s{4}\S/.test(lines[end] ?? "")) end += 1;
+      lines = [...lines.slice(0, start), ...lines.slice(end)];
+    }
+    writeFileSync(manifest, lines.join("\n"), "utf8");
+  };
+
+  it("normalizeBaselineText：去 BOM、CRLF / CR → LF、去行尾空白、末尾单换行", () => {
+    expect(normalizeBaselineText("\uFEFF# 标题  \r\n正文\t\r\n\r\n\r\n")).toBe("# 标题\n正文\n");
+    expect(normalizeBaselineText("a\rb")).toBe("a\nb\n");
+    expect(normalizeBaselineText("")).toBe("");
+    expect(normalizeBaselineText("\n\n")).toBe("");
+    expect(normalizeBaselineText("  缩进保留\n")).toBe("  缩进保留\n");
+  });
+
+  it("confirm 写入 normalized 段；autocrlf 克隆（LF → CRLF）不计漂移：confirmed + BASELINE_BYTES_ONLY_CHANGE warning，重确认 NO_CHANGE", async () => {
+    await buildConfirmedProject(dir);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("  normalized:");
+    rewrite(archPath(), (text) => text.replace(/\n/g, "\r\n"));
+    rewrite(stackPath(), (text) => text.replace(/\n/g, "\r\n"));
+
+    const confirmation = await readBaselineConfirmation(dir);
+    expect(confirmation.kind).toBe("record-valid");
+    if (confirmation.kind !== "record-valid") return;
+    expect(confirmation.state).toBe("confirmed");
+    expect(confirmation.mismatches).toEqual([]);
+    expect([...confirmation.bytes_only].sort()).toEqual([ARCH, STACK].sort());
+
+    const gate = await baselineGateAssessment(dir);
+    expect(gate.errors).toEqual([]);
+    expect(gate.warnings).toEqual([expect.objectContaining({ code: "BASELINE_BYTES_ONLY_CHANGE" })]);
+
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const replay = await runBaselineConfirm(dir);
+    expect(replay.result.change).toBe("NO_CHANGE");
+    expect(replay.human.join("\n")).toContain("bytes-only");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("加 BOM、改行尾空白、补末尾空行 → 不计漂移；改一个取值字符 → 照旧 BASELINE_DRIFT", async () => {
+    await buildConfirmedProject(dir);
+    rewrite(archPath(), (text) => `\uFEFF${text.replace(/\n/, "   \n")}\n\n`);
+    expect((await baselineGateErrors(dir))).toEqual([]);
+
+    rewrite(stackPath(), (text) => text.replace("framework-value", "framework-changed"));
+    const errors = await baselineGateErrors(dir);
+    expect(errors).toEqual([expect.objectContaining({ code: "BASELINE_DRIFT" })]);
+    expect(errors[0]?.message).toContain(STACK);
+    expect(errors[0]?.message).not.toContain(ARCH);
+  });
+
+  it("旧记录（无 normalized 段）：BOM / 换行变体仍判同；行尾空白变化需重确认后才豁免", async () => {
+    await buildConfirmedProject(dir);
+    stripNormalizedSection();
+    rewrite(archPath(), (text) => `\uFEFF${text.replace(/\n/g, "\r\n")}`);
+    const crlf = await readBaselineConfirmation(dir);
+    expect(crlf.kind === "record-valid" && crlf.state).toBe("confirmed");
+    expect(crlf.kind === "record-valid" && crlf.bytes_only).toEqual([ARCH]);
+
+    rewrite(stackPath(), (text) => text.replace(/\n/, "  \n"));
+    const trailing = await readBaselineConfirmation(dir);
+    expect(trailing.kind === "record-valid" && trailing.mismatches.map((m) => m.target)).toEqual([STACK]);
+  });
+
+  it("重确认：只有字节变化的目标沿用旧摘要（任务依赖快照不失效），真实变化的目标取新摘要", async () => {
+    await buildConfirmedProject(dir);
+    const before = await readBaselineConfirmation(dir);
+    if (before.kind !== "record-valid") throw new Error("expected confirmed record");
+    rewrite(archPath(), (text) => text.replace(/\n/g, "\r\n"));
+    rewrite(stackPath(), (text) => text.replace("framework-value", "framework-changed"));
+    const acked = await runBaselineConfirm(dir, { ackDrifted: true, note: "Owner 指示调整前端框架取值" });
+    expect(acked.ok).toBe(true);
+    expect(acked.result.ack?.files).toEqual([STACK]);
+    const after = await readBaselineConfirmation(dir);
+    if (after.kind !== "record-valid") throw new Error("expected confirmed record");
+    expect(after.state).toBe("confirmed");
+    expect(after.record.digests[ARCH]).toBe(before.record.digests[ARCH]);
+    expect(after.record.digests[STACK]).toBe(sha256OfUtf8(readFileSync(stackPath(), "utf8")));
+    expect(after.bytes_only).toEqual([ARCH]);
+  });
+
+  it("normalized 段缺目标 = 记录损坏（fail-closed，按无有效确认处理）", async () => {
+    await buildConfirmedProject(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const lines = readFileSync(manifest, "utf8").split("\n");
+    const start = lines.indexOf("  normalized:");
+    writeFileSync(manifest, [...lines.slice(0, start + 1), ...lines.slice(start + 2)].join("\n"), "utf8");
+    const read = await readBaselineConfirmation(dir);
+    expect(read.kind).toBe("record-invalid");
+    expect(read.kind === "record-invalid" && read.damage_detail).toContain("normalized 快照缺目标");
+  });
+});
+
+describe("autocrlf 克隆的基线照常可读写（V2-3；动态检查 #10）", () => {
+  const toCrlf = (relative: string): void => {
+    const path = join(dir, relative);
+    writeFileSync(path, readFileSync(path, "utf8").replace(/\r?\n/g, "\r\n"), "utf8");
+  };
+
+  it("manifest 与 stack.yaml 全部 CRLF（含 BOM）：确认态仍可解析、无漂移；set --change 改值保持 CRLF 不产出混合换行", async () => {
+    await buildConfirmedProject(dir);
+    for (const relative of [BASELINE_MANIFEST_RELATIVE, ".pomaster/baseline/frontend/stack.yaml", ".pomaster/baseline/backend/stack.yaml"]) {
+      toCrlf(relative);
+    }
+    const stackPath = join(dir, ".pomaster", "baseline", "frontend", "stack.yaml");
+    writeFileSync(stackPath, `﻿${readFileSync(stackPath, "utf8")}`, "utf8");
+
+    const confirmation = await readBaselineConfirmation(dir);
+    expect(confirmation.kind).toBe("record-valid");
+    expect(confirmation.kind === "record-valid" && confirmation.state).toBe("confirmed");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+    expect((await runBaselineConfirm(dir)).result.change).toBe("NO_CHANGE");
+
+    await seedGovernedFixture("CHANGE.B0001");
+    const changed = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "react", change: "CHANGE.B0001" });
+    expect(changed.ok).toBe(true);
+    const stackText = readFileSync(stackPath, "utf8");
+    expect(stackText.startsWith("﻿")).toBe(true);
+    expect(stackText).toContain("framework: react\r\n");
+    expect(stackText.replace(/\r\n/g, "")).not.toContain("\n");
+    const reconfirm = await runBaselineConfirm(dir, { change: "CHANGE.B0001" });
+    expect(reconfirm.ok).toBe(true);
+    expect(reconfirm.result.change).toBe("CONFIRMED");
+    const manifestText = read(BASELINE_MANIFEST_RELATIVE);
+    expect(manifestText.replace(/\r\n/g, "")).not.toContain("\n");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// 逐目标确认锚 + lane 范围（V2-4；VX-WRITE-01 / VX-INIT-07）
+// ============================================================
+
+describe("逐目标确认锚 target_seq（V2-4）", () => {
+  const ARCH = "baseline/frontend/architecture.md";
+  const OBS = "baseline/platform/observability.md";
+  const seqOf = async (): Promise<Readonly<Record<string, number>>> => {
+    const read = await readBaselineConfirmation(dir);
+    if (read.kind !== "record-valid") throw new Error("expected a valid confirmation record");
+    return baselineTargetSeq(read.record);
+  };
+
+  it("初次确认：全部目标 target_seq = at_seq；ack 只推进真实变化的目标，其余沿用", async () => {
+    await buildConfirmedProject(dir);
+    const first = await readBaselineConfirmation(dir);
+    if (first.kind !== "record-valid") throw new Error("expected confirmed");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("  target_seq:");
+    expect(Object.values(baselineTargetSeq(first.record)).every((seq) => seq === first.record.at_seq)).toBe(true);
+
+    await seedGovernedFixture("CHANGE.B0001"); // 推进 store seq（治理对象落库即事务）
+    const obsPath = join(dir, ".pomaster", OBS);
+    writeFileSync(obsPath, `${readFileSync(obsPath, "utf8")}\n- 新增告警阈值：p99 > 800ms\n`, "utf8");
+    const acked = await runBaselineConfirm(dir, { ackDrifted: true, note: "Owner 补充可观测性阈值" });
+    expect(acked.ok).toBe(true);
+    const after = await seqOf();
+    expect(acked.result.at_seq).toBeGreaterThan(first.record.at_seq);
+    expect(after[OBS]).toBe(acked.result.at_seq);
+    expect(after[ARCH]).toBe(first.record.at_seq);
+  });
+
+  it("旧记录（无 target_seq 段）按 at_seq 计；target_seq 缺目标 / 超前于 at_seq = 记录损坏", async () => {
+    await buildConfirmedProject(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const original = readFileSync(manifest, "utf8");
+    const lines = original.split("\n");
+    const start = lines.indexOf("  target_seq:");
+    let end = start + 1;
+    while (end < lines.length && /^\s{4}\S/.test(lines[end] ?? "")) end += 1;
+    writeFileSync(manifest, [...lines.slice(0, start), ...lines.slice(end)].join("\n"), "utf8");
+    const legacy = await readBaselineConfirmation(dir);
+    if (legacy.kind !== "record-valid") throw new Error("expected confirmed");
+    expect(legacy.record.target_seq).toBeUndefined();
+    expect(Object.values(baselineTargetSeq(legacy.record)).every((seq) => seq === legacy.record.at_seq)).toBe(true);
+
+    writeFileSync(manifest, [...lines.slice(0, start + 1), ...lines.slice(start + 2)].join("\n"), "utf8");
+    const missing = await readBaselineConfirmation(dir);
+    expect(missing.kind === "record-invalid" && missing.damage_detail).toContain("target_seq 缺目标");
+
+    const ahead = original.replace(new RegExp(`(    ${ARCH.replace(/[.]/g, "\\.")}: )([0-9]+)`), (_m, prefix: string) => `${prefix}999`);
+    writeFileSync(manifest, ahead, "utf8");
+    const aheadRead = await readBaselineConfirmation(dir);
+    expect(aheadRead.kind === "record-invalid" && aheadRead.damage_detail).toContain("target_seq 超前于 at_seq");
+  });
+
+  it("baselineTargetsForLanes：按目录归 lane，design-tokens 随 frontend，platform 只在列出时相关，划分覆盖全部目标", () => {
+    const frontend = baselineTargetsForLanes(["frontend"]);
+    expect(frontend.relevant).toContain("baseline/frontend/stack.yaml");
+    expect(frontend.relevant).toContain(BASELINE_DESIGN_TOKENS_TARGET);
+    expect(frontend.relevant.every((target) => target.startsWith("baseline/frontend/"))).toBe(true);
+    expect(frontend.excluded).toContain(OBS);
+    expect([...frontend.relevant, ...frontend.excluded].sort()).toEqual([...BASELINE_CONFIRM_TARGETS].sort());
+    expect(baselineTargetsForLanes(["platform"]).relevant).toContain(OBS);
+    expect(baselineTargetsForLanes([]).relevant).toEqual([]);
+  });
+});
+
+// ============================================================
+// 权威面锚定：补充节 / 填写指引 / 草案节不计漂移（V2-5；VX-INIT-07）
+// ============================================================
+
+describe("权威面锚定（V2-5）", () => {
+  const OBS = "baseline/platform/observability.md";
+  const ARCH = "baseline/frontend/architecture.md";
+  const STACK = "baseline/frontend/stack.yaml";
+  const pathOf = (target: string): string => join(dir, ".pomaster", target);
+  const rewrite = (target: string, transform: (text: string) => string): void => {
+    writeFileSync(pathOf(target), transform(readFileSync(pathOf(target), "utf8")), "utf8");
+  };
+  const judged = async (): Promise<{ state: string; drift: string[]; supplement: string[] }> => {
+    const read = await readBaselineConfirmation(dir);
+    if (read.kind !== "record-valid") throw new Error("expected a valid confirmation record");
+    return { state: read.state, drift: read.mismatches.map((m) => m.target), supplement: [...read.supplement] };
+  };
+
+  it("baselineAuthorityText：去文件头 / 填写指引 / 补充节 / 草案节；无 H2 不豁免；yaml 取键值", () => {
+    const md = "# 标题\n- 状态:模板\n## Layers\n\n- 起步值:三层\n- 填写指引:逐层登记\n## 补充\n- 说明文字\n## Purpose\n- 起步值:UNKNOWN\n";
+    expect(baselineAuthorityText(ARCH, md)).toBe("## Layers\n- 起步值:三层\n## Purpose\n- 起步值:UNKNOWN");
+    expect(baselineAuthorityText(ARCH, md.replace("- 状态:模板", "- 状态:已填写").replace("逐层登记", "按层登记"))).toBe(baselineAuthorityText(ARCH, md));
+    expect(baselineAuthorityText(ARCH, `${md}${PRESET_DRAFT_HEADING}\n\n### 层\n\n- 草案:x\n`)).toBe(baselineAuthorityText(ARCH, md));
+    expect(baselineAuthorityText(ARCH, md.replace("三层", "四层"))).not.toBe(baselineAuthorityText(ARCH, md));
+    expect(baselineAuthorityText(ARCH, "无标题正文\n")).toBe("无标题正文\n");
+    expect(baselineAuthorityText(STACK, "a: 1 # 注释\nb: 2\n")).toBe(baselineAuthorityText(STACK, "b: 2\na: 1\n"));
+    expect(baselineAuthorityText(STACK, "a: 1\n")).not.toBe(baselineAuthorityText(STACK, "a: 2\n"));
+  });
+
+  it("在 `## 补充` 下加说明 / 改填写指引 / 加草案节 / 改文件头 → 不计漂移（BASELINE_SUPPLEMENT_CHANGED warning），重确认 NO_CHANGE", async () => {
+    await buildConfirmedProject(dir);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("  authority:");
+    rewrite(OBS, (text) => `${text}\n## 补充\n\n- 给 Agent 的说明：日志字段遵循团队约定\n`);
+    rewrite(ARCH, (text) => text.replace("填写指引:本前端子系统", "填写指引:（已阅）本前端子系统").replace("- 状态:", "- 状态(已开始填写):"));
+    rewrite(ARCH, (text) => `${text}\n${PRESET_DRAFT_HEADING}\n\n### Layers\n\n- 草案:三层\n`);
+    rewrite(STACK, (text) => `# 团队注释\n${text}`);
+    const result = await judged();
+    expect(result.state).toBe("confirmed");
+    expect(result.drift).toEqual([]);
+    expect(result.supplement.sort()).toEqual([ARCH, STACK, OBS].sort());
+    const gate = await baselineGateAssessment(dir);
+    expect(gate.errors).toEqual([]);
+    expect(gate.warnings.map((warning) => warning.code)).toEqual(["BASELINE_SUPPLEMENT_CHANGED"]);
+    const replay = await runBaselineConfirm(dir);
+    expect(replay.result.change).toBe("NO_CHANGE");
+    expect(replay.human.join("\n")).toContain("supplement");
+  });
+
+  it("改 H2 节内取值 / 改 stack.yaml 取值 → 照旧 BASELINE_DRIFT", async () => {
+    await buildConfirmedProject(dir);
+    rewrite(ARCH, (text) => text.replace("## Layers\n\n- 起步值:UNKNOWN", "## Layers\n\n- 起步值:展示层 / 领域层 / 数据层"));
+    rewrite(STACK, (text) => text.replace("framework-value", "framework-changed"));
+    expect((await judged()).drift.sort()).toEqual([ARCH, STACK].sort());
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_DRIFT");
+  });
+
+  it("旧记录（无 authority 段）：补充性改动仍计漂移，直到下一次确认补写权威面", async () => {
+    await buildConfirmedProject(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const lines = readFileSync(manifest, "utf8").split("\n");
+    const start = lines.indexOf("  authority:");
+    let end = start + 1;
+    while (end < lines.length && /^\s{4}\S/.test(lines[end] ?? "")) end += 1;
+    writeFileSync(manifest, [...lines.slice(0, start), ...lines.slice(end)].join("\n"), "utf8");
+    rewrite(OBS, (text) => `${text}\n## 补充\n\n- 说明\n`);
+    expect((await judged()).drift).toEqual([OBS]);
+  });
+
+  it("重确认（另一目标真实漂移）时，补充性变化的目标沿用旧摘要与锚，之后仍判 supplement", async () => {
+    await buildConfirmedProject(dir);
+    const before = await readBaselineConfirmation(dir);
+    if (before.kind !== "record-valid") throw new Error("expected confirmed");
+    rewrite(OBS, (text) => `${text}\n## 补充\n\n- 说明\n`);
+    rewrite(STACK, (text) => text.replace("framework-value", "framework-changed"));
+    const acked = await runBaselineConfirm(dir, { ackDrifted: true, note: "Owner 调整前端框架取值" });
+    expect(acked.ok).toBe(true);
+    expect(acked.result.ack?.files).toEqual([STACK]);
+    const after = await readBaselineConfirmation(dir);
+    if (after.kind !== "record-valid") throw new Error("expected confirmed");
+    expect(after.record.digests[OBS]).toBe(before.record.digests[OBS]);
+    expect(baselineTargetSeq(after.record)[OBS]).toBe(baselineTargetSeq(before.record)[OBS]);
+    expect(after.state).toBe("confirmed");
+    expect([...after.supplement]).toEqual([OBS]);
   });
 });

@@ -1300,3 +1300,119 @@ describe("裁定 7=B：ui_surface 义务满足链判定矩阵", () => {
     expect(scanBrowserLegGrnBacked(mkdtempSync(join(tmpdir(), "pomaster-7b-scan-")), "AGX-2026-1", "TASK.X")).toBe(false);
   });
 });
+
+// ============================================================
+// V2-10 源码快照定向重验（plan run --requalify；台账 VX-WRITE-04）
+// ============================================================
+
+describe("plan run --requalify：只重跑过期 / 缺失义务，仍新鲜的证据跨 AGX 沿用（V2-10）", () => {
+  const TASK_REF = "TASK.STATIC.RUNNER";
+  const GOOD_ESLINT = "process.stdout.write(JSON.stringify([{filePath:'src/a.ts',messages:[],errorCount:0,warningCount:0,fatalErrorCount:0}]));";
+
+  async function secondExecution(role: "orchestrator" | "qa" = "orchestrator"): Promise<string> {
+    const store = await createStore(root);
+    return (await beginExecution(store, { role, runtime: "claude-code", identityKind: "interactive", startedAt: "2026-10-31T00:00:00.000Z" })).execution_id;
+  }
+
+  /** AGX-1：TYPECHECK passed、LINT 工具输出畸形 → not_run；随后修好工具（源码不动）。 */
+  async function firstRunWithBrokenLint(): Promise<{ first: string; typecheckGrn: string }> {
+    const first = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    writeFileSync(join(root, "eslint-fake.mjs"), "process.stdout.write('not-json');");
+    const outcome = await runPlanRun(root, { taskRef: TASK_REF, executionId: first, changed: ["src/a.ts"], faces });
+    expect(outcome.result.rows.map((row) => row.verdict)).toEqual(["passed", "not_run"]);
+    writeFileSync(join(root, "eslint-fake.mjs"), GOOD_ESLINT);
+    return { first, typecheckGrn: outcome.result.rows[0]?.grn as string };
+  }
+
+  function advanceDoc(adv: string): Record<string, unknown> {
+    return JSON.parse(readFileSync(join(root, ".pomaster", "state", "advances", `${adv}.json`), "utf8")) as Record<string, unknown>;
+  }
+
+  it("源码未变：新 AGX 沿用旧 AGX 的新鲜 passed GRN、只重跑非绿义务；ADVANCE 记 cohort，finalize 跨 AGX cohort 成立，复盘者不得是来源 AGX", async () => {
+    const { first, typecheckGrn } = await firstRunWithBrokenLint();
+    const second = await secondExecution();
+    const outcome = await runPlanRun(root, { taskRef: TASK_REF, executionId: second, changed: ["src/a.ts"], faces, requalify: true, by: "agent:verifier" });
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.ok).toBe(true);
+    const [typecheck, lint] = outcome.result.rows;
+    expect(typecheck).toMatchObject({ gate: "TYPECHECK", grn: typecheckGrn, verdict: "passed", carried_from: first });
+    expect(lint).toMatchObject({ gate: "LINT", verdict: "passed" });
+    expect(lint?.carried_from).toBeUndefined();
+    expect(outcome.result.advance).toBe("ADV-0001");
+    const advance = advanceDoc("ADV-0001").advance as Record<string, unknown>;
+    expect(advance.new_anchor).toMatchObject({ kind: "source_snapshot", ref: `${TASK_REF}#plan-cohort@${second}` });
+    expect(advance.affected_ids).toEqual([lint?.grn, TASK_REF].sort());
+    expect(advance.actor).toBe("agent:verifier");
+
+    const status = await runFinalizeStatus(root, { taskRef: TASK_REF });
+    expect(status.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+    expect(status.result.verification_execution_id).toBe(second);
+    const reviewer = await runFinalizeReplayAdjudicate(root, {
+      taskRef: TASK_REF, reviewRange: "HEAD~1..HEAD", planFingerprint: status.result.plan_fingerprint as string,
+      executionId: first, reviewedBy: "agent:reviewer", verdict: "allow-closeout",
+    });
+    expect(reviewer.errors[0]?.code).toBe("REPLAY_REVIEWER_NOT_INDEPENDENT");
+
+    // 重放同一 requalify：两项都在本 AGX 可复用 / 沿用，cohort 不变 → 不写新 ADVANCE。
+    const replay = await runPlanRun(root, { taskRef: TASK_REF, executionId: second, changed: ["src/a.ts"], faces, requalify: true, by: "agent:verifier" });
+    expect(replay.result.advance).toBe("ADV-0001");
+    expect(readdirSync(join(root, ".pomaster", "state", "advances"))).toEqual(["ADV-0001.json"]);
+  });
+
+  it("跨 AGX 无可复核链接 → finalize 不补齐（缺键 VERIFY_BLOCKED，下一步指向 --requalify）：ADVANCE 缺席或沿用 GRN 字节被改都算", async () => {
+    await firstRunWithBrokenLint();
+    const second = await secondExecution();
+    const outcome = await runPlanRun(root, { taskRef: TASK_REF, executionId: second, changed: ["src/a.ts"], faces, requalify: true, by: "agent:verifier" });
+    expect(outcome.ok).toBe(true);
+    const carried = outcome.result.rows.find((row) => row.carried_from !== undefined)?.grn as string;
+
+    const original = readFileSync(grnPath(carried), "utf8");
+    writeFileSync(grnPath(carried), `${original} `);
+    const tampered = await runFinalizeStatus(root, { taskRef: TASK_REF });
+    expect(tampered.result.stage).toBe("VERIFY_BLOCKED");
+    expect(tampered.result.next_actions[0]?.command).toContain("--requalify");
+    writeFileSync(grnPath(carried), original);
+    expect((await runFinalizeStatus(root, { taskRef: TASK_REF })).result.stage).toBe("AWAITING_REPLAY_REVIEW");
+
+    // ADVANCE 记下的 cohort 摘要与证据复算不符（被改写的新锚）→ 链接无效。
+    const advancePath = join(root, ".pomaster", "state", "advances", "ADV-0001.json");
+    const advanceText = readFileSync(advancePath, "utf8");
+    const doc = JSON.parse(advanceText) as { advance: { new_anchor: { digest: string } } };
+    doc.advance.new_anchor.digest = "0".repeat(64);
+    writeFileSync(advancePath, JSON.stringify(doc, null, 2));
+    expect((await runFinalizeStatus(root, { taskRef: TASK_REF })).result.stage).toBe("VERIFY_BLOCKED");
+    writeFileSync(advancePath, advanceText);
+
+    rmSync(join(root, ".pomaster", "state", "advances", "ADV-0001.json"));
+    const unlinked = await runFinalizeStatus(root, { taskRef: TASK_REF });
+    expect(unlinked.result.stage).toBe("VERIFY_BLOCKED");
+    expect(unlinked.result.next_actions[0]?.reason).toContain("分母缺失");
+  });
+
+  it("相关源码已变 → 旧证据不跨 AGX 沿用（全部重跑），无沿用不写 ADVANCE；来源执行角色不同同样不沿用", async () => {
+    const { first } = await firstRunWithBrokenLint();
+    expect(first).toMatch(/^AGX-/);
+    const qa = await secondExecution("qa");
+    const otherRole = await runPlanRun(root, { taskRef: TASK_REF, executionId: qa, changed: ["src/a.ts"], faces, requalify: true, by: "agent:verifier" });
+    expect(otherRole.ok).toBe(true);
+    expect(otherRole.result.rows.every((row) => row.carried_from === undefined)).toBe(true);
+    expect(otherRole.result.advance).toBeNull();
+
+    writeSource("src/a.ts", "export const a = 2;\n");
+    const third = await secondExecution();
+    const outcome = await runPlanRun(root, { taskRef: TASK_REF, executionId: third, changed: ["src/a.ts"], faces, requalify: true, by: "agent:verifier" });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.rows.every((row) => row.carried_from === undefined)).toBe(true);
+    expect(outcome.result.advance).toBeNull();
+    expect(existsSync(join(root, ".pomaster", "state", "advances"))).toBe(false);
+  });
+
+  it("--requalify 缺 --by → SCHEMA_INVALID，工具启动前拒绝、零 GRN", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    const outcome = await runPlanRun(root, { taskRef: TASK_REF, executionId, changed: ["src/a.ts"], faces, requalify: true });
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(existsSync(join(root, ".pomaster", "evidence", "runs")) ? readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name)) : []).toEqual([]);
+  });
+});

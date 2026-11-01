@@ -143,7 +143,7 @@ describe("studio design-tokens 页 · 生成器契约（R1/R3/R4）", () => {
     }
   });
 
-  it("generateAll 分母随动：132→133（foundations tokens 页 1 张；41+71+18+1+1+1）", () => {
+  it("generateAll 分母随动：132→133（foundations tokens 页 1 张）→134（B6H h5 overlay 页 1 张；41+71+19+1+1+1）", () => {
     const out = tempRoot("all");
     try {
       const counts = generateAll(out);
@@ -151,9 +151,9 @@ describe("studio design-tokens 页 · 生成器契约（R1/R3/R4）", () => {
       expect(counts.tokenValues).toBe(44);
       expect(counts.tokenUnknowns).toBe(14);
       const tree = snapshotTree(out);
-      // 分母：41 archetype + 71 component + 18 overlay + 1 baseline + 1 dataStruct
-      //      + 1 foundations（F-M2 增量）= 133。
-      expect(tree.size).toBe(133);
+      // 分母：41 archetype + 71 component + 19 overlay（B6H 增 h5）+ 1 baseline + 1 dataStruct
+      //      + 1 foundations（F-M2 增量）= 134。
+      expect(tree.size).toBe(134);
       expect(
         [...tree.keys()].some((path) =>
           path.split("\\").join("/").includes("foundations/design-tokens.stories.ts"),

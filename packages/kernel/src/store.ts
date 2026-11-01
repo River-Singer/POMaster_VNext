@@ -79,6 +79,24 @@ import { loadAuthorityMap } from "./permits.js";
 import { assertExecutionAttachable } from "./execution.js";
 import { gateResultToSnake } from "./gate-result.js";
 import { readAuthorityFaces } from "./authority.js";
+import {
+  ADVANCE_RECORDED_EVENT,
+  ADVANCE_RECORD_TYPE,
+  RETIREMENT_LEDGER_VERSION,
+  advancePathOf,
+  advancesDirOf,
+  isRetired,
+  listAdvanceRecords,
+  nextAdvanceId,
+  parseAdvanceRecord,
+  parseRetirementLedger,
+  readRetirementLedger,
+  retirementsPathOf,
+  type AdvanceRecord,
+  type ReinstatementLedgerEntry,
+  type RetirementLedgerEntry,
+} from "./advances.js";
+import { LANE_RETIREMENT_KINDS, validateAdvance, validateRetirements, type RetirementKind } from "./legal-advance.js";
 import { loadSourcesRegistry } from "./sources.js";
 import type {
   AxesBlock,
@@ -588,6 +606,8 @@ interface TxWorkspace {
   anyChange: boolean;
   /** 同事务内的正文覆盖层（upsert 后 transition 直接读改写）。 */
   readonly bodyOverlay: Map<string, UnknownRecord>;
+  /** TX_APPLIED 之后追加的 journal 行（ADVANCE_RECORDED 等 op 级事件；A2 同纪律）。 */
+  readonly journalTail: string[];
 }
 
 function rowBodyPath(paths: StorePaths, bodyRef: string): string {
@@ -901,6 +921,7 @@ export async function applyTransaction(
     nextSeq: curSeq + 1,
     anyChange: false,
     bodyOverlay: new Map(),
+    journalTail: [],
   };
 
   // —— D24 防篡改抽验（只读服务；失配 → WARN + auto-regen，永不阻断） ——
@@ -964,6 +985,8 @@ export async function applyTransaction(
       digest_warnings: workspace.digestWarnings.length,
     })}\n`,
   );
+  // op 级事件（ADVANCE_RECORDED）紧随 TX_APPLIED，同 seq；逐行原子追加。
+  for (const line of workspace.journalTail) appendLine(paths.journalPath, `${line}\n`);
 
   return {
     appliedSeq: workspace.nextSeq,
@@ -1057,6 +1080,15 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
       break;
     case "verify_claim":
       applyVerifyClaim(workspace, op);
+      break;
+    case "record_advance":
+      applyRecordAdvance(workspace, op);
+      break;
+    case "supersede_claim":
+      applySupersedeClaim(workspace, op);
+      break;
+    case "reassess_baseline_scope":
+      applyReassessBaselineScope(workspace, op);
       break;
   }
 }
@@ -2212,6 +2244,316 @@ function applyRecordGateRun(
   workspace.files.set(
     `${paths.runsDir}/${run.grn}.json`,
     `${JSON.stringify(record, null, 2)}\n`,
+  );
+  workspace.anyChange = true;
+}
+
+// —— supersede_claim（V2-8；VX-WRITE-01 / 04） ——
+
+function requalifyRejected(message: string, hint: string, details: UnknownRecord = {}): GovernanceError {
+  return new GovernanceError("SCHEMA_INVALID", message, hint, { reason_code: "CLAIM_REQUALIFY_TARGET_INVALID", ...details });
+}
+
+function applySupersedeClaim(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "supersede_claim" }>,
+): void {
+  const { paths } = workspace;
+  const input = op.requalify;
+  for (const [key, value] of [["clm", input.clm], ["successor", input.successor]] as const) {
+    if (typeof value !== "string" || !/^CLM-[0-9]+$/.test(value)) {
+      throw new GovernanceError("SCHEMA_INVALID", `supersede_claim.${key} 词形非法（须 CLM-[0-9]+）：${String(value)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { [key]: value });
+    }
+  }
+  if (input.successor === input.clm) {
+    throw requalifyRejected("后继 CLM 不能与被取代 CLM 相同", "后继由调用方按现有最大序号 +1 分配");
+  }
+  if (typeof input.reason !== "string" || input.reason.trim().length === 0) {
+    throw new GovernanceError("SCHEMA_INVALID", "supersede_claim 必须带 reason", "写清旧判定为何不再成立（如：相关 baseline 取值已变更）", {});
+  }
+  const oldPath = `${paths.claimsDir}/${input.clm}.json`;
+  const oldText = workspace.files.get(oldPath) ?? readText(oldPath);
+  if (oldText === null || oldText === undefined) {
+    throw new GovernanceError("CLAIM_NOT_FOUND", `被取代的 claim 不存在：${input.clm}`, "核对 CLM 引用（evidence/claims/）", { clm: input.clm });
+  }
+  let old: UnknownRecord;
+  try {
+    old = JSON.parse(oldText) as UnknownRecord;
+  } catch (error) {
+    throw new GovernanceError("SCHEMA_INVALID", `claim 文件无法解析：${input.clm}`, "从 git 恢复该证据文件", { clm: input.clm, cause: String(error) });
+  }
+  const verification = isPlainRecord(old.verification) ? old.verification : {};
+  const verdict = verification.verdict;
+  if (typeof verdict !== "string" || !ADJUDICATED_CLAIM_VERDICTS.has(verdict)) {
+    throw requalifyRejected(
+      `claim ${input.clm} 尚未判定（verdict=${String(verdict)}），不需要再判定`,
+      "未判定的 claim 直接走独立验证流：pomaster record verification --clm <CLM> …",
+      { clm: input.clm, verdict: verdict ?? null },
+    );
+  }
+  const ledgerPath = retirementsPathOf(paths);
+  const queuedLedger = workspace.files.get(ledgerPath);
+  const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
+  if (isRetired(ledger, "claim_superseded", input.clm)) {
+    const successor = ledger.entries.find((entry) => entry.kind === "claim_superseded" && entry.id === input.clm)?.replacement_id ?? null;
+    throw requalifyRejected(
+      `claim ${input.clm} 已被 ${String(successor)} 取代`,
+      `对当前有效的后继再判定：pomaster record requalify --clm ${String(successor)} …`,
+      { clm: input.clm, successor },
+    );
+  }
+  const successorPath = `${paths.claimsDir}/${input.successor}.json`;
+  if (workspace.files.has(successorPath) || readText(successorPath) !== null) {
+    throw new GovernanceError("EVIDENCE_ALREADY_EXISTS", `后继 CLM 已存在：${input.successor}`, "按现有最大序号 +1 重新分配后继 id", { successor: input.successor });
+  }
+  const subject = isPlainRecord(old.subject) ? old.subject : {};
+  const subjectId = typeof subject.object_id === "string" ? subject.object_id : null;
+  const objects = workspace.working.objects as RawRow[];
+  const row = subjectId === null ? undefined : objects.find((candidate) => candidate.id === subjectId);
+  if (subjectId === null || row === undefined) {
+    throw new GovernanceError("OBJECT_NOT_FOUND", `claim ${input.clm} 的 subject 对象不在索引：${String(subjectId)}`, "先恢复 subject 对象再再判定", { clm: input.clm });
+  }
+  const typedRefs = (input.evidenceRefs ?? []).map((ref) => typedEvidenceRef(ref, "supersede_claim.requalify.evidenceRefs[]"));
+  const record: UnknownRecord = {
+    record_type: "claim",
+    clm: input.successor,
+    subject,
+    is_fixture: old.is_fixture === true,
+    assertion: old.assertion,
+    asserted_by: { actor_type: input.by.actorType, actor: input.by.actor, self_attested: input.by.selfAttested },
+    verification: {
+      verdict: "UNVERIFIED",
+      recomputed_by: { actor_type: "kernel", actor: "pomaster-kernel", self_attested: false },
+    },
+    evidence_refs: typedRefs,
+    rev: workspace.nextSeq,
+    notes_md: `取代 ${input.clm}（${verdict}）：${input.reason}`,
+  };
+  workspace.files.set(successorPath, `${JSON.stringify(record, null, 2)}\n`);
+
+  // 验收绑定重绑：subject 正文 payload.acceptance[i].claim === 旧 CLM → 后继（同事务、rev 推进）。
+  const body = readBodyFor(paths, workspace.bodyOverlay, row);
+  const payload = body !== null && isPlainRecord(body.payload) ? body.payload : null;
+  const acceptance = payload !== null && Array.isArray(payload.acceptance) ? payload.acceptance : [];
+  let rebound = 0;
+  for (const entry of acceptance) {
+    if (isPlainRecord(entry) && entry.claim === input.clm) {
+      entry.claim = input.successor;
+      rebound += 1;
+    }
+  }
+  if (body !== null && rebound > 0) {
+    const newRev = (row.rev as number) + 1;
+    body.rev = newRev;
+    row.rev = newRev;
+    workspace.files.set(rowBodyPath(paths, row.body_ref as string), `${JSON.stringify(body, null, 2)}\n`);
+    workspace.bodyOverlay.set(subjectId, body);
+    row.body_sha256 = sha256OfCanonical(body);
+  }
+  row.evidence_summary = recomputeEvidenceSummary(workspace, subjectId);
+  workspace.changedObjectIds.add(subjectId);
+  workspace.anyChange = true;
+}
+
+// —— reassess_baseline_scope（V2-7；VX-WRITE-02） ——
+
+function applyReassessBaselineScope(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "reassess_baseline_scope" }>,
+): void {
+  const { paths } = workspace;
+  const id = parseIdOrWrap(op.task as string, "reassess_baseline_scope.task");
+  const row = (workspace.working.objects as RawRow[]).find((candidate) => candidate.id === id);
+  if (row === undefined) {
+    throw new GovernanceError("OBJECT_NOT_FOUND", `任务不在索引：${id}`, "核对 TASK 引用；先 promote 出该任务", { id });
+  }
+  if (row.kind !== "task_object") {
+    throw new GovernanceError("SCHEMA_INVALID", `${id} 不是 task_object（kind=${String(row.kind)}）`, "baseline 依赖范围只挂在任务正文上", { id });
+  }
+  if (!isPlainRecord(op.declaration)) {
+    throw new GovernanceError("SCHEMA_INVALID", "reassess_baseline_scope.declaration 须为对象", "由 CLI baseline reassess 生成完整声明", { id });
+  }
+  const body = readBodyFor(paths, workspace.bodyOverlay, row);
+  if (body === null) {
+    throw new GovernanceError("REF_INTEGRITY_VIOLATION", `任务正文缺失：${String(row.body_ref)}`, "正文层与索引层必须成对存在（A1）；从 git 恢复正文", { id });
+  }
+  const payload = isPlainRecord(body.payload) ? body.payload : {};
+  if (JSON.stringify(payload.baseline_dependencies ?? null) === JSON.stringify(op.declaration)) return; // 零变化
+  body.payload = { ...payload, baseline_dependencies: op.declaration };
+  const newRev = (row.rev as number) + 1;
+  body.rev = newRev;
+  row.rev = newRev;
+  workspace.files.set(rowBodyPath(paths, row.body_ref as string), `${JSON.stringify(body, null, 2)}\n`);
+  workspace.bodyOverlay.set(id, body);
+  row.body_sha256 = sha256OfCanonical(body);
+  workspace.changedObjectIds.add(id);
+  workspace.anyChange = true;
+}
+
+// —— record_advance（V1-4；vnext-legal-advance §2 / §3.5） ——
+
+function advanceRejected(reasonCode: string, message: string, hint: string, details: UnknownRecord): GovernanceError {
+  return new GovernanceError("SCHEMA_INVALID", message, hint, { reason_code: reasonCode, ...details });
+}
+
+function isPlainRecord(value: unknown): value is UnknownRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** 事务内已排队、尚未落盘的 ADVANCE 记录（同事务多段成链）。 */
+function pendingAdvanceRecords(workspace: TxWorkspace): AdvanceRecord[] {
+  const prefix = `${advancesDirOf(workspace.paths)}/`;
+  const records: AdvanceRecord[] = [];
+  for (const [path, text] of workspace.files) {
+    if (path.startsWith(prefix)) records.push(parseAdvanceRecord(path, text));
+  }
+  return records;
+}
+
+function applyRecordAdvance(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "record_advance" }>,
+): void {
+  const { paths } = workspace;
+  const input = op.record;
+  const advance = input.advance as unknown;
+  const newAnchor = isPlainRecord(advance) && isPlainRecord(advance.new_anchor) ? advance.new_anchor : {};
+  const anchorKind = typeof newAnchor.kind === "string" ? newAnchor.kind : null;
+  const ref = typeof newAnchor.ref === "string" ? newAnchor.ref : null;
+
+  // 链尾：同 (kind, ref) 最近一次 ADVANCE（已落盘 + 本事务排队）。
+  const pending = pendingAdvanceRecords(workspace);
+  const chain =
+    anchorKind === null || ref === null
+      ? []
+      : [...listAdvanceRecords(paths), ...pending].filter((record) => {
+          const anchor = record.advance.new_anchor;
+          return isPlainRecord(anchor) && anchor.kind === anchorKind && anchor.ref === ref;
+        });
+  const tail = chain.length === 0 ? null : (chain[chain.length - 1] ?? null);
+  const previousAnchor = tail !== null && isPlainRecord(tail.advance.new_anchor) ? tail.advance.new_anchor : null;
+
+  const errors = validateAdvance(advance, {
+    lane: "vnext",
+    event: { actor: input.actor, reason: input.reason, after: input.currentAnchor ?? newAnchor },
+    previousAfter: previousAnchor,
+  });
+  if (errors.length > 0) {
+    const rejudgeOnly = errors.every((error) => error.startsWith("advance.rejudge"));
+    throw advanceRejected(
+      rejudgeOnly ? "ADVANCE_REJUDGE_FAILED" : "ADVANCE_INVALID",
+      `record_advance 判卷不通过（${errors.length} 项）：${errors.join("；")}`,
+      rejudgeOnly
+        ? "复判未通过的推进不能落账：先修复内容使受影响闸全部 PASS，再重写 ADVANCE（本事务零落盘）"
+        : `按逐项理由修正 ADVANCE 段：显式 --actor / 非占位 reason、证据引用 + 摘要、复判 PASS、新锚 = 现状重算值${
+            tail === null ? "" : `、旧锚 = 链尾 ${tail.adv} 的 new_anchor`
+          }（本事务零落盘）`,
+      { errors, previous_adv: tail?.adv ?? null },
+    );
+  }
+
+  const entries = input.retirements ?? [];
+  const retirementErrors = validateRetirements(entries, { lane: "vnext", actor: input.actor });
+  const ledgerPath = retirementsPathOf(paths);
+  const queuedLedger = workspace.files.get(ledgerPath);
+  const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
+  entries.forEach((entry, index) => {
+    if (typeof entry.id === "string" && typeof entry.kind === "string" && isRetired(ledger, entry.kind, entry.id)) {
+      retirementErrors.push(`retirements[${index}] ${entry.kind} ${entry.id} is already retired`);
+    }
+  });
+  // 撤销退役（V2-6）：条目 {id, kind}；目标须当前在退役；actor / reason 取事件值。
+  const reinstatements = input.reinstatements ?? [];
+  const reinstatedSeen = new Set<string>();
+  reinstatements.forEach((entry, index) => {
+    const where = `reinstatements[${index}]`;
+    const id = isPlainRecord(entry) && typeof entry.id === "string" && /^\S+$/.test(entry.id) ? entry.id : null;
+    const kind = isPlainRecord(entry) && typeof entry.kind === "string" ? entry.kind : null;
+    if (id === null) {
+      retirementErrors.push(`${where}.id must be a non-empty token`);
+      return;
+    }
+    if (kind === null || !(LANE_RETIREMENT_KINDS.vnext as readonly string[]).includes(kind)) {
+      retirementErrors.push(`${where}.kind must be one of the vnext retirement kinds`);
+      return;
+    }
+    if (reinstatedSeen.has(`${kind}\u0000${id}`)) {
+      retirementErrors.push(`${where}.id is duplicated: ${id}`);
+      return;
+    }
+    reinstatedSeen.add(`${kind}\u0000${id}`);
+    if (!isRetired(ledger, kind, id)) retirementErrors.push(`${where} ${kind} ${id} is not retired`);
+  });
+  if (retirementErrors.length > 0) {
+    throw advanceRejected(
+      "RETIREMENT_INVALID",
+      `record_advance 退役条目不合格（${retirementErrors.length} 项）：${retirementErrors.join("；")}`,
+      "退役条目须写明 id / kind（vnext lane 五种）/ 非占位 reason / 与事件一致的 actor / 种类要求的 last_anchor 键；已退役的同一条目不重复退役，撤销只针对当前在退役的条目（本事务零落盘）",
+      { errors: retirementErrors },
+    );
+  }
+
+  const adv = nextAdvanceId(paths, pending.map((record) => record.adv));
+  const atSeq = workspace.nextSeq;
+  const retirementIds = entries.map((entry) => String(entry.id));
+  const reinstatementIds = reinstatements.map((entry) => String(entry.id));
+  const record: AdvanceRecord = {
+    record_type: ADVANCE_RECORD_TYPE,
+    adv,
+    at_seq: atSeq,
+    actor: input.actor,
+    reason: input.reason,
+    advance: advance as UnknownRecord,
+    retirement_ids: retirementIds,
+    ...(reinstatementIds.length > 0 ? { reinstatement_ids: reinstatementIds } : {}),
+  };
+  workspace.files.set(advancePathOf(paths, adv), `${JSON.stringify(record, null, 2)}\n`);
+  if (entries.length > 0 || reinstatements.length > 0) {
+    const appended: RetirementLedgerEntry[] = entries.map((entry) => ({
+      id: String(entry.id),
+      kind: entry.kind as RetirementKind,
+      reason: String(entry.reason),
+      actor: String(entry.actor),
+      replacement_id: typeof entry.replacement_id === "string" ? entry.replacement_id : null,
+      last_anchor: entry.last_anchor as UnknownRecord,
+      adv,
+      at_seq: atSeq,
+    }));
+    const reinstated: ReinstatementLedgerEntry[] = reinstatements.map((entry) => ({
+      id: String(entry.id),
+      kind: entry.kind as RetirementKind,
+      reason: input.reason,
+      actor: input.actor,
+      adv,
+      at_seq: atSeq,
+    }));
+    const allReinstatements = [...(ledger.reinstatements ?? []), ...reinstated];
+    workspace.files.set(
+      ledgerPath,
+      `${JSON.stringify(
+        {
+          version: RETIREMENT_LEDGER_VERSION,
+          entries: [...ledger.entries, ...appended],
+          ...(allReinstatements.length > 0 ? { reinstatements: allReinstatements } : {}),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+  const affected = (advance as UnknownRecord).affected_ids;
+  workspace.journalTail.push(
+    JSON.stringify({
+      type: ADVANCE_RECORDED_EVENT,
+      seq: atSeq,
+      adv,
+      anchor_kind: anchorKind,
+      ref,
+      affected_ids: Array.isArray(affected) ? affected : [],
+      retirement_ids: retirementIds,
+      ...(reinstatementIds.length > 0 ? { reinstatement_ids: reinstatementIds } : {}),
+      actor: input.actor,
+    }),
   );
   workspace.anyChange = true;
 }

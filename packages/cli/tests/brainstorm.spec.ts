@@ -1098,6 +1098,51 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect(JSON.parse(readFileSync(graphPath, "utf8"))).toEqual(graph);
   });
 
+  it("V2-4 --lanes：按 lane 生成 baseline 依赖范围（platform 只在显式列出时相关）；与逐文件旗标二选一；未声明 → BASELINE_SCOPE_UNDECLARED warning", async () => {
+    expect((await runInit(root)).ok).toBe(true);
+    for (const lane of BASELINE_LANES) {
+      for (const key of STACK_KEYS[lane]) {
+        expect((await runBaselineSet(root, { lane, key, value: key === "cache" || key === "grid" ? "none" : `${key}-value` })).ok).toBe(true);
+      }
+    }
+    expect((await runBaselineConfirm(root)).ok).toBe(true);
+    const prepare = async (id: string, decision: string): Promise<void> => {
+      await runBrainstormStart(root, { id });
+      const candidatesPath = join(root, `c-${id}.json`);
+      writeCandidatesFile(candidatesPath, [decideCandidate(decision)]);
+      expect((await runBrainstormDecide(root, { discoveryId: id, set: candidatesPath, retrieved: ["REPO"] })).ok).toBe(true);
+      expect((await runBrainstormDecide(root, { discoveryId: id, answer: decision, accept: true })).ok).toBe(true);
+    };
+    const contractOf = (id: string): { baseline_dependencies?: { relevant_targets: string[]; excluded_targets: string[] } } =>
+      (JSON.parse(readFileSync(join(scratchpadDir(id), "meta.json"), "utf8")) as { contract: Record<string, never> }).contract;
+
+    await prepare("idea-lanes", "DECISION.LANES_ROOT");
+    const conflict = await runBrainstormDecide(root, {
+      discoveryId: "idea-lanes",
+      ...readyArgs("DECISION.LANES_ROOT"),
+      baselineLanes: ["frontend"],
+      baselineTargets: [BASELINE_CONFIRM_TARGETS[0]!],
+    });
+    expect(conflict.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const unknown = await runBrainstormDecide(root, { discoveryId: "idea-lanes", ...readyArgs("DECISION.LANES_ROOT"), baselineLanes: ["mobile"] });
+    expect(unknown.errors[0]?.message).toContain("mobile");
+
+    const ready = await runBrainstormDecide(root, { discoveryId: "idea-lanes", ...readyArgs("DECISION.LANES_ROOT"), baselineLanes: ["frontend,data"] });
+    expect(ready.ok).toBe(true);
+    expect(ready.warnings).toEqual([]);
+    const declared = contractOf("idea-lanes").baseline_dependencies;
+    expect(declared?.relevant_targets).toEqual(BASELINE_CONFIRM_TARGETS.filter((target) => target.startsWith("baseline/frontend/") || target.startsWith("baseline/data/")));
+    expect(declared?.relevant_targets).toContain("baseline/frontend/design-tokens.yaml");
+    expect(declared?.excluded_targets.some((target) => target.startsWith("baseline/platform/"))).toBe(true);
+    expect([...(declared?.relevant_targets ?? []), ...(declared?.excluded_targets ?? [])].sort()).toEqual([...BASELINE_CONFIRM_TARGETS].sort());
+
+    await prepare("idea-undeclared", "DECISION.UNDECLARED_ROOT");
+    const undeclared = await runBrainstormDecide(root, { discoveryId: "idea-undeclared", ...readyArgs("DECISION.UNDECLARED_ROOT") });
+    expect(undeclared.ok).toBe(true);
+    expect(undeclared.warnings).toEqual([expect.objectContaining({ code: "BASELINE_SCOPE_UNDECLARED" })]);
+    expect(contractOf("idea-undeclared").baseline_dependencies).toBeUndefined();
+  });
+
   it("MSD 未达成入缺口：决议齐但申报文本空（goal 空白 → goal_defined=false 派生）→ blocking 携带缺失轴名（09 msd_assessment 判据面）", async () => {
     await runBrainstormStart(root, { id: "idea-msd" });
     const candidatesPath = join(root, "c-msd.json");

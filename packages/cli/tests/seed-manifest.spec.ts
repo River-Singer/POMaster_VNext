@@ -3,10 +3,10 @@
  * （B6b-B6G 移植/新著面 + B7-THEME 物化批：FE 45+index / BE 32+index 79 文件退役
  * （09-05-spec-thematic-reorg D3），重组为 themes/ 21 文件（20 主题 + 1 导航——
  * D1/D2 裁定）；+ 09-10 R3/F-M1 增量 baseline/frontend/design-tokens.yaml 补位
- * （B6D 批 25→26）；= 清单 103 条全量分母；seed-manifest.ts 单一装载实现）。
+ * （B6D 批 25→26）；B6H h5 同步 +2；= 清单 105 条全量分母；seed-manifest.ts 单一装载实现）。
  *
  * 钉面（09-05-spec-thematic-reorg Owner 裁定 D1-D8 / theme-mapping §6 + R3 增量）：
- * - 分母钉：103/103（themes 21 + stacks 36 + baseline 26 + evidence 20；批次合并清单
+ * - 分母钉：105/105（themes 21 + stacks 38 + baseline 26 + evidence 20；批次合并清单
  *   B6C/B6D/B6E/B6F/B6G/B7-THEME，逐批名单 manifest.batches；B6B-1/B6B-2 随退役删除）；
  * - provenance pin（R1 漂移缓解）：移植件清单逐条 source_sha256（hex64）+ source_bytes；
  *   stacks 资产 frontmatter seed_source/seed_source_sha256 与清单双锚一致（fail-closed）；
@@ -29,7 +29,7 @@
  * - B6f/B6G stacks 前端族形态钉不变（overlay 9+6+x-research-anchors）；
  * - R8 清洗执行登记（历史批次留痕）：stacks 18 overlay installed/bound 注记 + B7
  *   21 条主题/导航登记注记在册；清洗词形（finish/task.py/Trellis）与 A1 档位词形
- *   全分母（103 件）零命中。
+ *   全分母（105 件）零命中。
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -206,27 +206,29 @@ const B6D_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6D");
 const B6E_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6E");
 const B6F_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6F");
 const B6G_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6G");
+const B6H_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6H");
 const B7_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B7-THEME");
 /** 移植件（specs 面 57——有统一 frontmatter 的条目）。 */
 const PORTED_ENTRIES = manifest.entries.filter((e) => !e.authoring);
 
-describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THEME + R3 补位全量 103）", () => {
-  it("schema 词形 + 分母钉 103/103（themes 21 + stacks 36 + baseline 26 + evidence 20；batch=B7-THEME）", () => {
+describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THEME + R3 补位 + B6H h5 全量 105）", () => {
+  it("schema 词形 + 分母钉 105/105（themes 21 + stacks 38 + baseline 26 + evidence 20；batch=B7-THEME）", () => {
     expect(manifest.schema).toBe(SEED_MANIFEST_SCHEMA);
     expect(manifest.batch).toBe("B7-THEME");
-    expect(manifest.denominator.planted).toBe(103);
-    expect(manifest.denominator.planted_total).toBe(103);
+    expect(manifest.denominator.planted).toBe(105);
+    expect(manifest.denominator.planted_total).toBe(105);
     expect(manifest.denominator.batch_new).toBe(21);
-    expect(manifest.entries).toHaveLength(103);
+    expect(manifest.entries).toHaveLength(105);
     // 逐批名单（provenance 文档位）：B6C = 28（stacks 后端族；BE 33 随 D3 退役）、
     // B6D = 26（含 R3 design-tokens.yaml 补位）、B6E = 20、B6F = 6、B6G = 2、
-    // B7-THEME = 21，恰好划分 103。
+    // B6H = 2（h5 / 移动端，pomaster P7-1 同步）、B7-THEME = 21，恰好划分 105。
     const b3 = manifest.batches?.["B6C"] ?? [];
     const b4 = manifest.batches?.["B6D"] ?? [];
     const b5 = manifest.batches?.["B6E"] ?? [];
     const b6 = manifest.batches?.["B6F"] ?? [];
     const b7 = manifest.batches?.["B6G"] ?? [];
     const b8 = manifest.batches?.["B7-THEME"] ?? [];
+    const b9 = manifest.batches?.["B6H"] ?? [];
     expect(manifest.batches?.["B6B-1"]).toBeUndefined();
     expect(manifest.batches?.["B6B-2"]).toBeUndefined();
     expect(b3).toHaveLength(28);
@@ -235,17 +237,18 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
     expect(b6).toHaveLength(6);
     expect(b7).toHaveLength(2);
     expect(b8).toHaveLength(21);
-    expect(new Set([...b3, ...b4, ...b5, ...b6, ...b7, ...b8]).size).toBe(103);
+    expect(b9).toHaveLength(2);
+    expect(new Set([...b3, ...b4, ...b5, ...b6, ...b7, ...b8, ...b9]).size).toBe(105);
   });
 
-  it("lane/分面划分：themes 21 + stacks 36（B6c 后端 28 + B6f/B6G 前端 8）+ baseline 26（1+8+8+5+4）+ evidence 20；PORTED = 57", () => {
+  it("lane/分面划分：themes 21 + stacks 38（B6c 后端 28 + B6f/B6G/B6H 前端 10）+ baseline 26（1+8+8+5+4）+ evidence 20；PORTED = 59", () => {
     expect(THEME_ENTRIES).toHaveLength(21);
     expect(THEME_DOCS).toHaveLength(20);
     expect(THEME_NAV).toHaveLength(1);
-    expect(STACK_ENTRIES).toHaveLength(36);
+    expect(STACK_ENTRIES).toHaveLength(38);
     expect(BASELINE_ENTRIES).toHaveLength(26);
     expect(EVIDENCE_ENTRIES).toHaveLength(20);
-    expect(PORTED_ENTRIES).toHaveLength(57);
+    expect(PORTED_ENTRIES).toHaveLength(59);
     const LANE_VALUES = ["frontend", "backend", "frontend,backend"] as const;
     for (const entry of [...THEME_ENTRIES, ...STACK_ENTRIES]) {
       expect(LANE_VALUES).toContain(entry.lane);
@@ -257,9 +260,9 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
       expect(entry.target.startsWith(".pomaster/specs/hard/")).toBe(true);
       expect(entry.authoring).toBeUndefined();
     }
-    // stacks：18 slug × (index + overlay) 恰好划分 36；slug 子目录词形（B6c 守卫 ADR）。
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(18);
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(18);
+    // stacks：19 slug × (index + overlay) 恰好划分 38；slug 子目录词形（B6c 守卫 ADR）。
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(19);
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(19);
     for (const entry of STACK_ENTRIES) {
       expect(/^specs\/hard\/stacks\/[^/]+\/[^/]+\.md$/.test(entry.asset), entry.asset).toBe(
         true,
@@ -359,8 +362,8 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
   });
 });
 
-describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚合 / stacks 移植 / specs 面 57 件移植形态）", () => {
-  it("frontmatter 统一 9 字段在场（no-governed-id；lane 列表值 ↔ 清单 comma-join 同值）——specs 面 57 件", () => {
+describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚合 / stacks 移植 / specs 面 59 件移植形态）", () => {
+  it("frontmatter 统一 9 字段在场（no-governed-id；lane 列表值 ↔ 清单 comma-join 同值）——specs 面 59 件", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       for (const field of UNIFIED_FIELDS) {
@@ -391,7 +394,7 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     }
   });
 
-  it("seed_version 按所属批记：themes = B7-THEME、stacks 后端族 = B6C、前端族 = B6F、css = B6G（零墙钟批次代号；frontmatter 与清单同源）", () => {
+  it("seed_version 按所属批记：themes = B7-THEME、stacks 后端族 = B6C、前端族 = B6F、css = B6G、h5 = B6H（零墙钟批次代号；frontmatter 与清单同源）", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       const expected = doc.seed_version!;
@@ -404,11 +407,13 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     expect(B6F_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/"))).toBe(true);
     expect(B6G_ENTRIES).toHaveLength(2);
     expect(B6G_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/css/"))).toBe(true);
+    expect(B6H_ENTRIES).toHaveLength(2);
+    expect(B6H_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/h5/"))).toBe(true);
     expect(B7_ENTRIES).toHaveLength(21);
     expect(B7_ENTRIES).toEqual(THEME_ENTRIES);
   });
 
-  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 57 条全量）", () => {
+  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 59 条全量）", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       expect(fields.get("seed_source")).toBe(doc.source_path);
@@ -813,6 +818,62 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     }
   });
 
+  it("B6H h5 / 移动端 overlay 形态：统一 9 字段 + legacy 6 字段（legacy_id=frontend-stack:h5）+ x-research-anchors（2026-10-25 实抓：Vant 官方文档 + MDN viewport/env + web.dev INP + WCAG 2.2 SC 2.5.8）；正文三节结构与 vendor 逐字节等", () => {
+    const overlays = B6H_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"));
+    expect(overlays).toHaveLength(1);
+    for (const doc of overlays) {
+      const fm = frontmatterYaml(doc.asset);
+      expect(Object.keys(fm).sort()).toEqual(
+        [...UNIFIED_FIELDS, ...OVERLAY_LEGACY_FIELDS, "x-research-anchors"].sort(),
+      );
+      expect(fm.lane).toBe("frontend");
+      expect(fm.status).toBe("CURRENT");
+      expect(fm.authority_scope).toBe("mixed_required_and_advisory");
+      expect(fm["legacy_id"]).toBe("frontend-stack:h5");
+      expect(fm.capability).toBe("mobile-web-adaptation");
+      expect(fm.requires).toEqual(["frontend-stack:vue3"]);
+      expect(fm.conflicts).toEqual([]);
+      expect(fm.coexistence).toBe("independent");
+      expect(fm.stages).toEqual(["prepare", "implement", "check", "release"]);
+      const anchors = fm["x-research-anchors"] as {
+        note: string;
+        sources: Array<{ url: string; fetched: string | Date }>;
+      };
+      expect(anchors.note.length).toBeGreaterThan(0);
+      const urls = anchors.sources.map((source) => source.url);
+      expect(urls.some((url) => url.startsWith("https://github.com/youzan/vant/"))).toBe(true);
+      expect(urls).toContain("https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html");
+      for (const source of anchors.sources) {
+        expect(source.url.startsWith("https://"), source.url).toBe(true);
+        const fetched = source.fetched instanceof Date
+          ? source.fetched.toISOString().slice(0, 10)
+          : source.fetched;
+        expect(fetched, "h5 fetched 闭包").toBe("2026-10-25");
+      }
+      const { body } = seedSplit(doc.asset);
+      for (const section of ["## Scope", "## Rules", "## Checklist"]) {
+        expect(body.includes(`\n${section}\n`), `${doc.asset} 缺段 ${section}`).toBe(true);
+      }
+      expect(doc.porting_notes[0]).toContain("只播种不绑定");
+      if (VENDOR_FSTACKS_PRESENT) {
+        const vendor = readFileSync(join(VENDOR_FSTACKS, "h5", doc.asset.split("/").pop()!), "utf8");
+        const end = vendor.indexOf("\n---\n", 4);
+        expect(body, `${doc.asset} 正文逐字节`).toBe(vendor.slice(end + 5));
+      }
+    }
+  });
+
+  it.skipIf(!VENDOR_FSTACKS_PRESENT)("B6H h5 stack index 形态：纯统一 9 字段；正文与 vendor 全文逐字节等（能力表词形 frontend-stack:h5）", () => {
+    for (const doc of B6H_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))) {
+      const fm = frontmatterYaml(doc.asset);
+      expect(Object.keys(fm).sort()).toEqual([...UNIFIED_FIELDS].sort());
+      const { body } = seedSplit(doc.asset);
+      expect(body).toContain("`frontend-stack:h5`");
+      const vendor = readFileSync(join(VENDOR_FSTACKS, "h5", "index.md"), "utf8");
+      expect(body, `${doc.asset} 正文逐字节`).toBe(vendor);
+    }
+  });
+
   it("marker-free：播种件字节零生成标记（项目可编辑物，不进入 marker 重写生命周期）", () => {
     for (const entry of loaded) {
       expect(entry.content.includes("GENERATED")).toBe(false);
@@ -838,11 +899,11 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     ).toThrow();
   });
 
-  it("清洗与登记留痕（B7 重构后）：porting_notes 在册（stacks 18 overlay installed/bound 注记 + B7 21 条主题/导航登记注记）；清洗词形与 A1 档位词形全分母（102 件）零命中", () => {
+  it("清洗与登记留痕（B7 重构后）：porting_notes 在册（stacks 19 overlay installed/bound 注记 + B7 21 条主题/导航登记注记）；清洗词形与 A1 档位词形全分母（104 件）零命中", () => {
     const noted = PORTED_ENTRIES.filter((e) => e.porting_notes.length > 0);
     const stackNoted = noted.filter((e) => e.asset.startsWith("specs/hard/stacks/"));
     const themeNoted = noted.filter((e) => e.asset.startsWith("specs/hard/themes/"));
-    expect(stackNoted).toHaveLength(18);
+    expect(stackNoted).toHaveLength(19);
     expect(themeNoted).toHaveLength(21);
     for (const entry of stackNoted) {
       expect(entry.asset.endsWith("-overlay.md")).toBe(true);
@@ -852,11 +913,11 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     for (const entry of themeNoted) {
       expect(entry.porting_notes[0]).toContain("B7-THEME");
     }
-    // A1：102 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
+    // A1：104 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
     for (const entry of loaded) {
       expect(/\b(MINIMAL|LIGHT|STANDARD)\b/.test(entry.content), entry.path).toBe(false);
     }
-    // 清洗词形播种面零残留：finish / task.py / Trellis 全分母（102 件）零命中。
+    // 清洗词形播种面零残留：finish / task.py / Trellis 全分母（104 件）零命中。
     for (const entry of loaded) {
       expect(entry.content.includes("finish"), entry.path).toBe(false);
       expect(entry.content.includes("task.py"), entry.path).toBe(false);
