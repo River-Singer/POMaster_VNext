@@ -1,7 +1,7 @@
 // Overlay 能力清单 MDX 生成器（G-A · 四类页面之三：19 族 stack overlay 能力页；B6H 起含 h5）。
 //
 // 内容源（只读）：packages/cli/seeds/specs/hard/stacks/<slug>/（index.md +
-// <slug>-overlay.md；18 族 frontmatter 键形 2026-09-06 实证统一：capability/
+// <slug>-overlay.md；19 族（B6H 增 h5）frontmatter 键形 2026-09-06 实证统一：capability/
 // requires/conflicts/coexistence/lane/status/authority_scope/seed_version 等）。
 // 页面透传：身份 frontmatter 键值表 + Scope/Rules/Checklist 正文（code-span 感知
 // MDX 转义——overlay 正文含 `<style scoped>` 等官方词形）+ x-research-anchors 源指向。

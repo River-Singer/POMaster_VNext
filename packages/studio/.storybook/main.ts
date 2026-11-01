@@ -1,7 +1,7 @@
 // Storybook 主配置（G-A canonical 实例 · @storybook/vue3-vite 10.6）。
 //
 // stories 面：generated/（生成器产物——41 archetype MDX + 71 antdv story +
-// 18 overlay MDX + baseline 导航）+ src/pages/（手写边界页：总览/geist/CSS 体系）。
+// 19 overlay MDX + baseline 导航）+ src/pages/（手写边界页：总览/geist/CSS 体系）。
 // 版本锚定：`^10.6.0` 显式 pin（research 警告 11.0.0-alpha 已进 next tag——禁漂移）。
 // 遥测：core.disableTelemetry 是声明层双保险；boot 事件须由 run.mjs 前置的
 // STORYBOOK_DISABLE_TELEMETRY 环境变量拦截（官方原文，研究 §4）。
