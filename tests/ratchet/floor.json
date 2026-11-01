@@ -799,6 +799,9 @@
         "layer": "L1",
         "domain": "permit_evidence"
       },
+      "packages/cli/tests/scaffold-validate.spec.ts": {
+        "layer": "L1"
+      },
       "packages/gauntlet-lite/test/typecheck-lint-adapter.spec.ts": {
         "layer": "L1"
       },

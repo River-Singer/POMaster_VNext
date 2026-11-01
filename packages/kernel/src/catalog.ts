@@ -1139,6 +1139,12 @@ export interface CatalogArchetypeMaterial {
     readonly note: string | null;
     readonly urls: readonly string[];
   };
+  /**
+   * 操作清单（物料 operations 槽，原文词形：后端原型如 create/get/list/update/delete，
+   * API 原型如 "GET collection"）。脚手架领域规格的暴露操作对此校验（S1-1）。
+   * 槽位缺席 → null（不是所有原型都有操作面）；在场须为非空字符串数组且不重复，坏形 fail-closed。
+   */
+  readonly operations: readonly string[] | null;
 }
 
 /**
@@ -1199,6 +1205,7 @@ export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArch
     const composition = validateComposition(body["composition"], file, id);
     const semantic = validateSemantic(body["semantic"], file, id);
     const referenceAnchors = validateReferenceAnchors(body["x-research-anchors"], file, id);
+    const operations = validateOperations(body["operations"], file, id);
     if (materials.has(id)) {
       throw new GovernanceError(
         "SCHEMA_INVALID",
@@ -1217,6 +1224,7 @@ export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArch
       composition,
       semantic,
       referenceAnchors,
+      operations,
     });
   }
   return [...materials.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -1264,6 +1272,27 @@ function validateComposition(
     optional: out["optional"] ?? [],
     incompatible: out["incompatible"] ?? [],
   };
+}
+
+/** operations 槽校验（S1-1）：缺席 → null；在场须为非空、不重复的非空字符串数组。 */
+function validateOperations(value: unknown, file: string, id: string): readonly string[] | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    !value.every((item) => typeof item === "string" && item.trim().length > 0) ||
+    new Set(value).size !== value.length
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog archetype operations 形态非法（须非空、不重复的字符串数组）: ${file}`,
+      "operations 是原型的操作面；脚手架领域规格的暴露操作据此校验，坏形物料显式爆。",
+      { file, id },
+    );
+  }
+  return value as readonly string[];
 }
 
 /** semantic 面校验（v0.6.1 §4 semantic 三槽可选；非空字符串或缺席）。 */
