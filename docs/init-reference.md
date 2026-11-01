@@ -119,8 +119,9 @@ canonical 正文层为 `.pomaster/truth/objects/`；legacy `.pomaster/objects/` 
 
 - **缺失才写、在座零触碰**；
 - 播种件**不带生成标记**——项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖；
-- 播种分母 = **103 份内容文件** + manifest 单源：
-  - `specs/hard` 57：themes 21（20 主题 + 1 导航）/ stacks 18×2（后端 14 族 + 前端 4 族）；
+- 播种分母 = **105 份内容文件** + manifest 单源：
+  - `specs/hard` 59：themes 21（20 主题 + 1 导航）/ stacks 19×2（后端 14 族 + 前端 5 族：vue3 / antdesign / geist / css / h5）；
+    `h5`（H5 / 移动端适配，B6H 同步自 pomaster）只播种，VNext 尚无对应选型键，不进入绑定；
   - `specs/evidence` 20；
   - `baseline` 26（含 R3 增量 `frontend/design-tokens.yaml` 语义 token 合同）；
 - 已安装工作区的旧 FE/BE 平铺 spec 由 doctor / status 的 `legacy_specs_present` 检出呈现

@@ -220,13 +220,14 @@ describe("studio generators · antdv 组件目录（71 组件族 story + S1 态�
   });
 });
 
-describe("studio generators · overlay 能力清单（18 族）", () => {
-  it("覆盖 18 族 stack，capability/requires/源指向在座", () => {
+describe("studio generators · overlay 能力清单（19 族）", () => {
+  it("覆盖 19 族 stack（B6H h5 18→19），capability/requires/源指向在座", () => {
     const out = tempRoot("ovl");
     try {
       const { count, slugs } = generateOverlayPages(out);
-      expect(count).toBe(18);
+      expect(count).toBe(19);
       expect(slugs).toContain("css");
+      expect(slugs).toContain("h5");
       expect(slugs).toContain("vue3");
       expect(slugs).toContain("spring-boot");
       for (const slug of slugs) {

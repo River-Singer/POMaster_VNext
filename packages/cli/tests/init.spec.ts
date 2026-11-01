@@ -66,7 +66,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 14×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
+ * 14×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份 + B6H h5 105 份——预铺面
  * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
  * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6c-B6G+B7
  * 各批在册）。
@@ -99,7 +99,7 @@ describe("init 首次创建（CREATED）", () => {
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       heavyDefaultExpectedFiles(),
     );
-    // seeded = 播种件（B6c-B6G+B7-THEME 各批 102 份 + R3 tokens 补位 103 份）缺席写入——非 init 再生成物，与 created 分账。
+    // seeded = 播种件（B6c-B6G+B7-THEME 各批 102 份 + R3 tokens 补位 103 份 + B6H h5 105 份）缺席写入——非 init 再生成物，与 created 分账。
     expect(
       outcome.result.files.every(
         (f) => f.action === "created" || f.action === "seeded",

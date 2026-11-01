@@ -1,4 +1,4 @@
-// Overlay 能力清单 MDX 生成器（G-A · 四类页面之三：18 族 stack overlay 能力页）。
+// Overlay 能力清单 MDX 生成器（G-A · 四类页面之三：19 族 stack overlay 能力页；B6H 起含 h5）。
 //
 // 内容源（只读）：packages/cli/seeds/specs/hard/stacks/<slug>/（index.md +
 // <slug>-overlay.md；18 族 frontmatter 键形 2026-09-06 实证统一：capability/
