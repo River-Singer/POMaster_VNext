@@ -77,7 +77,10 @@
  *                   catalog-lock 漂移显式检出；relock = P-v06 批次 2.5 漂移恢复键——
  *                   幂等重算 sha256 重锁，D24 工具侧动作无授权闸；catalog 是策展源
  *                   非第二套 Project Truth——§92.2）
- * - scaffold validate
+ * - scaffold validate/confirm/status
+ *                   confirm/status（S1-2，harness 约束 ①）：.pomaster/scaffold/domain-spec.yaml 经
+ *                   Owner 确认打语义摘要快照，确认后语义变化 = 漂移，重确认只走 --change；
+ *                   closeout 聚合 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT
  *                   脚手架领域规格校验（11-01-storybook-scaffold S1-1）：pomaster.domain-spec/v1
  *                   闭世界逐项报错 + catalog 原型核对 + admin / public 两个部署面的暴露纪律；
  *                   通过时输出归一化摘要；只读，未 init 目录可跑
@@ -306,6 +309,7 @@ import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runScaffoldValidate } from "./scaffold.js";
+import { runScaffoldConfirm, runScaffoldStatus } from "./scaffold-governance.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
@@ -820,6 +824,26 @@ export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-
 export { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
 export { runScaffoldValidate } from "./scaffold.js";
 export type { ScaffoldValidateInput, ScaffoldValidateResult, ScaffoldSurfaceSummary } from "./scaffold.js";
+export {
+  SCAFFOLD_CONFIRMATION_SCHEMA,
+  SCAFFOLD_SPEC_CONFIRMED_EVENT,
+  SCAFFOLD_CHANGE_ACTIVE_LIFECYCLES,
+  assessScaffoldSpec,
+  readScaffoldConfirmation,
+  runScaffoldConfirm,
+  runScaffoldStatus,
+  scaffoldGateErrors,
+  scaffoldSemanticDigest,
+} from "./scaffold-governance.js";
+export type {
+  ScaffoldConfirmInput,
+  ScaffoldConfirmResult,
+  ScaffoldConfirmationEntry,
+  ScaffoldConfirmationRecord,
+  ScaffoldSpecAssessment,
+  ScaffoldSpecState,
+  ScaffoldStatusResult,
+} from "./scaffold-governance.js";
 export {
   DOMAIN_SPEC_SCHEMA,
   DOMAIN_FIELD_TYPES,
@@ -2654,7 +2678,7 @@ export function createProgram(
   const scaffold = program
     .command("scaffold")
     .description(
-      "脚手架命令面（S1-1）：validate = 校验领域规格 pomaster.domain-spec/v1（闭世界逐项报错；原型须在 catalog 且放对槽位；暴露操作须在后端原型操作清单内；用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出两个部署面的归一化摘要）",
+      "脚手架命令面（S1-1 / S1-2）：confirm = Owner 确认领域规格（确认后语义变化即漂移，重确认只走 --change，closeout 阻断）；status = 规格治理态；validate = 校验领域规格 pomaster.domain-spec/v1（闭世界逐项报错；原型须在 catalog 且放对槽位；暴露操作须在后端原型操作清单内；用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出两个部署面的归一化摘要）",
     );
   scaffold
     .command("validate")
@@ -2670,6 +2694,37 @@ export function createProgram(
         ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
       });
       record({ command: "scaffold validate", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("confirm")
+    .description(
+      `领域规格确认（S1-2，harness 约束 ①）：校验 .pomaster/scaffold/domain-spec.yaml 后写确认记录（归一化规格的语义摘要 + 原始字节摘要 + at_seq + 确认人，history 只追加）并追加 journal SCAFFOLD_SPEC_CONFIRMED。首次确认不需要通道；已确认且语义未变 → NO_CHANGE 零写入（只改格式 / 注释不算漂移）；确认后语义变化 → 必须 --change <CHANGE.*>（在册、change_object、PROPOSED | CURRENT），没有手改声明通道。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_RECONFIRM_REQUIRES_CHANGE / SCAFFOLD_CHANGE_NOT_ACTIVE / OBJECT_NOT_FOUND / SCHEMA_INVALID（--by 非 human:、无可授权变更时携 --change）/ NOT_INITIALIZED`,
+    )
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--change <change-id>", "治理通道：确认后规格语义变化时必携的活性 CHANGE.*")
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldConfirm(resolveDir(command), {
+        by: opts.by as string,
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
+        ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
+      });
+      record({ command: "scaffold confirm", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("status")
+    .description(
+      "领域规格治理态（只读）：absent（未使用脚手架）/ invalid / unconfirmed / confirmed / drifted，确认次数与 at_seq、字节是否变化、实体清单、待项目决定的决策位，以及 closeout 会给的阻断码",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldStatus(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold status", outcome, asJson: command.opts().json === true });
     });
 
   // —— Trellis Spec 迁移命令面（PRD §93.6 四词形 + §96 第 8 步；P30-Commands） ——

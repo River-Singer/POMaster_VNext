@@ -35,7 +35,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore } from "@pomaster/kernel";
-import { runCli, runCloseout, type CloseoutResult } from "@pomaster/cli";
+import { runCli, runCloseout, runScaffoldConfirm, type CloseoutResult } from "@pomaster/cli";
 
 let root: string;
 
@@ -1174,6 +1174,50 @@ describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELIN
       join(root, ".pomaster", "baseline", "manifest.yaml"),
       `id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\nconfirmed:\n  at_seq: 3\n  digests:\n${digestLines}\n`,
     );
+    const released = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(released.ok).toBe(true);
+    expect((released.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+});
+
+describe("closeout 脚手架领域规格确认门（S1-2：SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT）", () => {
+  const SAMPLE_SPEC = new URL("../scaffold/examples/fleet.domain-spec.yaml", import.meta.url);
+
+  function seedDomainSpec(text: string = readFileSync(SAMPLE_SPEC, "utf8")): void {
+    mkdirSync(join(root, ".pomaster", "scaffold"), { recursive: true });
+    writeFileSync(join(root, ".pomaster", "scaffold", "domain-spec.yaml"), text);
+  }
+
+  it("规格在场未确认 → SCAFFOLD_SPEC_NOT_CONFIRMED 阻断且零写入", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedAcceptReceipt();
+    seedDomainSpec();
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_SPEC_NOT_CONFIRMED"]);
+    expect(outcome.errors[0]?.hint).toContain("pomaster scaffold confirm");
+    expect((outcome.result as CloseoutResult).blocked).toBe(true);
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("确认后只改格式照常 COMPLETED；改了语义 → SCAFFOLD_SPEC_DRIFT 阻断", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedAcceptReceipt();
+    seedDomainSpec();
+    expect((await runScaffoldConfirm(root, { by: "human:owner" })).ok).toBe(true);
+    const confirmedText = readFileSync(join(root, ".pomaster", "scaffold", "domain-spec.yaml"), "utf8");
+
+    seedDomainSpec(confirmedText.replace("access: anonymous", "access: authenticated"));
+    const drifted = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(drifted.ok).toBe(false);
+    expect(drifted.errors.map((error) => error.code)).toEqual(["SCAFFOLD_SPEC_DRIFT"]);
+
+    seedDomainSpec(`# 只是加注释\n${confirmedText}`);
     const released = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(released.ok).toBe(true);
     expect((released.result as CloseoutResult).change).toBe("COMPLETED");

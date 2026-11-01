@@ -146,6 +146,7 @@ import {
   baselineGateAssessment,
   validateBaselineDependencyDeclaration,
 } from "./baseline.js";
+import { scaffoldGateErrors } from "./scaffold-governance.js";
 import {
   normalizeGrnEvidenceRefs,
   readEvidenceQualificationRequirement,
@@ -904,6 +905,11 @@ export async function runCloseout(
       }
     : await baselineGateAssessment(rootDir, baselineValidation?.declaration);
   const baselineErrors = baselineAssessment.errors;
+  // 脚手架领域规格确认门（11-01-storybook-scaffold S1-2，harness 约束 ①）：
+  // .pomaster/scaffold/domain-spec.yaml 在场的项目须持 Owner 确认且无语义漂移——
+  // SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT；规格缺席 → 门不适用。
+  // 判卷实现单源 scaffold-governance.ts（closeout 只聚合不旁移）。
+  const scaffoldErrors = await scaffoldGateErrors(rootDir);
 
   // ============================================================
   // ① DoD 判卷：acceptance 逐条映射 VERIFIED claim（§47 硬绑；D20 消费纪律）
@@ -1522,7 +1528,7 @@ export async function runCloseout(
   };
   const judged: CloseoutResult = { ...withKind, dod, gates };
 
-  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors];
+  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors, ...scaffoldErrors];
   const specSummary =
     dod.spec === null
       ? "spec: 无绑定 Evidence Spec（双轨过渡——acceptance 轨）"

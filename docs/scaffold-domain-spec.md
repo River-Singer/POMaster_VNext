@@ -7,7 +7,23 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）。生成命令 `scaffold plan / generate` 在 S1-6 提供。
+本页对应切片 S1-1（规格、校验、归一化）与 S1-2（规格进治理）。生成命令 `scaffold plan / generate` 在后续切片提供。
+
+## 规格进治理
+
+项目里的领域规格放在 `.pomaster/scaffold/domain-spec.yaml`。它是生成的单一事实源，必须经 Owner 确认才约束开发：
+
+```bash
+pomaster scaffold status                                   # 治理态 + closeout 会给的阻断码
+pomaster scaffold confirm --by human:<owner>               # 首次确认
+pomaster scaffold confirm --change CHANGE.C0042 --by human:<owner>   # 确认后改了规格
+```
+
+* 确认记录 `.pomaster/scaffold/confirmation.json` 存归一化规格的语义摘要与文件原始字节摘要，history 只追加；journal 追加 `SCAFFOLD_SPEC_CONFIRMED`。
+* 只认语义：改注释、缩进、键序、换行不算漂移；加字段、改暴露、把待定决策位定下来都是语义变化。
+* 确认后语义变化，重确认只能挂一个活性 `CHANGE.*`（在册、change_object、PROPOSED 或 CURRENT），没有手改声明通道。
+* 确认记录与 journal 对账：手改记录冒充确认会对不上，按未确认处理。
+* closeout 阻断码：`SCAFFOLD_SPEC_INVALID`（不通过校验）、`SCAFFOLD_SPEC_NOT_CONFIRMED`（未确认或记录不可信）、`SCAFFOLD_SPEC_DRIFT`（确认后语义变化）。没有规格文件的项目不受影响。
 
 ## 两个部署面
 
