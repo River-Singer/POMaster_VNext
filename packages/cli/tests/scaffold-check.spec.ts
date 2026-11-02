@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore } from "@pomaster/kernel";
+import { applyTransaction, createStore, sha256OfUtf8 } from "@pomaster/kernel";
 import { CATALOG_GATE_RECIPES } from "@pomaster/gauntlet-lite";
 import {
   SCAFFOLD_CHECK_IDS,
@@ -121,7 +121,7 @@ function snapshot(): Map<string, string> {
 }
 
 describe("五项检查", () => {
-  it("没有规格 → 门不适用：五项 not_applicable，零错误零警告", async () => {
+  it("没有规格 → 门不适用：六项 not_applicable，零错误零警告", async () => {
     await initStore();
     const result = await report();
     expect(result.applicable).toBe(false);
@@ -149,7 +149,7 @@ describe("五项检查", () => {
     expect(statuses(result)).toMatchObject({ spec_governance: "pass", generation_fresh: "warn" });
   });
 
-  it("确认并生成后 → 五项全过", async () => {
+  it("确认并生成后 → 六项全过", async () => {
     await confirmedAndGenerated();
     const result = await report();
     expect(result.errors).toEqual([]);
@@ -159,6 +159,7 @@ describe("五项检查", () => {
       ledger_integrity: "pass",
       generation_fresh: "pass",
       keybindings_registered: "pass",
+      contract_conformance: "pass",
       unmanaged_migrations: "pass",
     });
   });
@@ -173,6 +174,7 @@ describe("五项检查", () => {
     const ledger = result.checks.find((check) => check.id === "ledger_integrity");
     expect(ledger?.status).toBe("fail");
     expect(ledger?.findings).toEqual([`${GRANTS}（被删）`, `${MIGRATION_DIR}/V1__create_vehicle_model.sql（被手改）`]);
+    expect(statuses(result)["contract_conformance"]).toBe("pass");
   });
 
   it("改了规格并确认、却没重新生成 → SCAFFOLD_GENERATION_STALE；生成后恢复", async () => {
@@ -230,6 +232,45 @@ describe("五项检查", () => {
     expect(statuses(result)).toMatchObject({ ledger_integrity: "fail", generation_fresh: "not_applicable" });
   });
 
+  it("接口文档连同清单 sha 一起被改（清单核对骗过去了）→ contract_conformance 独立检出 SCAFFOLD_CONTRACT_DRIFT", async () => {
+    await confirmedAndGenerated();
+    const docPath = join(dir, "api", "openapi", "public.openapi.json");
+    const doc = JSON.parse(readFileSync(docPath, "utf8")) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    doc["components"]["schemas"]["PublicVehicleModel"]["properties"]["costPrice"] = { type: "string" };
+    const forged = `${JSON.stringify(doc, null, 2)}\n`;
+    writeFileSync(docPath, forged);
+    const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { files: { path: string; sha256: string }[] };
+    const entry = manifest.files.find((file) => file.path === "api/openapi/public.openapi.json");
+    if (entry === undefined) throw new Error("manifest entry");
+    entry.sha256 = sha256OfUtf8(forged);
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    const result = await report();
+    expect(statuses(result)["ledger_integrity"]).toBe("pass");
+    expect(codes(result)).toEqual(["SCAFFOLD_CONTRACT_DRIFT"]);
+    expect(result.checks.find((check) => check.id === "contract_conformance")?.findings).toEqual([
+      "api/openapi/public.openapi.json：用户侧文档 PublicVehicleModel 出现未对用户侧暴露的字段 costPrice（vehicle_model.cost_price）",
+    ]);
+  });
+
+  it("S1-3 时代的清单（没有接口文档）→ SCAFFOLD_CONTRACT_DRIFT 指路重新生成；生成后恢复", async () => {
+    await confirmedAndGenerated();
+    const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { files: { path: string }[]; template_sets: unknown[] };
+    manifest.files = manifest.files.filter((file) => !file.path.startsWith("api/"));
+    manifest.template_sets = [{ id: "mysql-flyway", version: "1" }];
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    rmSync(join(dir, "api"), { recursive: true, force: true });
+    const result = await report();
+    expect(codes(result)).toEqual(["SCAFFOLD_CONTRACT_DRIFT"]);
+    expect(result.checks.find((check) => check.id === "contract_conformance")?.findings).toEqual([
+      "缺少 admin 面的接口文档 api/openapi/admin.openapi.json（重新 scaffold generate）",
+      "缺少 public 面的接口文档 api/openapi/public.openapi.json（重新 scaffold generate）",
+    ]);
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    expect(codes(await report())).toEqual([]);
+  });
+
   it("判卷只读：前后全树字节不变", async () => {
     await confirmedAndGenerated();
     writeFileSync(join(dir, ...GRANTS.split("/")), "-- tampered\n");
@@ -250,11 +291,11 @@ describe("GRN 记录形态（check --gates 的 GATE.SCAFFOLD.CONSISTENCY）", ()
     expect(record.scopeNote).toContain("domain-spec.yaml");
   });
 
-  it("全过 → passed；scanned = 5、violations = 0", async () => {
+  it("全过 → passed；scanned = 6、violations = 0", async () => {
     await confirmedAndGenerated();
     const record = scaffoldConsistencyToRecord(await assessScaffoldConsistency(dir), input);
     expect(record.verdict).toBe("passed");
-    expect(record.counts).toEqual({ scanned: 5, applicableScanned: 5, violations: 0, notApplicable: 0 });
+    expect(record.counts).toEqual({ scanned: 6, applicableScanned: 6, violations: 0, notApplicable: 0 });
     expect(record.tool).toBe("cli:scaffold_consistency");
   });
 
@@ -311,7 +352,7 @@ describe("CLI：pomaster scaffold check", () => {
     expect((await runScaffoldGenerate(dir)).ok).toBe(true);
     lines.length = 0;
     expect(await runCli(["--dir", dir, "scaffold", "check", "--json"], io)).toBe(0);
-    expect(JSON.parse(lines.join("\n")).result.checks).toHaveLength(5);
+    expect(JSON.parse(lines.join("\n")).result.checks).toHaveLength(6);
     writeFileSync(join(dir, ...GRANTS.split("/")), "-- tampered\n");
     lines.length = 0;
     expect(await runCli(["--dir", dir, "scaffold", "check"], io)).toBe(1);

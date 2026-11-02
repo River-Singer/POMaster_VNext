@@ -862,8 +862,11 @@ export {
   SCAFFOLD_MANIFEST_SCHEMA,
   SCAFFOLD_GENERATED_EVENT,
   SCAFFOLD_CANONICAL_PREFIX,
+  SCAFFOLD_TEMPLATE_SETS,
   readGenerationManifest,
   runScaffoldGenerate,
+  scaffoldApiCanonicalId,
+  templateSetChanges,
   runScaffoldPlan,
   scaffoldDatabaseCanonicalId,
   scaffoldEntityCanonicalId,
@@ -878,6 +881,14 @@ export type {
   PlannedFile,
   GenerationConflict,
 } from "./scaffold-generate.js";
+export {
+  OPENAPI_TEMPLATE_SET,
+  checkOpenApiConformance,
+  expectedOperationIds,
+  openApiPath,
+  operationId as scaffoldOperationId,
+  renderOpenApi,
+} from "./scaffold-openapi.js";
 export {
   MYSQL_TEMPLATE_SET,
   columnType,
@@ -2811,7 +2822,7 @@ export function createProgram(
   scaffold
     .command("check")
     .description(
-      "一致性门禁（S1-4，harness 约束 ③，只读）：五项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
+      "一致性门禁（S1-4，harness 约束 ③，只读）：六项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 接口文档 ↔ 规格（S1-5）/ 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING / SCAFFOLD_CONTRACT_DRIFT；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
     )
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
     .option("--json", "machine-readable JSON output (§45)")

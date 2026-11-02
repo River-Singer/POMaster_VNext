@@ -19,7 +19,7 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
-import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -36,6 +36,7 @@ import {
   type BlockedSchemaChange,
   type SchemaChangeStatement,
 } from "./scaffold-mysql.js";
+import { OPENAPI_TEMPLATE_SET, openApiPath, renderOpenApi } from "./scaffold-openapi.js";
 import type { NormalizedDomainSpec } from "./scaffold-spec.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE, SCAFFOLD_GENERATION_MANIFEST_RELATIVE, journalFilePath } from "./store-layout.js";
 
@@ -44,7 +45,13 @@ export const SCAFFOLD_GENERATED_EVENT = "SCAFFOLD_GENERATED";
 /** 脚手架受管文件在 KEYBINDING 上的治理 id 前缀（hook 据此给出「改规格再生成」的指路）。 */
 export const SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD.";
 
-export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants";
+export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public";
+
+/** 当前生效的模板集（清单逐个记录版本；版本变了要单独评估升级）。 */
+export const SCAFFOLD_TEMPLATE_SETS: readonly { readonly id: string; readonly version: string }[] = [
+  MYSQL_TEMPLATE_SET,
+  OPENAPI_TEMPLATE_SET,
+];
 
 export interface ScaffoldManagedFile {
   /** 项目根相对 posix 路径。 */
@@ -65,6 +72,8 @@ export interface ScaffoldGenerationHistoryEntry {
   readonly spec_semantic_sha256: string;
   readonly created: readonly string[];
   readonly updated: readonly string[];
+  /** 不再生成而删除的可重生成文件（S1-5 起记录）。 */
+  readonly retired?: readonly string[];
 }
 
 export interface ScaffoldGenerationManifest {
@@ -139,6 +148,10 @@ export function scaffoldDatabaseCanonicalId(appKey: string): string {
   return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.DATABASE`;
 }
 
+export function scaffoldApiCanonicalId(appKey: string, surface: "admin" | "public"): string {
+  return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.API.${idSegment(surface)}`;
+}
+
 function keybindingId(appKey: string, fileSegment: string): string {
   return `KEYBINDING.SCAFFOLD.${idSegment(appKey)}.${idSegment(fileSegment)}`;
 }
@@ -164,7 +177,8 @@ function keybindingRow(file: ScaffoldManagedFile, seq: number): Record<string, u
 // 计划
 // ============================================================
 
-export type PlannedFileAction = "create" | "update" | "unchanged";
+/** retire = 不再生成的可重生成文件（如去掉了某个部署面）：未被手改时删除文件与 KEYBINDING 行。 */
+export type PlannedFileAction = "create" | "update" | "unchanged" | "retire";
 
 export interface PlannedFile {
   readonly path: string;
@@ -186,7 +200,7 @@ export interface GenerationConflict {
 export interface ScaffoldPlanResult {
   readonly spec_state: ScaffoldSpecState | null;
   readonly spec_semantic_sha256: string | null;
-  readonly template_set: { readonly id: string; readonly version: string };
+  readonly template_sets: readonly { readonly id: string; readonly version: string }[];
   /** 清单里记录的上次生成规格摘要（首次生成为 null）。 */
   readonly previous_spec_semantic_sha256: string | null;
   readonly files: readonly PlannedFile[];
@@ -225,7 +239,7 @@ function emptyPlan(state: ScaffoldSpecState | null): ScaffoldPlanResult {
   return {
     spec_state: state,
     spec_semantic_sha256: null,
-    template_set: { ...MYSQL_TEMPLATE_SET },
+    template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => ({ ...set })),
     previous_spec_semantic_sha256: null,
     files: [],
     statements: [],
@@ -299,21 +313,66 @@ async function buildPlan(
     }
   }
 
-  // 授权脚本：随规格重新生成（不进 Flyway）。
-  const grants = renderGrants(spec);
-  const grantsSha = sha256OfUtf8(grants);
-  const priorGrants = managedByPath.get(layout.grantsPath);
-  contents.set(layout.grantsPath, grants);
-  files.push({
-    path: layout.grantsPath,
-    action: priorGrants === undefined ? "create" : priorGrants.sha256 === grantsSha ? "unchanged" : "update",
-    template: "mysql.grants",
-    entities: spec.entities.map((entity) => entity.key),
-    immutable: false,
-    keybinding_id: keybindingId(spec.app.key, "GRANTS"),
-    canonical_id: scaffoldDatabaseCanonicalId(spec.app.key),
-    sha256: grantsSha,
-  });
+  // 可重生成文件：授权脚本（不进 Flyway）、每个面的 OpenAPI 文档——随规格更新。
+  const regenerable: {
+    readonly path: string;
+    readonly content: string;
+    readonly template: ScaffoldTemplateId;
+    readonly entities: readonly string[];
+    readonly keybindingSegment: string;
+    readonly canonicalId: string;
+  }[] = [
+    {
+      path: layout.grantsPath,
+      content: renderGrants(spec),
+      template: "mysql.grants",
+      entities: spec.entities.map((entity) => entity.key),
+      keybindingSegment: "GRANTS",
+      canonicalId: scaffoldDatabaseCanonicalId(spec.app.key),
+    },
+  ];
+  for (const surface of ["admin", "public"] as const) {
+    const document = renderOpenApi(spec, surface);
+    if (document === null) continue;
+    regenerable.push({
+      path: openApiPath(surface),
+      content: document,
+      template: surface === "admin" ? "openapi.admin" : "openapi.public",
+      entities: spec.entities.filter((entity) => entity.exposure[surface] !== undefined).map((entity) => entity.key),
+      keybindingSegment: `OPENAPI_${surface.toUpperCase()}`,
+      canonicalId: scaffoldApiCanonicalId(spec.app.key, surface),
+    });
+  }
+  for (const item of regenerable) {
+    const sha = sha256OfUtf8(item.content);
+    const prior = managedByPath.get(item.path);
+    contents.set(item.path, item.content);
+    files.push({
+      path: item.path,
+      action: prior === undefined ? "create" : prior.sha256 === sha ? "unchanged" : "update",
+      template: item.template,
+      entities: item.entities,
+      immutable: false,
+      keybinding_id: keybindingId(spec.app.key, item.keybindingSegment),
+      canonical_id: item.canonicalId,
+      sha256: sha,
+    });
+  }
+  // 清单里有、这次不再生成的可重生成文件 → retire（被手改 / 被删的已在上面记冲突，生成会先拒绝）。
+  const produced = new Set(regenerable.map((item) => item.path));
+  for (const file of manifest?.files ?? []) {
+    if (file.immutable || produced.has(file.path)) continue;
+    files.push({
+      path: file.path,
+      action: "retire",
+      template: file.template,
+      entities: file.entities,
+      immutable: false,
+      keybinding_id: file.keybinding_id,
+      canonical_id: file.canonical_id,
+      sha256: file.sha256,
+    });
+  }
   for (const file of manifest?.files ?? []) {
     if (file.immutable) {
       files.push({
@@ -342,7 +401,7 @@ async function buildPlan(
   const result: ScaffoldPlanResult = {
     spec_state: state,
     spec_semantic_sha256: specDigest,
-    template_set: { ...MYSQL_TEMPLATE_SET },
+    template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => ({ ...set })),
     previous_spec_semantic_sha256: manifest?.spec_semantic_sha256 ?? null,
     files: [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
     statements: diff.statements,
@@ -388,14 +447,14 @@ async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undef
   }
   const manifest = manifestRead.kind === "ok" ? manifestRead.manifest : null;
   if (manifest !== null) {
-    const recorded = manifest.template_sets.find((set) => set.id === MYSQL_TEMPLATE_SET.id);
-    if (recorded !== undefined && recorded.version !== MYSQL_TEMPLATE_SET.version) {
+    const changed = templateSetChanges(manifest);
+    if (changed.length > 0) {
       return {
         plan: null,
         errors: [
           {
             code: "SCAFFOLD_TEMPLATE_SET_CHANGED",
-            message: `模板集 ${MYSQL_TEMPLATE_SET.id} 版本变了（清单 ${recorded.version}，当前 ${MYSQL_TEMPLATE_SET.version}）`,
+            message: `模板集版本变了（${changed.join("；")}）`,
             hint: "模板集升级要单独评估对已生成文件的影响；当前版本不支持自动升级已生成项目。",
           },
         ],
@@ -409,6 +468,18 @@ async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undef
   }
   const plan = await buildPlan(rootDir, assessment.normalized, assessment.semantic_sha256, assessment.state, manifest);
   return { plan, errors: [], warnings, state: assessment.state };
+}
+
+/** 清单记录过、且版本与当前不同的模板集（新增的模板集不算变化）。 */
+export function templateSetChanges(manifest: ScaffoldGenerationManifest): string[] {
+  const changes: string[] = [];
+  for (const current of SCAFFOLD_TEMPLATE_SETS) {
+    const recorded = manifest.template_sets.find((set) => set.id === current.id);
+    if (recorded !== undefined && recorded.version !== current.version) {
+      changes.push(`${current.id}：清单 ${recorded.version}，当前 ${current.version}`);
+    }
+  }
+  return changes;
 }
 
 function specStateError(state: ScaffoldSpecState, confirmedAt: number | null): CliError | null {
@@ -463,11 +534,12 @@ function blockedError(blocked: readonly BlockedSchemaChange[]): CliError {
 function planHuman(result: ScaffoldPlanResult): string[] {
   const lines: string[] = [];
   lines.push(
-    `脚手架生成计划（模板集 ${result.template_set.id}@${result.template_set.version}；规格 ${result.spec_semantic_sha256?.slice(0, 19) ?? "?"}；上次生成 ${result.previous_spec_semantic_sha256?.slice(0, 19) ?? "无"}）`,
+    `脚手架生成计划（模板集 ${result.template_sets.map((set) => `${set.id}@${set.version}`).join(" + ")}；规格 ${result.spec_semantic_sha256?.slice(0, 19) ?? "?"}；上次生成 ${result.previous_spec_semantic_sha256?.slice(0, 19) ?? "无"}）`,
   );
   if (result.up_to_date) lines.push("  已是最新：现规格与上次生成一致，没有文件要写。");
   for (const file of result.files.filter((candidate) => candidate.action !== "unchanged")) {
-    lines.push(`  ${file.action === "create" ? "新建" : "更新"} ${file.path}（${file.template}；${file.canonical_id}）`);
+    const verb = file.action === "create" ? "新建" : file.action === "update" ? "更新" : "退役（不再生成，删除文件与 KEYBINDING 行）";
+    lines.push(`  ${verb} ${file.path}（${file.template}；${file.canonical_id}）`);
   }
   const unchanged = result.files.filter((file) => file.action === "unchanged").length;
   if (unchanged > 0) lines.push(`  不变 ${unchanged} 个受管文件`);
@@ -524,6 +596,7 @@ export interface ScaffoldGenerateResult extends ScaffoldPlanResult {
   readonly at_seq: number | null;
   readonly written: readonly string[];
   readonly keybindings_written: readonly string[];
+  readonly retired: readonly string[];
   readonly no_change: boolean;
 }
 
@@ -545,7 +618,7 @@ export async function runScaffoldGenerate(
   ): CommandOutcome<ScaffoldGenerateResult> =>
     failOutcome(
       "scaffold generate",
-      { ...plan, at_seq: null, written: [], keybindings_written: [], no_change: false },
+      { ...plan, at_seq: null, written: [], keybindings_written: [], retired: [], no_change: false },
       errors,
       [...planHuman(plan), ...errors.map((error) => `${error.code}: ${error.message}\n  → ${error.hint}`)],
       warnings,
@@ -562,11 +635,13 @@ export async function runScaffoldGenerate(
 
   // 受管文件在、KEYBINDING 行也都在 → 零写入。
   const keybindingDir = join(rootDir, ...KEYBINDINGS_DIR_RELATIVE.split("/"));
-  const missingRows = plan.files.filter((file) => !existsSync(join(keybindingDir, keybindingFileName(file.keybinding_id))));
+  const missingRows = plan.files.filter(
+    (file) => file.action !== "retire" && !existsSync(join(keybindingDir, keybindingFileName(file.keybinding_id))),
+  );
   if (plan.up_to_date && missingRows.length === 0) {
     return okOutcome(
       "scaffold generate",
-      { ...plan, at_seq: manifest?.at_seq ?? null, written: [], keybindings_written: [], no_change: true },
+      { ...plan, at_seq: manifest?.at_seq ?? null, written: [], keybindings_written: [], retired: [], no_change: true },
       ["NO_CHANGE：现规格与上次生成一致，受管文件与 KEYBINDING 都在册，零写入。"],
     );
   }
@@ -574,15 +649,23 @@ export async function runScaffoldGenerate(
   const seq = initialized.seq;
   const written: string[] = [];
   const keybindingsWritten: string[] = [];
+  const retired: string[] = [];
   try {
     for (const file of plan.files) {
       if (file.action === "unchanged") continue;
+      if (file.action === "retire") {
+        // 冲突（被手改 / 被删）已在计划阶段拦下，这里的文件内容与清单一致，删除是生成的逆操作。
+        await rm(join(rootDir, ...file.path.split("/")), { force: true });
+        await rm(join(keybindingDir, keybindingFileName(file.keybinding_id)), { force: true });
+        retired.push(file.path);
+        continue;
+      }
       const content = contents.get(file.path);
       if (content === undefined) throw new Error(`生成内容缺失：${file.path}（生成器内部错误）`);
       await writeAtomic(join(rootDir, ...file.path.split("/")), content);
       written.push(file.path);
     }
-    const managed: ScaffoldManagedFile[] = plan.files.map((file) => {
+    const managed: ScaffoldManagedFile[] = plan.files.filter((file) => file.action !== "retire").map((file) => {
       const prior = manifest?.files.find((candidate) => candidate.path === file.path);
       return {
         path: file.path,
@@ -619,14 +702,20 @@ export async function runScaffoldGenerate(
     const updated = plan.files.filter((file) => file.action === "update").map((file) => file.path);
     const next: ScaffoldGenerationManifest = {
       schema: SCAFFOLD_MANIFEST_SCHEMA,
-      template_sets: [{ ...MYSQL_TEMPLATE_SET }],
+      template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => ({ ...set })),
       spec_semantic_sha256: plan.spec_semantic_sha256 ?? "",
       at_seq: seq,
       spec_snapshot: spec,
       files: [...managed].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
       history: [
         ...(manifest?.history ?? []),
-        { at_seq: seq, spec_semantic_sha256: plan.spec_semantic_sha256 ?? "", created, updated },
+        {
+          at_seq: seq,
+          spec_semantic_sha256: plan.spec_semantic_sha256 ?? "",
+          created,
+          updated,
+          ...(retired.length > 0 ? { retired } : {}),
+        },
       ],
     };
     await writeAtomic(join(rootDir, SCAFFOLD_GENERATION_MANIFEST_RELATIVE), `${JSON.stringify(next, null, 2)}\n`);
@@ -636,9 +725,10 @@ export async function runScaffoldGenerate(
         type: SCAFFOLD_GENERATED_EVENT,
         seq,
         spec_semantic_sha256: next.spec_semantic_sha256,
-        template_set: `${MYSQL_TEMPLATE_SET.id}@${MYSQL_TEMPLATE_SET.version}`,
+        template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => `${set.id}@${set.version}`),
         created,
         updated,
+        retired,
       })}\n`,
       "utf8",
     );
@@ -654,12 +744,12 @@ export async function runScaffoldGenerate(
 
   const human = [
     ...planHuman(plan),
-    `已生成：写 ${written.length} 个文件，登记 ${keybindingsWritten.length} 行 KEYBINDING，清单 ${SCAFFOLD_GENERATION_MANIFEST_RELATIVE}（at_seq=${seq}）。`,
+    `已生成：写 ${written.length} 个文件${retired.length > 0 ? `，退役 ${retired.length} 个` : ""}，登记 ${keybindingsWritten.length} 行 KEYBINDING，清单 ${SCAFFOLD_GENERATION_MANIFEST_RELATIVE}（at_seq=${seq}）。`,
     "生成文件受管：活跃执行期内手改会被 exec-guard 拦下；要改就改规格 → scaffold confirm --change → scaffold generate。",
   ];
   return okOutcome(
     "scaffold generate",
-    { ...plan, at_seq: seq, written, keybindings_written: keybindingsWritten, no_change: false },
+    { ...plan, at_seq: seq, written, keybindings_written: keybindingsWritten, retired, no_change: false },
     human,
   );
 }

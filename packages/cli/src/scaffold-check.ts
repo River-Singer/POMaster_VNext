@@ -1,12 +1,14 @@
 /**
  * scaffold-check.ts —— 脚手架一致性门禁（S1-4；harness 约束 ③）。
  *
- * 只读判卷，五项：
+ * 只读判卷，六项：
  * 1. spec_governance：规格治理态（复用 S1-2 判卷：不通过 / 未确认 / 漂移即失败）；
  * 2. ledger_integrity：生成清单 ↔ 受管文件（被手改 / 被删即失败；清单坏了、模板集版本变了即失败）；
  * 3. generation_fresh：清单记录的规格摘要 = 已确认摘要（改了规格、确认了、却没重新生成 → 失败）；
  * 4. keybindings_registered：每个受管文件都有 KEYBINDING 行且锚对得上（写入约束的前提）；
- * 5. unmanaged_migrations：迁移目录里不在清单的手工迁移逐个列出（允许，警告呈现）。
+ * 5. contract_conformance（S1-5）：每个面的 OpenAPI 文档与规格独立对照——接口一一对应、
+ *    用户侧不出现未暴露字段、操作都标了授权结构（不依赖生成器自证）；
+ * 6. unmanaged_migrations：迁移目录里不在清单的手工迁移逐个列出（允许，警告呈现）。
  *
  * 三个消费面同一判卷：`pomaster scaffold check`（命令面）、closeout（阻断）、
  * `pomaster check --gates` 的 GATE.SCAFFOLD.CONSISTENCY（kernel-native 直调，结果作为 GRN 入账）。
@@ -21,9 +23,10 @@ import { sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { KEYBINDINGS_DIR_RELATIVE } from "./execution-audit.js";
-import { keybindingFileName, readGenerationManifest } from "./scaffold-generate.js";
+import { keybindingFileName, readGenerationManifest, templateSetChanges } from "./scaffold-generate.js";
 import { assessScaffoldSpec, scaffoldGateErrors, type ScaffoldGovernanceDeps, type ScaffoldSpecState } from "./scaffold-governance.js";
-import { MYSQL_TEMPLATE_SET, dbLayout } from "./scaffold-mysql.js";
+import { dbLayout } from "./scaffold-mysql.js";
+import { checkOpenApiConformance, openApiPath } from "./scaffold-openapi.js";
 import { SCAFFOLD_GENERATION_MANIFEST_RELATIVE } from "./store-layout.js";
 
 export const SCAFFOLD_CHECK_IDS = [
@@ -31,6 +34,7 @@ export const SCAFFOLD_CHECK_IDS = [
   "ledger_integrity",
   "generation_fresh",
   "keybindings_registered",
+  "contract_conformance",
   "unmanaged_migrations",
 ] as const;
 export type ScaffoldCheckId = (typeof SCAFFOLD_CHECK_IDS)[number];
@@ -100,7 +104,7 @@ export async function assessScaffoldConsistency(
     };
     errors.push(error);
     checks.push(item("ledger_integrity", "fail", "生成清单坏了", [error.code]));
-    for (const id of ["generation_fresh", "keybindings_registered", "unmanaged_migrations"] as const) {
+    for (const id of ["generation_fresh", "keybindings_registered", "contract_conformance", "unmanaged_migrations"] as const) {
       checks.push(item(id, "not_applicable", "生成清单坏了，无法判"));
     }
     return { applicable: true, spec_state: assessment.state, checks, errors, warnings };
@@ -116,17 +120,18 @@ export async function assessScaffoldConsistency(
     checks.push(item("ledger_integrity", "not_applicable", "还没有生成过"));
     checks.push(item("generation_fresh", assessment.state === "confirmed" ? "warn" : "not_applicable", "还没有生成过"));
     checks.push(item("keybindings_registered", "not_applicable", "还没有生成过"));
+    checks.push(item("contract_conformance", "not_applicable", "还没有生成过"));
     checks.push(item("unmanaged_migrations", "not_applicable", "还没有生成过"));
     return { applicable: true, spec_state: assessment.state, checks, errors, warnings };
   }
   const manifest = manifestRead.manifest;
 
   const ledgerFindings: string[] = [];
-  const recorded = manifest.template_sets.find((set) => set.id === MYSQL_TEMPLATE_SET.id);
-  if (recorded !== undefined && recorded.version !== MYSQL_TEMPLATE_SET.version) {
+  const setChanges = templateSetChanges(manifest);
+  if (setChanges.length > 0) {
     errors.push({
       code: "SCAFFOLD_TEMPLATE_SET_CHANGED",
-      message: `模板集 ${MYSQL_TEMPLATE_SET.id} 版本变了（清单 ${recorded.version}，当前 ${MYSQL_TEMPLATE_SET.version}）`,
+      message: `模板集版本变了（${setChanges.join("；")}）`,
       hint: "模板集升级要单独评估对已生成文件的影响；当前版本不支持自动升级已生成项目。",
     });
     ledgerFindings.push("SCAFFOLD_TEMPLATE_SET_CHANGED");
@@ -202,7 +207,42 @@ export async function assessScaffoldConsistency(
     checks.push(item("keybindings_registered", "pass", `${manifest.files.length} 行 KEYBINDING 在册`));
   }
 
-  // ⑤ 不受管的迁移（手工迁移允许，逐个呈现）
+  // ⑤ 接口文档 ↔ 规格（独立对照，不依赖生成器自证；以生成时的规格快照为准，新鲜度由 ③ 报）
+  const contractFindings: string[] = [];
+  const snapshot = manifest.spec_snapshot;
+  for (const surface of ["admin", "public"] as const) {
+    const exposed = snapshot.surfaces[surface] !== undefined && snapshot.entities.some((entity) => entity.exposure[surface] !== undefined);
+    const path = openApiPath(surface);
+    const managedDoc = manifest.files.find((file) => file.path === path);
+    if (!exposed) {
+      if (managedDoc !== undefined) contractFindings.push(`${path}：规格里这个面已没有暴露实体，文档却还在受管清单里`);
+      continue;
+    }
+    if (managedDoc === undefined) {
+      contractFindings.push(`缺少 ${surface} 面的接口文档 ${path}（重新 scaffold generate）`);
+      continue;
+    }
+    let text: string | null = null;
+    try {
+      text = await readFile(join(rootDir, ...path.split("/")), "utf8");
+    } catch {
+      text = null; // 被删已由 ② 报
+    }
+    if (text === null) continue;
+    for (const problem of checkOpenApiConformance(snapshot, surface, text)) contractFindings.push(`${path}：${problem}`);
+  }
+  if (contractFindings.length > 0) {
+    errors.push({
+      code: "SCAFFOLD_CONTRACT_DRIFT",
+      message: `接口文档与规格不符：${contractFindings.join("；")}`,
+      hint: "接口文档由规格生成，不手改：pomaster scaffold generate 重新生成；要改接口就改规格并走 --change 确认。",
+    });
+    checks.push(item("contract_conformance", "fail", "接口文档与规格不符", contractFindings));
+  } else {
+    checks.push(item("contract_conformance", "pass", "接口文档与规格一一对应"));
+  }
+
+  // ⑥ 不受管的迁移（手工迁移允许，逐个呈现）
   const migrationDir = dbLayout(manifest.spec_snapshot).migrationDir;
   const managed = new Set(manifest.files.map((file) => file.path));
   const dirPath = join(rootDir, ...migrationDir.split("/"));

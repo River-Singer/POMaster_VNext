@@ -1,0 +1,371 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "车队管理（用户侧（外网 / C 端））",
+    "version": "v1",
+    "description": "由 pomaster scaffold generate 生成（模板集 openapi-3.1@1）。受管文件，不要手改：改 .pomaster/scaffold/domain-spec.yaml → pomaster scaffold confirm --change → pomaster scaffold generate。认证方式由项目决定，本文档只标授权结构。",
+    "x-pomaster-surface": "public",
+    "x-pomaster-app": "fleet"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "用户侧（外网 / C 端）"
+    }
+  ],
+  "paths": {
+    "/vehicle-models": {
+      "get": {
+        "operationId": "publicListVehicleModel",
+        "tags": [
+          "车型"
+        ],
+        "x-pomaster-entity": "vehicle_model",
+        "x-pomaster-access": "anonymous",
+        "summary": "车型列表",
+        "description": "KEYSET 分页（after / limit），不返回总数；默认排序 business_code asc。只返回 status ∈ {ENABLED} 的记录。",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "上一页返回的 nextCursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "businessCode",
+            "in": "query",
+            "required": false,
+            "description": "车型编码（前缀匹配）",
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "description": "名称（前缀匹配）",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "一页记录",
+            "headers": {
+              "Cache-Control": {
+                "description": "匿名公开读可被 CDN / 浏览器缓存",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "ETag": {
+                "description": "内容实体标签，配合 If-None-Match 返回 304",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicVehicleModelPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/vehicle-models/{id}": {
+      "get": {
+        "operationId": "publicGetVehicleModel",
+        "tags": [
+          "车型"
+        ],
+        "x-pomaster-entity": "vehicle_model",
+        "x-pomaster-access": "anonymous",
+        "summary": "车型详情",
+        "description": "只返回 status ∈ {ENABLED} 的记录。不满足时返回 404。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "记录",
+            "headers": {
+              "Cache-Control": {
+                "description": "匿名公开读可被 CDN / 浏览器缓存",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "ETag": {
+                "description": "内容实体标签，配合 If-None-Match 返回 304",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicVehicleModel"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457 问题详情（ARCHETYPE.API.ERROR）：五个标准成员 + 扩展成员；客户端必须忽略不认识的扩展成员",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri-reference",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "description": "必须与真实 HTTP 状态码一致"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri-reference"
+          },
+          "code": {
+            "type": "string",
+            "description": "扩展成员：业务错误码"
+          },
+          "trace_id": {
+            "type": "string",
+            "description": "扩展成员：链路追踪 id"
+          },
+          "field_errors": {
+            "type": "array",
+            "description": "扩展成员：字段级错误",
+            "items": {
+              "type": "object",
+              "required": [
+                "detail",
+                "pointer"
+              ],
+              "properties": {
+                "detail": {
+                  "type": "string"
+                },
+                "pointer": {
+                  "type": "string",
+                  "description": "JSON Pointer，指向出错字段"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "title",
+          "status"
+        ]
+      },
+      "PublicVehicleModel": {
+        "type": "object",
+        "title": "车型",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true
+          },
+          "businessCode": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "车型编码"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "名称"
+          },
+          "seats": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 99,
+            "title": "座位数"
+          },
+          "listPrice": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "decimal",
+            "pattern": "^-?\\d{1,10}(\\.\\d{1,2})?$",
+            "x-minimum": "0",
+            "title": "指导价"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "title": "说明"
+          }
+        },
+        "required": [
+          "id",
+          "businessCode",
+          "name"
+        ]
+      },
+      "PublicVehicleModelPage": {
+        "type": "object",
+        "description": "KEYSET 分页：不返回总数；hasMore 为 true 时用 nextCursor 取下一页",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicVehicleModel"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "不透明游标"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "hasMore"
+        ]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求不合法（字段级错误见 field_errors）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未认证（认证方式由项目决定）",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "已认证但没有该操作的权限码",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "记录不存在、不可见或不属于当前用户",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "版本冲突（乐观锁）或唯一约束冲突",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "超出限流",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "description": "多少秒后可重试",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -42,6 +42,8 @@ const OWNER = "human:owner";
 const SPEC_RELATIVE = ".pomaster/scaffold/domain-spec.yaml";
 const MIGRATION_DIR = "backend/fleet-core/src/main/resources/db/migration";
 const GRANTS = "backend/db/grants.sql";
+const ADMIN_OAS = "api/openapi/admin.openapi.json";
+const PUBLIC_OAS = "api/openapi/public.openapi.json";
 const CATALOG = loadCatalogArchetypes(resolveCatalogRoot()).map((material) => ({
   id: material.id,
   operations: material.operations,
@@ -330,6 +332,8 @@ describe("generate：生成记账与写入约束", () => {
     expect(plan.ok).toBe(true);
     expect(plan.warnings.map((warning) => warning.code)).toEqual(["SCAFFOLD_SPEC_NOT_CONFIRMED"]);
     expect(plan.result.files.map((file) => `${file.action} ${file.path}`)).toEqual([
+      `create ${ADMIN_OAS}`,
+      `create ${PUBLIC_OAS}`,
       `create ${GRANTS}`,
       `create ${MIGRATION_DIR}/V1__create_vehicle_model.sql`,
     ]);
@@ -345,19 +349,26 @@ describe("generate：生成记账与写入约束", () => {
     await confirmed();
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
-    expect(outcome.result.written).toEqual([GRANTS, `${MIGRATION_DIR}/V1__create_vehicle_model.sql`]);
+    expect(outcome.result.written).toEqual([ADMIN_OAS, PUBLIC_OAS, GRANTS, `${MIGRATION_DIR}/V1__create_vehicle_model.sql`]);
 
     const migration = read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`);
     expect(migration).toContain("-- 受管文件，不要手改");
     expect(migration.endsWith(`${golden("vehicle_model.create.sql")}`)).toBe(true);
     expect(read(GRANTS)).toBe(golden("grants.sql"));
+    expect(read(ADMIN_OAS)).toBe(golden("admin.openapi.json"));
+    expect(read(PUBLIC_OAS)).toBe(golden("public.openapi.json"));
 
     const manifestRead = await readGenerationManifest(dir);
     expect(manifestRead.kind).toBe("ok");
     if (manifestRead.kind !== "ok") return;
     const manifest = manifestRead.manifest;
-    expect(manifest.template_sets).toEqual([{ id: "mysql-flyway", version: "1" }]);
+    expect(manifest.template_sets).toEqual([
+      { id: "mysql-flyway", version: "1" },
+      { id: "openapi-3.1", version: "1" },
+    ]);
     expect(manifest.files.map((file) => [file.path, file.template, file.immutable, file.canonical_id])).toEqual([
+      [ADMIN_OAS, "openapi.admin", false, "CAPABILITY.SCAFFOLD.FLEET.API.ADMIN"],
+      [PUBLIC_OAS, "openapi.public", false, "CAPABILITY.SCAFFOLD.FLEET.API.PUBLIC"],
       [GRANTS, "mysql.grants", false, "CAPABILITY.SCAFFOLD.FLEET.DATABASE"],
       [`${MIGRATION_DIR}/V1__create_vehicle_model.sql`, "mysql.migration", true, "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL"],
     ]);
@@ -365,7 +376,12 @@ describe("generate：生成记账与写入约束", () => {
     expect(manifest.spec_snapshot.entities[0]?.key).toBe("vehicle_model");
 
     const rows = readdirSync(join(dir, ".pomaster", "truth", "keybindings")).sort();
-    expect(rows).toEqual(["keybinding.scaffold.fleet.grants.json", "keybinding.scaffold.fleet.migration_v1.json"]);
+    expect(rows).toEqual([
+      "keybinding.scaffold.fleet.grants.json",
+      "keybinding.scaffold.fleet.migration_v1.json",
+      "keybinding.scaffold.fleet.openapi_admin.json",
+      "keybinding.scaffold.fleet.openapi_public.json",
+    ]);
     for (const name of rows) {
       const row = JSON.parse(read(`.pomaster/truth/keybindings/${name}`)) as Record<string, string>;
       expect(row["binding_class"]).toBe("capability_to_file");
@@ -375,7 +391,12 @@ describe("generate：生成记账与写入约束", () => {
     }
     const events = journalEvents(SCAFFOLD_GENERATED_EVENT);
     expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ template_set: "mysql-flyway@1", created: outcome.result.written, updated: [] });
+    expect(events[0]).toMatchObject({
+      template_sets: ["mysql-flyway@1", "openapi-3.1@1"],
+      created: outcome.result.written,
+      updated: [],
+      retired: [],
+    });
   });
 
   it("已最新 → NO_CHANGE 零写入", async () => {
@@ -427,7 +448,7 @@ describe("generate：生成记账与写入约束", () => {
     expect(plan.result.conflicts.map((conflict) => [conflict.path, conflict.kind])).toEqual([[GRANTS, "missing"]]);
   });
 
-  it("规格加法变化（--change 确认后）→ 追加 V2 迁移，V1 不动，授权脚本不变", async () => {
+  it("规格加法变化（--change 确认后）→ 追加 V2 迁移，V1 不动；管理侧接口文档更新，用户侧与授权脚本不变", async () => {
     await confirmed();
     await runScaffoldGenerate(dir);
     const v1 = read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`);
@@ -437,7 +458,9 @@ describe("generate：生成记账与写入约束", () => {
     expect((await runScaffoldConfirm(dir, { by: OWNER, change: "CHANGE.SCAFFOLD_COLOR" })).ok).toBe(true);
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
-    expect(outcome.result.written).toEqual([`${MIGRATION_DIR}/V2__alter_vehicle_model.sql`]);
+    expect(outcome.result.written).toEqual([ADMIN_OAS, `${MIGRATION_DIR}/V2__alter_vehicle_model.sql`]);
+    expect(read(ADMIN_OAS)).toContain('"color"');
+    expect(read(PUBLIC_OAS)).toBe(golden("public.openapi.json"));
     expect(read(`${MIGRATION_DIR}/V2__alter_vehicle_model.sql`)).toContain(
       "ALTER TABLE `vehicle_model` ADD COLUMN `color` VARCHAR(16) NULL COMMENT '颜色';",
     );
@@ -445,7 +468,7 @@ describe("generate：生成记账与写入约束", () => {
     const manifestRead = await readGenerationManifest(dir);
     if (manifestRead.kind !== "ok") throw new Error("manifest");
     expect(manifestRead.manifest.history).toHaveLength(2);
-    expect(manifestRead.manifest.files).toHaveLength(3);
+    expect(manifestRead.manifest.files).toHaveLength(5);
   });
 
   it("需要数据迁移的变化（删字段）→ SCAFFOLD_MIGRATION_NOT_ADDITIVE 且零写入", async () => {
@@ -499,6 +522,75 @@ describe("generate：生成记账与写入约束", () => {
     expect(() => parseGovernedId(long)).not.toThrow();
   });
 
+  it("去掉用户侧暴露 → 用户侧接口文档退役：删文件与 KEYBINDING 行、出清单；用户侧列表索引随之重建", async () => {
+    await confirmed();
+    await runScaffoldGenerate(dir);
+    const raw = sampleRaw();
+    delete raw["entities"][0]["exposure"]["public"];
+    delete raw["surfaces"]["public"];
+    writeSpec(JSON.stringify(raw));
+    await seedChange("CHANGE.SCAFFOLD_ADMIN_ONLY");
+    expect((await runScaffoldConfirm(dir, { by: OWNER, change: "CHANGE.SCAFFOLD_ADMIN_ONLY" })).ok).toBe(true);
+    const plan = await runScaffoldPlan(dir);
+    expect(plan.result.files.find((file) => file.path === PUBLIC_OAS)?.action).toBe("retire");
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.result.retired).toEqual([PUBLIC_OAS]);
+    expect(existsSync(join(dir, ...PUBLIC_OAS.split("/")))).toBe(false);
+    expect(existsSync(join(dir, ".pomaster", "truth", "keybindings", "keybinding.scaffold.fleet.openapi_public.json"))).toBe(false);
+    expect(read(`${MIGRATION_DIR}/V2__alter_vehicle_model.sql`)).toContain("DROP INDEX `idx_vehicle_model_public_list`");
+    const manifestRead = await readGenerationManifest(dir);
+    if (manifestRead.kind !== "ok") throw new Error("manifest");
+    expect(manifestRead.manifest.files.map((file) => file.path)).not.toContain(PUBLIC_OAS);
+    expect(manifestRead.manifest.history.at(-1)?.retired).toEqual([PUBLIC_OAS]);
+  });
+
+  it("退役前文件被手改 → 冲突拒绝，不删手改过的文件", async () => {
+    await confirmed();
+    await runScaffoldGenerate(dir);
+    writeFileSync(join(dir, ...PUBLIC_OAS.split("/")), "{}\n");
+    const raw = sampleRaw();
+    delete raw["entities"][0]["exposure"]["public"];
+    delete raw["surfaces"]["public"];
+    writeSpec(JSON.stringify(raw));
+    await seedChange("CHANGE.SCAFFOLD_ADMIN_ONLY");
+    expect((await runScaffoldConfirm(dir, { by: OWNER, change: "CHANGE.SCAFFOLD_ADMIN_ONLY" })).ok).toBe(true);
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_GENERATED_FILE_MODIFIED"]);
+    expect(read(PUBLIC_OAS)).toBe("{}\n");
+  });
+
+  it("从 S1-3 时代的清单升级（只有 mysql 模板集）→ 新增接口文档，已有迁移不动", async () => {
+    await confirmed();
+    await runScaffoldGenerate(dir);
+    const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Spec;
+    manifest["template_sets"] = [{ id: "mysql-flyway", version: "1" }];
+    manifest["files"] = manifest["files"].filter((file: Spec) => !String(file["path"]).startsWith("api/"));
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    for (const name of ["keybinding.scaffold.fleet.openapi_admin.json", "keybinding.scaffold.fleet.openapi_public.json"]) {
+      rmSync(join(dir, ".pomaster", "truth", "keybindings", name));
+    }
+    rmSync(join(dir, "api"), { recursive: true, force: true });
+    const v1 = read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`);
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.result.written).toEqual([ADMIN_OAS, PUBLIC_OAS]);
+    expect(read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`)).toBe(v1);
+  });
+
+  it("模板集版本与清单不符 → SCAFFOLD_TEMPLATE_SET_CHANGED", async () => {
+    await confirmed();
+    await runScaffoldGenerate(dir);
+    const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Spec;
+    manifest["template_sets"] = [{ id: "mysql-flyway", version: "1" }, { id: "openapi-3.1", version: "0" }];
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_TEMPLATE_SET_CHANGED"]);
+    expect(outcome.errors[0]?.message).toContain("openapi-3.1");
+  });
+
   it("CLI：scaffold plan / generate --json 信封与退出码", async () => {
     await confirmed();
     const lines: string[] = [];
@@ -507,7 +599,7 @@ describe("generate：生成记账与写入约束", () => {
     expect(JSON.parse(lines.join("\n")).command).toBe("scaffold plan");
     lines.length = 0;
     expect(await runCli(["--dir", dir, "scaffold", "generate", "--json"], io)).toBe(0);
-    expect(JSON.parse(lines.join("\n")).result.written).toHaveLength(2);
+    expect(JSON.parse(lines.join("\n")).result.written).toHaveLength(4);
     lines.length = 0;
     writeFileSync(join(dir, ...GRANTS.split("/")), "-- hand edit\n");
     expect(await runCli(["--dir", dir, "scaffold", "generate"], io)).toBe(1);
