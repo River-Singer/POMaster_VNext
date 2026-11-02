@@ -58,6 +58,10 @@ export const CHECK_TITLES = {
   "markup.single-primary-button": "一个按钮区一个主按钮",
   "text.no-literal-copy": "界面文字走文案字典",
   "text.banned-terms": "不用禁用词",
+  "state.store-library": "全局状态库只用 Pinia",
+  "state.no-direct-request": "组件不直接发请求",
+  "perf.lazy-load": "路由与重组件按需加载",
+  "perf.no-full-library-import": "组件库按需引入",
   "format.no-local-pattern": "日期数字走格式化注册表",
 };
 

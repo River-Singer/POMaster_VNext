@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:b0bfba21c58b7c278fed4672d6972963d0cc0bed88e5602e4bc595bdbb78a543`；状态 origin=preset。
+> 规范指纹 `sha256:3c20ee0b393e07d0ef234e4635da6d6336308d4659972445189c9ac0cabf8392`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。
 
@@ -1127,6 +1127,186 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-templates-detail-page--detail-actions
 
+## 工程规范 / 状态管理（STATE）
+
+每份状态有属主；服务端数据进查询缓存，不复制进全局 store；全局 store 只放稳定的跨页状态；可分享的状态进 URL；组件不直接发请求；身份切换与卸载时清理。
+
+页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--overview
+
+### STATE.OWNERSHIP 每份状态声明属主
+
+每份状态都说清楚：谁拥有、谁能改、放在哪（组件内、页面、全局 store、查询缓存、URL、浏览器存储）、活多久、什么时候清理。组件自己的状态留在组件里，不放进全局 store。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「每个状态声明 owner、更新者、存储位置、生命周期和清理策略。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 将组件状态放入全局 store。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-ownership
+
+### STATE.SERVER_STATE 服务端数据进查询缓存，不复制进全局 store
+
+从接口来的数据由查询缓存层管理（缓存 key、过期、重新获取、失效都在这一层），页面直接从查询缓存读；不把服务端数据复制进全局 store 再手动同步，也不在全局 store 里存大量业务数据。查询缓存用哪个库由项目定。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：查询缓存库 `p.query_library`：待项目决定——查询缓存层用哪个库？（候选 @tanstack/vue-query / Pinia Colada）
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「server state 由查询缓存层管理。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 复制 server state 到全局 store 手动同步。」
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 在全局状态库存储大量业务数据（server state 须走 Query Cache）。」
+- 示例（这样做）：页面从查询缓存读
+- 示例（别这样做）：拉回来塞进全局 store 再同步
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-server-state
+
+### STATE.GLOBAL_STORE 全局 store 用 Pinia，只放稳定的跨页状态
+
+全局状态库用 Pinia（Vuex 已是维护模式，不再使用）；全局 store 只放跨页面且稳定的状态，比如当前用户、权限、偏好设置；每个 store 一个文件，放在约定目录，文件头写明属主。
+
+- 执行：机器门禁 `state.store-library`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 参数：全局状态库 `p.library` = Pinia（pomaster 技术栈规范 · Vue 3（状态与路由选官方方案））
+- 硬规范依据：specs/hard/stacks/vue3/vue3-framework-overlay.md「新应用状态管理选 Pinia」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「全局 store 只保存稳定跨页面状态。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-global-store
+
+### STATE.URL 可分享、可恢复的状态进 URL
+
+列表的筛选条件、页码、排序、当前标签页这类可分享、刷新后要恢复的状态放进 URL；敏感信息和没提交的表单不进 URL。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「可分享和可恢复状态进入 URL。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 将敏感或未提交表单写入 URL。」
+- 示例（这样做）：筛选与页码在 URL 里
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-url
+
+### STATE.REQUESTS 组件不直接发请求
+
+组件不直接调用 fetch、axios，一律经生成的接口客户端（类型与 OpenAPI 同源）和查询缓存；展示组件不请求接口、不改路由、不改全局状态，数据从参数传入。
+
+- 执行：机器门禁 `state.no-direct-request`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 让展示组件偷偷请求接口、改路由或全局状态。」
+- 示例（别这样做）：组件里直接 fetch
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-requests
+
+### STATE.CACHE_KEYS 缓存 key 带全条件，写操作声明失效
+
+查询缓存的 key 包含所有影响结果的筛选条件和上下文（用户、租户、数据范围）；每个写操作声明它会让哪些查询失效，成功后刷新依赖数据；切换用户、角色、组织或数据范围时清掉可能越权的缓存。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「Query Key 包含所有影响结果的筛选和上下文。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「写操作定义依赖失效矩阵。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「用户、权限或范围切换时清除越权风险状态。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-cache-keys
+
+### STATE.CLEANUP 卸载与身份切换时清理，迟到的结果不写回
+
+状态持有的监听器、计时器、订阅、请求在组件卸载、身份切换时清理；已取消的请求、旧订阅、旧身份下的迟到结果不得写入当前状态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 让已取消请求、旧订阅或旧身份上下文的迟到结果继续写入当前状态。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-cleanup
+
+### STATE.FORM_MODEL 表单用独立的表单模型
+
+表单用独立的表单模型和类型化的校验 schema，不直接绑定接口返回的 DTO；区分初始值、当前值、是否改过、错误和提交中。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「使用独立 FormModel 和 typed schema。」
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「MUST NOT 直接绑定 DTO。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-form-model
+
+### STATE.BROWSER_STORAGE 浏览器存储要登记，不存凭据
+
+存进浏览器（localStorage、IndexedDB 等）的每一项都登记用途、隔离 key（按用户、租户）、版本、大小、过期时间和清理时机；读回来先校验版本和身份；脚本可读的存储里不放会话标识、刷新令牌等凭据。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「每个持久化项必须声明用途、Storage Class、Isolation Key、schema 版本、大小预算、过期时间、迁移/重置策略、清理触发器和 Owner。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「可被脚本读取的存储不得持久化 session identifier、refresh token、secret 或等价凭据」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-browser-storage
+
+## 工程规范 / 性能（PERF）
+
+先定预算；路由与重组件按需加载；大列表分页、宽表虚拟化；输入防抖并丢弃过期响应；初始化请求并行；度量分清实验室与真实用户数据。
+
+页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--overview
+
+### PERF.BUDGET 先定性能预算
+
+上线前定好预算：真实用户第 75 百分位 LCP ≤ 2.5 s、INP ≤ 200 ms、CLS ≤ 0.1（用户侧必须达到，管理侧作为参考目标，项目可以凭证据收紧）；首屏脚本体积和单个路由分包体积由项目定上限。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：LCP（p75） `p.lcp` = 2500ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：INP（p75） `p.inp` = 200ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：CLS（p75） `p.cls` = 0.1（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：首屏脚本体积 `p.initial_js`：待项目决定——首屏脚本（压缩后）体积上限是多少 KB？
+- 参数：路由分包体积 `p.route_chunk`：待项目决定——单个路由分包（压缩后）体积上限是多少 KB？
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「定义首屏、包体、交互和核心页面预算。」
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「默认参考目标为 p75 的 LCP ≤ 2.5s、INP ≤ 200ms、CLS ≤ 0.1」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-budget
+
+### PERF.LAZY_LOAD 路由与重组件按需加载
+
+路由一律懒加载；图表、富文本编辑器、大表格等重组件在用到的页面里按需加载；应用入口（main.ts）不同步引入这些重型依赖；页面先加载核心内容，非核心的延后。
+
+- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 在应用入口同步 import 重型编辑器、图表库或大表组件（首屏重依赖）。」
+- 示例（这样做）：路由懒加载
+- 示例（别这样做）：入口同步引入图表库
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-lazy-load
+
+### PERF.ON_DEMAND_LIBRARY 组件库按需引入
+
+组件库按需引入，不整包注册：管理侧按组件引入 ant-design-vue；用户侧 Vant 用官方的自动按需引入插件，不与全量引入混用。
+
+- 执行：机器门禁 `perf.no-full-library-import`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/stacks/h5/h5-mobile-overlay.md「Vant 引入必须走官方口径」
+- 示例（别这样做）：整包注册
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-on-demand-library
+
+### PERF.LARGE_LISTS 大列表分页，宽表虚拟化
+
+大列表走服务端分页、筛选、排序（管理侧每页最多 200 条，用户侧每次最多 50 条，与接口分页档一致）；行数多或列很多的表格用虚拟滚动；不用 v-for 一次渲染全量数据。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：管理侧每页上限 `p.admin_max_page_size` = 200 个（pomaster 脚手架部署面默认档（分页默认值与页长上限））
+- 参数：用户侧每次上限 `p.public_max_page_size` = 50 个（pomaster 脚手架部署面默认档（分页默认值与页长上限））
+- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——表格多少行以上启用虚拟滚动？
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「大列表服务端分页，宽表虚拟化。」
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-large-lists
+
+### PERF.INPUT 输入防抖，丢弃过期响应
+
+搜索、联想等随输入触发的请求做防抖；新请求发出时取消旧请求；过期的响应不覆盖新状态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-input
+
+### PERF.PARALLEL_INIT 页面初始化请求并行
+
+页面初始化需要的多个请求并行发出，或由后端聚合成一个；不串行等待彼此无关的请求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
+- 示例（这样做）：并行
+- 示例（别这样做）：串行等待
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-parallel-init
+
+### PERF.COMPUTE 渲染里不做重计算
+
+渲染函数和模板里不做复杂计算，派生值用 computed；对大数据全集的计算放到后端或 Web Worker，前端只做即时的轻计算。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 在 render 中执行复杂计算。」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-compute
+
+### PERF.MEASURE 度量分清实验室与真实用户
+
+性能结论分清实验室数据和真实用户数据，记录设备、网络、浏览器、样本量和统计口径，放行看第 75 百分位；同一数据量下对比前后结果，不拿平均值或单次本地耗时下结论。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「性能预算必须区分实验室数据与真实用户数据」
+- 页面：https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-measure
+
 ## 出处
 
 - `SRC.ANTD.SPEC.FONT` Ant Design 设计规范 · 字体：https://ant.design/docs/spec/font-cn（核实 2026-11-02）
@@ -1162,3 +1342,5 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 - `SRC.ANTD.SPEC.REACTION` Ant Design 设计原则 · 即时反应：https://ant.design/docs/spec/reaction（核实 2026-11-02）
 - `SRC.ANTD.SPEC.DETAIL_PAGE` Ant Design 模板文档 · 详情页：https://ant.design/docs/spec/detail-page-cn.md（核实 2026-11-02）
 - `SRC.ANTD.SPEC.VISUALIZATION` Ant Design 模板文档 · 数据可视化页：https://ant.design/docs/spec/visualization-page-cn（核实 2026-11-02）
+- `SRC.POMASTER.PERF_SPEC` pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）：repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md（核实 2026-11-02）
+- `SRC.POMASTER.VUE3_SPEC` pomaster 技术栈规范 · Vue 3（状态与路由选官方方案）：repo:packages/cli/seeds/specs/hard/stacks/vue3/vue3-framework-overlay.md（核实 2026-11-02）

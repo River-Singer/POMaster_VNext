@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v1",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源后运行 node packages/studio/run.mjs generate。",
-  "fingerprint": "sha256:b0bfba21c58b7c278fed4672d6972963d0cc0bed88e5602e4bc595bdbb78a543",
+  "fingerprint": "sha256:3c20ee0b393e07d0ef234e4635da6d6336308d4659972445189c9ac0cabf8392",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "1"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/antd.yaml",
-      "sha256": "d27b65c33feaea864ad820b120dabc4db221c4427481218ebbc2433157066a43"
+      "sha256": "6d81baf208434f2196e1eba62bb5b11b0c1e63eceebd558c76314ca0dda8b4cf"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -122,6 +122,26 @@
     {
       "id": "text.banned-terms",
       "title_zh": "不用禁用词",
+      "active": false
+    },
+    {
+      "id": "state.store-library",
+      "title_zh": "全局状态库只用 Pinia",
+      "active": false
+    },
+    {
+      "id": "state.no-direct-request",
+      "title_zh": "组件不直接发请求",
+      "active": false
+    },
+    {
+      "id": "perf.lazy-load",
+      "title_zh": "路由与重组件按需加载",
+      "active": false
+    },
+    {
+      "id": "perf.no-full-library-import",
+      "title_zh": "组件库按需引入",
       "active": false
     },
     {
@@ -5385,6 +5405,781 @@
           }
         }
       ]
+    },
+    {
+      "key": "state",
+      "title_zh": "状态管理",
+      "group": "engineering",
+      "group_title_zh": "工程规范",
+      "prefix": "STATE",
+      "summary_zh": "每份状态有属主；服务端数据进查询缓存，不复制进全局 store；全局 store 只放稳定的跨页状态；可分享的状态进 URL；组件不直接发请求；身份切换与卸载时清理。",
+      "storybook": {
+        "title": "规范/工程规范/状态管理",
+        "id": "standard-engineering-state--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--overview"
+      },
+      "rules": [
+        {
+          "id": "STATE.OWNERSHIP",
+          "title_zh": "每份状态声明属主",
+          "statement_zh": "每份状态都说清楚：谁拥有、谁能改、放在哪（组件内、页面、全局 store、查询缓存、URL、浏览器存储）、活多久、什么时候清理。组件自己的状态留在组件里，不放进全局 store。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "每个状态声明 owner、更新者、存储位置、生命周期和清理策略。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "MUST NOT 将组件状态放入全局 store。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-ownership",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-ownership"
+          }
+        },
+        {
+          "id": "STATE.SERVER_STATE",
+          "title_zh": "服务端数据进查询缓存，不复制进全局 store",
+          "statement_zh": "从接口来的数据由查询缓存层管理（缓存 key、过期、重新获取、失效都在这一层），页面直接从查询缓存读；不把服务端数据复制进全局 store 再手动同步，也不在全局 store 里存大量业务数据。查询缓存用哪个库由项目定。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "query_library",
+              "label_zh": "查询缓存库",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "查询缓存层用哪个库？",
+              "candidates": [
+                "@tanstack/vue-query",
+                "Pinia Colada"
+              ],
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "server state 由查询缓存层管理。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "MUST NOT 复制 server state 到全局 store 手动同步。"
+            },
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "MUST NOT 在全局状态库存储大量业务数据（server state 须走 Query Cache）。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "页面从查询缓存读",
+              "note_zh": null,
+              "template": null,
+              "code": "const { data, isLoading } = useVehicleModelList(query)   // 由生成的接口客户端 + 查询缓存提供",
+              "lang": "ts"
+            },
+            {
+              "kind": "dont",
+              "title_zh": "拉回来塞进全局 store 再同步",
+              "note_zh": null,
+              "template": null,
+              "code": "const store = useVehicleStore()\nstore.list = (await api.listVehicleModels(query)).items   // 之后每次改动都要手动同步",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-state--state-server-state",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-server-state"
+          }
+        },
+        {
+          "id": "STATE.GLOBAL_STORE",
+          "title_zh": "全局 store 用 Pinia，只放稳定的跨页状态",
+          "statement_zh": "全局状态库用 Pinia（Vuex 已是维护模式，不再使用）；全局 store 只放跨页面且稳定的状态，比如当前用户、权限、偏好设置；每个 store 一个文件，放在约定目录，文件头写明属主。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "state.store-library",
+            "check_title_zh": "全局状态库只用 Pinia",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "library",
+              "label_zh": "全局状态库",
+              "unit": "none",
+              "source": "SRC.POMASTER.VUE3_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "Pinia",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "vue3",
+              "doc": "stacks/vue3/vue3-framework-overlay.md",
+              "quote": "新应用状态管理选 Pinia"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "全局 store 只保存稳定跨页面状态。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-global-store",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-global-store"
+          }
+        },
+        {
+          "id": "STATE.URL",
+          "title_zh": "可分享、可恢复的状态进 URL",
+          "statement_zh": "列表的筛选条件、页码、排序、当前标签页这类可分享、刷新后要恢复的状态放进 URL；敏感信息和没提交的表单不进 URL。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "可分享和可恢复状态进入 URL。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "MUST NOT 将敏感或未提交表单写入 URL。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "筛选与页码在 URL 里",
+              "note_zh": null,
+              "template": null,
+              "code": "/admin/vehicle-models?status=ENABLED&page=3&size=20&sort=business_code,asc",
+              "lang": "html"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-state--state-url",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-url"
+          }
+        },
+        {
+          "id": "STATE.REQUESTS",
+          "title_zh": "组件不直接发请求",
+          "statement_zh": "组件不直接调用 fetch、axios，一律经生成的接口客户端（类型与 OpenAPI 同源）和查询缓存；展示组件不请求接口、不改路由、不改全局状态，数据从参数传入。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "state.no-direct-request",
+            "check_title_zh": "组件不直接发请求",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 让展示组件偷偷请求接口、改路由或全局状态。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "组件里直接 fetch",
+              "note_zh": null,
+              "template": null,
+              "code": "onMounted(async () => { rows.value = await (await fetch('/admin/api/v1/vehicle-models')).json() })",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-state--state-requests",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-requests"
+          }
+        },
+        {
+          "id": "STATE.CACHE_KEYS",
+          "title_zh": "缓存 key 带全条件，写操作声明失效",
+          "statement_zh": "查询缓存的 key 包含所有影响结果的筛选条件和上下文（用户、租户、数据范围）；每个写操作声明它会让哪些查询失效，成功后刷新依赖数据；切换用户、角色、组织或数据范围时清掉可能越权的缓存。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "Query Key 包含所有影响结果的筛选和上下文。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "写操作定义依赖失效矩阵。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "用户、权限或范围切换时清除越权风险状态。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-cache-keys",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-cache-keys"
+          }
+        },
+        {
+          "id": "STATE.CLEANUP",
+          "title_zh": "卸载与身份切换时清理，迟到的结果不写回",
+          "statement_zh": "状态持有的监听器、计时器、订阅、请求在组件卸载、身份切换时清理；已取消的请求、旧订阅、旧身份下的迟到结果不得写入当前状态。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "MUST NOT 让已取消请求、旧订阅或旧身份上下文的迟到结果继续写入当前状态。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-cleanup",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-cleanup"
+          }
+        },
+        {
+          "id": "STATE.FORM_MODEL",
+          "title_zh": "表单用独立的表单模型",
+          "statement_zh": "表单用独立的表单模型和类型化的校验 schema，不直接绑定接口返回的 DTO；区分初始值、当前值、是否改过、错误和提交中。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "使用独立 FormModel 和 typed schema。"
+            },
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "MUST NOT 直接绑定 DTO。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-form-model",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-form-model"
+          }
+        },
+        {
+          "id": "STATE.BROWSER_STORAGE",
+          "title_zh": "浏览器存储要登记，不存凭据",
+          "statement_zh": "存进浏览器（localStorage、IndexedDB 等）的每一项都登记用途、隔离 key（按用户、租户）、版本、大小、过期时间和清理时机；读回来先校验版本和身份；脚本可读的存储里不放会话标识、刷新令牌等凭据。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "每个持久化项必须声明用途、Storage Class、Isolation Key、schema 版本、大小预算、过期时间、迁移/重置策略、清理触发器和 Owner。"
+            },
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "可被脚本读取的存储不得持久化 session identifier、refresh token、secret 或等价凭据"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-state--state-browser-storage",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-state--state-browser-storage"
+          }
+        }
+      ]
+    },
+    {
+      "key": "performance",
+      "title_zh": "性能",
+      "group": "engineering",
+      "group_title_zh": "工程规范",
+      "prefix": "PERF",
+      "summary_zh": "先定预算；路由与重组件按需加载；大列表分页、宽表虚拟化；输入防抖并丢弃过期响应；初始化请求并行；度量分清实验室与真实用户数据。",
+      "storybook": {
+        "title": "规范/工程规范/性能",
+        "id": "standard-engineering-performance--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--overview"
+      },
+      "rules": [
+        {
+          "id": "PERF.BUDGET",
+          "title_zh": "先定性能预算",
+          "statement_zh": "上线前定好预算：真实用户第 75 百分位 LCP ≤ 2.5 s、INP ≤ 200 ms、CLS ≤ 0.1（用户侧必须达到，管理侧作为参考目标，项目可以凭证据收紧）；首屏脚本体积和单个路由分包体积由项目定上限。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "lcp",
+              "label_zh": "LCP（p75）",
+              "unit": "ms",
+              "source": "SRC.POMASTER.PERF_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 2500,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "inp",
+              "label_zh": "INP（p75）",
+              "unit": "ms",
+              "source": "SRC.POMASTER.PERF_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "cls",
+              "label_zh": "CLS（p75）",
+              "unit": "none",
+              "source": "SRC.POMASTER.PERF_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 0.1,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "initial_js",
+              "label_zh": "首屏脚本体积",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "首屏脚本（压缩后）体积上限是多少 KB？",
+              "candidates": null,
+              "pending": true
+            },
+            {
+              "key": "route_chunk",
+              "label_zh": "路由分包体积",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "单个路由分包（压缩后）体积上限是多少 KB？",
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "定义首屏、包体、交互和核心页面预算。"
+            },
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "默认参考目标为 p75 的 LCP ≤ 2.5s、INP ≤ 200ms、CLS ≤ 0.1"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-budget",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-budget"
+          }
+        },
+        {
+          "id": "PERF.LAZY_LOAD",
+          "title_zh": "路由与重组件按需加载",
+          "statement_zh": "路由一律懒加载；图表、富文本编辑器、大表格等重组件在用到的页面里按需加载；应用入口（main.ts）不同步引入这些重型依赖；页面先加载核心内容，非核心的延后。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "perf.lazy-load",
+            "check_title_zh": "路由与重组件按需加载",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "路由、图表和重组件按需加载。"
+            },
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "MUST NOT 在应用入口同步 import 重型编辑器、图表库或大表组件（首屏重依赖）。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "路由懒加载",
+              "note_zh": null,
+              "template": null,
+              "code": "{ path: '/vehicle-models', component: () => import('@/pages/vehicle-model/ListPage.vue') }",
+              "lang": "ts"
+            },
+            {
+              "kind": "dont",
+              "title_zh": "入口同步引入图表库",
+              "note_zh": null,
+              "template": null,
+              "code": "// main.ts\nimport * as echarts from 'echarts'",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-lazy-load",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-lazy-load"
+          }
+        },
+        {
+          "id": "PERF.ON_DEMAND_LIBRARY",
+          "title_zh": "组件库按需引入",
+          "statement_zh": "组件库按需引入，不整包注册：管理侧按组件引入 ant-design-vue；用户侧 Vant 用官方的自动按需引入插件，不与全量引入混用。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "perf.no-full-library-import",
+            "check_title_zh": "组件库按需引入",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "h5",
+              "doc": "stacks/h5/h5-mobile-overlay.md",
+              "quote": "Vant 引入必须走官方口径"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "整包注册",
+              "note_zh": null,
+              "template": null,
+              "code": "import Antd from 'ant-design-vue'\napp.use(Antd)",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-on-demand-library",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-on-demand-library"
+          }
+        },
+        {
+          "id": "PERF.LARGE_LISTS",
+          "title_zh": "大列表分页，宽表虚拟化",
+          "statement_zh": "大列表走服务端分页、筛选、排序（管理侧每页最多 200 条，用户侧每次最多 50 条，与接口分页档一致）；行数多或列很多的表格用虚拟滚动；不用 v-for 一次渲染全量数据。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "admin_max_page_size",
+              "label_zh": "管理侧每页上限",
+              "unit": "count",
+              "source": "SRC.POMASTER.SURFACES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "public_max_page_size",
+              "label_zh": "用户侧每次上限",
+              "unit": "count",
+              "source": "SRC.POMASTER.SURFACES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 50,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "virtual_threshold",
+              "label_zh": "虚拟滚动阈值",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "表格多少行以上启用虚拟滚动？",
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "大列表服务端分页，宽表虚拟化。"
+            },
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-large-lists",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-large-lists"
+          }
+        },
+        {
+          "id": "PERF.INPUT",
+          "title_zh": "输入防抖，丢弃过期响应",
+          "statement_zh": "搜索、联想等随输入触发的请求做防抖；新请求发出时取消旧请求；过期的响应不覆盖新状态。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "debounce",
+              "label_zh": "防抖间隔",
+              "unit": "ms",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "输入防抖间隔取多少毫秒？",
+              "candidates": [
+                300
+              ],
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "搜索防抖、旧请求取消、过期响应丢弃。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-input",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-input"
+          }
+        },
+        {
+          "id": "PERF.PARALLEL_INIT",
+          "title_zh": "页面初始化请求并行",
+          "statement_zh": "页面初始化需要的多个请求并行发出，或由后端聚合成一个；不串行等待彼此无关的请求。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "并行",
+              "note_zh": null,
+              "template": null,
+              "code": "const [dict, regions] = await Promise.all([api.getDict('vehicle_type'), api.listRegions()])",
+              "lang": "ts"
+            },
+            {
+              "kind": "dont",
+              "title_zh": "串行等待",
+              "note_zh": null,
+              "template": null,
+              "code": "const dict = await api.getDict('vehicle_type')\nconst regions = await api.listRegions()",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-parallel-init",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-parallel-init"
+          }
+        },
+        {
+          "id": "PERF.COMPUTE",
+          "title_zh": "渲染里不做重计算",
+          "statement_zh": "渲染函数和模板里不做复杂计算，派生值用 computed；对大数据全集的计算放到后端或 Web Worker，前端只做即时的轻计算。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "MUST NOT 在 render 中执行复杂计算。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-compute",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-compute"
+          }
+        },
+        {
+          "id": "PERF.MEASURE",
+          "title_zh": "度量分清实验室与真实用户",
+          "statement_zh": "性能结论分清实验室数据和真实用户数据，记录设备、网络、浏览器、样本量和统计口径，放行看第 75 百分位；同一数据量下对比前后结果，不拿平均值或单次本地耗时下结论。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "perf",
+              "doc": "themes/performance-and-capacity.md",
+              "quote": "性能预算必须区分实验室数据与真实用户数据"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-performance--perf-measure",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-engineering-performance--perf-measure"
+          }
+        }
+      ]
     }
   ],
   "sources": {
@@ -5585,12 +6380,27 @@
       "url": "https://ant.design/docs/spec/visualization-page-cn",
       "retrieved": "2026-11-02",
       "note_zh": null
+    },
+    "SRC.POMASTER.PERF_SPEC": {
+      "title_zh": "pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）",
+      "url": "repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.VUE3_SPEC": {
+      "title_zh": "pomaster 技术栈规范 · Vue 3（状态与路由选官方方案）",
+      "url": "repo:packages/cli/seeds/specs/hard/stacks/vue3/vue3-framework-overlay.md",
+      "retrieved": "2026-11-02",
+      "note_zh": null
     }
   },
   "specs": {
     "ui": "themes/ui-presentation-and-design.md",
     "page": "themes/page-composition-and-browser-environment.md",
     "i18n": "themes/internationalization-and-copywriting.md",
-    "perf": "themes/performance-and-capacity.md"
+    "perf": "themes/performance-and-capacity.md",
+    "state": "themes/frontend-state-and-client-data.md",
+    "vue3": "stacks/vue3/vue3-framework-overlay.md",
+    "h5": "stacks/h5/h5-mobile-overlay.md"
   }
 }

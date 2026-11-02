@@ -86,6 +86,10 @@ export const DESIGN_CHECKS: readonly DesignCheckSpec[] = [
   { id: "markup.single-primary-button", title_zh: "一个按钮区一个主按钮", description_zh: "同一个按钮区（同一父容器内的按钮组）里 type=primary 的按钮至多一个", active: false },
   { id: "text.no-literal-copy", title_zh: "界面文字走文案字典", description_zh: "模板、组件、脚本里不写死自然语言文本，统一经 i18n key 取文案", active: false },
   { id: "text.banned-terms", title_zh: "不用禁用词", description_zh: "文案字典与模板里不出现规范列出的错别字和弃用词（如「其它」「登陆」）", active: false },
+  { id: "state.store-library", title_zh: "全局状态库只用 Pinia", description_zh: "不引入 Vuex 等其他全局状态库", active: false },
+  { id: "state.no-direct-request", title_zh: "组件不直接发请求", description_zh: "组件与页面里不直接调用 fetch / axios，经生成的接口客户端", active: false },
+  { id: "perf.lazy-load", title_zh: "路由与重组件按需加载", description_zh: "路由组件用动态 import；应用入口不同步引入重型依赖", active: false },
+  { id: "perf.no-full-library-import", title_zh: "组件库按需引入", description_zh: "不整包注册组件库（app.use(Antd) / 全量引入 Vant）", active: false },
   { id: "format.no-local-pattern", title_zh: "日期数字走格式化注册表", description_zh: "页面里不手拼日期格式串、不硬编码货币符号，统一经格式化注册表输出", active: false },
 ];
 

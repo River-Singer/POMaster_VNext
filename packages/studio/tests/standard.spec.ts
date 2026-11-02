@@ -32,8 +32,8 @@ function tempRoot(prefix: string): string {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("26 个领域、101 条规则；Storybook 标题与 id 按分区派生（目录与 Ant Design 设计模式一致）", () => {
-    expect(model.areas.length).toBe(26);
+  it("28 个领域、118 条规则；Storybook 标题与 id 按分区派生（目录与 Ant Design 设计模式一致）", () => {
+    expect(model.areas.length).toBe(28);
     const titles = model.areas.map((area: { storybook: { title: string } }) => area.storybook.title);
     expect(titles.filter((title: string) => title.startsWith("规范/基础/"))).toHaveLength(6);
     expect(titles.filter((title: string) => title.startsWith("规范/设计模式/全局规则/"))).toEqual(
@@ -46,7 +46,8 @@ describe("规范分区 · 装载模型", () => {
       "规范/设计模式/模板文档/数据可视化页",
       "规范/设计模式/模板文档/详情页",
     ]);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(101);
+    expect(titles.filter((title: string) => title.startsWith("规范/工程规范/"))).toEqual(["规范/工程规范/状态管理", "规范/工程规范/性能"]);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(118);
     const grid = model.areas[1];
     expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview" });
     expect(grid.rules[1].storybook).toEqual({ export: "GRID_GUTTER", id: "standard-foundations-grid--grid-gutter" });
@@ -116,7 +117,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 27, areas: 26, rules: 101 });
+      expect(result).toMatchObject({ count: 29, areas: 28, rules: 118 });
       const overview = readFileSync(join(out, "00-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);

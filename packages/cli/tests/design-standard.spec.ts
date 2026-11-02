@@ -84,7 +84,7 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：26 个领域、101 条规则——基础 6 篇；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇（目录与 Ant Design 设计模式一致）", () => {
+  it("预设通过校验：28 个领域、118 条规则——基础 6 篇；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇（目录与 Ant Design 设计模式一致）；工程规范 2 篇", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -118,8 +118,10 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       ["reaction", "patterns.principles"],
       ["visualization_page", "patterns.templates"],
       ["detail_page", "patterns.templates"],
+      ["state", "engineering"],
+      ["performance", "engineering"],
     ]);
-    expect(loaded.summary).toEqual({ areas: 26, rules: 101, gate_rules: 22, review_rules: 79, pending_params: 5 });
+    expect(loaded.summary).toEqual({ areas: 28, rules: 118, gate_rules: 26, review_rules: 92, pending_params: 10 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -151,6 +153,11 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       "LAYOUT.CONTENT_REGION.content_max_width",
       "LAYOUT.Z_INDEX.layers",
       "ICON.LIBRARY.public_library",
+      "STATE.SERVER_STATE.query_library",
+      "PERF.BUDGET.initial_js",
+      "PERF.BUDGET.route_chunk",
+      "PERF.LARGE_LISTS.virtual_threshold",
+      "PERF.INPUT.debounce",
     ]);
     expect(loaded.issues.filter((issue) => issue.code === "DESIGN_DECISION_PENDING")).toHaveLength(1);
   });
@@ -459,7 +466,7 @@ describe("pomaster design validate / show", () => {
     mutate?.(raw);
     writeFileSync(join(frontend, "design-standard.yaml"), dumpYaml(raw, { lineWidth: -1 }));
     writeFileSync(join(frontend, "design-tokens.yaml"), readFileSync(TOKENS_PATH, "utf8"));
-    cpSync(join(SEEDS, "specs", "hard", "themes"), join(dir, ".pomaster", "specs", "hard", "themes"), { recursive: true });
+    cpSync(join(SEEDS, "specs", "hard"), join(dir, ".pomaster", "specs", "hard"), { recursive: true });
   }
 
   it("未 init 的目录用工具预设：--json 信封 ok，不写任何文件", async () => {
@@ -469,9 +476,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(101);
+    expect(envelope.result.summary.rules).toBe(118);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(26);
+    expect(envelope.result.normalized.areas).toHaveLength(28);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
 
