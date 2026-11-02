@@ -2,14 +2,14 @@
 //
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
-//    __pycache__ 排除] + lock 270 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
+//    __pycache__ 排除] + lock 271 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
 //    全等 + 清单 103 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
 //    关键词形。关键断言：catalog status 的 catalog_root 命中
 //    node_modules/pomaster/catalog（resolveCatalogRoot 候选链的包内资产候选，
-//    ok:true 且 270 entries 0 drift）。
+//    ok:true 且 271 entries 0 drift）。
 //
 // 冒烟产物（tgz 与 smoke 目录）留系统 temp 并在末尾打印路径，不进仓库
 // （stage/ 已在 .gitignore；temp 目录由操作系统清理策略兜底）。
@@ -86,7 +86,7 @@ const packedPaths = packReport.files.map((file) => file.path.replace(/\\/g, "/")
 // 1.1 bin 在座。
 assert(packedPaths.includes("dist/bin.js"), "bin 在座（dist/bin.js）");
 
-// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等（__pycache__ 排除）+ lock 270 entries。
+// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等（__pycache__ 排除）+ lock 271 entries。
 const repoCatalogFiles = walkFiles(p("catalog")).map((file) => `catalog/${file}`);
 const packedCatalogFiles = packedPaths.filter((file) => file.startsWith("catalog/"));
 const repoSet = new Set(repoCatalogFiles);
@@ -101,7 +101,7 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 270, "catalog-lock 270 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 271, "catalog-lock 271 entries", `实为 ${stageLock.entries.length}`);
 
 // 1.2.1 seeds 完整（B6c + B6d + B6e + B6f + B6G + B7-THEME）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
@@ -444,15 +444,15 @@ assert(
   "安装后 status 优先引导真实识别 TASK 的公开 report 流程",
 );
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 270 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 271 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 270,
-  `catalog entries = 270（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 271,
+  `catalog entries = 271（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&
