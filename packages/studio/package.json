@@ -6,6 +6,7 @@
   "type": "module",
   "description": "POMaster vNext 组件可视化画廊（canonical Storybook 实例，G-A）——不入 npm 发布面（private:true；build-npm-package 的 stage 白名单不含本包）",
   "devDependencies": {
+    "@ant-design/icons-vue": "7.0.1",
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/vue3": "^10.6.0",
     "@storybook/vue3-vite": "^10.6.0",

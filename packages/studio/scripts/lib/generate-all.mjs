@@ -8,6 +8,7 @@ import { generateOverlayPages } from "./overlays.mjs";
 import { generateBaselinePage } from "./baseline.mjs";
 import { generateDataStructPage } from "./data-struct.mjs";
 import { generateDesignTokensPage } from "./design-tokens-page.mjs";
+import { generateStandardPages, loadStandardModel } from "./standard.mjs";
 
 /** 跑全部生成器（outRoot 缺省 = packages/studio/generated）。 */
 export function generateAll(outRoot = GENERATED_DIR) {
@@ -17,6 +18,10 @@ export function generateAll(outRoot = GENERATED_DIR) {
   const baseline = generateBaselinePage(join(outRoot, "baseline"));
   const dataStruct = generateDataStructPage(join(outRoot, "data-struct"));
   const foundations = generateDesignTokensPage(join(outRoot, "foundations"));
+  // 规范分区（design-standard.yaml 同源：页面在这里生成；AI 孪生由 run.mjs generate 写入
+  // twin/，新鲜度由 tests/standard.spec.ts 钉住）。
+  const standardModel = loadStandardModel();
+  const standard = generateStandardPages(join(outRoot, "standard"), standardModel);
   return {
     archetypes: archetype.count,
     components: components.count,
@@ -31,5 +36,9 @@ export function generateAll(outRoot = GENERATED_DIR) {
     dataStructFiles: dataStruct.dataFiles,
     tokenValues: foundations.valueCount,
     tokenUnknowns: foundations.unknownCount,
+    standard: standard.count,
+    standardAreas: standard.areas,
+    standardRules: standard.rules,
+    standardFingerprint: standardModel.fingerprint,
   };
 }

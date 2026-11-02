@@ -25,12 +25,16 @@ if (!["generate", "dev", "build"].includes(action)) {
 
 // 1) 生成产物（generated/ 不入库——dev/build 前自愈重建，幂等可重放）。
 const { generateAll } = await import("./scripts/lib/generate-all.mjs");
+const { writeStandardTwin } = await import("./scripts/lib/standard.mjs");
 const counts = generateAll();
+// 规范 AI 孪生（入库）：与规范页同一次生成、同一个指纹。
+const twin = writeStandardTwin();
 console.log(
   `[studio] 生成完成: archetypes=${counts.archetypes} components=${counts.components} ` +
     `(stories=${counts.storyCount}) overlays=${counts.overlays} baseline=${counts.baseline} ` +
     `dataStruct=${counts.dataStruct} foundations=${counts.foundations} ` +
-    `(tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN)`,
+    `(tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN) ` +
+    `standard=${counts.standard} (${counts.standardAreas} 个领域 ${counts.standardRules} 条规则，指纹 ${twin.fingerprint})`,
 );
 if (action === "generate") process.exit(0);
 

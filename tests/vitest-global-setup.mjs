@@ -24,11 +24,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FAMILY_EXAMPLES } from "../packages/studio/scripts/lib/family-examples.mjs";
 import { generateAll } from "../packages/studio/scripts/lib/generate-all.mjs";
+import { generateStandardPages, loadStandardModel } from "../packages/studio/scripts/lib/standard.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const componentsDir = join(here, "..", "packages", "studio", "generated", "components");
+const standardDir = join(here, "..", "packages", "studio", "generated", "standard");
 
 export default function setupStudioGenerated() {
+  // 规范分区无条件重建：生成很快且确定；规范源刚改过时，挂载测试读到的总是同源最新页面
+  // （standard-mount.spec 的动态导入同样在 transform 期枚举候选文件）。
+  generateStandardPages(standardDir, loadStandardModel());
   const expected = FAMILY_EXAMPLES.size;
   let present = 0;
   if (existsSync(componentsDir)) {

@@ -1,0 +1,2724 @@
+{
+  "schema": "pomaster.design-standard-twin/v1",
+  "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源后运行 node packages/studio/run.mjs generate。",
+  "fingerprint": "sha256:93e0c003a890623d38f9a838863dbf36ff96d2d03c5cbe5a4a23f711731bd409",
+  "generator": {
+    "path": "packages/studio/scripts/lib/standard.mjs",
+    "version": "1"
+  },
+  "inputs": [
+    {
+      "path": "packages/cli/seeds/baseline/frontend/design-standard.yaml",
+      "sha256": "ad2ca7440ce8e1d4642ac15b5b7659f4406417cbf9ee96a6ed6c469d1ee76213"
+    },
+    {
+      "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
+      "sha256": "d2bc2733829e1d75ab9dd49f686a1192ac870cf357f80fd50db91a32ed7541b1"
+    }
+  ],
+  "edit": {
+    "source": "packages/cli/seeds/baseline/frontend/design-standard.yaml",
+    "validate": "pomaster design validate",
+    "regenerate": "node packages/studio/run.mjs generate",
+    "show": "pomaster design show --json"
+  },
+  "meta": {
+    "design_system": "antd",
+    "design_system_title_zh": "Ant Design",
+    "origin": "preset",
+    "customized": false,
+    "ui_library": "ant-design-vue@4.2.6"
+  },
+  "storybook": {
+    "base_url": "https://river-singer.github.io/POMaster_VNext/",
+    "overview": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-overview--overview"
+  },
+  "checks": [
+    {
+      "id": "style.no-raw-color",
+      "title_zh": "不写裸色值",
+      "active": false
+    },
+    {
+      "id": "style.spacing-scale",
+      "title_zh": "间距在阶梯内",
+      "active": false
+    },
+    {
+      "id": "style.font-size-scale",
+      "title_zh": "字号在字阶内",
+      "active": false
+    },
+    {
+      "id": "style.font-weight-allowed",
+      "title_zh": "字重在允许集内",
+      "active": false
+    },
+    {
+      "id": "style.font-family-token",
+      "title_zh": "字体族取 token",
+      "active": false
+    },
+    {
+      "id": "style.breakpoint-allowed",
+      "title_zh": "断点取规范值",
+      "active": false
+    },
+    {
+      "id": "style.no-raw-z-index",
+      "title_zh": "z-index 取层级 token",
+      "active": false
+    },
+    {
+      "id": "markup.single-h1",
+      "title_zh": "每个页面视图一个 h1",
+      "active": false
+    },
+    {
+      "id": "markup.heading-order",
+      "title_zh": "标题不跳级",
+      "active": false
+    },
+    {
+      "id": "markup.heading-level-max",
+      "title_zh": "应用界面标题不超过三级",
+      "active": false
+    },
+    {
+      "id": "markup.icon-button-label",
+      "title_zh": "纯图标按钮有可访问名称",
+      "active": false
+    },
+    {
+      "id": "grid.span-range",
+      "title_zh": "栅格跨度合法",
+      "active": false
+    },
+    {
+      "id": "grid.row-sum",
+      "title_zh": "一行不超过 24 栅格",
+      "active": false
+    },
+    {
+      "id": "grid.gutter-allowed",
+      "title_zh": "gutter 取规范值",
+      "active": false
+    },
+    {
+      "id": "icon.single-library",
+      "title_zh": "只用一套图标库",
+      "active": false
+    }
+  ],
+  "areas": [
+    {
+      "key": "layout",
+      "title_zh": "布局",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "LAYOUT",
+      "summary_zh": "页面骨架、适配基准与内容区尺寸。管理侧是「顶栏 + 左侧导航 + 内容区」，用户侧是移动端单列。",
+      "storybook": {
+        "title": "规范/基础/布局",
+        "id": "standard-foundations-layout--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--overview"
+      },
+      "rules": [
+        {
+          "id": "LAYOUT.ADMIN_SHELL",
+          "title_zh": "管理侧页面骨架",
+          "statement_zh": "管理侧应用统一用「顶栏 + 左侧导航 + 内容区」骨架。顶栏放产品标识和全局操作，左侧放多级菜单，内容区承载页面本身；侧栏可以收起，收起后只留图标；内容区两侧不留白，随窗口伸缩。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "header_height",
+              "label_zh": "顶栏高度",
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "layout.header_height",
+              "value": 64,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "sider_width",
+              "label_zh": "侧栏宽度",
+              "unit": "px",
+              "source": "SRC.ANTD.COMP.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "sider_collapsed_width",
+              "label_zh": "侧栏收起宽度",
+              "unit": "px",
+              "source": "SRC.ANTD.COMP.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 80,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "每类页面定义标题、面包屑、筛选、工具栏、主体、分页和详情位置。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "顶栏 + 左侧导航 + 内容区",
+              "note_zh": null,
+              "template": "<a-layout :style=\"{ height: '260px', border: '1px solid ' + t['color.border.subtle'] }\">\n  <a-layout-header :style=\"{ height: p.header_height + 'px', lineHeight: p.header_height + 'px', padding: '0 ' + t['spacing.xl'] + 'px', background: t['color.surface.container'], borderBottom: '1px solid ' + t['color.border.subtle'], color: t['color.text.primary'] }\">车队管理 · 全局搜索 · 个人中心</a-layout-header>\n  <a-layout>\n    <a-layout-sider :width=\"p.sider_width\" theme=\"light\" :style=\"{ borderRight: '1px solid ' + t['color.border.subtle'] }\">\n      <a-menu mode=\"inline\" :selected-keys=\"['vehicle-model']\" :items=\"[{ key: 'vehicle-model', label: '车型管理' }, { key: 'dict', label: '数据字典' }, { key: 'plan', label: '运输计划' }]\" />\n    </a-layout-sider>\n    <a-layout-content :style=\"{ padding: t['spacing.xl'] + 'px', background: t['color.surface.page'], color: t['color.text.secondary'] }\">内容区随窗口伸缩</a-layout-content>\n  </a-layout>\n</a-layout>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-admin-shell",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-admin-shell"
+          }
+        },
+        {
+          "id": "LAYOUT.ADAPTIVE",
+          "title_zh": "适配基准与验收宽度",
+          "statement_zh": "设计稿按 1440 宽的画板出；交付前在 1920、1440、1366、1280 四个宽度下逐一验收。左右布局时侧栏固定、内容区伸缩；内容区变窄时内容换行、折叠或出现横向滚动，不缩小字号。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "artboard",
+              "label_zh": "设计画板宽度",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 1440,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "acceptance_widths",
+              "label_zh": "验收宽度",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                1920,
+                1440,
+                1366,
+                1280
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "响应式断点和密度切换有验收矩阵。"
+            },
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "MUST NOT 用缩小字体解决小屏。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-adaptive",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-adaptive"
+          }
+        },
+        {
+          "id": "LAYOUT.CONTENT_REGION",
+          "title_zh": "内容区边距、区块间距与最大宽度",
+          "statement_zh": "内容区内边距、相邻区块之间的间距、内容最大宽度全站各用一个值，都取规范 token，不在单个页面里另定。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.spacing-scale",
+            "check_title_zh": "间距在阶梯内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "page_padding",
+              "label_zh": "内容区内边距",
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "layout.page_padding",
+              "value": null,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": true
+            },
+            {
+              "key": "section_gap",
+              "label_zh": "区块间距",
+              "unit": "px",
+              "source": null,
+              "note_zh": "候选 24 或 32",
+              "kind": "token",
+              "token": "spacing.section_gap",
+              "value": null,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": true
+            },
+            {
+              "key": "content_max_width",
+              "label_zh": "内容最大宽度",
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "layout.content_max_width",
+              "value": null,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 写孤立色值、魔法间距和临时阴影。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-content-region",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-content-region"
+          }
+        },
+        {
+          "id": "LAYOUT.OVERFLOW",
+          "title_zh": "外层管尺寸与滚动，内层不撑破",
+          "statement_zh": "尺寸和滚动由外层容器负责，内层组件不得把外层撑破；固定格式的控件（日期、金额、状态标签）给出稳定宽度或最小、最大宽度。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "外层负责布局与 overflow，内层不得反向撑爆。"
+            },
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "固定格式控件定义稳定尺寸、min/max 或比例。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-overflow",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-overflow"
+          }
+        },
+        {
+          "id": "LAYOUT.Z_INDEX",
+          "title_zh": "层级只取层级 token",
+          "statement_zh": "z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一档），不写死数字。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.no-raw-z-index",
+            "check_title_zh": "z-index 取层级 token",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "layers",
+              "label_zh": null,
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "层级 token 怎么分档？下拉、气泡、消息、抽屉、模态各取多少 z-index（现有 token 合同还没有层级分组）？",
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "z-index 只能来自层级 token。"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-z-index",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-z-index"
+          }
+        },
+        {
+          "id": "LAYOUT.PUBLIC_SHELL",
+          "title_zh": "用户侧移动端单列",
+          "statement_zh": "用户侧页面按移动端单列排布，宽度铺满视口；在 320 CSS px 宽度下内容仍能纵向阅读、不出现横向滚动；不得禁止缩放或锁定视口。",
+          "rationale_zh": null,
+          "surfaces": [
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "min_viewport",
+              "label_zh": "最窄验收视口",
+              "unit": "px",
+              "source": "SRC.POMASTER.UI_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 320,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "内容在 320 CSS px 宽度下可纵向阅读，不出现横向滚动；不得禁用浏览器缩放或固定视口"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-public-shell",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-layout--layout-public-shell"
+          }
+        }
+      ]
+    },
+    {
+      "key": "grid",
+      "title_zh": "栅格",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "GRID",
+      "summary_zh": "24 列栅格；列间距固定、列宽伸缩；响应式只用规范断点。",
+      "storybook": {
+        "title": "规范/基础/栅格",
+        "id": "standard-foundations-grid--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-grid--overview"
+      },
+      "rules": [
+        {
+          "id": "GRID.COLUMNS",
+          "title_zh": "24 列栅格",
+          "statement_zh": "页面区块按 24 列栅格切分，每个区块从某一列开始、到某一列结束；不用小数跨度或百分比宽度拼区块。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "grid.span-range",
+            "check_title_zh": "栅格跨度合法",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "columns",
+              "label_zh": "列数",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 24,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "三个等宽区块各占 8 列",
+              "note_zh": null,
+              "template": "<a-row :gutter=\"16\">\n  <a-col :span=\"8\"><div class=\"std-block\">span 8</div></a-col>\n  <a-col :span=\"8\"><div class=\"std-block\">span 8</div></a-col>\n  <a-col :span=\"8\"><div class=\"std-block\">span 8</div></a-col>\n</a-row>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "用百分比宽度拼区块",
+              "note_zh": "百分比宽度不对齐栅格，和页面其他区块的列线错位。",
+              "template": "<div style=\"display: flex; gap: 10px;\">\n  <div class=\"std-block\" style=\"width: 37%;\">37%</div>\n  <div class=\"std-block\" style=\"width: 30%;\">30%</div>\n  <div class=\"std-block\" style=\"width: 33%;\">33%</div>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-columns",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-grid--grid-columns"
+          }
+        },
+        {
+          "id": "GRID.GUTTER",
+          "title_zh": "列间距固定为 16 或 24",
+          "statement_zh": "列间距（gutter）是固定值，不随窗口缩放，只取 16 或 24；窗口变化时变的是列宽，不是间距。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "grid.gutter-allowed",
+            "check_title_zh": "gutter 取规范值",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "gutter",
+              "label_zh": "允许的列间距",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.BASICS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                16,
+                24
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "gutter 取 16",
+              "note_zh": null,
+              "template": "<a-row :gutter=\"p.gutter[0]\">\n  <a-col :span=\"6\" v-for=\"n in 4\" :key=\"n\"><div class=\"std-block\">span 6</div></a-col>\n</a-row>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "gutter 取 10",
+              "note_zh": null,
+              "template": "<a-row :gutter=\"10\">\n  <a-col :span=\"6\" v-for=\"n in 4\" :key=\"n\"><div class=\"std-block\">span 6</div></a-col>\n</a-row>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-gutter",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-grid--grid-gutter"
+          }
+        },
+        {
+          "id": "GRID.ROW_SUM",
+          "title_zh": "一行不超过 24 列",
+          "statement_zh": "同一行里各列跨度之和不超过 24。需要换行就拆成两行，不靠超出后自动折行。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "grid.row-sum",
+            "check_title_zh": "一行不超过 24 栅格",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "columns",
+              "label_zh": "一行列数上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 24,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "拆成两行",
+              "note_zh": null,
+              "template": "<div style=\"display: flex; flex-direction: column; gap: 16px;\">\n  <a-row :gutter=\"16\"><a-col :span=\"12\"><div class=\"std-block\">span 12</div></a-col><a-col :span=\"12\"><div class=\"std-block\">span 12</div></a-col></a-row>\n  <a-row :gutter=\"16\"><a-col :span=\"8\"><div class=\"std-block\">span 8</div></a-col></a-row>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "12 + 12 + 8 = 32，第三列被挤到下一行",
+              "note_zh": null,
+              "template": "<a-row :gutter=\"16\">\n  <a-col :span=\"12\"><div class=\"std-block\">span 12</div></a-col>\n  <a-col :span=\"12\"><div class=\"std-block\">span 12</div></a-col>\n  <a-col :span=\"8\"><div class=\"std-block\">span 8</div></a-col>\n</a-row>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-row-sum",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-grid--grid-row-sum"
+          }
+        },
+        {
+          "id": "GRID.BREAKPOINTS",
+          "title_zh": "响应式只用规范断点",
+          "statement_zh": "响应式只用规范断点（sm 576、md 768、lg 992、xl 1200），在 a-col 上用 xs / sm / md / lg / xl 声明各断点的跨度；样式里不自定义媒体查询断点。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.breakpoint-allowed",
+            "check_title_zh": "断点取规范值",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "sm",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "breakpoints.sm",
+              "value": 576,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "md",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "breakpoints.md",
+              "value": 768,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "lg",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "breakpoints.lg",
+              "value": 992,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "xl",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "breakpoints.xl",
+              "value": 1200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "响应式断点和密度切换有验收矩阵。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "小屏一列、中屏两列、大屏四列",
+              "note_zh": null,
+              "template": "<a-row :gutter=\"16\">\n  <a-col v-for=\"n in 4\" :key=\"n\" :xs=\"24\" :md=\"12\" :xl=\"6\" style=\"margin-bottom: 16px;\"><div class=\"std-block\">xs 24 · md 12 · xl 6</div></a-col>\n</a-row>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-breakpoints",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-grid--grid-breakpoints"
+          }
+        }
+      ]
+    },
+    {
+      "key": "spacing",
+      "title_zh": "间距",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "SPACING",
+      "summary_zh": "间距只取间距阶梯；用小、中、大三档间距表达元素之间关系的远近。",
+      "storybook": {
+        "title": "规范/基础/间距",
+        "id": "standard-foundations-spacing--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-spacing--overview"
+      },
+      "rules": [
+        {
+          "id": "SPACING.SCALE",
+          "title_zh": "间距只取阶梯值",
+          "statement_zh": "间距只取间距阶梯 4、8、12、16、24、32。基础单位是 8，4 和 12 只用于组件内部的紧凑间距。margin、padding、gap 不写阶梯以外的数值，比如 10px、13px、15px。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.spacing-scale",
+            "check_title_zh": "间距在阶梯内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "base_unit",
+              "label_zh": "基础单位",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 8,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "xs",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.xs",
+              "value": 4,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "sm",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.sm",
+              "value": 8,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "md",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.md",
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "lg",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.lg",
+              "value": 16,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "xl",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.xl",
+              "value": 24,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "xxl",
+              "label_zh": null,
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.xxl",
+              "value": 32,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 写孤立色值、魔法间距和临时阴影。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "间距阶梯",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', alignItems: 'flex-end', gap: p.xl + 'px' }\">\n  <div v-for=\"v in [p.xs, p.sm, p.md, p.lg, p.xl, p.xxl]\" :key=\"v\" :style=\"{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: p.sm + 'px' }\">\n    <div :style=\"{ width: v + 'px', height: v + 'px', background: t['color.brand.primary'] }\"></div>\n    <span :style=\"{ color: t['color.text.secondary'] }\">{{ v }}</span>\n  </div>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "照着截图量出来的 13px、15px",
+              "note_zh": null,
+              "template": null,
+              "code": ".vehicle-card { padding: 13px 15px; margin-bottom: 10px; }",
+              "lang": "css"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-spacing--spacing-scale",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-spacing--spacing-scale"
+          }
+        },
+        {
+          "id": "SPACING.TIERS",
+          "title_zh": "三档间距表达远近",
+          "statement_zh": "用三档纵向间距表达关系远近：同一组里的元素用小间距 8，组与组之间用中间距 16，区块与区块之间用大间距 24。关系越近，间距越小；不要整页只用一个间距。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "small",
+              "label_zh": "组内",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.PROXIMITY",
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.sm",
+              "value": 8,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "middle",
+              "label_zh": "组间",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.PROXIMITY",
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.lg",
+              "value": 16,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "large",
+              "label_zh": "区块间",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.PROXIMITY",
+              "note_zh": null,
+              "kind": "token",
+              "token": "spacing.xl",
+              "value": 24,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "组内 8、组间 16、区块间 24",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: p.large + 'px', color: t['color.text.primary'] }\">\n  <section :style=\"{ display: 'flex', flexDirection: 'column', gap: p.middle + 'px' }\">\n    <div :style=\"{ display: 'flex', flexDirection: 'column', gap: p.small + 'px' }\"><strong>识别信息</strong><span>车型编码：VM-001</span><span>车型名称：轻型厢式货车</span></div>\n    <div :style=\"{ display: 'flex', flexDirection: 'column', gap: p.small + 'px' }\"><strong>状态</strong><span>启用</span></div>\n  </section>\n  <section :style=\"{ display: 'flex', flexDirection: 'column', gap: p.small + 'px' }\"><strong>规格参数</strong><span>载重：1.5 吨</span><span>车厢长度：4.2 米</span></section>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "所有元素一个间距，看不出分组",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: p.middle + 'px', color: t['color.text.primary'] }\">\n  <strong>识别信息</strong><span>车型编码：VM-001</span><span>车型名称：轻型厢式货车</span><strong>状态</strong><span>启用</span><strong>规格参数</strong><span>载重：1.5 吨</span>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-spacing--spacing-tiers",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-spacing--spacing-tiers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "typography",
+      "title_zh": "字体与富文本",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "TYPE",
+      "summary_zh": "字体族、字阶、字重、文字颜色、等宽数字、富文本排版和文字溢出处理。",
+      "storybook": {
+        "title": "规范/基础/字体与富文本",
+        "id": "standard-foundations-typography--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--overview"
+      },
+      "rules": [
+        {
+          "id": "TYPE.FAMILY",
+          "title_zh": "只用两套字体族",
+          "statement_zh": "界面文字用规范无衬线字体族，代码和需要等宽的数字用规范等宽字体族；不引入第三种字体，也不在单个组件里另外指定字体。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.font-family-token",
+            "check_title_zh": "字体族取 token",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "sans",
+              "label_zh": "无衬线字体族",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "typography.family.sans",
+              "value": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "mono",
+              "label_zh": "等宽字体族",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "typography.family.mono",
+              "value": "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 在业务页面创建第二套视觉语言。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "正文与代码",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: t['spacing.sm'] + 'px', color: t['color.text.primary'] }\">\n  <span :style=\"{ fontFamily: p.sans, fontSize: t['typography.size.body'] + 'px' }\">车型编码只能包含大写字母、数字和连字符。</span>\n  <code :style=\"{ fontFamily: p.mono, fontSize: t['typography.size.body'] + 'px' }\">VM-2026-001</code>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-family",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-family"
+          }
+        },
+        {
+          "id": "TYPE.SCALE",
+          "title_zh": "字号只取字阶",
+          "statement_zh": "字号只取字阶 12、14、16、20、24、30、38（46、56、68 只用于展示型页面），每级行高是字号加 8。正文 14 号、行高 22。一个系统里常用的字号控制在 5 种以内。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.font-size-scale",
+            "check_title_zh": "字号在字阶内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "scale",
+              "label_zh": "字阶",
+              "unit": "px",
+              "source": "SRC.ANTD.THEME.FONT_SIZES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                12,
+                14,
+                16,
+                20,
+                24,
+                30,
+                38
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "line_heights",
+              "label_zh": "对应行高",
+              "unit": "px",
+              "source": "SRC.ANTD.THEME.FONT_SIZES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                20,
+                22,
+                24,
+                28,
+                32,
+                38,
+                46
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "display_scale",
+              "label_zh": "展示型字阶",
+              "unit": "px",
+              "source": "SRC.ANTD.THEME.FONT_SIZES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                46,
+                56,
+                68
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "body",
+              "label_zh": "正文字号",
+              "unit": "px",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "typography.size.body",
+              "value": 14,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "body_line_height",
+              "label_zh": "正文行高",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 22,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "max_sizes",
+              "label_zh": "常用字号种数上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 5,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "字阶与行高",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', color: t['color.text.primary'] }\">\n  <div v-for=\"(size, i) in p.scale\" :key=\"size\" :style=\"{ fontSize: size + 'px', lineHeight: p.line_heights[i] + 'px' }\">{{ size }} / {{ p.line_heights[i] }} 车型管理</div>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "字阶以外的 13px、17px",
+              "note_zh": null,
+              "template": null,
+              "code": ".title { font-size: 17px; }\n.hint { font-size: 13px; }",
+              "lang": "css"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-scale",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-scale"
+          }
+        },
+        {
+          "id": "TYPE.WEIGHT",
+          "title_zh": "字重以 400 和 500 为主",
+          "statement_zh": "正文用常规 400，需要强调的短文字用 500；600 只用于标题和英文加粗。强调时选一种手段，不要加粗、换色、放大同时叠加。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.font-weight-allowed",
+            "check_title_zh": "字重在允许集内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "regular",
+              "label_zh": "常规",
+              "unit": "none",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 400,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "medium",
+              "label_zh": "中粗",
+              "unit": "none",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 500,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "semibold",
+              "label_zh": "标题",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "typography.weight.semibold",
+              "value": 600,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "三种字重",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', gap: t['spacing.xl'] + 'px', fontSize: t['typography.size.body_large'] + 'px', color: t['color.text.primary'] }\">\n  <span :style=\"{ fontWeight: p.regular }\">400 常规</span>\n  <span :style=\"{ fontWeight: p.medium }\">500 中粗</span>\n  <span :style=\"{ fontWeight: p.semibold }\">600 标题</span>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-weight",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-weight"
+          }
+        },
+        {
+          "id": "TYPE.COLOR",
+          "title_zh": "文字颜色四档",
+          "statement_zh": "文字颜色只用四档文本 token：主要、次要、辅助、禁用。正文、标题与背景的对比度以 7:1 为目标，最低不得低于 4.5:1；颜色不能是传达信息的唯一手段。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.no-raw-color",
+            "check_title_zh": "不写裸色值",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "primary",
+              "label_zh": "主要",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.text.primary",
+              "value": "rgba(0, 0, 0, 0.88)",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "secondary",
+              "label_zh": "次要",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.text.secondary",
+              "value": "rgba(0, 0, 0, 0.65)",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "tertiary",
+              "label_zh": "辅助",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.text.tertiary",
+              "value": "rgba(0, 0, 0, 0.45)",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "disabled",
+              "label_zh": "禁用",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.text.disabled",
+              "value": "rgba(0, 0, 0, 0.25)",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "contrast_target",
+              "label_zh": "对比度目标",
+              "unit": "ratio",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 7,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "contrast_min",
+              "label_zh": "对比度下限",
+              "unit": "ratio",
+              "source": "SRC.POMASTER.UI_SPEC",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 4.5,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "颜色不得作为唯一信息来源；文本对比度至少 4.5:1"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "四档文本色",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: t['spacing.xs'] + 'px', fontSize: t['typography.size.body'] + 'px' }\">\n  <span :style=\"{ color: p.primary }\">主要：车型名称、正文</span>\n  <span :style=\"{ color: p.secondary }\">次要：字段说明、辅助信息</span>\n  <span :style=\"{ color: p.tertiary }\">辅助：占位、时间戳</span>\n  <span :style=\"{ color: p.disabled }\">禁用：不可操作的内容</span>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-color",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-color"
+          }
+        },
+        {
+          "id": "TYPE.TABULAR_NUMS",
+          "title_zh": "纵向对比的数字用等宽数字",
+          "statement_zh": "需要上下对比的数字（金额、数量、时间列）用等宽数字（font-variant-numeric 取 tabular-nums），并右对齐。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "numeric",
+              "label_zh": "font-variant-numeric",
+              "unit": "none",
+              "source": "SRC.ANTD.SPEC.FONT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "tabular-nums",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "等宽数字、右对齐",
+              "note_zh": null,
+              "template": "<div :style=\"{ width: '160px', textAlign: 'right', fontVariantNumeric: p.numeric, color: t['color.text.primary'] }\">\n  <div>1,111.11</div><div>98,000.00</div><div>7.50</div>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "比例数字、左对齐，位数对不齐",
+              "note_zh": null,
+              "template": "<div :style=\"{ width: '160px', textAlign: 'left', color: t['color.text.primary'] }\">\n  <div>1,111.11</div><div>98,000.00</div><div>7.50</div>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-tabular-nums",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-tabular-nums"
+          }
+        },
+        {
+          "id": "TYPE.RICH_TEXT",
+          "title_zh": "富文本统一用排版组件",
+          "statement_zh": "公告、帮助、说明等富文本统一放进 a-typography 里渲染，用组件自带的排版：段落之间隔一倍字高，列表每级缩进 20px 再加 4px，引用左侧 4px 竖线，行内代码字号 85%。业务页面不另写一套富文本样式。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "paragraph_gap",
+              "label_zh": "段落间距",
+              "unit": "em",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 1,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "list_indent",
+              "label_zh": "列表缩进（外边距 + 内边距）",
+              "unit": "px",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                20,
+                4
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "quote_border",
+              "label_zh": "引用竖线宽度",
+              "unit": "px",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 4,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "code_size",
+              "label_zh": "行内代码字号",
+              "unit": "percent",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 85,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 在业务页面创建第二套视觉语言。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "标题、段落、列表、引用、代码、按键、标记",
+              "note_zh": null,
+              "template": "<a-typography style=\"max-width: 560px;\">\n  <a-typography-title :level=\"3\">车型数据维护说明</a-typography-title>\n  <a-typography-paragraph>车型是运输计划的基础数据。新建车型前，先确认 <a-typography-text code>business_code</a-typography-text> 没有被占用。</a-typography-paragraph>\n  <a-typography-paragraph>\n    <ul>\n      <li>编码启用后不能修改；</li>\n      <li>停用的车型不会出现在下单页。</li>\n    </ul>\n  </a-typography-paragraph>\n  <a-typography-paragraph><blockquote>批量导入请先下载模板，按模板列填写。</blockquote></a-typography-paragraph>\n  <a-typography-paragraph>按 <a-typography-text keyboard>Ctrl</a-typography-text> + <a-typography-text keyboard>S</a-typography-text> 保存；<a-typography-text mark>标记</a-typography-text>的字段必填。</a-typography-paragraph>\n</a-typography>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-rich-text",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-rich-text"
+          }
+        },
+        {
+          "id": "TYPE.OVERFLOW",
+          "title_zh": "文字放不下时换行或省略",
+          "statement_zh": "文字放不下时换行，或者单行省略、悬停显示全文；不得缩小字号硬塞进去。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "文本换行、截断、tooltip 和横向滚动有统一规则。"
+            },
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 通过缩小字体掩盖溢出。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "单行省略，悬停看全文",
+              "note_zh": null,
+              "template": "<a-typography-paragraph :style=\"{ width: '240px', margin: 0 }\" :ellipsis=\"{ rows: 1, tooltip: true }\" content=\"轻型厢式货车（国六排放，冷链改装版，适用于城市配送）\" />",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "缩小字号硬塞",
+              "note_zh": null,
+              "template": "<div style=\"width: 240px; font-size: 10px; white-space: nowrap;\">轻型厢式货车（国六排放，冷链改装版，适用于城市配送）</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-overflow",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-typography--type-overflow"
+          }
+        }
+      ]
+    },
+    {
+      "key": "headings",
+      "title_zh": "标题层级",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "HEADING",
+      "summary_zh": "应用界面最多三级标题；内容型页面用 1–5 级排版标题；语义层级与视觉层级一致、不跳级。",
+      "storybook": {
+        "title": "规范/基础/标题层级",
+        "id": "standard-foundations-headings--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--overview"
+      },
+      "rules": [
+        {
+          "id": "HEADING.APP_LEVELS",
+          "title_zh": "应用界面最多三级标题",
+          "statement_zh": "列表、表单、详情等工作页最多用三级标题：h1 是页面标题，20px；h2 是卡片或区块标题，16px；h3 是区块里的分组标题，14px；三级都用 600 字重。更细的层次用间距和分组表达，不再加标题级。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.heading-level-max",
+            "check_title_zh": "应用界面标题不超过三级",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "h1_size",
+              "label_zh": "h1 页面标题",
+              "unit": "px",
+              "source": "SRC.ANTDV.PAGE_HEADER",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 20,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "h2_size",
+              "label_zh": "h2 卡片 / 区块标题",
+              "unit": "px",
+              "source": "SRC.ANTDV.CARD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 16,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "h3_size",
+              "label_zh": "h3 分组标题",
+              "unit": "px",
+              "source": "SRC.ANTDV.CARD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 14,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "weight",
+              "label_zh": "标题字重",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "typography.weight.semibold",
+              "value": 600,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "页面、区块、分组三级",
+              "note_zh": "a-card 的 title 不是标题元素；卡片标题要进页面大纲时，在 title 插槽里放 h2。",
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: t['spacing.lg'] + 'px', color: t['color.text.primary'] }\">\n  <h1 :style=\"{ fontSize: p.h1_size + 'px', fontWeight: p.weight, margin: 0 }\">车型管理</h1>\n  <a-card>\n    <template #title><h2 :style=\"{ fontSize: p.h2_size + 'px', fontWeight: p.weight, margin: 0 }\">基本信息</h2></template>\n    <h3 :style=\"{ fontSize: p.h3_size + 'px', fontWeight: p.weight, margin: '0 0 ' + t['spacing.sm'] + 'px' }\">识别信息</h3>\n    <p :style=\"{ margin: 0 }\">车型编码 VM-001 · 轻型厢式货车</p>\n  </a-card>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-headings--heading-app-levels",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--heading-app-levels"
+          }
+        },
+        {
+          "id": "HEADING.SINGLE_H1",
+          "title_zh": "每个页面视图只有一个 h1",
+          "statement_zh": "每个页面视图（一个路由页面，或一个全屏抽屉、模态）只有一个一级标题，内容就是这个页面叫什么；路由切换后同步更新浏览器标签页标题。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.single-h1",
+            "check_title_zh": "每个页面视图一个 h1",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "路由/页面切换后必须更新 document.title 并宣布页面变化"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-headings--heading-single-h1",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--heading-single-h1"
+          }
+        },
+        {
+          "id": "HEADING.ORDER",
+          "title_zh": "标题逐级下降，不跳级",
+          "statement_zh": "标题的语义层级与视觉层级一致，逐级下降：h1 下面是 h2，h2 下面是 h3，不能从 h1 直接跳到 h3。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.heading-order",
+            "check_title_zh": "标题不跳级",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "标题层级 h1–h6 与视觉层级一致，不跳过层级"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "h1 → h2 → h3",
+              "note_zh": null,
+              "template": null,
+              "code": "<h1>车型管理</h1>\n  <h2>基本信息</h2>\n    <h3>识别信息</h3>",
+              "lang": "html"
+            },
+            {
+              "kind": "dont",
+              "title_zh": "h1 直接跳到 h3",
+              "note_zh": null,
+              "template": null,
+              "code": "<h1>车型管理</h1>\n  <h3>识别信息</h3>",
+              "lang": "html"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-headings--heading-order",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--heading-order"
+          }
+        },
+        {
+          "id": "HEADING.CONTENT_LEVELS",
+          "title_zh": "内容型页面用 1–5 级排版标题",
+          "statement_zh": "帮助、公告、文章这类内容型页面用 a-typography-title 的 1–5 级：字号 38、30、24、20、16，行高 46、38、32、28、24，字重 600；标题前留 1.2 倍字高，标题后留 0.5 倍字高。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "sizes",
+              "label_zh": "1–5 级字号",
+              "unit": "px",
+              "source": "SRC.ANTD.THEME.FONT_SIZES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                38,
+                30,
+                24,
+                20,
+                16
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "line_heights",
+              "label_zh": "1–5 级行高",
+              "unit": "px",
+              "source": "SRC.ANTD.THEME.FONT_SIZES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                46,
+                38,
+                32,
+                28,
+                24
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "margin_top",
+              "label_zh": "标题前间距",
+              "unit": "em",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 1.2,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "margin_bottom",
+              "label_zh": "标题后间距",
+              "unit": "em",
+              "source": "SRC.ANTDV.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 0.5,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "五级排版标题",
+              "note_zh": null,
+              "template": "<a-typography>\n  <a-typography-title v-for=\"level in [1, 2, 3, 4, 5]\" :key=\"level\" :level=\"level\">{{ level }} 级标题 · {{ p.sizes[level - 1] }}px</a-typography-title>\n</a-typography>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-headings--heading-content-levels",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--heading-content-levels"
+          }
+        },
+        {
+          "id": "HEADING.REAL_ELEMENT",
+          "title_zh": "标题用真正的标题元素",
+          "statement_zh": "标题必须是 h1–h6 或 a-typography-title，不能用加粗的 div、span 冒充；反过来，只是想把文字放大加粗时也不要用标题元素。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "使用原生 HTML 语义可承载时优先使用原生元素"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "加粗的 div 冒充标题",
+              "note_zh": null,
+              "template": null,
+              "code": "<div class=\"big-bold\">基本信息</div>",
+              "lang": "html"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-headings--heading-real-element",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-headings--heading-real-element"
+          }
+        }
+      ]
+    },
+    {
+      "key": "icons",
+      "title_zh": "图标",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "ICON",
+      "summary_zh": "一套图标库、一种系统图标风格；图标跟随文字的大小和颜色；同一动作同一图标；纯图标按钮有可访问名称。",
+      "storybook": {
+        "title": "规范/基础/图标",
+        "id": "standard-foundations-icons--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--overview"
+      },
+      "rules": [
+        {
+          "id": "ICON.LIBRARY",
+          "title_zh": "只用一套图标库",
+          "statement_zh": "管理侧系统图标只用 @ant-design/icons-vue 的图标组件；不混用第二套图标库，也不用切图或内联 SVG 充当系统图标。用户侧（H5）的图标库待项目决定。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "icon.single-library",
+            "check_title_zh": "只用一套图标库",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "admin_library",
+              "label_zh": "管理侧图标库",
+              "unit": "none",
+              "source": "SRC.ANTDV.ICON",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "@ant-design/icons-vue",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "public_library",
+              "label_zh": "用户侧图标库",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "用户侧（H5）的图标库用哪一套？",
+              "candidates": [
+                "Vant Icon"
+              ],
+              "pending": true
+            }
+          ],
+          "anchors": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-library",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-library"
+          }
+        },
+        {
+          "id": "ICON.STYLE",
+          "title_zh": "系统图标统一线框风格",
+          "statement_zh": "同一界面的系统图标统一用线框风格（Outlined）；实心风格（Filled）只用于表达状态（成功、警告、错误、信息）；双色风格（TwoTone）只用于业务图标。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "system_style",
+              "label_zh": "系统图标风格",
+              "unit": "none",
+              "source": "SRC.POMASTER.PRESET",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "Outlined",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "two_tone_scope",
+              "label_zh": "双色风格的使用范围",
+              "unit": "none",
+              "source": "SRC.ANTD.SPEC.ICON",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "业务图标",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "操作用线框，状态用实心",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', alignItems: 'center', gap: t['spacing.lg'] + 'px', fontSize: t['typography.size.body_large'] + 'px', color: t['color.text.primary'] }\">\n  <PlusOutlined /><EditOutlined /><DeleteOutlined /><SearchOutlined />\n  <span :style=\"{ color: t['color.border.default'] }\">|</span>\n  <CheckCircleFilled :style=\"{ color: t['color.semantic.success'] }\" />\n  <ExclamationCircleFilled :style=\"{ color: t['color.semantic.warning'] }\" />\n  <CloseCircleFilled :style=\"{ color: t['color.semantic.error'] }\" />\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-style",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-style"
+          }
+        },
+        {
+          "id": "ICON.SIZE_SPACING",
+          "title_zh": "图标跟随文字大小，与文字间隔 8",
+          "statement_zh": "系统图标与相邻文字同字号（14px 文字配 14px 图标），图标与文字之间留 8px；业务图标只用 32、48、64 三档尺寸。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "text_gap",
+              "label_zh": "图标与文字间距",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.ICON",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 8,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "business_sizes",
+              "label_zh": "业务图标尺寸",
+              "unit": "px",
+              "source": "SRC.ANTD.SPEC.ICON",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                32,
+                48,
+                64
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "14px 文字配 14px 图标，间隔 8",
+              "note_zh": null,
+              "template": "<span :style=\"{ display: 'inline-flex', alignItems: 'center', gap: p.text_gap + 'px', fontSize: t['typography.size.body'] + 'px', color: t['color.text.primary'] }\"><SearchOutlined />搜索车型</span>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-size-spacing",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-size-spacing"
+          }
+        },
+        {
+          "id": "ICON.COLOR",
+          "title_zh": "图标跟随文字颜色，状态才用语义色",
+          "statement_zh": "系统图标跟随相邻文字的颜色；只有表达状态时才用语义色 token（成功、警告、错误、信息），并且同时配文字，不能只靠图标颜色传达状态。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.no-raw-color",
+            "check_title_zh": "不写裸色值",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "success",
+              "label_zh": null,
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.semantic.success",
+              "value": "#52c41a",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "warning",
+              "label_zh": null,
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.semantic.warning",
+              "value": "#faad14",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "error",
+              "label_zh": null,
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.semantic.error",
+              "value": "#ff4d4f",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "info",
+              "label_zh": null,
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "token",
+              "token": "color.semantic.info",
+              "value": "#1677ff",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 仅通过颜色、hover 或 tooltip 传递关键信息。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "语义色图标 + 状态文字",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', gap: t['spacing.xl'] + 'px', fontSize: t['typography.size.body'] + 'px', color: t['color.text.primary'] }\">\n  <span :style=\"{ display: 'inline-flex', alignItems: 'center', gap: t['spacing.sm'] + 'px' }\"><CheckCircleFilled :style=\"{ color: p.success }\" />已启用</span>\n  <span :style=\"{ display: 'inline-flex', alignItems: 'center', gap: t['spacing.sm'] + 'px' }\"><ExclamationCircleFilled :style=\"{ color: p.warning }\" />待审核</span>\n  <span :style=\"{ display: 'inline-flex', alignItems: 'center', gap: t['spacing.sm'] + 'px' }\"><CloseCircleFilled :style=\"{ color: p.error }\" />已停用</span>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "只有颜色点，没有文字",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', gap: t['spacing.lg'] + 'px' }\">\n  <CheckCircleFilled :style=\"{ color: p.success }\" /><CloseCircleFilled :style=\"{ color: p.error }\" />\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-color",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-color"
+          }
+        },
+        {
+          "id": "ICON.SEMANTICS",
+          "title_zh": "同一动作同一图标",
+          "statement_zh": "同一个动作在全系统用同一个图标，按下表取用；表里没有的动作，先补进表再用。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "map",
+              "label_zh": "动作 → 图标",
+              "unit": "none",
+              "source": "SRC.POMASTER.PRESET",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": {
+                "新建": "PlusOutlined",
+                "编辑": "EditOutlined",
+                "删除": "DeleteOutlined",
+                "搜索": "SearchOutlined",
+                "刷新": "ReloadOutlined",
+                "导出": "DownloadOutlined",
+                "导入": "UploadOutlined",
+                "筛选": "FilterOutlined",
+                "设置": "SettingOutlined",
+                "更多": "MoreOutlined",
+                "查看": "EyeOutlined",
+                "复制": "CopyOutlined"
+              },
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 同一路径使用不同文案或图标表示同一功能"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "动作图标对照",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: t['spacing.sm'] + 'px', maxWidth: '560px', fontSize: t['typography.size.body'] + 'px', color: t['color.text.primary'] }\">\n  <span v-for=\"(icon, action) in p.map\" :key=\"action\" :style=\"{ display: 'inline-flex', alignItems: 'center', gap: t['spacing.sm'] + 'px' }\"><component :is=\"icon\" />{{ action }}</span>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-semantics",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-semantics"
+          }
+        },
+        {
+          "id": "ICON.BUTTON_LABEL",
+          "title_zh": "纯图标按钮要有名字",
+          "statement_zh": "只有图标、没有文字的按钮必须带可访问名称（aria-label），悬停时用 tooltip 显示同样的文字。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.icon-button-label",
+            "check_title_zh": "纯图标按钮有可访问名称",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "aria-label 与 tooltip 同名",
+              "note_zh": null,
+              "template": "<a-tooltip title=\"刷新\">\n  <a-button shape=\"circle\" aria-label=\"刷新\"><template #icon><ReloadOutlined /></template></a-button>\n</a-tooltip>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "读屏只能读出「按钮」",
+              "note_zh": null,
+              "template": null,
+              "code": "<a-button shape=\"circle\"><template #icon><ReloadOutlined /></template></a-button>",
+              "lang": "vue"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-button-label",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-foundations-icons--icon-button-label"
+          }
+        }
+      ]
+    },
+    {
+      "key": "navigation",
+      "title_zh": "导航",
+      "group": "patterns.global",
+      "group_title_zh": "设计模式/全局规则",
+      "prefix": "NAV",
+      "summary_zh": "管理侧用左侧菜单；顶部导航只在一级入口少时用；面包屑、标签页、步骤条、分页各有数量与字数上限。",
+      "storybook": {
+        "title": "规范/设计模式/全局规则/导航",
+        "id": "standard-patterns-global-navigation--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--overview"
+      },
+      "rules": [
+        {
+          "id": "NAV.ADMIN_SIDE",
+          "title_zh": "管理侧主导航用左侧菜单",
+          "statement_zh": "管理侧主导航用左侧菜单，适合多级、操作密集的工作台。菜单项按业务域分组，多了可以滚动；当前页面在菜单里高亮。菜单高亮按路由的稳定标识匹配，不按标题文字或截取 URL 判断。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "sider_width",
+              "label_zh": "菜单宽度",
+              "unit": "px",
+              "source": "SRC.ANTD.COMP.LAYOUT",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "MUST NOT 用标题字符串或 URL 截取判断菜单。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "按业务域分组的多级菜单",
+              "note_zh": null,
+              "template": "<a-menu mode=\"inline\" :style=\"{ width: p.sider_width + 'px' }\" :selected-keys=\"['vehicle-model']\" :open-keys=\"['master', 'plan']\" :items=\"[\n  { key: 'master', label: '基础数据', children: [{ key: 'vehicle-model', label: '车型管理' }, { key: 'dict', label: '数据字典' }] },\n  { key: 'plan', label: '运输计划', children: [{ key: 'plan-list', label: '计划列表' }, { key: 'plan-board', label: '调度看板' }] }\n]\" />",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-admin-side",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-admin-side"
+          }
+        },
+        {
+          "id": "NAV.TOP",
+          "title_zh": "顶部导航只在一级入口少时用",
+          "statement_zh": "顶部导航只在一级入口为 2 到 7 个时使用，常见于用户侧门户；每个导航项名称不超过 14 个字。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "min_items",
+              "label_zh": "一级入口下限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 2,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "max_items",
+              "label_zh": "一级入口上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 7,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "label_max",
+              "label_zh": "导航项字数上限",
+              "unit": "chars",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 14,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "五个一级入口",
+              "note_zh": null,
+              "template": "<a-menu mode=\"horizontal\" :selected-keys=\"['home']\" :items=\"[{ key: 'home', label: '首页' }, { key: 'order', label: '我的订单' }, { key: 'track', label: '运单追踪' }, { key: 'invoice', label: '发票' }, { key: 'help', label: '帮助中心' }]\" />",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-top",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-top"
+          }
+        },
+        {
+          "id": "NAV.BREADCRUMB",
+          "title_zh": "面包屑建议 3 级以内，最多 5 级",
+          "statement_zh": "面包屑显示当前页在层级里的位置，建议不超过 3 级、最多 5 级；页面自身的导航已经能说明位置时不加面包屑。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "recommended_max",
+              "label_zh": "建议层级上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 3,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "max",
+              "label_zh": "层级上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 5,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "三级面包屑",
+              "note_zh": null,
+              "template": "<a-breadcrumb>\n  <a-breadcrumb-item>基础数据</a-breadcrumb-item>\n  <a-breadcrumb-item>车型管理</a-breadcrumb-item>\n  <a-breadcrumb-item>车型详情</a-breadcrumb-item>\n</a-breadcrumb>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-breadcrumb",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-breadcrumb"
+          }
+        },
+        {
+          "id": "NAV.TABS",
+          "title_zh": "标签页按作用范围选型",
+          "statement_zh": "标签页名称不超过 14 个字。切换整页核心功能用基础标签页；切换页面局部内容用卡片式标签页；卡片里的小范围切换用分段控件；选项很多时改用竖向标签页。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "label_max",
+              "label_zh": "标签名字数上限",
+              "unit": "chars",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 14,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "页面级标签页 + 卡片内分段控件",
+              "note_zh": null,
+              "template": "<div :style=\"{ display: 'flex', flexDirection: 'column', gap: t['spacing.lg'] + 'px' }\">\n  <a-tabs active-key=\"base\">\n    <a-tab-pane key=\"base\" tab=\"基本信息\" />\n    <a-tab-pane key=\"spec\" tab=\"规格参数\" />\n    <a-tab-pane key=\"log\" tab=\"变更记录\" />\n  </a-tabs>\n  <a-segmented :options=\"['按日', '按周', '按月']\" value=\"按周\" />\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-tabs",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-tabs"
+          }
+        },
+        {
+          "id": "NAV.STEPS",
+          "title_zh": "横向步骤条 3–4 步",
+          "statement_zh": "有固定流程的任务用步骤条。横向步骤条放 3 到 4 步，每步标题不超过 11 个字；步骤更多或数量会变时，用固定在页面左侧的竖向步骤条。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "horizontal_min",
+              "label_zh": "横向步数下限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 3,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "horizontal_max",
+              "label_zh": "横向步数上限",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 4,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "title_max",
+              "label_zh": "步骤标题字数上限",
+              "unit": "chars",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 11,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "三步流程",
+              "note_zh": null,
+              "template": "<a-steps :current=\"1\" :items=\"[{ title: '填写基本信息' }, { title: '上传资料' }, { title: '提交审核' }]\" />",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-steps",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-steps"
+          }
+        },
+        {
+          "id": "NAV.PAGINATION",
+          "title_zh": "分页与接口分页档一致",
+          "statement_zh": "管理侧列表用页码分页：默认每页 20 条，每页最多 200 条；超过 5 页时提供快速跳转，数据多时允许改每页条数；卡片或浮层里用迷你分页。用户侧列表用「加载更多」的游标分页，与接口的 KEYSET 分页一致，每次最多 50 条，不显示总页数。不得前端拉全量再假分页。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "admin_page_size",
+              "label_zh": "管理侧默认每页条数",
+              "unit": "count",
+              "source": "SRC.POMASTER.SURFACES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 20,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "admin_max_page_size",
+              "label_zh": "管理侧每页上限",
+              "unit": "count",
+              "source": "SRC.POMASTER.SURFACES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "quick_jumper_after",
+              "label_zh": "超过多少页加快速跳转",
+              "unit": "count",
+              "source": "SRC.ANTD.SPEC.NAVIGATION",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 5,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "public_max_page_size",
+              "label_zh": "用户侧每次加载上限",
+              "unit": "count",
+              "source": "SRC.POMASTER.SURFACES",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 50,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 前端加载全量数据假分页。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "管理侧页码分页",
+              "note_zh": null,
+              "template": "<a-pagination :total=\"1280\" :page-size=\"p.admin_page_size\" show-quick-jumper show-size-changer :page-size-options=\"[String(p.admin_page_size), '50', '100', String(p.admin_max_page_size)]\" />",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-patterns-global-navigation--nav-pagination",
+            "url": "https://river-singer.github.io/POMaster_VNext/?path=/story/standard-patterns-global-navigation--nav-pagination"
+          }
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "SRC.ANTD.SPEC.FONT": {
+      "title_zh": "Ant Design 设计规范 · 字体",
+      "url": "https://ant.design/docs/spec/font-cn",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.SPEC.LAYOUT": {
+      "title_zh": "Ant Design 设计规范 · 布局",
+      "url": "https://ant.design/docs/spec/layout-cn",
+      "retrieved": "2026-11-02",
+      "note_zh": "正文经 ant-design 仓库 docs/spec/layout.zh-CN.md 核实（官网页面正文为图片与脚本渲染）"
+    },
+    "SRC.ANTD.SPEC.BASICS": {
+      "title_zh": "Ant Design 设计基础简版（官方 Wiki）",
+      "url": "https://www.github.com/ant-design/ant-design/wiki/Ant-Design-%E8%AE%BE%E8%AE%A1%E5%9F%BA%E7%A1%80%E7%AE%80%E7%89%88",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.SPEC.PROXIMITY": {
+      "title_zh": "Ant Design 设计规范 · 亲密性",
+      "url": "https://ant.design/docs/spec/proximity-cn",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.SPEC.ICON": {
+      "title_zh": "Ant Design 设计规范 · 图标",
+      "url": "https://ant.design/docs/spec/icon-cn",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.SPEC.NAVIGATION": {
+      "title_zh": "Ant Design 设计规范 · 导航",
+      "url": "https://ant.design/docs/spec/navigation",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.COMP.LAYOUT": {
+      "title_zh": "Ant Design 组件 · Layout 布局（Sider 默认宽度与收起宽度）",
+      "url": "https://ant.design/components/layout-cn",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTD.THEME.FONT_SIZES": {
+      "title_zh": "Ant Design v5 主题算法 · 字阶与行高（genFontSizes / genFontMapToken）",
+      "url": "https://app.unpkg.com/antd-v5@5.14.1/files/lib/theme/themes/shared/genFontSizes.js",
+      "retrieved": "2026-11-02",
+      "note_zh": "字阶 = 14 × e^(i/5) 取偶数，行高 = 字号 + 8；ant-design-vue 4 与 antd v5 同一主题算法"
+    },
+    "SRC.ANTDV.TYPOGRAPHY": {
+      "title_zh": "ant-design-vue Typography 样式（段距、列表、引用、代码、标题间距）",
+      "url": "https://app.unpkg.com/ant-design-vue@4.1.0/files/es/typography/style/index.js",
+      "retrieved": "2026-11-02",
+      "note_zh": "富文本元素的样式值见同目录 mixins.js"
+    },
+    "SRC.ANTDV.PAGE_HEADER": {
+      "title_zh": "ant-design-vue PageHeader 样式（页面标题取 fontSizeHeading4、字重 600）",
+      "url": "https://app.unpkg.com/ant-design-vue@4.1.0/files/lib/page-header/style/index.js",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTDV.CARD": {
+      "title_zh": "ant-design-vue Card 样式（卡片标题取 fontSizeLG 与 fontWeightStrong；内嵌小卡片标题取 fontSize）",
+      "url": "https://app.unpkg.com/ant-design-vue@4.2.0/files/es/card/style/index.js",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.ANTDV.ICON": {
+      "title_zh": "ant-design-vue 图标示例（图标来自 @ant-design/icons-vue）",
+      "url": "https://github.com/vueComponent/ant-design-vue/blob/b3ed6ddd9cff24d4f122f50e19c00b6eb2c9e668/components/icon/demo/index.vue",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.UI_SPEC": {
+      "title_zh": "pomaster 主题硬规范 · UI 呈现与设计",
+      "url": "repo:packages/cli/seeds/specs/hard/themes/ui-presentation-and-design.md",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.SURFACES": {
+      "title_zh": "pomaster 脚手架部署面默认档（分页默认值与页长上限）",
+      "url": "repo:packages/cli/src/scaffold-surfaces.ts",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.PRESET": {
+      "title_zh": "pomaster 预设约定",
+      "url": "repo:packages/cli/seeds/baseline/frontend/design-standard.yaml",
+      "retrieved": "2026-11-02",
+      "note_zh": "不是外部权威，是为了全站一致而做的预设选择；项目可以改"
+    }
+  },
+  "specs": {
+    "ui": "themes/ui-presentation-and-design.md",
+    "page": "themes/page-composition-and-browser-environment.md"
+  }
+}
