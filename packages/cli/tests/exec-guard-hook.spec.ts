@@ -479,6 +479,38 @@ describe("exec-guard hook (b) DENY（exit 2 + permit 面指路）", () => {
 // (c) fail-open——判卷器自身故障两支（exit 0 + 显式声明，永不阻塞开发流）
 // ---------------------------------------------------------------------------
 
+describe("exec-guard hook 脚手架生成文件（11-01-storybook-scaffold S1-3，harness 约束 ④）", () => {
+  it("映射到 CAPABILITY.SCAFFOLD.* 的文件被拦 → DENY 额外指路「改规格 → confirm --change → generate」", async () => {
+    if (!py.available) {
+      expectPendingRecorded("deny.scaffold_generated", "脚手架生成文件 DENY 指路断言");
+      return;
+    }
+    writeHostFile("backend/db/grants.sql", "-- generated\n");
+    seedBindingRow("KEYBINDING.SCAFFOLD.FLEET.GRANTS", "CAPABILITY.SCAFFOLD.FLEET.DATABASE", "backend/db/grants.sql");
+    // 显式无 permit 的活跃执行：不依赖 CLI dist 也走 DENY 支（与 deny.permitless 同路径）。
+    await beginExecutionId([]);
+    const run = runHook(writePayload("backend/db/grants.sql"));
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("DENY");
+    expect(run.stderr).toContain("CAPABILITY.SCAFFOLD.FLEET.DATABASE");
+    expect(run.stderr).toContain("脚手架生成文件");
+    expect(run.stderr).toContain("pomaster scaffold generate");
+    expect(run.stderr).toContain("domain-spec.yaml");
+  });
+
+  it("非脚手架文件被拦 → 不出现脚手架指路", async () => {
+    if (!py.available) {
+      expectPendingRecorded("deny.non_scaffold_no_hint", "非脚手架 DENY 不带脚手架指路断言");
+      return;
+    }
+    seedStandardBindingTable();
+    await beginExecutionId([]);
+    const run = runHook(writePayload("src/in-scope.ts"));
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).not.toContain("脚手架生成文件");
+  });
+});
+
 describe("exec-guard hook (c) fail-open（exit 0 + stderr 显式声明）", () => {
   it("判卷器进程故障（CLI 入口缺席）→ exit 0 + FAIL-OPEN 声明（注入面 env 确定性故障）", async () => {
     if (!py.available) {

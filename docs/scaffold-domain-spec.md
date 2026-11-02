@@ -7,7 +7,7 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）与 S1-2（规格进治理）。生成命令 `scaffold plan / generate` 在后续切片提供。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）与 S1-3（生成记账与写入约束，第一块砖是数据库层）。
 
 ## 规格进治理
 
@@ -24,6 +24,20 @@ pomaster scaffold confirm --change CHANGE.C0042 --by human:<owner>   # 确认后
 * 确认后语义变化，重确认只能挂一个活性 `CHANGE.*`（在册、change_object、PROPOSED 或 CURRENT），没有手改声明通道。
 * 确认记录与 journal 对账：手改记录冒充确认会对不上，按未确认处理。
 * closeout 阻断码：`SCAFFOLD_SPEC_INVALID`（不通过校验）、`SCAFFOLD_SPEC_NOT_CONFIRMED`（未确认或记录不可信）、`SCAFFOLD_SPEC_DRIFT`（确认后语义变化）。没有规格文件的项目不受影响。
+
+## 生成：记账与写入约束
+
+```bash
+pomaster scaffold plan       # 只读：会新建 / 更新哪些文件、哪些变化被拒绝、哪些受管文件被手改
+pomaster scaffold generate   # 只按已确认、无漂移的规格生成
+```
+
+* **只认已确认规格**：未确认 / 漂移 / 不通过一律拒绝（`SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` / `SCAFFOLD_SPEC_INVALID`）。
+* **数据库层（模板集 `mysql-flyway@1`）**：迁移写到 `backend/<app>-core/src/main/resources/db/migration/`，账号授权脚本写到 `backend/db/grants.sql`（不进 Flyway，DBA 按环境执行；口令与来源主机是占位符）。标识符一律反引号引用；敏感个人信息存密文列。
+* **迁移只追加**：生成过的迁移永不重写（Flyway 校验和）。规格变化时按「上次生成时的规格快照 → 现规格」求差，追加新迁移；版本号从盘上已有迁移（含手工迁移）的最大值往上加。只自动生成加法变化（新实体、新可空字段、加长、放宽必填、decimal 只加整数位、加唯一 / 检索索引、枚举加值、用户侧列表索引重建）。删实体、删字段、改类型、收窄、新增必填字段、去唯一、枚举去值、属主增删等需要数据迁移的变化拒绝（`SCAFFOLD_MIGRATION_NOT_ADDITIVE`），逐条列出。
+* **生成清单** `.pomaster/scaffold/generation-manifest.json`：每个受管文件的路径、sha256、模板、覆盖实体、是否不可变、对应 KEYBINDING 与治理 id；上次生成的规格快照；模板集版本；history 只追加。journal 追加 `SCAFFOLD_GENERATED`。已最新 → `NO_CHANGE` 零写入。
+* **不覆盖手改**：受管文件被手改或删除、或目标位置已有内容不同的不受管文件 → 拒绝生成且零写入（`SCAFFOLD_GENERATED_FILE_MODIFIED`）。内容相同的同名文件直接纳管（中断后恢复）。
+* **写入约束**：每个受管文件登记一行 KEYBINDING（`.pomaster/truth/keybindings/`，`capability_to_file` → `CAPABILITY.SCAFFOLD.<APP>.ENTITY.<ENTITY>` 或 `CAPABILITY.SCAFFOLD.<APP>.DATABASE`）。活跃执行期内，exec-guard hook 把对这些文件的 Edit / Write 交给 `pomaster exec-guard` 判卷，业务任务的 permit 不含这些 id 就 DENY，并指路「改规格 → `scaffold confirm --change` → `scaffold generate`」。执行期外的手改由 `execution audit` 与一致性门禁检出。
 
 ## 两个部署面
 

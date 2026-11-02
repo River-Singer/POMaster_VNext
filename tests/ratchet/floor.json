@@ -802,6 +802,9 @@
       "packages/cli/tests/scaffold-validate.spec.ts": {
         "layer": "L1"
       },
+      "packages/cli/tests/scaffold-generate.spec.ts": {
+        "layer": "L1"
+      },
       "packages/cli/tests/scaffold-governance.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"

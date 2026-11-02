@@ -102,6 +102,10 @@ DEADLINE_ENV = "POMASTER_HOOK_DEADLINE_SECONDS"
 # CLI 入口注入面（默认 = 自举布局 <store_root>/packages/cli/dist/bin.js）。
 CLI_ENTRY_ENV = "POMASTER_CLI_ENTRY"
 
+# 脚手架受管文件的治理 id 前缀（镜像 packages/cli/src/scaffold-generate.ts
+# SCAFFOLD_CANONICAL_PREFIX）。只影响 DENY 的指路呈现，不参与判卷。
+SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD."
+
 TOOL_PATH_KEYS = ("file_path", "notebook_path")
 BASH_TOOL = "Bash"
 SUPPORTED_TOOLS = {"Edit", "Write", "NotebookEdit", BASH_TOOL}
@@ -549,6 +553,21 @@ def main() -> int:
                     f"permit_ref={verdict.get('permit_ref') or '-'}",
                     file=sys.stderr,
                 )
+        scaffold_ids = sorted(
+            {
+                part.strip()
+                for verdict in out_of_scope
+                for part in str(verdict.get("id") or "").split(",")
+                if part.strip().startswith(SCAFFOLD_CANONICAL_PREFIX)
+            }
+        )
+        if scaffold_ids:
+            print(
+                f"  脚手架生成文件（{', '.join(scaffold_ids)}）：不手改。要改就改 "
+                "`.pomaster/scaffold/domain-spec.yaml` → `pomaster scaffold confirm --change <CHANGE-id> "
+                "--by human:<owner>` → `pomaster scaffold generate`；业务扩展写在生成器留出的扩展点里。",
+                file=sys.stderr,
+            )
         print(
             "  正确 permit 面：把目标对象纳入范围须回 FRAMEWORK LOCK 重审（D20，不得旁路扩权）——"
             "`pomaster permit issue --subject <governed-id> --actor human:owner` 圈定范围后 "

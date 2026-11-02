@@ -173,6 +173,8 @@ export const BASELINE_MANIFEST_RELATIVE = `${BASELINE_DIR_RELATIVE}/manifest.yam
 export const SCAFFOLD_DIR_RELATIVE = `${POMASTER_DIR}/scaffold`;
 export const SCAFFOLD_DOMAIN_SPEC_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/domain-spec.yaml`;
 export const SCAFFOLD_CONFIRMATION_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/confirmation.json`;
+/** 脚手架生成清单（S1-3 生成记账：受管文件路径 / sha256 / 模板 / 来源规格快照）。 */
+export const SCAFFOLD_GENERATION_MANIFEST_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/generation-manifest.json`;
 
 /** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
 export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;

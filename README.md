@@ -347,7 +347,7 @@ pomaster recon import-graph|migrations|sbom|architecture-snapshot|token-sources|
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
-pomaster scaffold validate/confirm/status   # confirm = Owner 确认 .pomaster/scaffold/domain-spec.yaml（--by human:<owner>；确认后语义变化即漂移，重确认只走 --change <CHANGE.*>，closeout 阻断 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT）；status = 规格治理态；validate <spec> = 脚手架领域规格校验（pomaster.domain-spec/v1）：原型须在 catalog、暴露操作须在后端原型清单内；admin（管理侧 / 内网）与 public（用户侧 / 外网）两个部署面——用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出归一化摘要（表名 / 类名 / 路径 / 权限码 / 分页档），只读
+pomaster scaffold validate/confirm/status/plan/generate   # plan / generate = 只按已确认规格生成受管文件（数据库层：Flyway 迁移只追加，需要数据迁移的变化拒绝；授权脚本随规格更新），生成清单 .pomaster/scaffold/generation-manifest.json 记账，受管文件登记 KEYBINDING——活跃执行期内手改由 exec-guard 拦下，手改过的文件拒绝覆盖；confirm = Owner 确认 .pomaster/scaffold/domain-spec.yaml（--by human:<owner>；确认后语义变化即漂移，重确认只走 --change <CHANGE.*>，closeout 阻断 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT）；status = 规格治理态；validate <spec> = 脚手架领域规格校验（pomaster.domain-spec/v1）：原型须在 catalog、暴露操作须在后端原型清单内；admin（管理侧 / 内网）与 public（用户侧 / 外网）两个部署面——用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出归一化摘要（表名 / 类名 / 路径 / 权限码 / 分页档），只读
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement
 pomaster agents status/dispatch-pack
