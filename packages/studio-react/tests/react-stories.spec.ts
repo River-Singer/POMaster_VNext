@@ -94,8 +94,9 @@ describe("studio-react generators · antd 对齐族（S2）", () => {
       const a = walk(first);
       const b = walk(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      // 总文件数 = 68 对齐族 + 1 Foundations/Design Tokens 对照 story（F-M2 R2 增量）。
-      expect(a.size).toBe(69);
+      // 总文件数 = 68 对齐族 + 1 Foundations/Design Tokens 对照 story（F-M2 R2 增量）
+      // + 9 规范页（总览 + 8 个 Geist 领域，R1 增量）。
+      expect(a.size).toBe(78);
       let diffs = 0;
       for (const [key, value] of a) if (b.get(key) !== value) diffs += 1;
       expect(diffs).toBe(0);
@@ -135,10 +136,18 @@ describe("studio-react 发布面纪律（S2 落位裁定）", () => {
       "@storybook/addon-docs",
       "@storybook/react",
       "@storybook/react-vite",
+      "@tailwindcss/vite",
       "antd",
+      "class-variance-authority",
+      "clsx",
+      "lucide-react",
+      "radix-ui",
       "react",
       "react-dom",
       "storybook",
+      "tailwind-merge",
+      "tailwindcss",
+      "tw-animate-css",
       "vite",
     ]);
     // 遥测声明层双保险（boot 事件由 run.mjs 环境变量拦截——运行面纪律）。

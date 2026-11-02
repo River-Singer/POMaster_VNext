@@ -1,0 +1,1419 @@
+{
+  "schema": "pomaster.design-standard-twin/v1",
+  "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源后运行 node packages/studio-react/run.mjs generate。",
+  "fingerprint": "sha256:d40e3d160661f7868c03739fe3ac45cc57124eca2759e99b6c19e48a91e6f2df",
+  "generator": {
+    "path": "packages/studio-react/scripts/lib/standard.mjs",
+    "version": "1"
+  },
+  "inputs": [
+    {
+      "path": "packages/cli/seeds/design-standards/geist.yaml",
+      "sha256": "f0c81caf9f3d64c6db28a9dfa2808da54d213f532392e5cbba06722257f58221"
+    }
+  ],
+  "edit": {
+    "source": "packages/cli/seeds/design-standards/geist.yaml",
+    "validate": "pomaster design validate --system geist",
+    "regenerate": "node packages/studio-react/run.mjs generate",
+    "show": "pomaster design show --system geist --json"
+  },
+  "meta": {
+    "design_system": "geist",
+    "design_system_title_zh": "Vercel Geist",
+    "origin": "preset",
+    "customized": false,
+    "ui_library": "shadcn/ui + Tailwind CSS 4"
+  },
+  "storybook": {
+    "base_url": null,
+    "overview": "?path=/story/standard-overview--overview"
+  },
+  "checks": [
+    {
+      "id": "style.no-raw-color",
+      "title_zh": "不写裸色值",
+      "active": false
+    },
+    {
+      "id": "style.spacing-scale",
+      "title_zh": "间距在阶梯内",
+      "active": false
+    },
+    {
+      "id": "style.font-size-scale",
+      "title_zh": "字号在字阶内",
+      "active": false
+    },
+    {
+      "id": "style.font-weight-allowed",
+      "title_zh": "字重在允许集内",
+      "active": false
+    },
+    {
+      "id": "style.font-family-token",
+      "title_zh": "字体族取 token",
+      "active": false
+    },
+    {
+      "id": "style.breakpoint-allowed",
+      "title_zh": "断点取规范值",
+      "active": false
+    },
+    {
+      "id": "style.no-raw-z-index",
+      "title_zh": "z-index 取层级 token",
+      "active": false
+    },
+    {
+      "id": "markup.single-h1",
+      "title_zh": "每个页面视图一个 h1",
+      "active": false
+    },
+    {
+      "id": "markup.heading-order",
+      "title_zh": "标题不跳级",
+      "active": false
+    },
+    {
+      "id": "markup.heading-level-max",
+      "title_zh": "应用界面标题不超过三级",
+      "active": false
+    },
+    {
+      "id": "markup.icon-button-label",
+      "title_zh": "纯图标按钮有可访问名称",
+      "active": false
+    },
+    {
+      "id": "grid.span-range",
+      "title_zh": "栅格跨度合法",
+      "active": false
+    },
+    {
+      "id": "grid.row-sum",
+      "title_zh": "一行不超过 24 栅格",
+      "active": false
+    },
+    {
+      "id": "grid.gutter-allowed",
+      "title_zh": "gutter 取规范值",
+      "active": false
+    },
+    {
+      "id": "icon.single-library",
+      "title_zh": "只用一套图标库",
+      "active": false
+    },
+    {
+      "id": "markup.single-primary-button",
+      "title_zh": "一个按钮区一个主按钮",
+      "active": false
+    },
+    {
+      "id": "text.no-literal-copy",
+      "title_zh": "界面文字走文案字典",
+      "active": false
+    },
+    {
+      "id": "text.banned-terms",
+      "title_zh": "不用禁用词",
+      "active": false
+    },
+    {
+      "id": "state.store-library",
+      "title_zh": "全局状态库只用 Pinia",
+      "active": false
+    },
+    {
+      "id": "state.no-direct-request",
+      "title_zh": "组件不直接发请求",
+      "active": false
+    },
+    {
+      "id": "perf.lazy-load",
+      "title_zh": "路由与重组件按需加载",
+      "active": false
+    },
+    {
+      "id": "perf.no-full-library-import",
+      "title_zh": "组件库按需引入",
+      "active": false
+    },
+    {
+      "id": "format.no-local-pattern",
+      "title_zh": "日期数字走格式化注册表",
+      "active": false
+    }
+  ],
+  "areas": [
+    {
+      "key": "typography",
+      "title_zh": "字体",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "TYPE",
+      "summary_zh": "Geist Sans 与 Geist Mono 两套字体；字号只用 Geist 的四组排版类（标题、按钮、标签、正文），不自造字号和字重。",
+      "storybook": {
+        "title": "规范/基础/字体",
+        "id": "standard-foundations-typography--overview",
+        "url": "?path=/story/standard-foundations-typography--overview"
+      },
+      "rules": [
+        {
+          "id": "TYPE.FAMILY",
+          "title_zh": "两套字体各管各的",
+          "statement_zh": "正文、标题、标签、控件、表格、图表都用 Geist Sans；Geist Mono 只用于代码、命令、路径、原始 token、时间戳和短标识。字体从 Google Fonts 加载 Geist 与 Geist Mono，字重 400 到 600。字体族只经 font-sans / font-mono（或带 -mono 的排版类）取，不写内联 font-family：主题里的字体栈带系统字体兜底，中文字形由系统无衬线字体补上。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.font-family-token",
+            "check_title_zh": "字体族取 token",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "sans",
+              "label_zh": "无衬线",
+              "unit": "none",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "Geist",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "mono",
+              "label_zh": "等宽",
+              "unit": "none",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "Geist Mono",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "weights",
+              "label_zh": "字重范围",
+              "unit": "none",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                400,
+                600
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "正文用 Sans，标识用 Mono",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<p className=\"font-sans text-copy-14\">\n  部署 <code className=\"text-copy-13-mono\">dpl_7Hq2x</code> 已于 <code className=\"text-copy-13-mono\">2026-11-02 14:08</code> 上线。\n</p>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "内联写字体名",
+              "note_zh": "只写一个字体名没有兜底，中文会落到浏览器默认字体（常是衬线体）。",
+              "template": null,
+              "jsx": null,
+              "code": "<p style={{ fontFamily: \"Geist\" }}>部署已上线</p>",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-family",
+            "url": "?path=/story/standard-foundations-typography--type-family"
+          }
+        },
+        {
+          "id": "TYPE.ROLES",
+          "title_zh": "按角色选排版类",
+          "statement_zh": "字号只用 Geist 的四组排版类，类名里的数字就是字号：标题 text-heading-72 到 text-heading-14，用来开启页面或区块；按钮 text-button-16 / 14 / 12，只在按钮组件里用，14 是默认，12 只用于输入框里的小按钮；标签 text-label-20 到 text-label-12，用于单行文字，14 最常用；正文 text-copy-24 到 text-copy-13，用于多行文字，14 最常用。不自造字号，也不写数字字重。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.font-size-scale",
+            "check_title_zh": "字号在字阶内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "heading",
+              "label_zh": "标题",
+              "unit": "px",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                72,
+                64,
+                56,
+                48,
+                40,
+                32,
+                24,
+                20,
+                16,
+                14
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "button",
+              "label_zh": "按钮",
+              "unit": "px",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                16,
+                14,
+                12
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "label",
+              "label_zh": "标签",
+              "unit": "px",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                20,
+                18,
+                16,
+                14,
+                13,
+                12
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "copy",
+              "label_zh": "正文",
+              "unit": "px",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                24,
+                20,
+                18,
+                16,
+                14,
+                13
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "line_heights",
+              "label_zh": "行高 / 字重 / 字距",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "各排版类的行高、字重、字距取多少？（Geist 官方数值在 Figma 里，接入设计稿后回填）",
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "标题、标签、正文",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex flex-col gap-2\">\n  <h2 className=\"text-heading-24\">项目设置</h2>\n  <span className=\"text-label-14\">构建与部署</span>\n  <p className=\"text-copy-14 text-muted-foreground\">推送到 main 分支时自动部署到生产环境。</p>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "自造的 15px 与 font-weight 650",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "<p style={{ fontSize: 15, fontWeight: 650 }}>项目设置</p>",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-roles",
+            "url": "?path=/story/standard-foundations-typography--type-roles"
+          }
+        },
+        {
+          "id": "TYPE.LABEL_VS_COPY",
+          "title_zh": "单行用标签，多行用正文",
+          "statement_zh": "单行文字（菜单项、表单标签、与图标并排的文字）用标签类，行高留得足；多行文字用正文类。标签旁的次要信息用 text-label-13，数字用等宽数字；忙碌视图里的第三层信息用 text-label-12；正文里提到代码用 text-copy-13-mono。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "secondary",
+              "label_zh": "次要单行",
+              "unit": "none",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "text-label-13",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "tertiary",
+              "label_zh": "第三层单行",
+              "unit": "none",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "text-label-12",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "inline_code",
+              "label_zh": "正文中的代码",
+              "unit": "none",
+              "source": "SRC.GEIST.TYPOGRAPHY",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "text-copy-13-mono",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "标签 + 次要信息",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex items-baseline gap-2\">\n  <span className=\"text-label-14\">生产环境</span>\n  <span className=\"text-label-13 text-muted-foreground tabular-nums\">3 分钟前</span>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-typography--type-label-vs-copy",
+            "url": "?path=/story/standard-foundations-typography--type-label-vs-copy"
+          }
+        },
+        {
+          "id": "TYPE.READING",
+          "title_zh": "长文行宽 60 到 68 个字符",
+          "statement_zh": "长段落控制在每行 60 到 68 个字符；需要上下对比的数字用等宽数字（tabular-nums）。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "line_length",
+              "label_zh": "长文行宽",
+              "unit": "chars",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                60,
+                68
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-typography--type-reading",
+            "url": "?path=/story/standard-foundations-typography--type-reading"
+          }
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "title_zh": "色彩",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "COLOR",
+      "summary_zh": "默认单色；颜色只经主题变量取得；状态色只表达状态，且不只靠颜色；不用装饰性渐变、发光、毛玻璃。",
+      "storybook": {
+        "title": "规范/基础/色彩",
+        "id": "standard-foundations-color--overview",
+        "url": "?path=/story/standard-foundations-color--overview"
+      },
+      "rules": [
+        {
+          "id": "COLOR.MONOCHROME",
+          "title_zh": "默认单色，颜色只走主题变量",
+          "statement_zh": "界面默认单色（黑、白、灰），颜色只经主题变量（background / foreground、primary、muted、border 等成对的变量）取得，不在组件里写死色值。主题变量当前取 shadcn/ui neutral 主题作为近似，拿到 Geist 官方色板后替换。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.no-raw-color",
+            "check_title_zh": "不写裸色值",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "theme",
+              "label_zh": "主题变量近似来源",
+              "unit": "none",
+              "source": "SRC.SHADCN.THEMING",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "shadcn/ui neutral",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "radius",
+              "label_zh": "shadcn 默认 --radius",
+              "unit": "none",
+              "source": "SRC.SHADCN.THEMING",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "0.625rem",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "成对变量：表面与其上的文字",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex gap-3\">\n  <div className=\"rounded-md bg-primary px-4 py-2 text-primary-foreground text-label-14\">primary</div>\n  <div className=\"rounded-md bg-muted px-4 py-2 text-muted-foreground text-label-14\">muted</div>\n  <div className=\"rounded-md border border-border px-4 py-2 text-foreground text-label-14\">border</div>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-color--color-monochrome",
+            "url": "?path=/story/standard-foundations-color--color-monochrome"
+          }
+        },
+        {
+          "id": "COLOR.STATUS",
+          "title_zh": "状态色只表达状态",
+          "statement_zh": "蓝、绿、黄、红只用来表达信息、成功、警告、错误四种状态，并且同时给出文字或图标，不能只靠颜色。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "statuses",
+              "label_zh": "状态",
+              "unit": "none",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                "info",
+                "success",
+                "warning",
+                "error"
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "颜色不得作为唯一信息来源"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "颜色 + 文字",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex gap-2\">\n  <Badge variant=\"secondary\"><CircleCheckIcon className=\"size-3.5\" />已就绪</Badge>\n  <Badge variant=\"destructive\"><CircleXIcon className=\"size-3.5\" />构建失败</Badge>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-color--color-status",
+            "url": "?path=/story/standard-foundations-color--color-status"
+          }
+        },
+        {
+          "id": "COLOR.NO_DECORATION",
+          "title_zh": "不用装饰性效果",
+          "statement_zh": "不用装饰性渐变、渐变文字、发光、色块、条纹、纹理、网格背景、毛玻璃，也不用装饰性或伪立体阴影。渐变只在表示连续数据刻度时使用，并且要标注。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "渐变文字 + 发光",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "<h1 className=\"bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(168,85,247,0.6)]\">Ship faster</h1>",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-color--color-no-decoration",
+            "url": "?path=/story/standard-foundations-color--color-no-decoration"
+          }
+        }
+      ]
+    },
+    {
+      "key": "materials",
+      "title_zh": "材质",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "MATERIAL",
+      "summary_zh": "页面内表面与浮层各有固定圆角；只有提示气泡带指向三角；阴影只表达层级，不作装饰。",
+      "storybook": {
+        "title": "规范/基础/材质",
+        "id": "standard-foundations-materials--overview",
+        "url": "?path=/story/standard-foundations-materials--overview"
+      },
+      "rules": [
+        {
+          "id": "MATERIAL.SURFACES",
+          "title_zh": "页面内表面的圆角",
+          "statement_zh": "页面内的表面按抬升程度取圆角：base 与 small 用 6px，medium 与 large 用 12px。同一层级的表面圆角一致。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "base",
+              "label_zh": "material-base",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 6,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "small",
+              "label_zh": "material-small",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 6,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "medium",
+              "label_zh": "material-medium",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "large",
+              "label_zh": "material-large",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "6px 与 12px 两档",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex gap-4\">\n  <div className=\"border border-border bg-background px-4 py-3 text-label-14\" style={{ borderRadius: p.base }}>base · {p.base}px</div>\n  <div className=\"border border-border bg-background px-4 py-3 text-label-14\" style={{ borderRadius: p.medium }}>medium · {p.medium}px</div>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-materials--material-surfaces",
+            "url": "?path=/story/standard-foundations-materials--material-surfaces"
+          }
+        },
+        {
+          "id": "MATERIAL.FLOATING",
+          "title_zh": "浮层的圆角与层级",
+          "statement_zh": "浮在页面之上的元素按层级取圆角：提示气泡 6px（阴影最轻，也是唯一带指向三角的浮层）；菜单 12px；对话框 12px（比菜单抬得更高）；全屏层 16px。阴影只表达层级，具体阴影值待项目决定。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "tooltip",
+              "label_zh": "material-tooltip",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 6,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "menu",
+              "label_zh": "material-menu",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "modal",
+              "label_zh": "material-modal",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "fullscreen",
+              "label_zh": "material-fullscreen",
+              "unit": "px",
+              "source": "SRC.GEIST.MATERIALS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 16,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "shadows",
+              "label_zh": "阴影",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "各层级的阴影取什么值？（Geist 官网正文未给出）",
+              "candidates": null,
+              "pending": true
+            }
+          ],
+          "anchors": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-materials--material-floating",
+            "url": "?path=/story/standard-foundations-materials--material-floating"
+          }
+        }
+      ]
+    },
+    {
+      "key": "grid",
+      "title_zh": "栅格",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "GRID",
+      "summary_zh": "桌面 12 列、平板 6 列、手机 4 列；长文占 6 到 7 列；带参考线的二维布局才用 Geist Grid 的画法。",
+      "storybook": {
+        "title": "规范/基础/栅格",
+        "id": "standard-foundations-grid--overview",
+        "url": "?path=/story/standard-foundations-grid--overview"
+      },
+      "rules": [
+        {
+          "id": "GRID.COLUMNS",
+          "title_zh": "12 / 6 / 4 列",
+          "statement_zh": "外层栅格桌面 12 列、平板 6 列、手机 4 列；长文内容占 6 到 7 列，表格、图表、计算器和主要对比可以占满 12 列。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "desktop",
+              "label_zh": "桌面",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 12,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "tablet",
+              "label_zh": "平板",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 6,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "mobile",
+              "label_zh": "手机",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 4,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "prose_span",
+              "label_zh": "长文占列",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                6,
+                7
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "12 列里长文占 7 列",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"grid gap-4\" style={{ gridTemplateColumns: `repeat(${p.desktop}, minmax(0, 1fr))` }}>\n  <div className=\"rounded-md border border-border p-3 text-copy-13\" style={{ gridColumn: `span ${p.prose_span[1]}` }}>长文 · {p.prose_span[1]} 列</div>\n  <div className=\"rounded-md bg-muted p-3 text-copy-13\" style={{ gridColumn: `span ${p.desktop - p.prose_span[1]}` }}>侧栏 · {p.desktop - p.prose_span[1]} 列</div>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-columns",
+            "url": "?path=/story/standard-foundations-grid--grid-columns"
+          }
+        },
+        {
+          "id": "GRID.GUIDES",
+          "title_zh": "参考线只在二维布局里用",
+          "statement_zh": "参考线和格子边框本身是设计的一部分时，才用带参考线的网格（Geist Grid 的画法）；普通的响应式内容用 Tailwind 的 grid 工具类。网格最多嵌套一层；参考线是装饰，标 aria-hidden；可点的格子有自己的焦点环，Tab 顺序按阅读顺序；参考线对比度不低于 3:1。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "guide_contrast",
+              "label_zh": "参考线最低对比度",
+              "unit": "ratio",
+              "source": "SRC.GEIST.GRID",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 3,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "max_nesting",
+              "label_zh": "最多嵌套层数",
+              "unit": "count",
+              "source": "SRC.GEIST.GRID",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 1,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-grid--grid-guides",
+            "url": "?path=/story/standard-foundations-grid--grid-guides"
+          }
+        }
+      ]
+    },
+    {
+      "key": "spacing",
+      "title_zh": "间距",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "SPACING",
+      "summary_zh": "间距只取间距阶梯；组内、组间、区块、章节各用一段阶梯。",
+      "storybook": {
+        "title": "规范/基础/间距",
+        "id": "standard-foundations-spacing--overview",
+        "url": "?path=/story/standard-foundations-spacing--overview"
+      },
+      "rules": [
+        {
+          "id": "SPACING.SCALE",
+          "title_zh": "间距只取阶梯，按关系选档",
+          "statement_zh": "间距只用间距阶梯（Tailwind 的 --spacing 基数 0.25rem 的整数倍），不写任意值。组内元素用第 2 到 4 档，组与组之间用第 6 到 8 档，大区块转折用第 8 到 12 档；第 16 档只用于真正的章节分隔，不作为页面默认间距。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "style.spacing-scale",
+            "check_title_zh": "间距在阶梯内",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "base",
+              "label_zh": "间距基数 --spacing",
+              "unit": "none",
+              "source": "SRC.TAILWIND.SPACING",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "0.25rem",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "within_group",
+              "label_zh": "组内档位",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                2,
+                4
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "between_groups",
+              "label_zh": "组间档位",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                6,
+                8
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "sections",
+              "label_zh": "区块档位",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": [
+                8,
+                12
+              ],
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "chapter",
+              "label_zh": "章节档位",
+              "unit": "count",
+              "source": "SRC.VERCEL.DESIGN_MD",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": 16,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 写孤立色值、魔法间距和临时阴影。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "组内 gap-2，组间 gap-6",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex flex-col gap-6\">\n  <div className=\"flex flex-col gap-2\"><Label>项目名称</Label><Input defaultValue=\"pomaster-web\" /></div>\n  <div className=\"flex flex-col gap-2\"><Label>根目录</Label><Input defaultValue=\"apps/web\" /></div>\n</div>",
+              "code": null,
+              "lang": null
+            },
+            {
+              "kind": "dont",
+              "title_zh": "任意值",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "<div className=\"mt-[13px] gap-[7px]\">…</div>",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-spacing--spacing-scale",
+            "url": "?path=/story/standard-foundations-spacing--spacing-scale"
+          }
+        }
+      ]
+    },
+    {
+      "key": "icons",
+      "title_zh": "图标",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "ICON",
+      "summary_zh": "只用一套图标库；图标只在能让操作更快被认出时使用；纯图标按钮要有名字。",
+      "storybook": {
+        "title": "规范/基础/图标",
+        "id": "standard-foundations-icons--overview",
+        "url": "?path=/story/standard-foundations-icons--overview"
+      },
+      "rules": [
+        {
+          "id": "ICON.LIBRARY",
+          "title_zh": "只用 lucide-react",
+          "statement_zh": "图标统一用 lucide-react（shadcn/ui 的默认图标库），不混用第二套。Geist 官方图标包 @vercel/geistcn-assets 未公开发布，公开后再评估替换。图标只在一个约定俗成的图标能让操作更快被认出时才用。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "icon.single-library",
+            "check_title_zh": "只用一套图标库",
+            "active": false
+          },
+          "params": [
+            {
+              "key": "library",
+              "label_zh": "图标库",
+              "unit": "none",
+              "source": "SRC.POMASTER.PRESET",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "lucide-react",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            },
+            {
+              "key": "official",
+              "label_zh": "Geist 官方图标包",
+              "unit": "none",
+              "source": "SRC.GEIST.ICONS",
+              "note_zh": null,
+              "kind": "value",
+              "token": null,
+              "value": "@vercel/geistcn-assets（未公开）",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
+            }
+          ],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "图标与文字并排",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex gap-2\">\n  <Button variant=\"outline\"><SearchIcon />搜索</Button>\n  <Button><PlusIcon />新建项目</Button>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-library",
+            "url": "?path=/story/standard-foundations-icons--icon-library"
+          }
+        },
+        {
+          "id": "ICON.BUTTON_LABEL",
+          "title_zh": "纯图标按钮要有名字",
+          "statement_zh": "只有图标的按钮必须带 aria-label，悬停时用提示显示同样的文字。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.icon-button-label",
+            "check_title_zh": "纯图标按钮有可访问名称",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。"
+            }
+          ],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "带 aria-label",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<Button variant=\"outline\" size=\"icon\" aria-label=\"刷新\"><RefreshCwIcon /></Button>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-icons--icon-button-label",
+            "url": "?path=/story/standard-foundations-icons--icon-button-label"
+          }
+        }
+      ]
+    },
+    {
+      "key": "motion",
+      "title_zh": "动效",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "MOTION",
+      "summary_zh": "默认静止；动效只用来解释状态变化、保持连续、确认操作；尊重减少动效设置。",
+      "storybook": {
+        "title": "规范/基础/动效",
+        "id": "standard-foundations-motion--overview",
+        "url": "?path=/story/standard-foundations-motion--overview"
+      },
+      "rules": [
+        {
+          "id": "MOTION.PURPOSE",
+          "title_zh": "默认静止，动效要有理由",
+          "statement_zh": "界面默认静止。动效只用于三件事：解释状态变化、保持视觉连续、确认一个操作。不用跑马灯、打字光标、脉冲指示、弹跳、视差和滚动出现效果；用户开启「减少动效」时关闭或降级。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-motion--motion-purpose",
+            "url": "?path=/story/standard-foundations-motion--motion-purpose"
+          }
+        }
+      ]
+    },
+    {
+      "key": "layout",
+      "title_zh": "布局与可访问性",
+      "group": "foundations",
+      "group_title_zh": "基础",
+      "prefix": "LAYOUT",
+      "summary_zh": "一个 h1、标题有序；先换行再缩小；网格与弹性子项设 min-width 0；不藏溢出；源码顺序即阅读顺序。",
+      "storybook": {
+        "title": "规范/基础/布局与可访问性",
+        "id": "standard-foundations-layout--overview",
+        "url": "?path=/story/standard-foundations-layout--overview"
+      },
+      "rules": [
+        {
+          "id": "LAYOUT.HEADINGS",
+          "title_zh": "一个 h1，标题有序",
+          "statement_zh": "每个页面一个 h1，标题逐级下降；用地标元素、跳转到主内容的链接、原生控件、语义化表格和可见的焦点环，满足 WCAG AA。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "gate",
+            "check": "markup.heading-order",
+            "check_title_zh": "标题不跳级",
+            "active": false
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "ui",
+              "doc": "themes/ui-presentation-and-design.md",
+              "quote": "标题层级 h1–h6 与视觉层级一致，不跳过层级"
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-headings",
+            "url": "?path=/story/standard-foundations-layout--layout-headings"
+          }
+        },
+        {
+          "id": "LAYOUT.REFLOW",
+          "title_zh": "先换行，再缩小",
+          "statement_zh": "空间不够时先重新排布（换行、换列），不先缩小字号；网格和弹性布局的子项设 min-width 0，避免被长内容撑破；不用 overflow 隐藏把内容藏起来；源码顺序就是阅读顺序。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "子项 min-w-0，长文本截断",
+              "note_zh": null,
+              "template": null,
+              "jsx": "<div className=\"flex w-72 items-center gap-2 rounded-md border border-border p-3\">\n  <div className=\"min-w-0 flex-1 truncate text-label-14\">pomaster-web-git-feature-design-standard-team.vercel.app</div>\n  <Badge variant=\"secondary\">Preview</Badge>\n</div>",
+              "code": null,
+              "lang": null
+            }
+          ],
+          "storybook": {
+            "id": "standard-foundations-layout--layout-reflow",
+            "url": "?path=/story/standard-foundations-layout--layout-reflow"
+          }
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "SRC.GEIST.HOME": {
+      "title_zh": "Vercel Geist 设计体系",
+      "url": "https://vercel.com/geist",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.GEIST.TYPOGRAPHY": {
+      "title_zh": "Geist · Typography",
+      "url": "https://vercel.com/geist/typography",
+      "retrieved": "2026-11-02",
+      "note_zh": "页面给出类名与用法；字号即类名中的数字（px），行高、字重、字距在 Geist Figma 里，正文未给出"
+    },
+    "SRC.GEIST.MATERIALS": {
+      "title_zh": "Geist · Materials",
+      "url": "https://vercel.com/geist/materials",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.GEIST.GRID": {
+      "title_zh": "Geist · Grid",
+      "url": "https://vercel.com/geist/grid",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.GEIST.ICONS": {
+      "title_zh": "Geist · Icons（图标包 @vercel/geistcn-assets）",
+      "url": "https://vercel.com/geist/icons",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.VERCEL.DESIGN_MD": {
+      "title_zh": "Vercel design.md（官方设计技能文档：栅格、间距角色、字体、色彩、动效、可访问性）",
+      "url": "https://vercel.com/design.md",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.SHADCN.THEMING": {
+      "title_zh": "shadcn/ui · Theming（neutral 主题 CSS 变量）",
+      "url": "https://ui.shadcn.com/docs/theming",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.TAILWIND.SPACING": {
+      "title_zh": "Tailwind CSS · 间距（--spacing 基数）",
+      "url": "https://tailWindcss.com/docs/customizing-spacing",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.UI_SPEC": {
+      "title_zh": "pomaster 主题硬规范 · UI 呈现与设计",
+      "url": "repo:packages/cli/seeds/specs/hard/themes/ui-presentation-and-design.md",
+      "retrieved": "2026-11-02",
+      "note_zh": null
+    },
+    "SRC.POMASTER.PRESET": {
+      "title_zh": "pomaster 预设约定（Geist 体系）",
+      "url": "repo:packages/cli/seeds/design-standards/geist.yaml",
+      "retrieved": "2026-11-02",
+      "note_zh": "不是外部权威，是为了全站一致而做的预设选择；项目可以改"
+    }
+  },
+  "specs": {
+    "ui": "themes/ui-presentation-and-design.md"
+  }
+}

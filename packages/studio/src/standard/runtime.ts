@@ -26,6 +26,7 @@ export interface StdExample {
   readonly title_zh: string;
   readonly note_zh: string | null;
   readonly template: string | null;
+  readonly jsx?: string | null;
   readonly code: string | null;
   readonly lang: string | null;
 }

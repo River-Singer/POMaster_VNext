@@ -4,21 +4,26 @@
 
 | 给谁 | 是什么 | 在哪里 |
 |---|---|---|
-| 人 | Storybook「规范」分区：每条规则的条文、数值与出处、执行方式、实时渲染的「这样做 / 别这样做」 | 侧栏最上方「规范」；在线版见 README「组件画廊」 |
-| AI | 孪生：结构化 JSON + 一条规则一节的 Markdown 摘要 | `packages/studio/twin/design-standard.json`、`design-standard.md` |
-| AI / 脚本 | 命令行视图，按领域或规则过滤 | `pomaster design show [--area <key>] [--rule <id>] [--json]` |
+| 人 | Storybook「规范」分区：每条规则的条文、数值与出处、执行方式、实时渲染的「这样做 / 别这样做」 | 侧栏最上方「规范」；Vue 画廊的在线版见 README「组件画廊」 |
+| AI | 孪生：结构化 JSON + 一条规则一节的 Markdown 摘要 | 见下表 |
+| AI / 脚本 | 命令行视图，按领域或规则过滤 | `pomaster design show [--system <体系>] [--area <key>] [--rule <id>] [--json]` |
 
-规范源：工具预设按设计体系各一份，在 `packages/cli/seeds/design-standards/<体系>.yaml`（当前有 `antd.yaml`；预设不直接播种）；项目自己的规范在 `.pomaster/baseline/frontend/design-standard.yaml`。命令优先用项目规范，项目没有时用预设（`--system antd|geist` 选体系，缺省 antd）。
+规范源：工具预设按设计体系各一份，在 `packages/cli/seeds/design-standards/<体系>.yaml`（预设不直接播种）；项目自己的规范在 `.pomaster/baseline/frontend/design-standard.yaml`。命令优先用项目规范，项目没有时用预设（`--system antd|geist` 选体系，缺省 antd）。
+
+| 体系 | 技术栈 | 预设 | 规范页 | AI 孪生 | 重新生成 |
+|---|---|---|---|---|---|
+| `antd` | Vue 3 + ant-design-vue | `antd.yaml` | Vue 画廊（`pnpm studio:dev`） | `packages/studio/twin/design-standard.{json,md}` | `node packages/studio/run.mjs generate` |
+| `geist` | React + shadcn/ui + Tailwind CSS 4 | `geist.yaml` | React 画廊（`pnpm studio:react:dev`） | `packages/studio-react/twin/design-standard.geist.{json,md}` | `node packages/studio-react/run.mjs generate` |
 
 ## 怎么改
 
 人和 AI 走同一条路，页面和孪生都不手改：
 
 1. 编辑规范源：改条文、改数值、补示例；
-2. `pomaster design validate`：所有问题一次报全；
-3. `node packages/studio/run.mjs generate`：Storybook 页面与 AI 孪生一起重新生成。
+2. `pomaster design validate [--system geist]`：所有问题一次报全；
+3. 按上表重新生成：Storybook 页面与 AI 孪生一起更新。
 
-孪生没重新生成时，`packages/studio/tests/standard.spec.ts` 让 CI 失败；规范源或 CLI 种子改动合入 main 后，Storybook 自动重新发布。
+孪生没重新生成时，`packages/studio/tests/standard.spec.ts`（Ant Design）或 `packages/studio-react/tests/standard.spec.ts`（Geist）让 CI 失败；规范源或 CLI 种子改动合入 main 后，Vue 画廊自动重新发布。
 
 ## 结构
 
@@ -62,7 +67,7 @@ areas:
 
 | 写法 | 含义 |
 |---|---|
-| `token: <点分路径>` | 取 `design-tokens.yaml` 的值；token 还是 UNKNOWN 时这个参数待定 |
+| `token: <点分路径>` | 取 `design-tokens.yaml` 的值；token 还是 UNKNOWN 时这个参数待定。只有引用了 token（参数或示例里的 `t[…]`）的规范，token 表才进规范指纹 |
 | `value: … + source: SRC.*` | 带出处的定值；出处必须在 `sources` 登记（标题、链接、核实日期）。仓库内出处写 `repo:<路径>` |
 | `decision: <问题>` | 项目决策位：框架不替项目选，可附 `candidates` 供参考 |
 
@@ -79,9 +84,11 @@ areas:
 
 ### 示例
 
-- `template`：Vue 模板，Storybook 里用 antdv 实时渲染（Ant Design 体系）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`）；只能引用已定的值，不能有 `<script>` / `<style>`。
-- `jsx`：JSX 片段，React 侧实时渲染（Geist 体系）。
-- `code` + `lang`：只展示的代码片段（`vue` / `ts` / `css` / `html`）。
+- `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`）；只能引用已定的值，不能有 `<script>` / `<style>`。
+- `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），渲染在 `.geist-root` 容器里。同样用 `p` / `t` 取值；只能用 `packages/studio-react/src/components/ui/` 里登记的 shadcn/ui 组件（Button、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。
+- `code` + `lang`：只展示的代码片段（`vue` / `ts` / `tsx` / `css` / `html`）。
+
+一个体系只收自己的实时示例形态：Ant Design 预设写 `template`，Geist 预设写 `jsx`。
 
 `kind` 只有 `do`（这样做）和 `dont`（别这样做）。
 
@@ -97,7 +104,20 @@ areas:
 
 数值取自 Ant Design 设计规范与 ant-design-vue 主题源码，条文用自己的话写成可执行条款；官方没给数值的（内容区内边距、区块间距、内容最大宽度、层级 token、用户侧图标库、查询缓存库、首屏与分包体积、虚拟滚动阈值、防抖间隔）是项目决策位。26 条规则由机器门禁执行（检查接入前按评审执行），其余在评审时核对。
 
-后续：React / Geist 预设、规范门禁接入。
+## 当前预设（Vercel Geist · React）
+
+8 个领域、17 条规则，全部在「基础」：字体、色彩、材质、栅格、间距、图标、动效、布局与可访问性。
+
+- 组件：shadcn/ui（组件源码在 `packages/studio-react/src/components/ui/`）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 没有公开发布，公开后再评估替换。
+- 颜色：shadcn/ui neutral 主题的成对变量，作为 Geist 单色体系的近似，拿到 Geist 官方色板后替换。
+- 排版：Geist 的四组排版类 `text-heading-*`、`text-button-*`、`text-label-*`、`text-copy-*`（类名里的数字就是字号，见 `src/styles/geist.css`）；字体 Geist / Geist Mono 经 Google Fonts 加载。
+- 图标：lucide-react。
+
+数值取自 Geist 官方站（排版、材质、栅格、图标）、Vercel 的 design.md、shadcn/ui 主题文档与 Tailwind 间距文档；官方没公开的（排版类的行高与字重、浮层阴影）是项目决策位。7 条规则由机器门禁执行（检查接入前按评审执行），其余在评审时核对。
+
+Geist 示例和 antd 组件页在同一个 React Storybook 里：Tailwind 不加全局 preflight，preflight 只作用在 `.geist-root` 里；antd 的 reset.css 放进最低的 CSS 层，免得它的元素选择器压过 Tailwind 工具类（见 `packages/studio-react/.storybook/preview.css`）。
+
+后续：规范门禁接入。
 
 ## 错误码
 

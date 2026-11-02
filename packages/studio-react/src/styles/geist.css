@@ -1,0 +1,234 @@
+/*
+ * Geist 主题（React 画廊 · shadcn/ui + Tailwind CSS 4）。
+ *
+ * - 不引入 Tailwind 的全局 preflight：同一个 Storybook 里还有 antd 组件页，全局重置会改它们的样子。
+ *   preflight 只作用在 .geist-root 里（规范页的实时示例都包在里面）。
+ * - 颜色：shadcn/ui neutral 主题的 CSS 变量（https://ui.shadcn.com/docs/theming）作为 Geist 单色体系的近似，
+ *   拿到 Geist 官方色板后替换；组件只经这些成对变量取色。
+ * - 排版：Geist 的排版类（https://vercel.com/geist/typography），类名里的数字就是字号；官方行高、字重、
+ *   字距在 Figma 里，正文未给出，这里不设，等项目回填（规范 TYPE.ROLES 的决策位）。
+ * - 字体：Geist / Geist Mono，经 .storybook/preview-head.html 从 Google Fonts 加载（Vercel design.md 的做法）。
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
+
+/* 自动扫描关掉（source(none)）：只扫规范页和组件。生成的规范页在 .gitignore 里，自动扫描本来也会跳过。 */
+@source "../../generated/standard";
+@source "../components";
+@source "../standard";
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* 只在 .geist-root 里生效的 preflight（Tailwind 4 preflight 的要点）。 */
+@layer base {
+  .geist-root,
+  .geist-root *,
+  .geist-root ::before,
+  .geist-root ::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+  .geist-root {
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .geist-root h1,
+  .geist-root h2,
+  .geist-root h3,
+  .geist-root h4 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+  .geist-root code,
+  .geist-root kbd,
+  .geist-root pre {
+    font-family: var(--font-mono);
+  }
+  .geist-root button,
+  .geist-root input {
+    font: inherit;
+    color: inherit;
+    background-color: transparent;
+  }
+  .geist-root button {
+    cursor: pointer;
+  }
+  .geist-root svg {
+    display: block;
+    vertical-align: middle;
+  }
+}
+
+/* Geist 排版类：字号即类名中的数字（px）。 */
+@utility text-heading-72 {
+  font-size: 72px;
+}
+
+@utility text-heading-64 {
+  font-size: 64px;
+}
+
+@utility text-heading-56 {
+  font-size: 56px;
+}
+
+@utility text-heading-48 {
+  font-size: 48px;
+}
+
+@utility text-heading-40 {
+  font-size: 40px;
+}
+
+@utility text-heading-32 {
+  font-size: 32px;
+}
+
+@utility text-heading-24 {
+  font-size: 24px;
+}
+
+@utility text-heading-20 {
+  font-size: 20px;
+}
+
+@utility text-heading-16 {
+  font-size: 16px;
+}
+
+@utility text-heading-14 {
+  font-size: 14px;
+}
+
+@utility text-button-16 {
+  font-size: 16px;
+}
+
+@utility text-button-14 {
+  font-size: 14px;
+}
+
+@utility text-button-12 {
+  font-size: 12px;
+}
+
+@utility text-label-20 {
+  font-size: 20px;
+}
+
+@utility text-label-18 {
+  font-size: 18px;
+}
+
+@utility text-label-16 {
+  font-size: 16px;
+}
+
+@utility text-label-14 {
+  font-size: 14px;
+}
+
+@utility text-label-13 {
+  font-size: 13px;
+}
+
+@utility text-label-12 {
+  font-size: 12px;
+}
+
+@utility text-copy-24 {
+  font-size: 24px;
+}
+
+@utility text-copy-20 {
+  font-size: 20px;
+}
+
+@utility text-copy-18 {
+  font-size: 18px;
+}
+
+@utility text-copy-16 {
+  font-size: 16px;
+}
+
+@utility text-copy-14 {
+  font-size: 14px;
+}
+
+@utility text-copy-13 {
+  font-size: 13px;
+}
+
+@utility text-label-14-mono {
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+@utility text-label-13-mono {
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+@utility text-label-12-mono {
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+@utility text-copy-13-mono {
+  font-size: 13px;
+  font-family: var(--font-mono);
+}

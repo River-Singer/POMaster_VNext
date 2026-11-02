@@ -2,12 +2,20 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 <Meta title="React Sidecar 总览" />
 
-# POMaster React Sidecar 画廊（antd 对照浏览）
+# POMaster React Sidecar 画廊
 
-> **NON-AUTHORITATIVE** — 本实例（`packages/studio-react`，React sidecar，裁定 S2）
-> 是组件资产的**可视化呈现面**，非规范文本；权威语义以 catalog/seeds 锚定源为准。
-> 全部 story 由生成器从安装的 antd 包只读枚举渲染——本包 private、不入 npm 发布面、
-> 不预置任何业务实体/业务组件（G-D 业务不预设）。
+本实例（`packages/studio-react`）分两部分：
+
+- **规范**（侧栏最上方「规范」分区）：React 栈开发必须遵守的前端设计规范，Vercel Geist 预设——
+  字体、色彩、材质、栅格、间距、图标、动效、布局与可访问性。每条规则带编号、数值与出处、执行方式
+  （机器门禁 / 人工评审）和实时渲染的「这样做 / 别这样做」示例（shadcn/ui + Tailwind CSS 4）。
+  页面由 `packages/cli/seeds/design-standards/geist.yaml` 生成，AI 读同源的孪生
+  `packages/studio-react/twin/design-standard.geist.json`（或 `pomaster design show --system geist --json`）。
+  改规范只改那份源：`pomaster design validate --system geist` 校验，`node packages/studio-react/run.mjs generate`
+  重新生成。
+- **antd 对照画廊**（其余分区）：组件资产的可视化呈现面，非规范文本；权威语义以 catalog/seeds 锚定源为准。
+  story 由生成器从安装的 antd 包只读枚举渲染——本包 private、不入 npm 发布面、
+  不预置任何业务实体/业务组件（G-D 业务不预设）。
 
 ## 定位：同设计系统两端的对照浏览
 
@@ -35,12 +43,14 @@ import { Meta } from '@storybook/addon-docs/blocks';
 - archetype↔组件映射层与本实例共用同一份映射配置（Vue 主实例
   `packages/studio/scripts/lib/archetype-component-map.json`）——组件页的
   「服务场景」注记即反向映射呈现。
-- geist 无 React 渲染实例——诚实说明见「Foundations/Geist」页。
+- Geist 规范页用的是按 Geist 主题着色的 shadcn/ui（官方 Geist 组件包未公开发布），
+  哪些是近似见「Foundations/Geist（说明）」页。
 
 ## 生成器纪律
 
 - stories 全部由 `packages/studio-react/scripts/lib/`（generate-react-stories.mjs +
-  generate-design-tokens-story.mjs）程序化生成（幂等、可重放）；`generated/` 不入 git。
+  generate-design-tokens-story.mjs + standard.mjs）程序化生成（幂等、可重放）；`generated/` 不入 git，
+  规范的 AI 孪生 `twin/` 入 git（新鲜度由 `tests/standard.spec.ts` 钉住）。
   design tokens 对照页装载器跨包复用 Vue 主实例的
   `packages/studio/scripts/lib/design-tokens.mjs`（单一事实源）。
 - 重新生成：`corepack pnpm studio:react:dev` / `studio:react:build` 前自动重建；
