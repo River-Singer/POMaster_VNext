@@ -7,7 +7,58 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）。生成命令 `scaffold plan / generate` 在 S1-6 提供。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）与 S1-5（接口层：每个面一份 OpenAPI 3.1）。
+
+## 规格进治理
+
+项目里的领域规格放在 `.pomaster/scaffold/domain-spec.yaml`。它是生成的单一事实源，必须经 Owner 确认才约束开发：
+
+```bash
+pomaster scaffold status                                   # 治理态 + closeout 会给的阻断码
+pomaster scaffold confirm --by human:<owner>               # 首次确认
+pomaster scaffold confirm --change CHANGE.C0042 --by human:<owner>   # 确认后改了规格
+```
+
+* 确认记录 `.pomaster/scaffold/confirmation.json` 存归一化规格的语义摘要与文件原始字节摘要，history 只追加；journal 追加 `SCAFFOLD_SPEC_CONFIRMED`。
+* 只认语义：改注释、缩进、键序、换行不算漂移；加字段、改暴露、把待定决策位定下来都是语义变化。
+* 确认后语义变化，重确认只能挂一个活性 `CHANGE.*`（在册、change_object、PROPOSED 或 CURRENT），没有手改声明通道。
+* 确认记录与 journal 对账：手改记录冒充确认会对不上，按未确认处理。
+* closeout 阻断码：`SCAFFOLD_SPEC_INVALID`（不通过校验）、`SCAFFOLD_SPEC_NOT_CONFIRMED`（未确认或记录不可信）、`SCAFFOLD_SPEC_DRIFT`（确认后语义变化）。没有规格文件的项目不受影响。
+
+## 生成：记账与写入约束
+
+```bash
+pomaster scaffold plan       # 只读：会新建 / 更新哪些文件、哪些变化被拒绝、哪些受管文件被手改
+pomaster scaffold generate   # 只按已确认、无漂移的规格生成
+```
+
+* **只认已确认规格**：未确认 / 漂移 / 不通过一律拒绝（`SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` / `SCAFFOLD_SPEC_INVALID`）。
+* **数据库层（模板集 `mysql-flyway@1`）**：迁移写到 `backend/<app>-core/src/main/resources/db/migration/`，账号授权脚本写到 `backend/db/grants.sql`（不进 Flyway，DBA 按环境执行；口令与来源主机是占位符）。标识符一律反引号引用；敏感个人信息存密文列。
+* **接口层（模板集 `openapi-3.1@1`）**：每个部署面一份文档，`api/openapi/admin.openapi.json` 与 `api/openapi/public.openapi.json`（JSON，确定性键序）。形态取自原型卡：管理侧 OFFSET（`page` / `size`，实体开 `count_total` 时带 `total`）、每个操作标权限码 `x-pomaster-permission`、响应 `Cache-Control: no-store`；用户侧 KEYSET（`after` / `limit`，不返回总数）、每个操作标访问档 `x-pomaster-access`、匿名读带 `Cache-Control` 与 `ETag`、只出现对用户侧暴露的字段。两侧错误都是 RFC 9457 `application/problem+json`（扩展成员 `code` / `trace_id` / `field_errors`），都有 429。修改带 `version` 做乐观锁（冲突 409）。DTO 属性 camelCase；decimal 用带精度 pattern 的字符串；可空字段用 3.1 的 type 数组。认证方式是项目决策位，文档不声明 `securitySchemes`。去掉某个面的全部暴露后，该面文档在下次生成时退役（未被手改时删除文件与 KEYBINDING 行）。
+* **迁移只追加**：生成过的迁移永不重写（Flyway 校验和）。规格变化时按「上次生成时的规格快照 → 现规格」求差，追加新迁移；版本号从盘上已有迁移（含手工迁移）的最大值往上加。只自动生成加法变化（新实体、新可空字段、加长、放宽必填、decimal 只加整数位、加唯一 / 检索索引、枚举加值、用户侧列表索引重建）。删实体、删字段、改类型、收窄、新增必填字段、去唯一、枚举去值、属主增删等需要数据迁移的变化拒绝（`SCAFFOLD_MIGRATION_NOT_ADDITIVE`），逐条列出。
+* **生成清单** `.pomaster/scaffold/generation-manifest.json`：每个受管文件的路径、sha256、模板、覆盖实体、是否不可变、对应 KEYBINDING 与治理 id；上次生成的规格快照；模板集版本；history 只追加。journal 追加 `SCAFFOLD_GENERATED`。已最新 → `NO_CHANGE` 零写入。
+* **不覆盖手改**：受管文件被手改或删除、或目标位置已有内容不同的不受管文件 → 拒绝生成且零写入（`SCAFFOLD_GENERATED_FILE_MODIFIED`）。内容相同的同名文件直接纳管（中断后恢复）。
+* **写入约束**：每个受管文件登记一行 KEYBINDING（`.pomaster/truth/keybindings/`，`capability_to_file` → `CAPABILITY.SCAFFOLD.<APP>.ENTITY.<ENTITY>` 或 `CAPABILITY.SCAFFOLD.<APP>.DATABASE`）。活跃执行期内，exec-guard hook 把对这些文件的 Edit / Write 交给 `pomaster exec-guard` 判卷，业务任务的 permit 不含这些 id 就 DENY，并指路「改规格 → `scaffold confirm --change` → `scaffold generate`」。执行期外的手改由 `execution audit` 与一致性门禁检出。
+
+## 一致性门禁
+
+```bash
+pomaster scaffold check          # 只读；不一致 exit 1
+pomaster check --gates           # 其中 GATE.SCAFFOLD.CONSISTENCY 同一判卷，结果作为 GRN 入账
+```
+
+六项检查，`scaffold check`、closeout、`check --gates` 三处用同一个判卷：
+
+| 检查 | 失败码 | 说明 |
+|---|---|---|
+| 规格治理 | `SCAFFOLD_SPEC_INVALID` / `SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` | 规格要通过校验、经确认、确认后无语义漂移 |
+| 清单 ↔ 文件 | `SCAFFOLD_GENERATED_FILE_MODIFIED` / `SCAFFOLD_MANIFEST_MALFORMED` / `SCAFFOLD_TEMPLATE_SET_CHANGED` | 受管文件现盘 sha256 与清单一致，没被手改或删除 |
+| 生成新鲜度 | `SCAFFOLD_GENERATION_STALE` | 规格改了、确认了，就要重新生成（与已确认摘要比；现盘漂移由规格治理那一项报，不重复） |
+| KEYBINDING 在册 | `SCAFFOLD_KEYBINDING_MISSING` | 每个受管文件都有绑定行且锚对得上——写入约束的前提；`scaffold generate` 会补回 |
+| 接口文档 ↔ 规格 | `SCAFFOLD_CONTRACT_DRIFT` | 不依赖生成器自证，从规格独立推出约束逐条对照：接口与规格暴露的操作一一对应、用户侧不出现未暴露的字段、每个操作都标了授权结构；缺某个面的文档也算 |
+| 手工迁移 | （警告 `SCAFFOLD_UNMANAGED_MIGRATION`） | 迁移目录里不在清单的迁移逐个列出，不阻断 |
+
+规格缺席 = 项目没用脚手架，门不适用（`check --gates` 记 `not_configured`，closeout 不阻断）。规格已确认但从未生成只警告（`SCAFFOLD_NOT_GENERATED`）。closeout 对上表的失败码阻断。
 
 ## 两个部署面
 

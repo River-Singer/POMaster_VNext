@@ -164,6 +164,18 @@ export function baselineStackRelative(lane: BaselineStackLane): string {
 }
 export const BASELINE_MANIFEST_RELATIVE = `${BASELINE_DIR_RELATIVE}/manifest.yaml`;
 
+/**
+ * .pomaster/scaffold/（脚手架 S1-2：领域规格进治理）——CLI 平面，kernel 契约无路径登记：
+ * - domain-spec.yaml：受治理的领域规格（项目手写 / AI 起草，Owner 确认）；
+ * - confirmation.json：确认记录（语义摘要 + 原始字节摘要 + at_seq + 确认人 + --change 授权，
+ *   history 只追加）。确认后语义变化 = 漂移，closeout 阻断，重确认只走 --change 治理通道。
+ */
+export const SCAFFOLD_DIR_RELATIVE = `${POMASTER_DIR}/scaffold`;
+export const SCAFFOLD_DOMAIN_SPEC_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/domain-spec.yaml`;
+export const SCAFFOLD_CONFIRMATION_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/confirmation.json`;
+/** 脚手架生成清单（S1-3 生成记账：受管文件路径 / sha256 / 模板 / 来源规格快照）。 */
+export const SCAFFOLD_GENERATION_MANIFEST_RELATIVE = `${SCAFFOLD_DIR_RELATIVE}/generation-manifest.json`;
+
 /** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
 export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 

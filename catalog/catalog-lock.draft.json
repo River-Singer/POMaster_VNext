@@ -57,6 +57,7 @@
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
       "gates/gate.new-entity.checks.json",
+      "gates/gate.scaffold.consistency.json",
       "gates/gate.web.api.request_checks.json",
       "gates/gate.web.grid.checks.json",
       "knowledge/knowledge.api.example_stable_error_code.json",
@@ -329,6 +330,7 @@
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
       "gates/gate.new-entity.checks.json",
+      "gates/gate.scaffold.consistency.json",
       "gates/gate.web.api.request_checks.json",
       "gates/gate.web.grid.checks.json",
       "knowledge/knowledge.api.example_stable_error_code.json",
@@ -784,6 +786,12 @@
       "path": "gates/gate.new-entity.checks.json",
       "content_sha256": "sha256:b10d08f869f9f1d45d4a05fb55b64f24269e0153b33cfb6eaa8bb62ee5812040",
       "source_ref": "catalog/tools/materialize_v06_relock.py（P-v06 批次 1；v0.6.1 §75/§87 判卷定义锚）"
+    },
+    {
+      "id": "GATE.SCAFFOLD.CONSISTENCY",
+      "path": "gates/gate.scaffold.consistency.json",
+      "content_sha256": "sha256:a506a76fdb96be9a0c9a00b9012a005b2d06dda24c093ce9b798e0a0e5832f27",
+      "source_ref": "package://catalog/gates/gate.scaffold.consistency.json"
     },
     {
       "id": "GATE.WEB.API.REQUEST_CHECKS",

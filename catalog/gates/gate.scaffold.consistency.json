@@ -1,0 +1,105 @@
+{
+  "x-scaffold": {
+    "status": "registered",
+    "note": "脚手架 S1-4（harness 约束 ③，Owner 2026-11-01 裁定五道约束全要）：领域规格 ↔ 生成清单 ↔ 受管文件 ↔ KEYBINDING 一致性门禁。判卷核心住 packages/cli/src/scaffold-check.ts assessScaffoldConsistency（`pomaster scaffold check`、closeout、check --gates 三消费面同一函数）；check --gates 以 kernel_native 直调形态派发（GATE.NEW_ENTITY.CHECKS 先例），结果作为 GRN 入账。项目没有领域规格时门不适用（not_configured）。",
+    "locked_vocab_untouched": true
+  },
+  "id": "GATE.SCAFFOLD.CONSISTENCY",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "脚手架一致性门禁",
+  "statement_zh": "脚手架一致性门禁：①领域规格经 Owner 确认且无语义漂移 ②受管文件与生成清单一致（未被手改、未被删除）③生成不落后于已确认规格 ④每个受管文件都有 KEYBINDING 行（写入约束的前提）⑤迁移目录里的手工迁移逐个呈现。",
+  "applies_when": {
+    "lane": "any",
+    "condition": "项目使用脚手架（.pomaster/scaffold/domain-spec.yaml 在场）",
+    "applicability_note": "规格缺席 = 项目没用脚手架，门不适用（not_configured，非绿非红）；规格已确认但从未生成只警告"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.SCAFFOLD.CONSISTENCY@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver' 且与 recipe id 同源（runner 分母自检强制）",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填（C1）：不适用的检查项（如还没生成过时的清单类检查）计入 not_applicable，不计入 scanned 的适用面",
+      "trust_twin": "asserted/recomputed 孪生字段组：判卷以现盘重算为准（文件 sha256、KEYBINDING 行、确认记录与 journal 交叉核对），不采信生成清单或绑定行的自报值（C5）",
+      "blindspot_evidence": "门不适用时落 not_configured 并写明原因，禁止当 passed；判卷器自身故障落 blocked",
+      "aggregate_honesty": "passed ⇔ 适用检查项零失败；警告（未生成、手工迁移）写入 scope_note，不吞没也不冒充违规"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "spec_governance",
+      "statement_zh": "领域规格通过校验、经 Owner 确认、确认后无语义漂移（确认记录与 journal 交叉核对）",
+      "judgeability": "machine",
+      "machine_support": "scaffold-governance assessScaffoldSpec（SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT）"
+    },
+    {
+      "seq": 2,
+      "check_id": "ledger_integrity",
+      "statement_zh": "生成清单可读、模板集版本未变，每个受管文件现盘 sha256 与清单一致",
+      "judgeability": "machine",
+      "machine_support": "现盘重算 sha256 对账 generation-manifest.json（SCAFFOLD_GENERATED_FILE_MODIFIED / MANIFEST_MALFORMED / TEMPLATE_SET_CHANGED）"
+    },
+    {
+      "seq": 3,
+      "check_id": "generation_fresh",
+      "statement_zh": "生成清单记录的规格语义摘要等于当前已确认摘要（改了规格、确认了，就要重新生成）",
+      "judgeability": "machine",
+      "machine_support": "清单 spec_semantic_sha256 对账确认记录 current.semantic_sha256（SCAFFOLD_GENERATION_STALE）"
+    },
+    {
+      "seq": 4,
+      "check_id": "keybindings_registered",
+      "statement_zh": "每个受管文件在 .pomaster/truth/keybindings/ 有 capability_to_file 行，canonical_id 与 physical_path 对得上",
+      "judgeability": "machine",
+      "machine_support": "逐行读 KEYBINDING 对账清单（SCAFFOLD_KEYBINDING_MISSING）"
+    },
+    {
+      "seq": 5,
+      "check_id": "unmanaged_migrations",
+      "statement_zh": "迁移目录里不在清单的手工迁移逐个呈现（允许，不阻断）",
+      "judgeability": "machine",
+      "machine_support": "迁移目录 V*__*.sql 与清单差集（SCAFFOLD_UNMANAGED_MIGRATION 警告）"
+    }
+  ],
+  "policy_refs": [
+    "POMaster_VNext/catalog/gates/gate.new-entity.checks.json（kernel_native 派发同构先例）"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "scaffold-s1-4-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": ".trellis/tasks/11-01-storybook-scaffold/prd.md",
+      "captured_by": "agent:claude/scaffold-s1-4",
+      "locator": {
+        "section": "D-S6 harness 五道约束 ③ / S1-4 设计草案"
+      }
+    }
+  ],
+  "review_notes": [
+    "判卷核心住 CLI scaffold-check.ts（单一实现，三消费面）；五项检查全部机判"
+  ]
+}

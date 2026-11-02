@@ -145,9 +145,9 @@ describe("check --gates 的 kernel-native 纳入（R5）", () => {
       store: store as Store,
       kernelGates: { "GATE.NEW_ENTITY.CHECKS": newEntityKernelGateExecutor() },
     });
-    expect(outcome.ok).toBe(false); // 六 recipe 全非 passed（缺席不是通过）
+    expect(outcome.ok).toBe(false); // 七 recipe 全非 passed（缺席不是通过；脚手架 S1-4 6→7）
     const result = outcome.result as GatesCheckResult;
-    expect(result.recipes_total).toBe(6);
+    expect(result.recipes_total).toBe(7);
     const row = result.rows.find((candidate) => candidate.recipe === "GATE.NEW_ENTITY.CHECKS");
     expect(row).toBeDefined();
     expect(row?.verdict).toBe("not_run");

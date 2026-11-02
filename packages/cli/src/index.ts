@@ -77,7 +77,15 @@
  *                   catalog-lock 漂移显式检出；relock = P-v06 批次 2.5 漂移恢复键——
  *                   幂等重算 sha256 重锁，D24 工具侧动作无授权闸；catalog 是策展源
  *                   非第二套 Project Truth——§92.2）
- * - scaffold validate
+ * - scaffold validate/confirm/status/plan/generate/check
+ *                   check（S1-4，harness 约束 ③）：规格治理 / 清单 ↔ 文件 / 生成新鲜度 / KEYBINDING /
+ *                   手工迁移五项一致性；closeout 与 check --gates（GATE.SCAFFOLD.CONSISTENCY）同一判卷；
+ *                   plan/generate（S1-3，harness 约束 ② ④）：只按已确认规格生成；数据库层
+ *                   Flyway 迁移只追加、需要数据迁移的变化拒绝；生成清单记账 + 受管文件登记
+ *                   KEYBINDING（活跃执行期手改由 exec-guard 拦下）+ journal SCAFFOLD_GENERATED；
+ *                   confirm/status（S1-2，harness 约束 ①）：.pomaster/scaffold/domain-spec.yaml 经
+ *                   Owner 确认打语义摘要快照，确认后语义变化 = 漂移，重确认只走 --change；
+ *                   closeout 聚合 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT
  *                   脚手架领域规格校验（11-01-storybook-scaffold S1-1）：pomaster.domain-spec/v1
  *                   闭世界逐项报错 + catalog 原型核对 + admin / public 两个部署面的暴露纪律；
  *                   通过时输出归一化摘要；只读，未 init 目录可跑
@@ -306,6 +314,9 @@ import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runScaffoldValidate } from "./scaffold.js";
+import { runScaffoldConfirm, runScaffoldStatus } from "./scaffold-governance.js";
+import { runScaffoldGenerate, runScaffoldPlan } from "./scaffold-generate.js";
+import { runScaffoldCheck } from "./scaffold-check.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
@@ -820,6 +831,84 @@ export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-
 export { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
 export { runScaffoldValidate } from "./scaffold.js";
 export type { ScaffoldValidateInput, ScaffoldValidateResult, ScaffoldSurfaceSummary } from "./scaffold.js";
+export {
+  SCAFFOLD_CONFIRMATION_SCHEMA,
+  SCAFFOLD_SPEC_CONFIRMED_EVENT,
+  SCAFFOLD_CHANGE_ACTIVE_LIFECYCLES,
+  assessScaffoldSpec,
+  readScaffoldConfirmation,
+  runScaffoldConfirm,
+  runScaffoldStatus,
+  scaffoldGateErrors,
+  scaffoldSemanticDigest,
+} from "./scaffold-governance.js";
+export {
+  SCAFFOLD_CHECK_IDS,
+  SCAFFOLD_GATE_TOOL_ID,
+  assessScaffoldConsistency,
+  runScaffoldCheck,
+  scaffoldConsistencyGateErrors,
+  scaffoldConsistencyKernelGateExecutor,
+  scaffoldConsistencyToRecord,
+} from "./scaffold-check.js";
+export type {
+  ScaffoldCheckId,
+  ScaffoldCheckItem,
+  ScaffoldCheckResult,
+  ScaffoldCheckStatus,
+  ScaffoldConsistencyReport,
+} from "./scaffold-check.js";
+export {
+  SCAFFOLD_MANIFEST_SCHEMA,
+  SCAFFOLD_GENERATED_EVENT,
+  SCAFFOLD_CANONICAL_PREFIX,
+  SCAFFOLD_TEMPLATE_SETS,
+  readGenerationManifest,
+  runScaffoldGenerate,
+  scaffoldApiCanonicalId,
+  templateSetChanges,
+  runScaffoldPlan,
+  scaffoldDatabaseCanonicalId,
+  scaffoldEntityCanonicalId,
+} from "./scaffold-generate.js";
+export type {
+  ScaffoldGenerateInput,
+  ScaffoldGenerateResult,
+  ScaffoldGenerationManifest,
+  ScaffoldManagedFile,
+  ScaffoldPlanInput,
+  ScaffoldPlanResult,
+  PlannedFile,
+  GenerationConflict,
+} from "./scaffold-generate.js";
+export {
+  OPENAPI_TEMPLATE_SET,
+  checkOpenApiConformance,
+  expectedOperationIds,
+  openApiPath,
+  operationId as scaffoldOperationId,
+  renderOpenApi,
+} from "./scaffold-openapi.js";
+export {
+  MYSQL_TEMPLATE_SET,
+  columnType,
+  constraintName,
+  dbLayout,
+  diffSchema,
+  renderCreateTable,
+  renderGrants,
+  renderMigration,
+} from "./scaffold-mysql.js";
+export type { SchemaDiff, SchemaChangeStatement, BlockedSchemaChange } from "./scaffold-mysql.js";
+export type {
+  ScaffoldConfirmInput,
+  ScaffoldConfirmResult,
+  ScaffoldConfirmationEntry,
+  ScaffoldConfirmationRecord,
+  ScaffoldSpecAssessment,
+  ScaffoldSpecState,
+  ScaffoldStatusResult,
+} from "./scaffold-governance.js";
 export {
   DOMAIN_SPEC_SCHEMA,
   DOMAIN_FIELD_TYPES,
@@ -2654,7 +2743,7 @@ export function createProgram(
   const scaffold = program
     .command("scaffold")
     .description(
-      "脚手架命令面（S1-1）：validate = 校验领域规格 pomaster.domain-spec/v1（闭世界逐项报错；原型须在 catalog 且放对槽位；暴露操作须在后端原型操作清单内；用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出两个部署面的归一化摘要）",
+      "脚手架命令面（S1-1 / S1-2）：confirm = Owner 确认领域规格（确认后语义变化即漂移，重确认只走 --change，closeout 阻断）；status = 规格治理态；validate = 校验领域规格 pomaster.domain-spec/v1（闭世界逐项报错；原型须在 catalog 且放对槽位；暴露操作须在后端原型操作清单内；用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出两个部署面的归一化摘要）",
     );
   scaffold
     .command("validate")
@@ -2670,6 +2759,79 @@ export function createProgram(
         ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
       });
       record({ command: "scaffold validate", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("confirm")
+    .description(
+      `领域规格确认（S1-2，harness 约束 ①）：校验 .pomaster/scaffold/domain-spec.yaml 后写确认记录（归一化规格的语义摘要 + 原始字节摘要 + at_seq + 确认人，history 只追加）并追加 journal SCAFFOLD_SPEC_CONFIRMED。首次确认不需要通道；已确认且语义未变 → NO_CHANGE 零写入（只改格式 / 注释不算漂移）；确认后语义变化 → 必须 --change <CHANGE.*>（在册、change_object、PROPOSED | CURRENT），没有手改声明通道。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_RECONFIRM_REQUIRES_CHANGE / SCAFFOLD_CHANGE_NOT_ACTIVE / OBJECT_NOT_FOUND / SCHEMA_INVALID（--by 非 human:、无可授权变更时携 --change）/ NOT_INITIALIZED`,
+    )
+    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .option("--change <change-id>", "治理通道：确认后规格语义变化时必携的活性 CHANGE.*")
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldConfirm(resolveDir(command), {
+        by: opts.by as string,
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
+        ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
+      });
+      record({ command: "scaffold confirm", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("status")
+    .description(
+      "领域规格治理态（只读）：absent（未使用脚手架）/ invalid / unconfirmed / confirmed / drifted，确认次数与 at_seq、字节是否变化、实体清单、待项目决定的决策位，以及 closeout 会给的阻断码",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldStatus(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold status", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("plan")
+    .description(
+      "生成计划（S1-3，只读）：按「上次生成时的规格快照 → 现规格」求差，列出要新建 / 更新的受管文件（Flyway 迁移只追加、授权脚本随规格更新）、需要数据迁移而被拒绝的变化、受管文件被手改 / 删除的冲突。规格未确认或漂移时照样出计划但带警告（generate 会拒绝）。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_MIGRATION_NOT_ADDITIVE / NOT_INITIALIZED",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldPlan(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold plan", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("generate")
+    .description(
+      "按已确认规格生成（S1-3，harness 约束 ② ④）：只认 Owner 确认且无漂移的规格；写受管文件（数据库层：MySQL DDL 的 Flyway 迁移 + 账号授权脚本），写生成清单 .pomaster/scaffold/generation-manifest.json（路径 / sha256 / 模板 / 规格快照，history 只追加），每个受管文件登记 KEYBINDING（CAPABILITY.SCAFFOLD.*，活跃执行期内手改由 exec-guard 拦下），journal 追加 SCAFFOLD_GENERATED。已最新 → NO_CHANGE 零写入。错误码：同 plan，另加 SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldGenerate(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold generate", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("check")
+    .description(
+      "一致性门禁（S1-4，harness 约束 ③，只读）：六项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 接口文档 ↔ 规格（S1-5）/ 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING / SCAFFOLD_CONTRACT_DRIFT；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldCheck(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold check", outcome, asJson: command.opts().json === true });
     });
 
   // —— Trellis Spec 迁移命令面（PRD §93.6 四词形 + §96 第 8 步；P30-Commands） ——

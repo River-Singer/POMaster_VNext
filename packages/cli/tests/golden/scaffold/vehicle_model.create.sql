@@ -1,0 +1,21 @@
+CREATE TABLE `vehicle_model` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `business_code` VARCHAR(32) NOT NULL COMMENT '车型编码',
+  `name` VARCHAR(64) NOT NULL COMMENT '名称',
+  `status` VARCHAR(32) NOT NULL COMMENT '状态',
+  `seats` INT NULL COMMENT '座位数',
+  `list_price` DECIMAL(12,2) NULL COMMENT '指导价',
+  `cost_price` DECIMAL(12,2) NULL COMMENT '成本价',
+  `description` TEXT NULL COMMENT '说明',
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  `created_by` VARCHAR(64) NOT NULL COMMENT '创建人',
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  `updated_by` VARCHAR(64) NOT NULL COMMENT '更新人',
+  `version` INT NOT NULL DEFAULT 0 COMMENT '版本',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vehicle_model_business_code` (`business_code`),
+  KEY `idx_vehicle_model_name` (`name`),
+  KEY `idx_vehicle_model_status` (`status`),
+  KEY `idx_vehicle_model_public_list` (`status`, `business_code`, `id`),
+  CONSTRAINT `ck_vehicle_model_status` CHECK (`status` IN ('ENABLED', 'DISABLED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='车型';
