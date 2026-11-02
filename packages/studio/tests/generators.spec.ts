@@ -313,8 +313,9 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
       // 总文件数 = 41 + 71 + 19 + 1 + 1 + 1（B6H 增 h5 overlay 页；六类页面分母：S5 增 Database Struct 占位分区；
-      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）。
-      expect(a.size).toBe(134);
+      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 29（总览 1 + 28 个领域，
+      // 设计规范预设同源生成）= 163。
+      expect(a.size).toBe(163);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;
@@ -336,6 +337,7 @@ describe("studio 发布面纪律（G-A 落位裁定）", () => {
     expect(manifest.optionalDependencies).toBeUndefined();
     expect(typeof manifest.devDependencies).toBe("object");
     expect(Object.keys(manifest.devDependencies).sort()).toEqual([
+      "@ant-design/icons-vue",
       "@storybook/addon-docs",
       "@storybook/vue3",
       "@storybook/vue3-vite",

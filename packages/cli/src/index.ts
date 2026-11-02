@@ -96,6 +96,11 @@
  *                   （注册表无此词形，golden 钉住），unknown-option 拦截面显式提示
  *                   COMMAND_DEFERRED + exit 1 非静默吞参；--spec-root 缺席 fail-closed
  *                   不猜测默认路径；迁移纪律（§96 第 11 步 Tracer Bullet）随报告呈现
+ * - design validate / show
+ *                   前端设计规范（Storybook「规范」分区的结构化源，pomaster.design-standard/v1）：
+ *                   validate 闭世界校验（出处、token 引用、硬规范锚点原文、门禁检查词表、实时
+ *                   示例引用）；show 输出给 AI 读的规范视图；与 Storybook 规范页、AI 孪生同指纹；
+ *                   只读，未 init 目录可跑（缺省用工具预设）
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
@@ -320,6 +325,8 @@ import { runScaffoldCheck } from "./scaffold-check.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
+import { runDesignShow, runDesignValidate } from "./design.js";
+import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
@@ -994,6 +1001,54 @@ export {
 } from "./source-snapshot.js";
 export type { CaptureSourceSnapshotInput, RunSourceStabilityJudgment } from "./source-snapshot.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
+export { runDesignValidate, runDesignShow, resolveDesignInputs, loadDesignStandard, formatDesignParam } from "./design.js";
+export type {
+  DesignInputs,
+  DesignSourceMode,
+  DesignSummary,
+  DesignValidateInput,
+  DesignValidateResult,
+  DesignShowInput,
+  DesignShowResult,
+} from "./design.js";
+export {
+  DESIGN_STANDARD_SCHEMA,
+  DESIGN_STANDARD_RELATIVE,
+  DESIGN_STANDARD_PRESETS_DIR,
+  DESIGN_TOKENS_RELATIVE,
+  DESIGN_AREA_GROUPS,
+  DESIGN_SYSTEMS,
+  DESIGN_SURFACES,
+  DESIGN_PARAM_UNITS,
+  DESIGN_EXAMPLE_LANGS,
+  DESIGN_CHECKS,
+  validateDesignStandard,
+  designStandardFingerprint,
+  normalizeDesignText,
+  lookupToken,
+  readDesignStandardFile,
+  readTokenGroups,
+  readSpecTexts,
+} from "./design-standard.js";
+export type {
+  DesignAreaGroup,
+  DesignSystem,
+  DesignSurface,
+  DesignParamUnit,
+  DesignExampleLang,
+  DesignCheckSpec,
+  DesignStandardIssue,
+  DesignSource,
+  DesignParam,
+  DesignAnchor,
+  DesignEnforcement,
+  DesignExample,
+  DesignRule,
+  DesignArea,
+  NormalizedDesignStandard,
+  DesignStandardContext,
+  DesignStandardValidation,
+} from "./design-standard.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";
 export { runGraph, renderGraph, DEFAULT_IMPACT_DEPTH } from "./graph.js";
@@ -2876,6 +2931,47 @@ export function createProgram(
         outcome,
         asJson: command.opts().json === true,
       });
+    });
+
+  // —— 前端设计规范（Storybook「规范」分区的结构化源；D-S7 / D-S8） ——
+  // 规范源取用顺序：--file > 项目 .pomaster/baseline/frontend/design-standard.yaml > 工具预设。
+  // 两个命令都只读、不写文件、不要求 init。show 是给 AI 读的规范视图（--json 即结构化全量）。
+  const design = program
+    .command("design")
+    .description(
+      "前端设计规范命令面：validate = 校验规范源 pomaster.design-standard/v1；show = 按领域 / 规则输出规范（已解析的数值、出处、硬规范锚点、执行方式），与 Storybook 规范页、AI 孪生同源同指纹",
+    );
+  design
+    .command("validate")
+    .description(
+      "校验设计规范（闭世界逐项报错；定值必须带登记过的出处；token 引用必须存在；锚点必须逐字出现在硬规范原文里；门禁规则的检查必须在词表内；实时示例只能引用已定的参数与 token）。错误码：DESIGN_UNREADABLE / DESIGN_SYSTEM_UNKNOWN / DESIGN_SCHEMA_UNSUPPORTED / DESIGN_SHAPE / DESIGN_UNKNOWN_KEY / DESIGN_IDENTIFIER / DESIGN_DUPLICATE / DESIGN_PARAM_SOURCE / DESIGN_SOURCE_UNKNOWN / DESIGN_TOKEN_UNKNOWN / DESIGN_SPEC_UNKNOWN / DESIGN_ANCHOR_MISSING / DESIGN_CHECK_UNKNOWN / DESIGN_EXAMPLE；警告：DESIGN_DECISION_PENDING / DESIGN_CHECK_PENDING / DESIGN_TOKENS_UNAVAILABLE / DESIGN_SPECS_UNAVAILABLE",
+    )
+    .argument("[file]", "规范文件（缺省 = 项目规范，项目没有则用工具预设）")
+    .option("--system <system>", "项目没有规范时用哪套工具预设：antd（Vue + ant-design-vue）/ geist（React + shadcn/ui）；缺省 antd")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((file: string | undefined, opts, command) => {
+      const outcome = runDesignValidate(resolveDir(command), {
+        ...(file === undefined ? {} : { file }),
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
+      });
+      record({ command: "design validate", outcome, asJson: command.opts().json === true });
+    });
+  design
+    .command("show")
+    .description("输出设计规范：领域 → 规则 → 参数（已解析的值与出处）、硬规范锚点、执行方式；--area / --rule 过滤")
+    .option("--file <path>", "规范文件（缺省 = 项目规范，项目没有则用工具预设）")
+    .option("--area <key>", "只看一个领域（如 grid）")
+    .option("--rule <id>", "只看一条规则（如 GRID.GUTTER）")
+    .option("--system <system>", "项目没有规范时用哪套工具预设：antd / geist；缺省 antd")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runDesignShow(resolveDir(command), {
+        ...(opts.file !== undefined ? { file: opts.file as string } : {}),
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
+        ...(opts.area !== undefined ? { area: opts.area as string } : {}),
+        ...(opts.rule !== undefined ? { rule: opts.rule as string } : {}),
+      });
+      record({ command: "design show", outcome, asJson: command.opts().json === true });
     });
 
   // —— Agent Behavioral Eval（PRD §44.10；§94.3 触发面配套） ——

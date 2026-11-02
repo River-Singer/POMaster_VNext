@@ -2,7 +2,9 @@ name: Studio Pages
 
 # 组件画廊（packages/studio Storybook 实例）→ GitHub Pages 发布流。
 #
-# 触发面：push main 且仅当画廊源/本工作流文件变更（paths 过滤），或手动 dispatch。
+# 触发面：push main 且画廊源、画廊读取的物料（catalog/、CLI 种子——含规范源
+# design-standard.yaml 与 design-tokens.yaml）或本工作流文件变更（paths 过滤），或手动
+# dispatch。规范源改了，在线 Storybook 必须随之重新发布，人看的页面才不会落后于 AI 孪生。
 # 流程：frozen-lockfile 安装 → 生成器重建 generated/（幂等可重放）→ storybook 静态
 # 构建（STORYBOOK_BASE 注入项目页子路径 base——vite 资源 URL 必须对齐
 # https://river-singer.github.io/POMaster_VNext/ 才不白屏）→ upload-pages-artifact
@@ -19,6 +21,8 @@ on:
     branches: [main]
     paths:
       - "packages/studio/**"
+      - "packages/cli/seeds/**"
+      - "catalog/**"
       - ".github/workflows/studio-pages.yml"
   workflow_dispatch:
 
