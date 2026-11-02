@@ -23,8 +23,10 @@ import { load as loadYaml } from "js-yaml";
 
 export const DESIGN_STANDARD_SCHEMA = "pomaster.design-standard/v1";
 
-/** 规范源在 baseline 下的相对位置（项目：`.pomaster/` 下；工具预设：`seeds/` 下）。 */
+/** 项目规范源在 `.pomaster/` 下的相对位置（也是指纹用的逻辑路径）。 */
 export const DESIGN_STANDARD_RELATIVE = "baseline/frontend/design-standard.yaml";
+/** 工具预设目录（包内 seeds 下）：每套设计体系一份 `<design_system>.yaml`，不直接播种。 */
+export const DESIGN_STANDARD_PRESETS_DIR = "design-standards";
 /** 同目录的 token 合同（规则参数 `token` 引用的值来源）。 */
 export const DESIGN_TOKENS_RELATIVE = "baseline/frontend/design-tokens.yaml";
 

@@ -1,8 +1,8 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:93e0c003a890623d38f9a838863dbf36ff96d2d03c5cbe5a4a23f711731bd409`；状态 origin=preset。
-> 修改规范：编辑 `packages/cli/seeds/baseline/frontend/design-standard.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`。
+> 规范指纹 `sha256:816305082efcd895096ffd27fff31ca2e5577138a24801ca9aaef0083ec4be9b`；状态 origin=preset。
+> 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。
 
 ## 基础 / 布局（LAYOUT）
@@ -460,4 +460,4 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 - `SRC.ANTDV.ICON` ant-design-vue 图标示例（图标来自 @ant-design/icons-vue）：https://github.com/vueComponent/ant-design-vue/blob/b3ed6ddd9cff24d4f122f50e19c00b6eb2c9e668/components/icon/demo/index.vue（核实 2026-11-02）
 - `SRC.POMASTER.UI_SPEC` pomaster 主题硬规范 · UI 呈现与设计：repo:packages/cli/seeds/specs/hard/themes/ui-presentation-and-design.md（核实 2026-11-02）
 - `SRC.POMASTER.SURFACES` pomaster 脚手架部署面默认档（分页默认值与页长上限）：repo:packages/cli/src/scaffold-surfaces.ts（核实 2026-11-02）
-- `SRC.POMASTER.PRESET` pomaster 预设约定：repo:packages/cli/seeds/baseline/frontend/design-standard.yaml（核实 2026-11-02）
+- `SRC.POMASTER.PRESET` pomaster 预设约定：repo:packages/cli/seeds/design-standards/antd.yaml（核实 2026-11-02）

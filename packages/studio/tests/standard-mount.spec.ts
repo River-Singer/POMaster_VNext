@@ -52,7 +52,8 @@ describe("规范分区 · 领域页挂载", () => {
       const warnings: string[] = [];
       const wrapper = mountStory(module, "Overview", warnings);
       try {
-        const root = wrapper.element as HTMLElement;
+        // 页面根元素自身带 data-area，从挂载容器往下查（querySelector 不含自身）。
+        const root = (wrapper.element as HTMLElement).parentElement ?? (wrapper.element as HTMLElement);
         expect(root.querySelector(`[data-area="${area.key}"]`)).toBeTruthy();
         expect(root.querySelectorAll("[data-rule]").length).toBe(area.rules.length);
         const liveCount = area.rules.reduce(

@@ -160,13 +160,13 @@ describe("规范分区 · AI 孪生", () => {
     expect(twin.schema).toBe("pomaster.design-standard-twin/v1");
     expect(twin.fingerprint).toBe(model.fingerprint);
     expect(twin.edit).toEqual({
-      source: "packages/cli/seeds/baseline/frontend/design-standard.yaml",
+      source: "packages/cli/seeds/design-standards/antd.yaml",
       validate: "pomaster design validate",
       regenerate: "node packages/studio/run.mjs generate",
       show: "pomaster design show --json",
     });
     expect(twin.inputs.map((input: { path: string }) => input.path)).toEqual([
-      "packages/cli/seeds/baseline/frontend/design-standard.yaml",
+      "packages/cli/seeds/design-standards/antd.yaml",
       "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
     ]);
     const gutter = twin.areas[1].rules[1];

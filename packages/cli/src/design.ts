@@ -2,7 +2,7 @@
  * design.ts —— `pomaster design` 命令面：validate（校验规范源）与 show（给 AI 读的规范视图）。
  *
  * 规范源取用顺序：显式文件 > 项目 `.pomaster/baseline/frontend/design-standard.yaml` > 工具预设
- * （包内 seeds）。token 表与硬规范原文就近取：显式文件同目录的 design-tokens.yaml > 项目 > 预设。
+ * （包内 `seeds/design-standards/<设计体系>.yaml`，缺省 antd）。token 表与硬规范原文就近取：显式文件同目录的 design-tokens.yaml > 项目 > 预设。
  * 两个命令都只读、不写任何文件，不要求项目已 init。
  */
 import { existsSync } from "node:fs";
@@ -10,7 +10,9 @@ import { dirname, isAbsolute, join } from "node:path";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
+  DESIGN_STANDARD_PRESETS_DIR,
   DESIGN_STANDARD_RELATIVE,
+  DESIGN_SYSTEMS,
   DESIGN_TOKENS_RELATIVE,
   designStandardFingerprint,
   readDesignStandardFile,
@@ -21,6 +23,7 @@ import {
   type DesignParam,
   type DesignRule,
   type DesignStandardIssue,
+  type DesignSystem,
   type NormalizedDesignStandard,
 } from "./design-standard.js";
 import { seedsRootCandidates } from "./seed-manifest.js";
@@ -56,6 +59,8 @@ export interface DesignValidateResult extends DesignInputs {
 
 export interface DesignValidateInput {
   readonly file?: string;
+  /** 用哪套设计体系的工具预设（项目没有规范、也没指定文件时生效；缺省 antd）。 */
+  readonly system?: DesignSystem;
   /** 包内 seeds 根覆盖位（测试注入；缺省按模块位置解析）。 */
   readonly seedsRoot?: string;
 }
@@ -87,7 +92,8 @@ export function resolveDesignInputs(dir: string, input: DesignValidateInput): De
   const projectStandard = join(projectRoot, DESIGN_STANDARD_RELATIVE);
   const projectTokens = join(projectRoot, DESIGN_TOKENS_RELATIVE);
   const projectSpecs = join(projectRoot, "specs", "hard");
-  const presetStandard = seedsRoot === null ? null : join(seedsRoot, DESIGN_STANDARD_RELATIVE);
+  const system: DesignSystem = input.system ?? "antd";
+  const presetStandard = seedsRoot === null ? null : join(seedsRoot, DESIGN_STANDARD_PRESETS_DIR, `${system}.yaml`);
   const presetTokens = seedsRoot === null ? null : join(seedsRoot, DESIGN_TOKENS_RELATIVE);
   const presetSpecs = seedsRoot === null ? null : join(seedsRoot, "specs", "hard");
   const firstExisting = (...paths: ReadonlyArray<string | null>): string | null =>
@@ -151,6 +157,26 @@ const MODE_ZH: Record<DesignSourceMode, string> = {
 export function loadDesignStandard(dir: string, input: DesignValidateInput): DesignValidateResult {
   const inputs = resolveDesignInputs(dir, input);
   const base = { ...inputs, fingerprint: null, summary: null, normalized: null };
+  if (input.system !== undefined && !(input.system in DESIGN_SYSTEMS)) {
+    const issue: DesignStandardIssue = {
+      severity: "error",
+      code: "DESIGN_SYSTEM_UNKNOWN",
+      path: "",
+      message: `设计体系 ${String(input.system)} 不在词表内`,
+      hint: `可选：${Object.keys(DESIGN_SYSTEMS).join(" / ")}`,
+    };
+    return { ...base, ok: false, errors: 1, warnings: 0, issues: [issue] };
+  }
+  if (inputs.mode === "preset" && !existsSync(inputs.standard_path)) {
+    const issue: DesignStandardIssue = {
+      severity: "error",
+      code: "DESIGN_UNREADABLE",
+      path: "",
+      message: `设计体系 ${input.system ?? "antd"} 的工具预设尚未提供（${inputs.standard_path}）`,
+      hint: "项目里写自己的规范（.pomaster/baseline/frontend/design-standard.yaml），或换一套已提供预设的设计体系",
+    };
+    return { ...base, ok: false, errors: 1, warnings: 0, issues: [issue] };
+  }
   const loaded = readDesignStandardFile(inputs.standard_path);
   if (!loaded.ok) {
     return { ...base, ok: false, errors: 1, warnings: 0, issues: [loaded.issue] };

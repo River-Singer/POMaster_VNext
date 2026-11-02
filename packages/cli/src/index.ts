@@ -326,6 +326,7 @@ import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
 import { runDesignShow, runDesignValidate } from "./design.js";
+import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
@@ -1013,6 +1014,7 @@ export type {
 export {
   DESIGN_STANDARD_SCHEMA,
   DESIGN_STANDARD_RELATIVE,
+  DESIGN_STANDARD_PRESETS_DIR,
   DESIGN_TOKENS_RELATIVE,
   DESIGN_AREA_GROUPS,
   DESIGN_SYSTEMS,
@@ -2942,12 +2944,16 @@ export function createProgram(
   design
     .command("validate")
     .description(
-      "校验设计规范（闭世界逐项报错；定值必须带登记过的出处；token 引用必须存在；锚点必须逐字出现在硬规范原文里；门禁规则的检查必须在词表内；实时示例只能引用已定的参数与 token）。错误码：DESIGN_UNREADABLE / DESIGN_SCHEMA_UNSUPPORTED / DESIGN_SHAPE / DESIGN_UNKNOWN_KEY / DESIGN_IDENTIFIER / DESIGN_DUPLICATE / DESIGN_PARAM_SOURCE / DESIGN_SOURCE_UNKNOWN / DESIGN_TOKEN_UNKNOWN / DESIGN_SPEC_UNKNOWN / DESIGN_ANCHOR_MISSING / DESIGN_CHECK_UNKNOWN / DESIGN_EXAMPLE；警告：DESIGN_DECISION_PENDING / DESIGN_CHECK_PENDING / DESIGN_TOKENS_UNAVAILABLE / DESIGN_SPECS_UNAVAILABLE",
+      "校验设计规范（闭世界逐项报错；定值必须带登记过的出处；token 引用必须存在；锚点必须逐字出现在硬规范原文里；门禁规则的检查必须在词表内；实时示例只能引用已定的参数与 token）。错误码：DESIGN_UNREADABLE / DESIGN_SYSTEM_UNKNOWN / DESIGN_SCHEMA_UNSUPPORTED / DESIGN_SHAPE / DESIGN_UNKNOWN_KEY / DESIGN_IDENTIFIER / DESIGN_DUPLICATE / DESIGN_PARAM_SOURCE / DESIGN_SOURCE_UNKNOWN / DESIGN_TOKEN_UNKNOWN / DESIGN_SPEC_UNKNOWN / DESIGN_ANCHOR_MISSING / DESIGN_CHECK_UNKNOWN / DESIGN_EXAMPLE；警告：DESIGN_DECISION_PENDING / DESIGN_CHECK_PENDING / DESIGN_TOKENS_UNAVAILABLE / DESIGN_SPECS_UNAVAILABLE",
     )
     .argument("[file]", "规范文件（缺省 = 项目规范，项目没有则用工具预设）")
+    .option("--system <system>", "项目没有规范时用哪套工具预设：antd（Vue + ant-design-vue）/ geist（React + shadcn/ui）；缺省 antd")
     .option("--json", "machine-readable JSON output (§45)")
-    .action((file: string | undefined, _opts, command) => {
-      const outcome = runDesignValidate(resolveDir(command), file === undefined ? {} : { file });
+    .action((file: string | undefined, opts, command) => {
+      const outcome = runDesignValidate(resolveDir(command), {
+        ...(file === undefined ? {} : { file }),
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
+      });
       record({ command: "design validate", outcome, asJson: command.opts().json === true });
     });
   design
@@ -2956,10 +2962,12 @@ export function createProgram(
     .option("--file <path>", "规范文件（缺省 = 项目规范，项目没有则用工具预设）")
     .option("--area <key>", "只看一个领域（如 grid）")
     .option("--rule <id>", "只看一条规则（如 GRID.GUTTER）")
+    .option("--system <system>", "项目没有规范时用哪套工具预设：antd / geist；缺省 antd")
     .option("--json", "machine-readable JSON output (§45)")
     .action((opts, command) => {
       const outcome = runDesignShow(resolveDir(command), {
         ...(opts.file !== undefined ? { file: opts.file as string } : {}),
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
         ...(opts.area !== undefined ? { area: opts.area as string } : {}),
         ...(opts.rule !== undefined ? { rule: opts.rule as string } : {}),
       });

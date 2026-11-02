@@ -21,7 +21,7 @@ import { formatDesignParam, loadDesignStandard, runDesignShow, runDesignValidate
 import { runCli } from "@pomaster/cli";
 
 const SEEDS = fileURLToPath(new URL("../seeds", import.meta.url));
-const PRESET_PATH = join(SEEDS, "baseline", "frontend", "design-standard.yaml");
+const PRESET_PATH = join(SEEDS, "design-standards", "antd.yaml");
 const TOKENS_PATH = join(SEEDS, "baseline", "frontend", "design-tokens.yaml");
 
 // 规范是 YAML 解析出的动态结构，测试里按路径改写，用 any 最直接。
@@ -83,7 +83,7 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
   return raw["areas"][area]["rules"][index];
 }
 
-describe("设计规范预设（seeds/baseline/frontend/design-standard.yaml）", () => {
+describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
   it("预设通过校验：7 个领域、36 条规则，基础 6 个领域 + 全局规则 · 导航", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
@@ -480,6 +480,17 @@ describe("pomaster design validate / show", () => {
     expect(human.code).toBe(1);
     expect(human.out).toContain("设计规范未通过");
     expect(human.out).toContain("areas[1].rules[1].params.gutter.source");
+  });
+
+  it("--system：未知体系 → DESIGN_SYSTEM_UNKNOWN；还没有预设的体系 → DESIGN_UNREADABLE 并说明原因", async () => {
+    const unknown = await run(["--dir", dir, "design", "validate", "--system", "material", "--json"]);
+    expect(unknown.code).toBe(1);
+    expect(JSON.parse(unknown.out).errors.map((error: Raw) => error.code)).toEqual(["DESIGN_SYSTEM_UNKNOWN"]);
+    const geist = runDesignValidate(dir, { system: "geist" });
+    expect(geist.ok).toBe(false);
+    expect(geist.errors[0]!.code).toBe("DESIGN_UNREADABLE");
+    expect(geist.errors[0]!.message).toContain("geist 的工具预设尚未提供");
+    expect(runDesignValidate(dir, { system: "antd" }).ok).toBe(true);
   });
 
   it("显式文件：不是合法 YAML → DESIGN_UNREADABLE", async () => {

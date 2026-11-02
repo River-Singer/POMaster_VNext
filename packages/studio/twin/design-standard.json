@@ -1,15 +1,15 @@
 {
   "schema": "pomaster.design-standard-twin/v1",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源后运行 node packages/studio/run.mjs generate。",
-  "fingerprint": "sha256:93e0c003a890623d38f9a838863dbf36ff96d2d03c5cbe5a4a23f711731bd409",
+  "fingerprint": "sha256:816305082efcd895096ffd27fff31ca2e5577138a24801ca9aaef0083ec4be9b",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "1"
   },
   "inputs": [
     {
-      "path": "packages/cli/seeds/baseline/frontend/design-standard.yaml",
-      "sha256": "ad2ca7440ce8e1d4642ac15b5b7659f4406417cbf9ee96a6ed6c469d1ee76213"
+      "path": "packages/cli/seeds/design-standards/antd.yaml",
+      "sha256": "6975dd42bff9293e58a3b50f788d542d5dbcb6ac0075ffa5d2e61c3f137700cf"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -17,7 +17,7 @@
     }
   ],
   "edit": {
-    "source": "packages/cli/seeds/baseline/frontend/design-standard.yaml",
+    "source": "packages/cli/seeds/design-standards/antd.yaml",
     "validate": "pomaster design validate",
     "regenerate": "node packages/studio/run.mjs generate",
     "show": "pomaster design show --json"
@@ -2712,7 +2712,7 @@
     },
     "SRC.POMASTER.PRESET": {
       "title_zh": "pomaster 预设约定",
-      "url": "repo:packages/cli/seeds/baseline/frontend/design-standard.yaml",
+      "url": "repo:packages/cli/seeds/design-standards/antd.yaml",
       "retrieved": "2026-11-02",
       "note_zh": "不是外部权威，是为了全站一致而做的预设选择；项目可以改"
     }

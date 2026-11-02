@@ -1,7 +1,7 @@
 // 规范页 + AI 孪生生成器（Storybook「规范」分区）。
 //
-// 单一结构化源：packages/cli/seeds/baseline/frontend/design-standard.yaml（规则）+ 同目录
-// design-tokens.yaml（token 值）。同一次装载、同一个内存模型，产出两样东西：
+// 单一结构化源：packages/cli/seeds/design-standards/antd.yaml（规则，Ant Design 预设）+
+// packages/cli/seeds/baseline/frontend/design-tokens.yaml（token 值）。同一次装载、同一个内存模型，产出两样东西：
 //   1. 人看的 Storybook 页面：generated/standard/*.stories.ts（不入库，dev/build 前重建）；
 //   2. AI 读的孪生：twin/design-standard.json + twin/design-standard.md（入库）。
 // 两边盖同一个规范指纹（与 `pomaster design show` 的指纹算法一致）。孪生是否新鲜由
@@ -13,12 +13,12 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import yaml from "js-yaml";
-import { SEEDS_BASELINE_DIR, STUDIO_ROOT, resetDir, writeFileEnsuringDir } from "./common.mjs";
+import { REPO_ROOT, SEEDS_BASELINE_DIR, STUDIO_ROOT, resetDir, writeFileEnsuringDir } from "./common.mjs";
 
 /** 规范源与 token 合同（工具预设）。 */
-export const STANDARD_PATH = join(SEEDS_BASELINE_DIR, "frontend", "design-standard.yaml");
+export const STANDARD_PATH = join(REPO_ROOT, "packages", "cli", "seeds", "design-standards", "antd.yaml");
 export const STANDARD_TOKENS_PATH = join(SEEDS_BASELINE_DIR, "frontend", "design-tokens.yaml");
-export const STANDARD_SOURCE_POINTER = "packages/cli/seeds/baseline/frontend/design-standard.yaml";
+export const STANDARD_SOURCE_POINTER = "packages/cli/seeds/design-standards/antd.yaml";
 export const STANDARD_TOKENS_POINTER = "packages/cli/seeds/baseline/frontend/design-tokens.yaml";
 /** 指纹用的逻辑路径（与 CLI design-standard.ts 的 DESIGN_STANDARD_RELATIVE / DESIGN_TOKENS_RELATIVE 一致）。 */
 const FINGERPRINT_STANDARD_PATH = "baseline/frontend/design-standard.yaml";

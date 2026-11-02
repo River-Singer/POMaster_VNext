@@ -1,4 +1,7 @@
-# baseline/frontend/design-standard.yaml —— 前端设计规范（Ant Design 体系 · Vue 栈预设）
+# design-standards/antd.yaml —— 前端设计规范工具预设（Ant Design 体系 · Vue 栈）
+#
+# 预设不直接播种：项目落地后规范在 .pomaster/baseline/frontend/design-standard.yaml，
+# 未落地时 `pomaster design validate / show` 与 Storybook 规范页用本预设。
 #
 # 这是 Storybook「规范」分区与 AI 孪生的单一结构化源：人看的规范页、AI 读的孪生、
 # `pomaster design show` 的输出都从这里同源生成，并盖同一个规范指纹。
@@ -88,7 +91,7 @@ sources:
     retrieved: 2026-11-02
   SRC.POMASTER.PRESET:
     title_zh: pomaster 预设约定
-    url: repo:packages/cli/seeds/baseline/frontend/design-standard.yaml
+    url: repo:packages/cli/seeds/design-standards/antd.yaml
     retrieved: 2026-11-02
     note_zh: 不是外部权威，是为了全站一致而做的预设选择；项目可以改
 

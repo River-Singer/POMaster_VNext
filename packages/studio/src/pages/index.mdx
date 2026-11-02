@@ -9,7 +9,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 - **规范**（侧栏最上方「规范」分区）：开发必须遵守的前端设计规范——布局、栅格、间距、
   字体与富文本、标题层级、图标、导航……每条规则带编号、数值与出处、执行方式（机器门禁 /
   人工评审）和实时渲染的「这样做 / 别这样做」示例。页面由
-  `packages/cli/seeds/baseline/frontend/design-standard.yaml` 生成，AI 读同源的孪生
+  `packages/cli/seeds/design-standards/antd.yaml`（Ant Design 预设）生成，AI 读同源的孪生
   `packages/studio/twin/design-standard.json`（或 `pomaster design show --json`），两边盖同一个
   规范指纹。改规范只改那份源：`pomaster design validate` 校验，`node packages/studio/run.mjs generate`
   重新生成。

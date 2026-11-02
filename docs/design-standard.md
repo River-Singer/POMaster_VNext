@@ -8,7 +8,7 @@
 | AI | 孪生：结构化 JSON + 一条规则一节的 Markdown 摘要 | `packages/studio/twin/design-standard.json`、`design-standard.md` |
 | AI / 脚本 | 命令行视图，按领域或规则过滤 | `pomaster design show [--area <key>] [--rule <id>] [--json]` |
 
-规范源：工具预设在 `packages/cli/seeds/baseline/frontend/design-standard.yaml`；项目自己的规范在 `.pomaster/baseline/frontend/design-standard.yaml`（有项目规范时命令优先用项目规范）。
+规范源：工具预设按设计体系各一份，在 `packages/cli/seeds/design-standards/<体系>.yaml`（当前有 `antd.yaml`；预设不直接播种）；项目自己的规范在 `.pomaster/baseline/frontend/design-standard.yaml`。命令优先用项目规范，项目没有时用预设（`--system antd|geist` 选体系，缺省 antd）。
 
 ## 怎么改
 
@@ -95,7 +95,8 @@ areas:
 
 | 码 | 含义 |
 |---|---|
-| `DESIGN_UNREADABLE` | 文件不存在或不是合法 YAML |
+| `DESIGN_UNREADABLE` | 文件不存在或不是合法 YAML；所选设计体系还没有工具预设 |
+| `DESIGN_SYSTEM_UNKNOWN` | `--system` 不在词表内 |
 | `DESIGN_SCHEMA_UNSUPPORTED` | `schema` 不是 `pomaster.design-standard/v1` |
 | `DESIGN_SHAPE` / `DESIGN_UNKNOWN_KEY` | 缺必填项、类型不对、值不在词表、未知键 |
 | `DESIGN_IDENTIFIER` / `DESIGN_DUPLICATE` | 编号不合规（规则编号须带领域前缀）、键或编号重复 |
