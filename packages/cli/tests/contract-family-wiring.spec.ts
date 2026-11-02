@@ -96,7 +96,7 @@ describe("CONTRACT 族经真实 CLI check --gates 全链（W3-S4）", () => {
     // 六 recipe 逐行呈现：contract 行 passed，其余五行缺席/判定如实——ok=false 是
     // 「零静默跳过」的诚实出口（任一非 passed 行都显式报错，不伪装全绿）。
     expect(outcome.ok).toBe(false);
-    expect(outcome.result.recipes_total).toBe(6);
+    expect(outcome.result.recipes_total).toBe(7);
     const row = contractRow(outcome.result);
     expect(row.grn).toBe("GRN-0001");
     expect(row.verdict).toBe("passed");

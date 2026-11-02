@@ -249,13 +249,13 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
     }
   });
 
-  it("真实六 recipe 全量实跑（裸工程）：1 not_configured + 5 not_run，六条 GRN 单事务入账（P-v06 增量 5→6）", async () => {
+  it("真实七 recipe 全量实跑（裸工程）：not_configured + 5 not_run + not_configured（脚手架门不适用），七条 GRN 单事务入账（P-v06 增量 5→6；脚手架 S1-4 6→7）", async () => {
     const root = await initStore();
     try {
       const outcome = await runCheckGates(root);
       expect(outcome.ok).toBe(false);
-      expect(outcome.result.recipes_total).toBe(6);
-      expect(outcome.result.rows).toHaveLength(6);
+      expect(outcome.result.recipes_total).toBe(7);
+      expect(outcome.result.rows).toHaveLength(7);
       expect(outcome.result.rows.map((row) => row.verdict)).toEqual([
         "not_configured",
         "not_run",
@@ -263,8 +263,9 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
         "not_run",
         "not_run",
         "not_run",
+        "not_configured",
       ]);
-      // recipe↔GRN 一一对应且连续分配（GRN-0001..0006；P-v06 增量 5→6）。
+      // recipe↔GRN 一一对应且连续分配（GRN-0001..0007；P-v06 增量 5→6；脚手架 S1-4 6→7）。
       expect(outcome.result.rows.map((row) => row.grn)).toEqual([
         "GRN-0001",
         "GRN-0002",
@@ -272,6 +273,7 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
         "GRN-0004",
         "GRN-0005",
         "GRN-0006",
+        "GRN-0007",
       ]);
       expect(outcome.result.applied_seq).toBe(1);
       // 每行 GRN 均已落 evidence/runs/（一条 recipe 一条 GRN 文件）。
@@ -283,6 +285,7 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
         "GRN-0004.json",
         "GRN-0005.json",
         "GRN-0006.json",
+        "GRN-0007.json",
       ]);
       // 落盘形态抽验：inline 三件套 + verdict 词形（NOT_RUN 语义实跑验证）。
       const first = JSON.parse(
@@ -320,7 +323,7 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
         not_applicable: 0,
       });
       // 逐行 errors 显式（非 passed 一律入 errors，报错带路标）。
-      expect(outcome.errors).toHaveLength(6);
+      expect(outcome.errors).toHaveLength(7);
       expect(outcome.errors[0]?.code).toBe("GATE_NOT_CONFIGURED");
       expect(outcome.errors[1]?.code).toBe("GATE_NOT_RUN");
     } finally {
@@ -328,7 +331,7 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
     }
   });
 
-  it("绑定腿注入 fake passed 执行器 → 该 recipe 真判卷 passed，其余五腿保持 not_run（P-v06 5→6）", async () => {
+  it("绑定腿注入 fake passed 执行器 → 该 recipe 真判卷 passed，其余五腿保持 not_run、脚手架门不适用（P-v06 5→6；脚手架 S1-4 6→7）", async () => {
     const root = await initStore();
     try {
       const outcome = await runCheckGates(root, {
@@ -343,9 +346,10 @@ describe("check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账", 
         "not_run",
         "not_run",
         "not_run",
+        "not_configured",
       ]);
       expect(outcome.ok).toBe(false); // 任一非 passed → fail-closed
-      expect(outcome.errors).toHaveLength(5);
+      expect(outcome.errors).toHaveLength(6);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

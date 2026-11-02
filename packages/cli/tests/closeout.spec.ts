@@ -35,7 +35,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore } from "@pomaster/kernel";
-import { runCli, runCloseout, runScaffoldConfirm, type CloseoutResult } from "@pomaster/cli";
+import { runCli, runCloseout, runScaffoldConfirm, runScaffoldGenerate, type CloseoutResult } from "@pomaster/cli";
 
 let root: string;
 
@@ -1218,6 +1218,30 @@ describe("closeout 脚手架领域规格确认门（S1-2：SCAFFOLD_SPEC_NOT_CON
     expect(drifted.errors.map((error) => error.code)).toEqual(["SCAFFOLD_SPEC_DRIFT"]);
 
     seedDomainSpec(`# 只是加注释\n${confirmedText}`);
+    const released = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(released.ok).toBe(true);
+    expect((released.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+
+  it("生成文件被手改 → SCAFFOLD_GENERATED_FILE_MODIFIED 阻断且零写入；恢复后 COMPLETED（S1-4 一致性门）", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedAcceptReceipt();
+    seedDomainSpec();
+    expect((await runScaffoldConfirm(root, { by: "human:owner" })).ok).toBe(true);
+    expect((await runScaffoldGenerate(root)).ok).toBe(true);
+    const grantsPath = join(root, "backend", "db", "grants.sql");
+    const generated = readFileSync(grantsPath, "utf8");
+    writeFileSync(grantsPath, `${generated}GRANT ALL ON *.* TO 'x'@'%';\n`);
+    const before = snapshot();
+    const blocked = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors.map((error) => error.code)).toEqual(["SCAFFOLD_GENERATED_FILE_MODIFIED"]);
+    expect(blocked.errors[0]?.message).toContain("backend/db/grants.sql");
+    expect(snapshot()).toEqual(before);
+
+    writeFileSync(grantsPath, generated);
     const released = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(released.ok).toBe(true);
     expect((released.result as CloseoutResult).change).toBe("COMPLETED");

@@ -355,20 +355,20 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，FastAPI 工程
 // ============================================================
 
 describe("八拍⑤ gate（FastAPI 工程）", () => {
-  it("check --gates exit 1：6 recipe 全派发 passed=0 + applied_seq=2（fail-closed 非绿；P-v06 增量 5→6）", () => {
+  it("check --gates exit 1：7 recipe 全派发 passed=0 + applied_seq=2（fail-closed 非绿；P-v06 增量 5→6；脚手架 S1-4 6→7）", () => {
     const rec = chain.gates;
     expect(rec.code).toBe(1);
     expect(env(rec).ok).toBe(false);
     const result = resultOf(rec);
-    expect(result["recipes_total"]).toBe(6);
+    expect(result["recipes_total"]).toBe(7);
     expect(result["passed"]).toBe(0);
     // 裁定批 D D2：init 预植 seq=1 + ops 入账 seq=2 → 首轮 gates 单事务 applied_seq=3。
     expect(result["applied_seq"]).toBe(3);
   });
 
-  it("rows 判卷词形：not_configured + not_run×5 + GRN-0001..0006 连号（缺席非绿非红；P-v06 增量）", () => {
+  it("rows 判卷词形：not_configured + not_run×5 + not_configured（脚手架门不适用）+ GRN-0001..0007 连号（缺席非绿非红；P-v06 增量；脚手架 S1-4）", () => {
     const rows = (resultOf(chain.gates)["rows"] ?? []) as Record<string, unknown>[];
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
     expect(rows.map((row) => row["verdict"])).toEqual([
       "not_configured",
       "not_run",
@@ -376,6 +376,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
       "not_run",
       "not_run",
       "not_run",
+      "not_configured",
     ]);
     expect(rows.map((row) => row["grn"])).toEqual([
       "GRN-0001",
@@ -384,10 +385,11 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
       "GRN-0004",
       "GRN-0005",
       "GRN-0006",
+      "GRN-0007",
     ]);
   });
 
-  it("GRN 落盘 evidence/runs：6 文件 record_type=run + 三件套 + counts 全零显式", () => {
+  it("GRN 落盘 evidence/runs：7 文件 record_type=run + 三件套 + counts 全零显式", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
     expect(readdirSync(runsDir).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
@@ -396,6 +398,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
       "GRN-0004.json",
       "GRN-0005.json",
       "GRN-0006.json",
+      "GRN-0007.json",
     ]);
     for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(readFileSync(join(runsDir, fileName), "utf8")) as {
@@ -432,21 +435,21 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
     expect(detail).toContain("pytest");
   });
 
-  it("check --fast 纯读：runs 平面仍 6 文件（--fast 不落 GRN，G6 纪律）", () => {
+  it("check --fast 纯读：runs 平面仍 7 文件（--fast 不落 GRN，G6 纪律）", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir).filter((name) => name !== "README.md")).toHaveLength(6);
+    expect(readdirSync(runsDir).filter((name) => name !== "README.md")).toHaveLength(7);
   });
 
-  it("gates 二次跑：GRN 续号 0007..0012 + applied_seq=3（观察追加非覆写；P-v06 增量 5→6）", async () => {
+  it("gates 二次跑：GRN 续号 0008..0014 + applied_seq=3（观察追加非覆写；P-v06 增量 5→6；脚手架 S1-4 6→7）", async () => {
     const second = await runJsonStep(root, ["check", "--gates"]);
     expect(second.code).toBe(1);
     const result = resultOf(second);
     const rows = (result["rows"] ?? []) as Record<string, unknown>[];
-    expect(rows[0]?.["grn"]).toBe("GRN-0007");
-    expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0012");
+    expect(rows[0]?.["grn"]).toBe("GRN-0008");
+    expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0014");
     // 首轮 gates seq=3 → 二次 gates applied_seq=4。
     expect(result["applied_seq"]).toBe(4);
-    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => name !== "README.md")).toHaveLength(12);
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => name !== "README.md")).toHaveLength(14);
   });
 });
 

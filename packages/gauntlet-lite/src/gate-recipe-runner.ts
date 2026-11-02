@@ -57,7 +57,7 @@ export interface CatalogGateRecipeDescriptor {
 }
 
 /**
- * catalog/gates/ 五份 recipe 投影（P12b 时点实存分母；增删必须同步自检测试）。
+ * catalog/gates/ recipe 投影（P12b 时点五份；P-v06 增 NEW_ENTITY、脚手架 S1-4 增 SCAFFOLD.CONSISTENCY，现七份；增删必须同步自检测试）。
  * 字段值逐字来自各 recipe 文件（gate-recipe-runner.spec.ts 逐文件复核，漂移即红）。
  */
 export const CATALOG_GATE_RECIPES: readonly CatalogGateRecipeDescriptor[] = [
@@ -103,6 +103,13 @@ export const CATALOG_GATE_RECIPES: readonly CatalogGateRecipeDescriptor[] = [
     titleZh: "新实体门禁检查单",
     lane: "any",
   },
+  {
+    file: "gate.scaffold.consistency.json",
+    id: "GATE.SCAFFOLD.CONSISTENCY",
+    gateDef: "GATE.SCAFFOLD.CONSISTENCY@0.1.0",
+    titleZh: "脚手架一致性门禁",
+    lane: "any",
+  },
 ];
 
 // ============================================================
@@ -142,6 +149,9 @@ export type GateRecipeDispatch =
  *   （创建路径前置施断属新治理语义 → Proposal，宪法 §9/C4）；recipe ② 的
  *   composition/adapter 两否维持 hybrid/manual 终审在 Authority
  *   （gate.new-entity.checks.json:54-60 现状不变）；
+ * - GATE.SCAFFOLD.CONSISTENCY → kernel_native 直调形态（脚手架 S1-4，NEW_ENTITY 同构）：
+ *   判卷核心住 CLI scaffold-check.ts assessScaffoldConsistency（scaffold check / closeout /
+ *   check --gates 三消费面同一函数），执行器由命令面注入；项目没有领域规格 → not_configured；
  * - 其余四份 recipe 的检查项均无机器执行器（五类消费者对账 / prechange 六项 /
  *   请求层静态扫描 / 表格 registry 对账）→ unbound 显式缺席。
  */
@@ -168,6 +178,7 @@ export const RECIPE_GATE_DISPATCH: Readonly<Record<string, GateRecipeDispatch>> 
       "表格五项依赖 interaction-contract-registry 对账与列 schema 扫描，扫描器未建（check#5 registry 对账为 opt-in：registry 文件缺席 → not_configured 语义需专用 adapter 承载）；需 grid checklist adapter 后接线",
   },
   "GATE.NEW_ENTITY.CHECKS": { kind: "kernel_native" },
+  "GATE.SCAFFOLD.CONSISTENCY": { kind: "kernel_native" },
 };
 
 // ============================================================

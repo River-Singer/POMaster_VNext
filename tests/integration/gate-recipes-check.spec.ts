@@ -38,8 +38,8 @@ async function runJson(
   };
 }
 
-describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）", () => {
-  it("① + ②：六 recipe 全量消费、六条 GRN 落盘、seq 推进、缺席显式非绿", async () => {
+describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；P-v06 增量 5→6；脚手架 S1-4 6→7）", () => {
+  it("① + ②：七 recipe 全量消费、七条 GRN 落盘、seq 推进、缺席显式非绿", async () => {
     expect((await runJson(["init"])).code).toBe(0);
 
     const check = await runJson(["check", "--gates"]);
@@ -48,12 +48,12 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     expect(check.envelope.command).toBe("check");
 
     const result = check.envelope.result as Record<string, unknown>;
-    expect(result["recipes_total"]).toBe(6);
+    expect(result["recipes_total"]).toBe(7);
     expect(result["passed"]).toBe(0);
     // 裁定批 D D2：init 预植占 seq=1 → check --gates 单事务 applied_seq=2。
     expect(result["applied_seq"]).toBe(2);
     const rows = result["rows"] as Record<string, unknown>[];
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
     expect(rows.map((row) => row["verdict"])).toEqual([
       "not_configured",
       "not_run",
@@ -61,6 +61,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
       "not_run",
       "not_run",
       "not_run",
+      "not_configured",
     ]);
     expect(rows.map((row) => row["grn"])).toEqual([
       "GRN-0001",
@@ -69,9 +70,10 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
       "GRN-0004",
       "GRN-0005",
       "GRN-0006",
+      "GRN-0007",
     ]);
 
-    // 证据平面：六条 GRN 文件逐一落盘且 inline 形态齐备（三件套强制上报纪律）。
+    // 证据平面：七条 GRN 文件逐一落盘且 inline 形态齐备（三件套强制上报纪律）。
     const runsDir = join(root, ".pomaster", "evidence", "runs");
     expect(readdirSync(runsDir).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
@@ -80,6 +82,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
       "GRN-0004.json",
       "GRN-0005.json",
       "GRN-0006.json",
+      "GRN-0007.json",
     ]);
     for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(
@@ -111,7 +114,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     expect(notRunInline["gate_def"]).toBe("GATE.CHG.PRECHANGE_CHECKS@0.1.0");
     expect(notRunInline["tool"]).toBe("gauntlet:gate_recipe_runner");
 
-    // 账本推进：init 预植 seq=1 → check --gates 单事务入账六条 → seq=2。
+    // 账本推进：init 预植 seq=1 → check --gates 单事务入账七条 → seq=2。
     const status = await runJson(["status"]);
     expect(status.envelope.result["generation_seq"]).toBe(2);
   });
@@ -122,7 +125,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     const second = await runJson(["check", "--gates"]);
     const result = second.envelope.result as Record<string, unknown>;
     const rows = result["rows"] as Record<string, unknown>[];
-    expect(rows[0]?.["grn"]).toBe("GRN-0007"); // 续号不重号（evidence 平面追加语义；P-v06 6 recipe 后二次从 0007 起）
+    expect(rows[0]?.["grn"]).toBe("GRN-0008"); // 续号不重号（evidence 平面追加语义；脚手架 S1-4 后 7 recipe，二次从 0008 起）
     // 裁定批 D D2：init 预植 seq=1、首次 check seq=2 → 二次 check applied_seq=3。
     expect(result["applied_seq"]).toBe(3);
   });

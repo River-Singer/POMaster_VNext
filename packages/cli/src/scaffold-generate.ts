@@ -143,7 +143,7 @@ function keybindingId(appKey: string, fileSegment: string): string {
   return `KEYBINDING.SCAFFOLD.${idSegment(appKey)}.${idSegment(fileSegment)}`;
 }
 
-function keybindingFileName(id: string): string {
+export function keybindingFileName(id: string): string {
   return `${id.toLowerCase()}.json`;
 }
 

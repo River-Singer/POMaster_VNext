@@ -77,7 +77,9 @@
  *                   catalog-lock 漂移显式检出；relock = P-v06 批次 2.5 漂移恢复键——
  *                   幂等重算 sha256 重锁，D24 工具侧动作无授权闸；catalog 是策展源
  *                   非第二套 Project Truth——§92.2）
- * - scaffold validate/confirm/status/plan/generate
+ * - scaffold validate/confirm/status/plan/generate/check
+ *                   check（S1-4，harness 约束 ③）：规格治理 / 清单 ↔ 文件 / 生成新鲜度 / KEYBINDING /
+ *                   手工迁移五项一致性；closeout 与 check --gates（GATE.SCAFFOLD.CONSISTENCY）同一判卷；
  *                   plan/generate（S1-3，harness 约束 ② ④）：只按已确认规格生成；数据库层
  *                   Flyway 迁移只追加、需要数据迁移的变化拒绝；生成清单记账 + 受管文件登记
  *                   KEYBINDING（活跃执行期手改由 exec-guard 拦下）+ journal SCAFFOLD_GENERATED；
@@ -314,6 +316,7 @@ import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog
 import { runScaffoldValidate } from "./scaffold.js";
 import { runScaffoldConfirm, runScaffoldStatus } from "./scaffold-governance.js";
 import { runScaffoldGenerate, runScaffoldPlan } from "./scaffold-generate.js";
+import { runScaffoldCheck } from "./scaffold-check.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
@@ -839,6 +842,22 @@ export {
   scaffoldGateErrors,
   scaffoldSemanticDigest,
 } from "./scaffold-governance.js";
+export {
+  SCAFFOLD_CHECK_IDS,
+  SCAFFOLD_GATE_TOOL_ID,
+  assessScaffoldConsistency,
+  runScaffoldCheck,
+  scaffoldConsistencyGateErrors,
+  scaffoldConsistencyKernelGateExecutor,
+  scaffoldConsistencyToRecord,
+} from "./scaffold-check.js";
+export type {
+  ScaffoldCheckId,
+  ScaffoldCheckItem,
+  ScaffoldCheckResult,
+  ScaffoldCheckStatus,
+  ScaffoldConsistencyReport,
+} from "./scaffold-check.js";
 export {
   SCAFFOLD_MANIFEST_SCHEMA,
   SCAFFOLD_GENERATED_EVENT,
@@ -2788,6 +2807,20 @@ export function createProgram(
         opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
       );
       record({ command: "scaffold generate", outcome, asJson: command.opts().json === true });
+    });
+  scaffold
+    .command("check")
+    .description(
+      "一致性门禁（S1-4，harness 约束 ③，只读）：五项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScaffoldCheck(
+        resolveDir(command),
+        opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {},
+      );
+      record({ command: "scaffold check", outcome, asJson: command.opts().json === true });
     });
 
   // —— Trellis Spec 迁移命令面（PRD §93.6 四词形 + §96 第 8 步；P30-Commands） ——

@@ -7,7 +7,7 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）与 S1-3（生成记账与写入约束，第一块砖是数据库层）。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）与 S1-4（一致性门禁）。
 
 ## 规格进治理
 
@@ -38,6 +38,25 @@ pomaster scaffold generate   # 只按已确认、无漂移的规格生成
 * **生成清单** `.pomaster/scaffold/generation-manifest.json`：每个受管文件的路径、sha256、模板、覆盖实体、是否不可变、对应 KEYBINDING 与治理 id；上次生成的规格快照；模板集版本；history 只追加。journal 追加 `SCAFFOLD_GENERATED`。已最新 → `NO_CHANGE` 零写入。
 * **不覆盖手改**：受管文件被手改或删除、或目标位置已有内容不同的不受管文件 → 拒绝生成且零写入（`SCAFFOLD_GENERATED_FILE_MODIFIED`）。内容相同的同名文件直接纳管（中断后恢复）。
 * **写入约束**：每个受管文件登记一行 KEYBINDING（`.pomaster/truth/keybindings/`，`capability_to_file` → `CAPABILITY.SCAFFOLD.<APP>.ENTITY.<ENTITY>` 或 `CAPABILITY.SCAFFOLD.<APP>.DATABASE`）。活跃执行期内，exec-guard hook 把对这些文件的 Edit / Write 交给 `pomaster exec-guard` 判卷，业务任务的 permit 不含这些 id 就 DENY，并指路「改规格 → `scaffold confirm --change` → `scaffold generate`」。执行期外的手改由 `execution audit` 与一致性门禁检出。
+
+## 一致性门禁
+
+```bash
+pomaster scaffold check          # 只读；不一致 exit 1
+pomaster check --gates           # 其中 GATE.SCAFFOLD.CONSISTENCY 同一判卷，结果作为 GRN 入账
+```
+
+五项检查，`scaffold check`、closeout、`check --gates` 三处用同一个判卷：
+
+| 检查 | 失败码 | 说明 |
+|---|---|---|
+| 规格治理 | `SCAFFOLD_SPEC_INVALID` / `SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` | 规格要通过校验、经确认、确认后无语义漂移 |
+| 清单 ↔ 文件 | `SCAFFOLD_GENERATED_FILE_MODIFIED` / `SCAFFOLD_MANIFEST_MALFORMED` / `SCAFFOLD_TEMPLATE_SET_CHANGED` | 受管文件现盘 sha256 与清单一致，没被手改或删除 |
+| 生成新鲜度 | `SCAFFOLD_GENERATION_STALE` | 规格改了、确认了，就要重新生成（与已确认摘要比；现盘漂移由规格治理那一项报，不重复） |
+| KEYBINDING 在册 | `SCAFFOLD_KEYBINDING_MISSING` | 每个受管文件都有绑定行且锚对得上——写入约束的前提；`scaffold generate` 会补回 |
+| 手工迁移 | （警告 `SCAFFOLD_UNMANAGED_MIGRATION`） | 迁移目录里不在清单的迁移逐个列出，不阻断 |
+
+规格缺席 = 项目没用脚手架，门不适用（`check --gates` 记 `not_configured`，closeout 不阻断）。规格已确认但从未生成只警告（`SCAFFOLD_NOT_GENERATED`）。closeout 对上表的失败码阻断。
 
 ## 两个部署面
 
