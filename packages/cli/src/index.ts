@@ -77,6 +77,10 @@
  *                   catalog-lock 漂移显式检出；relock = P-v06 批次 2.5 漂移恢复键——
  *                   幂等重算 sha256 重锁，D24 工具侧动作无授权闸；catalog 是策展源
  *                   非第二套 Project Truth——§92.2）
+ * - scaffold validate
+ *                   脚手架领域规格校验（11-01-storybook-scaffold S1-1）：pomaster.domain-spec/v1
+ *                   闭世界逐项报错 + catalog 原型核对 + admin / public 两个部署面的暴露纪律；
+ *                   通过时输出归一化摘要；只读，未 init 目录可跑
  * - migrate trellis-spec
  *                   Trellis Spec 迁移命令面（§93.6/§96 第 8 步；P30-Commands）：--analyze
  *                   消费 P30a Analyzer 内核输出迁移分类清单（分母 fail-closed 恒呈现；
@@ -301,6 +305,7 @@ import { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
 import { runCloseout } from "./closeout.js";
 import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
+import { runScaffoldValidate } from "./scaffold.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
@@ -813,6 +818,50 @@ export type {
 export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordRequalify, runRecordVerification } from "./record.js";
 export { runTaskReassessBaseline, TASK_REASSESS_BASELINE_COMMAND } from "./task-baseline.js";
 export { runBaselineRetire, runBaselineUnretire } from "./baseline-retire.js";
+export { runScaffoldValidate } from "./scaffold.js";
+export type { ScaffoldValidateInput, ScaffoldValidateResult, ScaffoldSurfaceSummary } from "./scaffold.js";
+export {
+  DOMAIN_SPEC_SCHEMA,
+  DOMAIN_FIELD_TYPES,
+  ARCHETYPE_SLOT_PREFIXES,
+  SCAFFOLD_TEMPLATE_COVERAGE,
+  SYSTEM_COLUMNS,
+  OWNER_COLUMN,
+  readDomainSpecFile,
+  validateDomainSpec,
+  snakeToCamel,
+  snakeToPascal,
+  defaultResourceSegment,
+} from "./scaffold-spec.js";
+export type {
+  DomainSpecIssue,
+  DomainSpecValidation,
+  NormalizedDomainSpec,
+  NormalizedEntity,
+  NormalizedField,
+  NormalizedAdminExposure,
+  NormalizedPublicExposure,
+  NormalizedSurface,
+  SurfaceDecision,
+  ArchetypeCatalogEntry,
+} from "./scaffold-spec.js";
+export {
+  SCAFFOLD_SURFACE_KEYS,
+  SURFACE_PROFILES,
+  SURFACE_DECISION_SLOTS,
+  SURFACE_DECISION_SLOT_SPECS,
+  PUBLIC_ACCESS_LEVELS,
+  FIELD_CLASSIFICATIONS,
+  CLASSIFICATION_TREATMENTS,
+} from "./scaffold-surfaces.js";
+export type {
+  SurfaceProfile,
+  ScaffoldSurfaceKey,
+  SurfaceDecisionSlot,
+  SurfaceDecisionSlotSpec,
+  FieldClassification,
+  PublicAccessLevel,
+} from "./scaffold-surfaces.js";
 export type { BaselineRetireInput, BaselineUnretireInput, BaselineRetireResult } from "./baseline-retire.js";
 export type { TaskReassessBaselineInput, TaskReassessBaselineResult, ReassessAffectedClaim } from "./task-baseline.js";
 export type {
@@ -2597,6 +2646,30 @@ export function createProgram(
         outcome,
         asJson: command.opts().json === true,
       });
+    });
+
+  // —— 脚手架（11-01-storybook-scaffold S1-1）：领域规格校验 ——
+  // 领域规格是四层生成的单一事实源；validate 只读、不写文件、不要求 init（需求阶段即可校验）。
+  // 两个部署面 admin（管理侧 / 内网）与 public（用户侧 / 外网）的默认档见 scaffold-surfaces.ts。
+  const scaffold = program
+    .command("scaffold")
+    .description(
+      "脚手架命令面（S1-1）：validate = 校验领域规格 pomaster.domain-spec/v1（闭世界逐项报错；原型须在 catalog 且放对槽位；暴露操作须在后端原型操作清单内；用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出两个部署面的归一化摘要）",
+    );
+  scaffold
+    .command("validate")
+    .description(
+      "校验领域规格（YAML / JSON）并输出归一化摘要：表名、类名、admin / public 两个面的路径、操作、字段、权限码、分页档，以及每个面还没定的项目决策位（登录方式、会话形态、凭据管理、合规定级——框架不替项目选，定了写进 surfaces.<面>.decisions）。只读；错误码：SPEC_UNREADABLE / SPEC_SCHEMA_UNSUPPORTED / SPEC_SHAPE / SPEC_UNKNOWN_KEY / SPEC_IDENTIFIER / SPEC_DUPLICATE / SPEC_RESERVED_FIELD / SPEC_FIELD_TYPE / SPEC_CONSTRAINT / SPEC_ARCHETYPE_UNKNOWN / SPEC_ARCHETYPE_SLOT / SPEC_SURFACE / SPEC_OPERATION / SPEC_EXPOSURE_FIELD / SPEC_PUBLIC_ACCESS / SPEC_PUBLIC_FIELD_FORBIDDEN / SPEC_VISIBILITY / SPEC_ENTITY_UNEXPOSED / SPEC_PAGE_WITHOUT_ADMIN / SPEC_CATALOG_UNAVAILABLE",
+    )
+    .argument("<spec>", "领域规格文件（相对路径按 --dir 解析）")
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (spec: string, opts, command) => {
+      const outcome = await runScaffoldValidate(resolveDir(command), {
+        spec,
+        ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
+      });
+      record({ command: "scaffold validate", outcome, asJson: command.opts().json === true });
     });
 
   // —— Trellis Spec 迁移命令面（PRD §93.6 四词形 + §96 第 8 步；P30-Commands） ——

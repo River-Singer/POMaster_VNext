@@ -347,6 +347,7 @@ pomaster recon import-graph|migrations|sbom|architecture-snapshot|token-sources|
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
+pomaster scaffold validate <spec>   # 脚手架领域规格校验（pomaster.domain-spec/v1）：原型须在 catalog、暴露操作须在后端原型清单内；admin（管理侧 / 内网）与 public（用户侧 / 外网）两个部署面——用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出归一化摘要（表名 / 类名 / 路径 / 权限码 / 分页档），只读
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement
 pomaster agents status/dispatch-pack
@@ -585,6 +586,7 @@ POMaster 的开发仓自己吃自己的治理：仓库根本机台账 `.pomaster
 
 - [`docs/init-reference.md`](docs/init-reference.md) — `pomaster init` 全机制：产物表 / 目录宪法全树 / 播种语义 / 重入口三件套 / 模式分叉（Greenfield / Brownfield recon 编排）/ 技术栈问卷 / 基线确认 gate / 预置草案 / doctor 探针矩阵
 - [`docs/kernel-api.md`](docs/kernel-api.md) — kernel API 参考
+- [`docs/scaffold-domain-spec.md`](docs/scaffold-domain-spec.md) — 脚手架领域规格 `pomaster.domain-spec/v1`：管理侧 / 用户侧两个部署面的默认档、字段与分级、暴露规则、错误码
 - [组件画廊（在线版）](https://river-singer.github.io/POMaster_VNext/) — GitHub Pages；仓库源在 [`packages/studio`](packages/studio/)（Vue 主实例）与 [`packages/studio-react`](packages/studio-react/)（React sidecar，private 对照实例）
 - [`catalog/`](catalog/) — 随包分发的工程策展物料（policies / knowledge / gates / sensors / archetypes / tools）
 - [`references/`](references/) — concept-ledger（治理概念账本）· external-sites-index（外部参照站点索引）

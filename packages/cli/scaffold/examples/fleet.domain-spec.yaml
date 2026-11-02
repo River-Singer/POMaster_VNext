@@ -1,0 +1,44 @@
+# 样例领域规格（S1-1）：车队管理。
+# 车型是主数据：管理侧（内网）完整维护；用户侧（外网）匿名只读，只看启用的车型和公开字段。
+# 校验：pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
+schema: pomaster.domain-spec/v1
+app:
+  key: fleet
+  name_zh: 车队管理
+  java_package: com.example.fleet
+surfaces:
+  admin: {}
+  public: {}
+entities:
+  - key: vehicle_model
+    name_zh: 车型
+    archetypes:
+      data: DATA_ARCHETYPE.MASTER_DATA
+      backend: ARCHETYPE.BACKEND.CRUD_RESOURCE
+      page: PAGE_ARCHETYPE.MASTER_DATA
+    default_sort: { field: business_code, direction: asc }
+    fields:
+      - { key: business_code, name_zh: 车型编码, type: string, length: 32, required: true, unique: true, searchable: true, classification: public }
+      - { key: name, name_zh: 名称, type: string, length: 64, required: true, searchable: true, classification: public }
+      - key: status
+        name_zh: 状态
+        type: enum
+        values:
+          - { key: ENABLED, name_zh: 启用 }
+          - { key: DISABLED, name_zh: 停用 }
+        required: true
+        searchable: true
+        classification: public
+      - { key: seats, name_zh: 座位数, type: int, range: { min: 1, max: 99 }, classification: public }
+      - { key: list_price, name_zh: 指导价, type: decimal, precision: 12, scale: 2, range: { min: 0 }, classification: public }
+      - { key: cost_price, name_zh: 成本价, type: decimal, precision: 12, scale: 2, range: { min: 0 } }
+      - { key: description, name_zh: 说明, type: text, classification: public }
+    exposure:
+      admin:
+        operations: [create, get, list, update, delete]
+        count_total: true
+      public:
+        operations: [list, get]
+        access: anonymous
+        fields: [business_code, name, seats, list_price, description]
+        visible_when: { field: status, in: [ENABLED] }
