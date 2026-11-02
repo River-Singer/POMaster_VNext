@@ -8,38 +8,38 @@
 ## 0. 锚点与口径
 
 <!-- notices-sync:begin:anchor -->
-- **版本锚**：本清单以仓库内 `pnpm-lock.yaml`（lockfileVersion 9.0）为唯一锚点；该 lockfile 最后变更于 commit `65905df9637e8105fa8096d1f5464a78b869fab2`；lockfile 内容指纹 sha256 = `891105fb89ee91af21dfd9cbe42863e3b5b8de3acb415bac0daa67249be80967`。本清单不写墙钟生成日期、不写仓库 HEAD（HEAD 随无关提交漂移，不可作锚）——刷新口径 = 「以 pnpm-lock.yaml 对应 commit + 内容指纹为锚」。
+- **版本锚**：本清单以仓库内 `pnpm-lock.yaml`（lockfileVersion 9.0）为唯一锚点；该 lockfile 最后变更于 commit `df66245380c01e3096433e3db36807de95dc3877`；lockfile 内容指纹 sha256 = `df066245ccf9a632dae5a2c51a758c781e8195d4791c1cf4ee4c3ea23db40fe7`。本清单不写墙钟生成日期、不写仓库 HEAD（HEAD 随无关提交漂移，不可作锚）——刷新口径 = 「以 pnpm-lock.yaml 对应 commit + 内容指纹为锚」。
 <!-- notices-sync:end:anchor -->
 <!-- notices-sync:begin:dep-face -->
-- **依赖面**：lockfile `packages:` 节共 **617 个第三方包**（name@version 去重；peer 多变体同包只记一行），按用途拆两节：
-  - **§A 运行时依赖**（workspace 各包 `dependencies` 的非 workspace 传递闭包）：**8 个**。
-  - **§B 开发工具链依赖**（其余全部：root / studio / studio-react devDependencies 闭包）：**609 个**。
+- **依赖面**：lockfile `packages:` 节共 **727 个第三方包**（name@version 去重；peer 多变体同包只记一行），按用途拆两节：
+  - **§A 运行时依赖**（workspace 各包 `dependencies` 的非 workspace 传递闭包）：**20 个**。
+  - **§B 开发工具链依赖**（其余全部：root / studio / studio-react devDependencies 闭包）：**707 个**。
   - **分发口径 pending**：对外分发时 §A 必然构成第三方 notice 义务；§B 是否随分发触发 notice 义务取决于分发形态（源码仓库分发 / 产物分发），归 License Decision Gate 裁定。两节都先列全。
 <!-- notices-sync:end:dep-face -->
 <!-- notices-sync:begin:method -->
-- **事实源方法**：对 lockfile 内每个包，在本机 `node_modules/.pnpm/` 实际打开其 LICENSE 文件核对 license id（不凭记忆）。未在本机安装的 142 个平台二进制/可选包按证据等级 B3/B4 显式标注，绝不混充本地核对。
+- **事实源方法**：对 lockfile 内每个包，在本机 `node_modules/.pnpm/` 实际打开其 LICENSE 文件核对 license id（不凭记忆）。未在本机安装的 165 个平台二进制/可选包按证据等级 B3/B4 显式标注，绝不混充本地核对。
 <!-- notices-sync:end:method -->
 <!-- notices-sync:begin:grades -->
 - **证据等级**：
   - **B1** = 本地打开包内 LICENSE 文件，文件正文与 license id 一致。
   - **B2** = 包内无 LICENSE 文件；license id 取自该包 `package.json` 的 `license` 字段（README 佐证逐包注明）。
-  - **B3** = 平台二进制包（lockfile `os`/`cpu` 受限包）不设 B1 路径锚——装与未装都不可跨平台逐包核对；license id 按同族已核对成员/主包 LICENSE 声明外推（本轮回：esbuild 家族锚点 esbuild@0.21.5（B1 MIT）；rollup 家族锚点 rollup@4.63.0（B1 MIT）；lightningcss 家族锚点 lightningcss@1.33.0（B1 MPL-2.0）；oxc-parser 家族锚点 oxc-parser@0.127.0（B1 MIT）；oxc-resolver 家族锚点 oxc-resolver@11.21.2（B2 MIT）；rolldown 家族锚点 rolldown@1.2.7（B1 MIT））。**非 B1 逐包路径锚。**
+  - **B3** = 平台二进制包（lockfile `os`/`cpu` 受限包）不设 B1 路径锚——装与未装都不可跨平台逐包核对；license id 按同族已核对成员/主包 LICENSE 声明外推（本轮回：esbuild 家族锚点 esbuild@0.21.5（B1 MIT）；rollup 家族锚点 rollup@4.63.0（B1 MIT）；lightningcss 家族锚点 lightningcss@1.32.0（B1 MPL-2.0）；oxc-parser 家族锚点 oxc-parser@0.127.0（B1 MIT）；oxc-resolver 家族锚点 oxc-resolver@11.21.2（B2 MIT）；rolldown 家族锚点 rolldown@1.2.7（B1 MIT）；@tailwindcss/oxide 家族锚点 @tailwindcss/oxide@4.3.3（B1 MIT））。**非 B1 逐包路径锚。**
   - **B4** = 未安装且无同族锚点；license id 取自 npm registry 元数据（`npm view <pkg>@<ver> license`，本轮回 `@emnapi/core@{1.11.0,1.9.2}`、`@emnapi/runtime@{1.11.0,1.9.2}`、`@emnapi/wasi-threads@{1.2.1,1.2.2}`、`@napi-rs/lzma-linux-x64-gnu@{1.5.1}`、`@napi-rs/wasm-runtime@{1.2.3}`、`@tybys/wasm-util@{0.10.3}`、`fsevents@{2.3.3}` 均为 MIT）。**非本地文件核对。**
 <!-- notices-sync:end:grades -->
 <!-- notices-sync:begin:distribution -->
-### license id 分布（617 包）
+### license id 分布（727 包）
 
 | id | 数量 | 标注 |
 |---|---|---|
-| MIT | 389 | B1 本地核对 |
-| MIT（平台包家族外推）* | 121 | B3 |
+| MIT | 471 | B1 本地核对 |
+| MIT（平台包家族外推）* | 133 | B3 |
 | MIT（registry 元数据）** | 10 | B4 |
-| MIT（无 LICENSE 文件）† | 26 | B2 |
-| Apache-2.0 | 20 | B1 本地核对 |
+| MIT（无 LICENSE 文件）† | 27 | B2 |
+| MPL-2.0 | 2 | B1 本地核对 |
+| MPL-2.0（平台包家族外推）* | 22 | B3 |
+| Apache-2.0 | 21 | B1 本地核对 |
 | Apache-2.0（无 LICENSE 文件）† | 1（@humanfs/types） | B2 |
-| ISC | 17 | B1 本地核对 |
-| MPL-2.0 | 1（lightningcss） | B1 本地核对 |
-| MPL-2.0（平台包家族外推）* | 11 | B3 |
+| ISC | 19 | B1 本地核对 |
 | BSD-2-Clause | 7 | B1 本地核对 |
 | BSD-2-Clause（无 LICENSE 文件）† | 1（esrecurse） | B2 |
 | BlueOak-1.0.0 | 5 | B1 本地核对 |
@@ -49,28 +49,40 @@
 | CC0-1.0 | 1（type-fest） | B1 本地核对 |
 | Python-2.0 | 1（argparse） | B1 本地核对 |
 
-**净事实**：本仓库依赖树（§A+§B）共 617 包。**强 copyleft 家族（GPL/LGPL/AGPL/SSPL/EPL）零命中**；copyleft 家族仅命中 **MPL-2.0**（12 包：lightningcss、lightningcss-android-arm64、lightningcss-darwin-arm64、lightningcss-darwin-x64、lightningcss-freebsd-x64、lightningcss-linux-arm-gnueabihf、lightningcss-linux-arm64-gnu、lightningcss-linux-arm64-musl、lightningcss-linux-x64-gnu、lightningcss-linux-x64-musl、lightningcss-win32-arm64-msvc、lightningcss-win32-x64-msvc——文件级弱 copyleft：以依赖形式原样引用不传染使用方源码；随源码仓库可见/产物分发时须保留 MPL 许可文本与文件级改动声明，收录范围归 §0 分发口径裁定）。其余全部为宽松或公共域许可（MIT / ISC / 0BSD / BSD-2-Clause / BSD-3-Clause / Apache-2.0 / CC0-1.0 / CC-BY-4.0 / BlueOak-1.0.0 / Python-2.0）。MIT/ISC/BSD/Apache 均要求保留版权与许可声明——本文件即该 notice 义务的载体。
+**净事实**：本仓库依赖树（§A+§B）共 727 包。**强 copyleft 家族（GPL/LGPL/AGPL/SSPL/EPL）零命中**；copyleft 家族仅命中 **MPL-2.0**（24 包：lightningcss-android-arm64@1.32.0、lightningcss-android-arm64@1.33.0、lightningcss-darwin-arm64@1.32.0、lightningcss-darwin-arm64@1.33.0、lightningcss-darwin-x64@1.32.0、lightningcss-darwin-x64@1.33.0、lightningcss-freebsd-x64@1.32.0、lightningcss-freebsd-x64@1.33.0、lightningcss-linux-arm-gnueabihf@1.32.0、lightningcss-linux-arm-gnueabihf@1.33.0、lightningcss-linux-arm64-gnu@1.32.0、lightningcss-linux-arm64-gnu@1.33.0、lightningcss-linux-arm64-musl@1.32.0、lightningcss-linux-arm64-musl@1.33.0、lightningcss-linux-x64-gnu@1.32.0、lightningcss-linux-x64-gnu@1.33.0、lightningcss-linux-x64-musl@1.32.0、lightningcss-linux-x64-musl@1.33.0、lightningcss-win32-arm64-msvc@1.32.0、lightningcss-win32-arm64-msvc@1.33.0、lightningcss-win32-x64-msvc@1.32.0、lightningcss-win32-x64-msvc@1.33.0、lightningcss@1.32.0、lightningcss@1.33.0——文件级弱 copyleft：以依赖形式原样引用不传染使用方源码；随源码仓库可见/产物分发时须保留 MPL 许可文本与文件级改动声明，收录范围归 §0 分发口径裁定）。其余全部为宽松或公共域许可（MIT / ISC / 0BSD / BSD-2-Clause / BSD-3-Clause / Apache-2.0 / CC0-1.0 / CC-BY-4.0 / BlueOak-1.0.0 / Python-2.0）。MIT/ISC/BSD/Apache 均要求保留版权与许可声明——本文件即该 notice 义务的载体。
 <!-- notices-sync:end:distribution -->
 <!-- notices-sync:begin:section-a -->
-## §A 运行时依赖（8 包）
+## §A 运行时依赖（20 包）
 
-构成：workspace 各包 `dependencies`（非 dev）的非 workspace 传递闭包——packages/cli → ajv / commander / js-yaml；packages/gauntlet-lite →（无第三方运行时依赖）；packages/kernel → ajv / js-yaml；packages/schemas →（无第三方运行时依赖）；packages/studio →（无第三方运行时依赖）；packages/studio-react →（无第三方运行时依赖）。
+构成：workspace 各包 `dependencies`（非 dev）的非 workspace 传递闭包——packages/cli → ajv / commander / js-yaml / jsonc-parser；packages/gauntlet-lite → @vue/compiler-dom / typescript；packages/kernel → ajv / js-yaml；packages/schemas →（无第三方运行时依赖）；packages/studio →（无第三方运行时依赖）；packages/studio-react →（无第三方运行时依赖）。
 
 | 包名 | 版本 | license id | license 源文件路径（本仓库 node_modules 内） | 证据 |
 |---|---|---|---|---|
+| @babel/helper-string-parser | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-string-parser@7.29.7/node_modules/@babel/helper-string-parser/LICENSE | B1 |
+| @babel/helper-validator-identifier | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-validator-identifier@7.29.7/node_modules/@babel/helper-validator-identifier/LICENSE | B1 |
+| @babel/parser | 7.29.8 | MIT | node_modules/.pnpm/@babel+parser@7.29.8/node_modules/@babel/parser/LICENSE | B1 |
+| @babel/types | 7.29.8 | MIT | node_modules/.pnpm/@babel+types@7.29.8/node_modules/@babel/types/LICENSE | B1 |
+| @vue/compiler-core | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-core@3.5.42/node_modules/@vue/compiler-core/LICENSE | B1 |
+| @vue/compiler-dom | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-dom@3.5.42/node_modules/@vue/compiler-dom/LICENSE | B1 |
+| @vue/shared | 3.5.42 | MIT | node_modules/.pnpm/@vue+shared@3.5.42/node_modules/@vue/shared/LICENSE | B1 |
 | ajv | 8.20.0 | MIT | node_modules/.pnpm/ajv@8.20.0/node_modules/ajv/LICENSE | B1 |
 | argparse | 2.0.1 | Python-2.0 | node_modules/.pnpm/argparse@2.0.1/node_modules/argparse/LICENSE | B1 |
 | commander | 14.0.3 | MIT | node_modules/.pnpm/commander@14.0.3/node_modules/commander/LICENSE | B1 |
+| entities | 7.0.1 | BSD-2-Clause | node_modules/.pnpm/entities@7.0.1/node_modules/entities/LICENSE | B1 |
+| estree-walker | 2.0.2 | MIT | node_modules/.pnpm/estree-walker@2.0.2/node_modules/estree-walker/LICENSE | B1 |
 | fast-deep-equal | 3.1.3 | MIT | node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/LICENSE | B1 |
 | fast-uri | 3.1.6 | BSD-3-Clause | node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/LICENSE | B1 |
 | js-yaml | 4.3.2 | MIT | node_modules/.pnpm/js-yaml@4.3.2/node_modules/js-yaml/LICENSE | B1 |
 | json-schema-traverse | 1.0.0 | MIT | node_modules/.pnpm/json-schema-traverse@1.0.0/node_modules/json-schema-traverse/LICENSE | B1 |
+| jsonc-parser | 3.3.1 | MIT | node_modules/.pnpm/jsonc-parser@3.3.1/node_modules/jsonc-parser/LICENSE.md | B1 |
 | require-from-string | 2.0.2 | MIT | node_modules/.pnpm/require-from-string@2.0.2/node_modules/require-from-string/license | B1 |
+| source-map-js | 1.2.1 | BSD-3-Clause | node_modules/.pnpm/source-map-js@1.2.1/node_modules/source-map-js/LICENSE | B1 |
+| typescript | 5.9.3 | Apache-2.0 | node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/LICENSE.txt | B1 |
 <!-- notices-sync:end:section-a -->
 <!-- notices-sync:begin:section-b -->
-## §B 开发工具链依赖（609 包）
+## §B 开发工具链依赖（707 包）
 
-构成：lockfile 其余全部包——root devDependencies 闭包（@types/node / ajv / ajv-formats / esbuild / eslint / js-yaml / typescript / typescript-eslint / vitest）+ packages/studio devDependencies 闭包（@storybook/addon-docs / @storybook/vue3 / @storybook/vue3-vite / @vue/test-utils / ant-design-vue / happy-dom / js-yaml / storybook / vite / vue）+ packages/studio-react devDependencies 闭包（@storybook/addon-docs / @storybook/react / @storybook/react-vite / antd / react / react-dom / storybook / vite）。
+构成：lockfile 其余全部包——root devDependencies 闭包（@types/node / ajv / ajv-formats / esbuild / eslint / js-yaml / typescript / typescript-eslint / vitest）+ packages/studio devDependencies 闭包（@storybook/addon-docs / @storybook/vue3 / @storybook/vue3-vite / @vue/test-utils / ant-design-vue / happy-dom / js-yaml / storybook / vite / vue）+ packages/studio-react devDependencies 闭包（@storybook/addon-docs / @storybook/react / @storybook/react-vite / @tailwindcss/vite / antd / class-variance-authority / clsx / lucide-react / radix-ui / react / react-dom / storybook / tailwind-merge / tailwindcss / tw-animate-css / vite）。
 
 | 包名 | 版本 | license id | license 源文件路径 | 证据 |
 |---|---|---|---|---|
@@ -92,15 +104,11 @@
 | @babel/helper-globals | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-globals@7.29.7/node_modules/@babel/helper-globals/LICENSE | B1 |
 | @babel/helper-module-imports | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-module-imports@7.29.7/node_modules/@babel/helper-module-imports/LICENSE | B1 |
 | @babel/helper-module-transforms | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-module-transforms@7.29.7_@babel+core@7.29.7/node_modules/@babel/helper-module-transforms/LICENSE | B1 |
-| @babel/helper-string-parser | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-string-parser@7.29.7/node_modules/@babel/helper-string-parser/LICENSE | B1 |
-| @babel/helper-validator-identifier | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-validator-identifier@7.29.7/node_modules/@babel/helper-validator-identifier/LICENSE | B1 |
 | @babel/helper-validator-option | 7.29.7 | MIT | node_modules/.pnpm/@babel+helper-validator-option@7.29.7/node_modules/@babel/helper-validator-option/LICENSE | B1 |
 | @babel/helpers | 7.29.7 | MIT | node_modules/.pnpm/@babel+helpers@7.29.7/node_modules/@babel/helpers/LICENSE | B1 |
-| @babel/parser | 7.29.8 | MIT | node_modules/.pnpm/@babel+parser@7.29.8/node_modules/@babel/parser/LICENSE | B1 |
 | @babel/runtime | 7.29.7 | MIT | node_modules/.pnpm/@babel+runtime@7.29.7/node_modules/@babel/runtime/LICENSE | B1 |
 | @babel/template | 7.29.7 | MIT | node_modules/.pnpm/@babel+template@7.29.7/node_modules/@babel/template/LICENSE | B1 |
 | @babel/traverse | 7.29.8 | MIT | node_modules/.pnpm/@babel+traverse@7.29.8/node_modules/@babel/traverse/LICENSE | B1 |
-| @babel/types | 7.29.8 | MIT | node_modules/.pnpm/@babel+types@7.29.8/node_modules/@babel/types/LICENSE | B1 |
 | @ctrl/tinycolor | 3.6.1 | MIT | node_modules/.pnpm/@ctrl+tinycolor@3.6.1/node_modules/@ctrl/tinycolor/LICENSE | B1 |
 | @emnapi/core | 1.11.0 | MIT** | (未安装) | B4 |
 | @emnapi/core | 1.9.2 | MIT** | (未安装) | B4 |
@@ -161,7 +169,7 @@
 | @esbuild/win32-ia32 | 0.28.2 | MIT* | (未安装) | B3 |
 | @esbuild/win32-x64 | 0.21.5 | MIT† | （包内无 LICENSE 文件） | B2 |
 | @esbuild/win32-x64 | 0.28.2 | MIT† | （包内无 LICENSE 文件） | B2 |
-| @eslint-community/eslint-utils | 4.10.1 | MIT | node_modules/.pnpm/@eslint-community+eslint-utils@4.10.1_eslint@9.39.5/node_modules/@eslint-community/eslint-utils/LICENSE | B1 |
+| @eslint-community/eslint-utils | 4.10.1 | MIT | node_modules/.pnpm/@eslint-community+eslint-utils@4.10.1_eslint@9.39.5_jiti@2.7.0_/node_modules/@eslint-community/eslint-utils/LICENSE | B1 |
 | @eslint-community/regexpp | 4.12.2 | MIT | node_modules/.pnpm/@eslint-community+regexpp@4.12.2/node_modules/@eslint-community/regexpp/LICENSE | B1 |
 | @eslint/config-array | 0.21.2 | Apache-2.0 | node_modules/.pnpm/@eslint+config-array@0.21.2/node_modules/@eslint/config-array/LICENSE | B1 |
 | @eslint/config-helpers | 0.4.2 | Apache-2.0 | node_modules/.pnpm/@eslint+config-helpers@0.4.2/node_modules/@eslint/config-helpers/LICENSE | B1 |
@@ -170,6 +178,10 @@
 | @eslint/js | 9.39.5 | MIT | node_modules/.pnpm/@eslint+js@9.39.5/node_modules/@eslint/js/LICENSE | B1 |
 | @eslint/object-schema | 2.1.7 | Apache-2.0 | node_modules/.pnpm/@eslint+object-schema@2.1.7/node_modules/@eslint/object-schema/LICENSE | B1 |
 | @eslint/plugin-kit | 0.4.1 | Apache-2.0 | node_modules/.pnpm/@eslint+plugin-kit@0.4.1/node_modules/@eslint/plugin-kit/LICENSE | B1 |
+| @floating-ui/core | 1.8.0 | MIT | node_modules/.pnpm/@floating-ui+core@1.8.0/node_modules/@floating-ui/core/LICENSE | B1 |
+| @floating-ui/dom | 1.8.0 | MIT | node_modules/.pnpm/@floating-ui+dom@1.8.0/node_modules/@floating-ui/dom/LICENSE | B1 |
+| @floating-ui/react-dom | 2.1.9 | MIT | node_modules/.pnpm/@floating-ui+react-dom@2.1.9_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@floating-ui/react-dom/LICENSE | B1 |
+| @floating-ui/utils | 0.2.12 | MIT | node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/LICENSE | B1 |
 | @humanfs/core | 0.19.2 | Apache-2.0 | node_modules/.pnpm/@humanfs+core@0.19.2/node_modules/@humanfs/core/LICENSE | B1 |
 | @humanfs/node | 0.16.8 | Apache-2.0 | node_modules/.pnpm/@humanfs+node@0.16.8/node_modules/@humanfs/node/LICENSE | B1 |
 | @humanfs/types | 0.15.0 | Apache-2.0† | （包内无 LICENSE 文件） | B2 |
@@ -226,6 +238,66 @@
 | @oxc-resolver/binding-wasm32-wasi | 11.21.2 | MIT* | (未安装) | B3 |
 | @oxc-resolver/binding-win32-arm64-msvc | 11.21.2 | MIT* | (未安装) | B3 |
 | @oxc-resolver/binding-win32-x64-msvc | 11.21.2 | MIT† | （包内无 LICENSE 文件） | B2 |
+| @radix-ui/number | 1.1.3 | MIT | node_modules/.pnpm/@radix-ui+number@1.1.3/node_modules/@radix-ui/number/LICENSE | B1 |
+| @radix-ui/primitive | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+primitive@1.2.0/node_modules/@radix-ui/primitive/LICENSE | B1 |
+| @radix-ui/react-accessible-icon | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-accessible-icon@1.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-accessible-icon/LICENSE | B1 |
+| @radix-ui/react-accordion | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-accordion@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-accordion/LICENSE | B1 |
+| @radix-ui/react-alert-dialog | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-alert-dialog@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-alert-dialog/LICENSE | B1 |
+| @radix-ui/react-arrow | 1.1.17 | MIT | node_modules/.pnpm/@radix-ui+react-arrow@1.1.17_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-arrow/LICENSE | B1 |
+| @radix-ui/react-aspect-ratio | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-aspect-ratio@1.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-aspect-ratio/LICENSE | B1 |
+| @radix-ui/react-avatar | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-avatar@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-avatar/LICENSE | B1 |
+| @radix-ui/react-checkbox | 1.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-checkbox@1.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-checkbox/LICENSE | B1 |
+| @radix-ui/react-collapsible | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-collapsible@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-collapsible/LICENSE | B1 |
+| @radix-ui/react-collection | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-collection@1.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-collection/LICENSE | B1 |
+| @radix-ui/react-compose-refs | 1.1.5 | MIT | node_modules/.pnpm/@radix-ui+react-compose-refs@1.1.5_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-compose-refs/LICENSE | B1 |
+| @radix-ui/react-context | 1.3.0 | MIT | node_modules/.pnpm/@radix-ui+react-context@1.3.0_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-context/LICENSE | B1 |
+| @radix-ui/react-context-menu | 2.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-context-menu@2.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-context-menu/LICENSE | B1 |
+| @radix-ui/react-dialog | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-dialog@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-dialog/LICENSE | B1 |
+| @radix-ui/react-direction | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-direction@1.2.0_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-direction/LICENSE | B1 |
+| @radix-ui/react-dismissable-layer | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-dismissable-layer@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-dismissable-layer/LICENSE | B1 |
+| @radix-ui/react-dropdown-menu | 2.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-dropdown-menu@2.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-dropdown-menu/LICENSE | B1 |
+| @radix-ui/react-focus-guards | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-focus-guards@1.2.0_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-focus-guards/LICENSE | B1 |
+| @radix-ui/react-focus-scope | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-focus-scope@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-focus-scope/LICENSE | B1 |
+| @radix-ui/react-form | 0.3.0 | MIT | node_modules/.pnpm/@radix-ui+react-form@0.3.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-form/LICENSE | B1 |
+| @radix-ui/react-hover-card | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-hover-card@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-hover-card/LICENSE | B1 |
+| @radix-ui/react-id | 1.1.4 | MIT | node_modules/.pnpm/@radix-ui+react-id@1.1.4_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-id/LICENSE | B1 |
+| @radix-ui/react-label | 2.1.17 | MIT | node_modules/.pnpm/@radix-ui+react-label@2.1.17_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-label/LICENSE | B1 |
+| @radix-ui/react-menu | 2.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-menu@2.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-menu/LICENSE | B1 |
+| @radix-ui/react-menubar | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-menubar@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-menubar/LICENSE | B1 |
+| @radix-ui/react-navigation-menu | 1.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-navigation-menu@1.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-navigation-menu/LICENSE | B1 |
+| @radix-ui/react-one-time-password-field | 0.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-one-time-password-field@0.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-one-time-password-field/LICENSE | B1 |
+| @radix-ui/react-password-toggle-field | 0.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-password-toggle-field@0.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-password-toggle-field/LICENSE | B1 |
+| @radix-ui/react-popover | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-popover@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popover/LICENSE | B1 |
+| @radix-ui/react-popper | 1.4.0 | MIT | node_modules/.pnpm/@radix-ui+react-popper@1.4.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popper/LICENSE | B1 |
+| @radix-ui/react-portal | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-portal@1.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-portal/LICENSE | B1 |
+| @radix-ui/react-presence | 1.1.11 | MIT | node_modules/.pnpm/@radix-ui+react-presence@1.1.11_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-presence/LICENSE | B1 |
+| @radix-ui/react-primitive | 2.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-primitive@2.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-primitive/LICENSE | B1 |
+| @radix-ui/react-progress | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-progress@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-progress/LICENSE | B1 |
+| @radix-ui/react-radio-group | 1.5.1 | MIT | node_modules/.pnpm/@radix-ui+react-radio-group@1.5.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-radio-group/LICENSE | B1 |
+| @radix-ui/react-roving-focus | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-roving-focus@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-roving-focus/LICENSE | B1 |
+| @radix-ui/react-scroll-area | 1.4.0 | MIT | node_modules/.pnpm/@radix-ui+react-scroll-area@1.4.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-scroll-area/LICENSE | B1 |
+| @radix-ui/react-select | 2.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-select@2.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-select/LICENSE | B1 |
+| @radix-ui/react-separator | 1.2.0 | MIT | node_modules/.pnpm/@radix-ui+react-separator@1.2.0_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-separator/LICENSE | B1 |
+| @radix-ui/react-slider | 1.6.1 | MIT | node_modules/.pnpm/@radix-ui+react-slider@1.6.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-slider/LICENSE | B1 |
+| @radix-ui/react-slot | 1.5.0 | MIT | node_modules/.pnpm/@radix-ui+react-slot@1.5.0_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-slot/LICENSE | B1 |
+| @radix-ui/react-switch | 1.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-switch@1.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-switch/LICENSE | B1 |
+| @radix-ui/react-tabs | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-tabs@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-tabs/LICENSE | B1 |
+| @radix-ui/react-toast | 1.3.1 | MIT | node_modules/.pnpm/@radix-ui+react-toast@1.3.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-toast/LICENSE | B1 |
+| @radix-ui/react-toggle | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-toggle@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-toggle/LICENSE | B1 |
+| @radix-ui/react-toggle-group | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-toggle-group@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-toggle-group/LICENSE | B1 |
+| @radix-ui/react-toolbar | 1.2.1 | MIT | node_modules/.pnpm/@radix-ui+react-toolbar@1.2.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-toolbar/LICENSE | B1 |
+| @radix-ui/react-tooltip | 1.4.1 | MIT | node_modules/.pnpm/@radix-ui+react-tooltip@1.4.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-tooltip/LICENSE | B1 |
+| @radix-ui/react-use-callback-ref | 1.1.5 | MIT | node_modules/.pnpm/@radix-ui+react-use-callback-ref@1.1.5_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-callback-ref/LICENSE | B1 |
+| @radix-ui/react-use-controllable-state | 1.3.0 | MIT | node_modules/.pnpm/@radix-ui+react-use-controllable-state@1.3.0_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-controllable-state/LICENSE | B1 |
+| @radix-ui/react-use-effect-event | 0.0.5 | MIT | node_modules/.pnpm/@radix-ui+react-use-effect-event@0.0.5_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-effect-event/LICENSE | B1 |
+| @radix-ui/react-use-escape-keydown | 1.1.6 | MIT | node_modules/.pnpm/@radix-ui+react-use-escape-keydown@1.1.6_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-escape-keydown/LICENSE | B1 |
+| @radix-ui/react-use-is-hydrated | 0.1.3 | MIT | node_modules/.pnpm/@radix-ui+react-use-is-hydrated@0.1.3_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-is-hydrated/LICENSE | B1 |
+| @radix-ui/react-use-layout-effect | 1.1.4 | MIT | node_modules/.pnpm/@radix-ui+react-use-layout-effect@1.1.4_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-layout-effect/LICENSE | B1 |
+| @radix-ui/react-use-previous | 1.1.4 | MIT | node_modules/.pnpm/@radix-ui+react-use-previous@1.1.4_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-previous/LICENSE | B1 |
+| @radix-ui/react-use-rect | 1.1.4 | MIT | node_modules/.pnpm/@radix-ui+react-use-rect@1.1.4_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-rect/LICENSE | B1 |
+| @radix-ui/react-use-size | 1.1.5 | MIT | node_modules/.pnpm/@radix-ui+react-use-size@1.1.5_@types+react@19.2.18_react@18.3.1/node_modules/@radix-ui/react-use-size/LICENSE | B1 |
+| @radix-ui/react-visually-hidden | 1.2.13 | MIT | node_modules/.pnpm/@radix-ui+react-visually-hidden@1.2.13_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-visually-hidden/LICENSE | B1 |
+| @radix-ui/rect | 1.1.3 | MIT | node_modules/.pnpm/@radix-ui+rect@1.1.3/node_modules/@radix-ui/rect/LICENSE | B1 |
 | @rc-component/async-validator | 5.1.2 | MIT | node_modules/.pnpm/@rc-component+async-validator@5.1.2/node_modules/@rc-component/async-validator/LICENSE.md | B1 |
 | @rc-component/color-picker | 2.0.1 | MIT | node_modules/.pnpm/@rc-component+color-picker@2.0.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@rc-component/color-picker/LICENSE.md | B1 |
 | @rc-component/context | 1.4.0 | MIT | node_modules/.pnpm/@rc-component+context@1.4.0_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@rc-component/context/LICENSE.md | B1 |
@@ -287,6 +359,21 @@
 | @storybook/react-vite | 10.6.0 | MIT† | （包内无 LICENSE 文件） | B2 |
 | @storybook/vue3 | 10.6.0 | MIT† | （包内无 LICENSE 文件） | B2 |
 | @storybook/vue3-vite | 10.6.0 | MIT† | （包内无 LICENSE 文件） | B2 |
+| @tailwindcss/node | 4.3.3 | MIT | node_modules/.pnpm/@tailwindcss+node@4.3.3/node_modules/@tailwindcss/node/LICENSE | B1 |
+| @tailwindcss/oxide | 4.3.3 | MIT | node_modules/.pnpm/@tailwindcss+oxide@4.3.3/node_modules/@tailwindcss/oxide/LICENSE | B1 |
+| @tailwindcss/oxide-android-arm64 | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-darwin-arm64 | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-darwin-x64 | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-freebsd-x64 | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-linux-arm-gnueabihf | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-linux-arm64-gnu | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-linux-arm64-musl | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-linux-x64-gnu | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-linux-x64-musl | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-wasm32-wasi | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-win32-arm64-msvc | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/oxide-win32-x64-msvc | 4.3.3 | MIT* | (未安装) | B3 |
+| @tailwindcss/vite | 4.3.3 | MIT | node_modules/.pnpm/@tailwindcss+vite@4.3.3_vite@8.2.2_@types+node@22.20.1_esbuild@0.28.2_jiti@2.7.0_/node_modules/@tailwindcss/vite/LICENSE | B1 |
 | @testing-library/dom | 10.4.1 | MIT | node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/LICENSE | B1 |
 | @testing-library/jest-dom | 6.9.1 | MIT | node_modules/.pnpm/@testing-library+jest-dom@6.9.1/node_modules/@testing-library/jest-dom/LICENSE | B1 |
 | @testing-library/user-event | 14.6.7 | MIT | node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.1/node_modules/@testing-library/user-event/LICENSE | B1 |
@@ -307,15 +394,15 @@
 | @types/resolve | 1.20.6 | MIT | node_modules/.pnpm/@types+resolve@1.20.6/node_modules/@types/resolve/LICENSE | B1 |
 | @types/whatwg-mimetype | 3.0.2 | MIT | node_modules/.pnpm/@types+whatwg-mimetype@3.0.2/node_modules/@types/whatwg-mimetype/LICENSE | B1 |
 | @types/ws | 8.18.1 | MIT | node_modules/.pnpm/@types+ws@8.18.1/node_modules/@types/ws/LICENSE | B1 |
-| @typescript-eslint/eslint-plugin | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+eslint-plugin@8.68.0_@typescript-eslint+parser@8.68.0_eslint@9.39.5_typesc_xrzdpqnaxc7i73xaavdcoxmsay/node_modules/@typescript-eslint/eslint-plugin/LICENSE | B1 |
-| @typescript-eslint/parser | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+parser@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/@typescript-eslint/parser/LICENSE | B1 |
+| @typescript-eslint/eslint-plugin | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+eslint-plugin@8.68.0_@typescript-eslint+parser@8.68.0_eslint@9.39.5_jiti@2_5qoqtfd5lm3crnuz6ztfewkmuq/node_modules/@typescript-eslint/eslint-plugin/LICENSE | B1 |
+| @typescript-eslint/parser | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+parser@8.68.0_eslint@9.39.5_jiti@2.7.0__typescript@5.9.3/node_modules/@typescript-eslint/parser/LICENSE | B1 |
 | @typescript-eslint/project-service | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+project-service@8.68.0_typescript@5.9.3/node_modules/@typescript-eslint/project-service/LICENSE | B1 |
 | @typescript-eslint/scope-manager | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+scope-manager@8.68.0/node_modules/@typescript-eslint/scope-manager/LICENSE | B1 |
 | @typescript-eslint/tsconfig-utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+tsconfig-utils@8.68.0_typescript@5.9.3/node_modules/@typescript-eslint/tsconfig-utils/LICENSE | B1 |
-| @typescript-eslint/type-utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+type-utils@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/@typescript-eslint/type-utils/LICENSE | B1 |
+| @typescript-eslint/type-utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+type-utils@8.68.0_eslint@9.39.5_jiti@2.7.0__typescript@5.9.3/node_modules/@typescript-eslint/type-utils/LICENSE | B1 |
 | @typescript-eslint/types | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+types@8.68.0/node_modules/@typescript-eslint/types/LICENSE | B1 |
 | @typescript-eslint/typescript-estree | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+typescript-estree@8.68.0_typescript@5.9.3/node_modules/@typescript-eslint/typescript-estree/LICENSE | B1 |
-| @typescript-eslint/utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+utils@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/@typescript-eslint/utils/LICENSE | B1 |
+| @typescript-eslint/utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+utils@8.68.0_eslint@9.39.5_jiti@2.7.0__typescript@5.9.3/node_modules/@typescript-eslint/utils/LICENSE | B1 |
 | @typescript-eslint/visitor-keys | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+visitor-keys@8.68.0/node_modules/@typescript-eslint/visitor-keys/LICENSE | B1 |
 | @vitest/expect | 2.1.9 | MIT | node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/LICENSE | B1 |
 | @vitest/expect | 3.2.4 | MIT | node_modules/.pnpm/@vitest+expect@3.2.4/node_modules/@vitest/expect/LICENSE | B1 |
@@ -331,8 +418,6 @@
 | @volar/language-core | 2.4.28 | MIT | node_modules/.pnpm/@volar+language-core@2.4.28/node_modules/@volar/language-core/LICENSE | B1 |
 | @volar/source-map | 2.4.28 | MIT | node_modules/.pnpm/@volar+source-map@2.4.28/node_modules/@volar/source-map/LICENSE | B1 |
 | @volar/typescript | 2.4.28 | MIT | node_modules/.pnpm/@volar+typescript@2.4.28/node_modules/@volar/typescript/LICENSE | B1 |
-| @vue/compiler-core | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-core@3.5.42/node_modules/@vue/compiler-core/LICENSE | B1 |
-| @vue/compiler-dom | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-dom@3.5.42/node_modules/@vue/compiler-dom/LICENSE | B1 |
 | @vue/compiler-sfc | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-sfc@3.5.42/node_modules/@vue/compiler-sfc/LICENSE | B1 |
 | @vue/compiler-ssr | 3.5.42 | MIT | node_modules/.pnpm/@vue+compiler-ssr@3.5.42/node_modules/@vue/compiler-ssr/LICENSE | B1 |
 | @vue/language-core | 3.3.11 | MIT | node_modules/.pnpm/@vue+language-core@3.3.11/node_modules/@vue/language-core/LICENSE | B1 |
@@ -340,7 +425,6 @@
 | @vue/runtime-core | 3.5.42 | MIT | node_modules/.pnpm/@vue+runtime-core@3.5.42/node_modules/@vue/runtime-core/LICENSE | B1 |
 | @vue/runtime-dom | 3.5.42 | MIT | node_modules/.pnpm/@vue+runtime-dom@3.5.42/node_modules/@vue/runtime-dom/LICENSE | B1 |
 | @vue/server-renderer | 3.5.42 | MIT | node_modules/.pnpm/@vue+server-renderer@3.5.42/node_modules/@vue/server-renderer/LICENSE | B1 |
-| @vue/shared | 3.5.42 | MIT | node_modules/.pnpm/@vue+shared@3.5.42/node_modules/@vue/shared/LICENSE | B1 |
 | @vue/test-utils | 2.5.0 | MIT | node_modules/.pnpm/@vue+test-utils@2.5.0_@vue+compiler-dom@3.5.42_@vue+server-renderer@3.5.42_vue@3.5.42_typescript@5.9.3_/node_modules/@vue/test-utils/LICENSE | B1 |
 | @webcontainer/env | 1.1.1 | MIT | node_modules/.pnpm/@webcontainer+env@1.1.1/node_modules/@webcontainer/env/LICENSE.md | B1 |
 | abbrev | 5.0.0 | ISC | node_modules/.pnpm/abbrev@5.0.0/node_modules/abbrev/LICENSE | B1 |
@@ -355,6 +439,7 @@
 | ansi-styles | 5.2.0 | MIT | node_modules/.pnpm/ansi-styles@5.2.0/node_modules/ansi-styles/license | B1 |
 | ant-design-vue | 4.2.6 | MIT | node_modules/.pnpm/ant-design-vue@4.2.6_vue@3.5.42_typescript@5.9.3_/node_modules/ant-design-vue/LICENSE | B1 |
 | antd | 5.29.3 | MIT | node_modules/.pnpm/antd@5.29.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/antd/LICENSE | B1 |
+| aria-hidden | 1.2.6 | MIT | node_modules/.pnpm/aria-hidden@1.2.6/node_modules/aria-hidden/LICENSE | B1 |
 | aria-query | 5.3.0 | Apache-2.0 | node_modules/.pnpm/aria-query@5.3.0/node_modules/aria-query/LICENSE | B1 |
 | aria-query | 5.3.2 | Apache-2.0 | node_modules/.pnpm/aria-query@5.3.2/node_modules/aria-query/LICENSE | B1 |
 | array-tree-filter | 2.1.0 | MIT† | （包内无 LICENSE 文件） | B2 |
@@ -381,7 +466,9 @@
 | chalk | 4.1.2 | MIT | node_modules/.pnpm/chalk@4.1.2/node_modules/chalk/license | B1 |
 | character-parser | 2.2.0 | MIT | node_modules/.pnpm/character-parser@2.2.0/node_modules/character-parser/LICENSE | B1 |
 | check-error | 2.1.3 | MIT | node_modules/.pnpm/check-error@2.1.3/node_modules/check-error/LICENSE | B1 |
+| class-variance-authority | 0.7.1 | Apache-2.0 | node_modules/.pnpm/class-variance-authority@0.7.1/node_modules/class-variance-authority/LICENSE | B1 |
 | classnames | 2.5.1 | MIT | node_modules/.pnpm/classnames@2.5.1/node_modules/classnames/LICENSE | B1 |
+| clsx | 2.1.1 | MIT | node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/license | B1 |
 | color-convert | 2.0.1 | MIT | node_modules/.pnpm/color-convert@2.0.1/node_modules/color-convert/LICENSE | B1 |
 | color-name | 1.1.4 | MIT | node_modules/.pnpm/color-name@1.1.4/node_modules/color-name/LICENSE | B1 |
 | compute-scroll-into-view | 1.0.20 | MIT | node_modules/.pnpm/compute-scroll-into-view@1.0.20/node_modules/compute-scroll-into-view/LICENSE | B1 |
@@ -404,6 +491,7 @@
 | define-lazy-prop | 3.0.0 | MIT | node_modules/.pnpm/define-lazy-prop@3.0.0/node_modules/define-lazy-prop/license | B1 |
 | dequal | 2.0.3 | MIT | node_modules/.pnpm/dequal@2.0.3/node_modules/dequal/license | B1 |
 | detect-libc | 2.1.2 | Apache-2.0 | node_modules/.pnpm/detect-libc@2.1.2/node_modules/detect-libc/LICENSE | B1 |
+| detect-node-es | 1.1.0 | MIT | node_modules/.pnpm/detect-node-es@1.1.0/node_modules/detect-node-es/LICENSE | B1 |
 | doctrine | 3.0.0 | Apache-2.0 | node_modules/.pnpm/doctrine@3.0.0/node_modules/doctrine/LICENSE | B1 |
 | doctypes | 1.1.0 | MIT | node_modules/.pnpm/doctypes@1.1.0/node_modules/doctypes/LICENSE | B1 |
 | dom-accessibility-api | 0.5.16 | MIT | node_modules/.pnpm/dom-accessibility-api@0.5.16/node_modules/dom-accessibility-api/LICENSE.md | B1 |
@@ -414,7 +502,7 @@
 | editorconfig | 3.0.2 | MIT | node_modules/.pnpm/editorconfig@3.0.2/node_modules/editorconfig/LICENSE | B1 |
 | electron-to-chromium | 1.5.422 | ISC | node_modules/.pnpm/electron-to-chromium@1.5.422/node_modules/electron-to-chromium/LICENSE | B1 |
 | empathic | 2.0.1 | MIT | node_modules/.pnpm/empathic@2.0.1/node_modules/empathic/license | B1 |
-| entities | 7.0.1 | BSD-2-Clause | node_modules/.pnpm/entities@7.0.1/node_modules/entities/LICENSE | B1 |
+| enhanced-resolve | 5.26.0 | MIT | node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/LICENSE | B1 |
 | es-define-property | 1.0.1 | MIT | node_modules/.pnpm/es-define-property@1.0.1/node_modules/es-define-property/LICENSE | B1 |
 | es-errors | 1.3.0 | MIT | node_modules/.pnpm/es-errors@1.3.0/node_modules/es-errors/LICENSE | B1 |
 | es-module-lexer | 1.7.0 | MIT | node_modules/.pnpm/es-module-lexer@1.7.0/node_modules/es-module-lexer/LICENSE | B1 |
@@ -423,7 +511,7 @@
 | esbuild | 0.28.2 | MIT | node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/LICENSE.md | B1 |
 | escalade | 3.2.0 | MIT | node_modules/.pnpm/escalade@3.2.0/node_modules/escalade/license | B1 |
 | escape-string-regexp | 4.0.0 | MIT | node_modules/.pnpm/escape-string-regexp@4.0.0/node_modules/escape-string-regexp/license | B1 |
-| eslint | 9.39.5 | MIT | node_modules/.pnpm/eslint@9.39.5/node_modules/eslint/LICENSE | B1 |
+| eslint | 9.39.5 | MIT | node_modules/.pnpm/eslint@9.39.5_jiti@2.7.0/node_modules/eslint/LICENSE | B1 |
 | eslint-scope | 8.4.0 | BSD-2-Clause | node_modules/.pnpm/eslint-scope@8.4.0/node_modules/eslint-scope/LICENSE | B1 |
 | eslint-visitor-keys | 3.4.3 | Apache-2.0 | node_modules/.pnpm/eslint-visitor-keys@3.4.3/node_modules/eslint-visitor-keys/LICENSE | B1 |
 | eslint-visitor-keys | 4.2.1 | Apache-2.0 | node_modules/.pnpm/eslint-visitor-keys@4.2.1/node_modules/eslint-visitor-keys/LICENSE | B1 |
@@ -434,7 +522,6 @@
 | esquery | 1.7.0 | BSD-3-Clause | node_modules/.pnpm/esquery@1.7.0/node_modules/esquery/license.txt | B1 |
 | esrecurse | 4.3.0 | BSD-2-Clause† | （包内无 LICENSE 文件） | B2 |
 | estraverse | 5.3.0 | BSD-2-Clause | node_modules/.pnpm/estraverse@5.3.0/node_modules/estraverse/LICENSE.BSD | B1 |
-| estree-walker | 2.0.2 | MIT | node_modules/.pnpm/estree-walker@2.0.2/node_modules/estree-walker/LICENSE | B1 |
 | estree-walker | 3.0.3 | MIT | node_modules/.pnpm/estree-walker@3.0.3/node_modules/estree-walker/LICENSE | B1 |
 | esutils | 2.0.3 | BSD-2-Clause | node_modules/.pnpm/esutils@2.0.3/node_modules/esutils/LICENSE.BSD | B1 |
 | expect-type | 1.4.0 | Apache-2.0 | node_modules/.pnpm/expect-type@1.4.0/node_modules/expect-type/LICENSE | B1 |
@@ -449,11 +536,13 @@
 | function-bind | 1.1.2 | MIT | node_modules/.pnpm/function-bind@1.1.2/node_modules/function-bind/LICENSE | B1 |
 | gensync | 1.0.0-beta.2 | MIT | node_modules/.pnpm/gensync@1.0.0-beta.2/node_modules/gensync/LICENSE | B1 |
 | get-intrinsic | 1.3.0 | MIT | node_modules/.pnpm/get-intrinsic@1.3.0/node_modules/get-intrinsic/LICENSE | B1 |
+| get-nonce | 1.0.1 | MIT | node_modules/.pnpm/get-nonce@1.0.1/node_modules/get-nonce/LICENSE | B1 |
 | get-proto | 1.0.1 | MIT | node_modules/.pnpm/get-proto@1.0.1/node_modules/get-proto/LICENSE | B1 |
 | glob | 13.0.6 | BlueOak-1.0.0 | node_modules/.pnpm/glob@13.0.6/node_modules/glob/LICENSE.md | B1 |
 | glob-parent | 6.0.2 | ISC | node_modules/.pnpm/glob-parent@6.0.2/node_modules/glob-parent/LICENSE | B1 |
 | globals | 14.0.0 | MIT | node_modules/.pnpm/globals@14.0.0/node_modules/globals/license | B1 |
 | gopd | 1.2.0 | MIT | node_modules/.pnpm/gopd@1.2.0/node_modules/gopd/LICENSE | B1 |
+| graceful-fs | 4.2.11 | ISC | node_modules/.pnpm/graceful-fs@4.2.11/node_modules/graceful-fs/LICENSE | B1 |
 | happy-dom | 20.14.0 | MIT | node_modules/.pnpm/happy-dom@20.14.0/node_modules/happy-dom/LICENSE | B1 |
 | has-flag | 4.0.0 | MIT | node_modules/.pnpm/has-flag@4.0.0/node_modules/has-flag/license | B1 |
 | has-symbols | 1.1.0 | MIT | node_modules/.pnpm/has-symbols@1.1.0/node_modules/has-symbols/LICENSE | B1 |
@@ -477,6 +566,7 @@
 | is-regex | 1.2.1 | MIT | node_modules/.pnpm/is-regex@1.2.1/node_modules/is-regex/LICENSE | B1 |
 | is-wsl | 3.1.1 | MIT | node_modules/.pnpm/is-wsl@3.1.1/node_modules/is-wsl/license | B1 |
 | isexe | 2.0.0 | ISC | node_modules/.pnpm/isexe@2.0.0/node_modules/isexe/LICENSE | B1 |
+| jiti | 2.7.0 | MIT | node_modules/.pnpm/jiti@2.7.0/node_modules/jiti/LICENSE | B1 |
 | js-beautify | 2.0.3 | MIT | node_modules/.pnpm/js-beautify@2.0.3/node_modules/js-beautify/LICENSE | B1 |
 | js-cookie | 3.0.8 | MIT | node_modules/.pnpm/js-cookie@3.0.8/node_modules/js-cookie/LICENSE | B1 |
 | js-stringify | 1.0.2 | MIT | node_modules/.pnpm/js-stringify@1.0.2/node_modules/js-stringify/LICENSE | B1 |
@@ -487,21 +577,32 @@
 | json-stable-stringify-without-jsonify | 1.0.1 | MIT | node_modules/.pnpm/json-stable-stringify-without-jsonify@1.0.1/node_modules/json-stable-stringify-without-jsonify/LICENSE | B1 |
 | json2mq | 0.2.0 | MIT | node_modules/.pnpm/json2mq@0.2.0/node_modules/json2mq/LICENSE | B1 |
 | json5 | 2.2.3 | MIT | node_modules/.pnpm/json5@2.2.3/node_modules/json5/LICENSE.md | B1 |
-| jsonc-parser | 3.3.1 | MIT | node_modules/.pnpm/jsonc-parser@3.3.1/node_modules/jsonc-parser/LICENSE.md | B1 |
 | jstransformer | 1.0.0 | MIT | node_modules/.pnpm/jstransformer@1.0.0/node_modules/jstransformer/LICENSE.md | B1 |
 | keyv | 4.5.4 | MIT† | （包内无 LICENSE 文件） | B2 |
 | levn | 0.4.1 | MIT | node_modules/.pnpm/levn@0.4.1/node_modules/levn/LICENSE | B1 |
+| lightningcss | 1.32.0 | MPL-2.0 | node_modules/.pnpm/lightningcss@1.32.0/node_modules/lightningcss/LICENSE | B1 |
 | lightningcss | 1.33.0 | MPL-2.0 | node_modules/.pnpm/lightningcss@1.33.0/node_modules/lightningcss/LICENSE | B1 |
+| lightningcss-android-arm64 | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-android-arm64 | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-darwin-arm64 | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-darwin-arm64 | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-darwin-x64 | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-darwin-x64 | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-freebsd-x64 | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-freebsd-x64 | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-linux-arm-gnueabihf | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-linux-arm-gnueabihf | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-linux-arm64-gnu | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-linux-arm64-gnu | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-linux-arm64-musl | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-linux-arm64-musl | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-linux-x64-gnu | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-linux-x64-gnu | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-linux-x64-musl | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-linux-x64-musl | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-win32-arm64-msvc | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-win32-arm64-msvc | 1.33.0 | MPL-2.0* | (未安装) | B3 |
+| lightningcss-win32-x64-msvc | 1.32.0 | MPL-2.0* | (未安装) | B3 |
 | lightningcss-win32-x64-msvc | 1.33.0 | MPL-2.0* | (未安装) | B3 |
 | locate-path | 6.0.0 | MIT | node_modules/.pnpm/locate-path@6.0.0/node_modules/locate-path/license | B1 |
 | lodash | 4.18.1 | MIT | node_modules/.pnpm/lodash@4.18.1/node_modules/lodash/LICENSE | B1 |
@@ -512,6 +613,7 @@
 | lru-cache | 11.5.2 | BlueOak-1.0.0 | node_modules/.pnpm/lru-cache@11.5.2/node_modules/lru-cache/LICENSE.md | B1 |
 | lru-cache | 5.1.1 | ISC | node_modules/.pnpm/lru-cache@5.1.1/node_modules/lru-cache/LICENSE | B1 |
 | lru-cache | 8.0.5 | ISC | node_modules/.pnpm/lru-cache@8.0.5/node_modules/lru-cache/LICENSE | B1 |
+| lucide-react | 1.66.0 | ISC | node_modules/.pnpm/lucide-react@1.66.0_@types+react@19.2.18_react@18.3.1/node_modules/lucide-react/LICENSE | B1 |
 | lz-string | 1.5.0 | MIT | node_modules/.pnpm/lz-string@1.5.0/node_modules/lz-string/LICENSE | B1 |
 | magic-string | 0.30.21 | MIT | node_modules/.pnpm/magic-string@0.30.21/node_modules/magic-string/LICENSE | B1 |
 | magic-string | 1.2.3 | MIT | node_modules/.pnpm/magic-string@1.2.3/node_modules/magic-string/LICENSE | B1 |
@@ -563,6 +665,7 @@
 | pug-strip-comments | 2.0.0 | MIT | node_modules/.pnpm/pug-strip-comments@2.0.0/node_modules/pug-strip-comments/LICENSE.md | B1 |
 | pug-walk | 2.0.0 | MIT | node_modules/.pnpm/pug-walk@2.0.0/node_modules/pug-walk/LICENSE | B1 |
 | punycode | 2.3.1 | MIT | node_modules/.pnpm/punycode@2.3.1/node_modules/punycode/LICENSE-MIT.txt | B1 |
+| radix-ui | 1.8.1 | MIT | node_modules/.pnpm/radix-ui@1.8.1_@types+react@19.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/radix-ui/LICENSE | B1 |
 | rc-cascader | 3.34.0 | MIT | node_modules/.pnpm/rc-cascader@3.34.0_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/rc-cascader/LICENSE.md | B1 |
 | rc-checkbox | 3.5.0 | MIT | node_modules/.pnpm/rc-checkbox@3.5.0_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/rc-checkbox/LICENSE.md | B1 |
 | rc-collapse | 3.9.0 | MIT | node_modules/.pnpm/rc-collapse@3.9.0_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/rc-collapse/LICENSE.md | B1 |
@@ -603,6 +706,9 @@
 | react-dom | 18.3.1 | MIT | node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/LICENSE | B1 |
 | react-is | 17.0.2 | MIT | node_modules/.pnpm/react-is@17.0.2/node_modules/react-is/LICENSE | B1 |
 | react-is | 18.3.1 | MIT | node_modules/.pnpm/react-is@18.3.1/node_modules/react-is/LICENSE | B1 |
+| react-remove-scroll | 2.7.2 | MIT | node_modules/.pnpm/react-remove-scroll@2.7.2_@types+react@19.2.18_react@18.3.1/node_modules/react-remove-scroll/LICENSE | B1 |
+| react-remove-scroll-bar | 2.3.8 | MIT† | （包内无 LICENSE 文件） | B2 |
+| react-style-singleton | 2.2.3 | MIT | node_modules/.pnpm/react-style-singleton@2.2.3_@types+react@19.2.18_react@18.3.1/node_modules/react-style-singleton/LICENSE | B1 |
 | recast | 0.23.21 | MIT | node_modules/.pnpm/recast@0.23.21/node_modules/recast/LICENSE | B1 |
 | redent | 3.0.0 | MIT | node_modules/.pnpm/redent@3.0.0/node_modules/redent/license | B1 |
 | resize-observer-polyfill | 1.5.1 | MIT | node_modules/.pnpm/resize-observer-polyfill@1.5.1/node_modules/resize-observer-polyfill/LICENSE | B1 |
@@ -621,7 +727,6 @@
 | shebang-regex | 3.0.0 | MIT | node_modules/.pnpm/shebang-regex@3.0.0/node_modules/shebang-regex/license | B1 |
 | siginfo | 2.0.0 | ISC | node_modules/.pnpm/siginfo@2.0.0/node_modules/siginfo/LICENSE | B1 |
 | source-map | 0.6.1 | BSD-3-Clause | node_modules/.pnpm/source-map@0.6.1/node_modules/source-map/LICENSE | B1 |
-| source-map-js | 1.2.1 | BSD-3-Clause | node_modules/.pnpm/source-map-js@1.2.1/node_modules/source-map-js/LICENSE | B1 |
 | stackback | 0.0.2 | MIT† | （包内无 LICENSE 文件） | B2 |
 | std-env | 3.10.0 | MIT | node_modules/.pnpm/std-env@3.10.0/node_modules/std-env/LICENCE | B1 |
 | storybook | 10.6.0 | MIT† | （包内无 LICENSE 文件） | B2 |
@@ -634,6 +739,9 @@
 | supports-color | 7.2.0 | MIT | node_modules/.pnpm/supports-color@7.2.0/node_modules/supports-color/license | B1 |
 | supports-preserve-symlinks-flag | 1.0.0 | MIT | node_modules/.pnpm/supports-preserve-symlinks-flag@1.0.0/node_modules/supports-preserve-symlinks-flag/LICENSE | B1 |
 | tagged-tag | 1.0.0 | MIT | node_modules/.pnpm/tagged-tag@1.0.0/node_modules/tagged-tag/license | B1 |
+| tailwind-merge | 3.7.0 | MIT | node_modules/.pnpm/tailwind-merge@3.7.0/node_modules/tailwind-merge/LICENSE.md | B1 |
+| tailwindcss | 4.3.3 | MIT | node_modules/.pnpm/tailwindcss@4.3.3/node_modules/tailwindcss/LICENSE | B1 |
+| tapable | 2.3.3 | MIT | node_modules/.pnpm/tapable@2.3.3/node_modules/tapable/LICENSE | B1 |
 | throttle-debounce | 5.0.2 | MIT | node_modules/.pnpm/throttle-debounce@5.0.2/node_modules/throttle-debounce/LICENSE.md | B1 |
 | tiny-invariant | 1.3.3 | MIT | node_modules/.pnpm/tiny-invariant@1.3.3/node_modules/tiny-invariant/LICENSE | B1 |
 | tinybench | 2.9.0 | MIT | node_modules/.pnpm/tinybench@2.9.0/node_modules/tinybench/LICENSE | B1 |
@@ -651,17 +759,19 @@
 | ts-map | 1.0.3 | MIT | node_modules/.pnpm/ts-map@1.0.3/node_modules/ts-map/LICENCE | B1 |
 | tsconfig-paths | 4.2.0 | MIT | node_modules/.pnpm/tsconfig-paths@4.2.0/node_modules/tsconfig-paths/LICENSE | B1 |
 | tslib | 2.8.1 | 0BSD | node_modules/.pnpm/tslib@2.8.1/node_modules/tslib/LICENSE.txt | B1 |
+| tw-animate-css | 1.4.0 | MIT | node_modules/.pnpm/tw-animate-css@1.4.0/node_modules/tw-animate-css/LICENSE | B1 |
 | type-check | 0.4.0 | MIT | node_modules/.pnpm/type-check@0.4.0/node_modules/type-check/LICENSE | B1 |
 | type-fest | 5.9.0 | CC0-1.0 | node_modules/.pnpm/type-fest@5.9.0/node_modules/type-fest/license-cc0 | B1 |
-| typescript | 5.9.3 | Apache-2.0 | node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/LICENSE.txt | B1 |
-| typescript-eslint | 8.68.0 | MIT | node_modules/.pnpm/typescript-eslint@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/typescript-eslint/LICENSE | B1 |
+| typescript-eslint | 8.68.0 | MIT | node_modules/.pnpm/typescript-eslint@8.68.0_eslint@9.39.5_jiti@2.7.0__typescript@5.9.3/node_modules/typescript-eslint/LICENSE | B1 |
 | undici-types | 6.21.0 | MIT | node_modules/.pnpm/undici-types@6.21.0/node_modules/undici-types/LICENSE | B1 |
 | unplugin | 2.3.11 | MIT | node_modules/.pnpm/unplugin@2.3.11/node_modules/unplugin/LICENSE | B1 |
 | update-browserslist-db | 1.3.2 | MIT | node_modules/.pnpm/update-browserslist-db@1.3.2_browserslist@4.28.9/node_modules/update-browserslist-db/LICENSE | B1 |
 | uri-js | 4.4.1 | BSD-2-Clause | node_modules/.pnpm/uri-js@4.4.1/node_modules/uri-js/LICENSE | B1 |
+| use-callback-ref | 1.3.3 | MIT | node_modules/.pnpm/use-callback-ref@1.3.3_@types+react@19.2.18_react@18.3.1/node_modules/use-callback-ref/LICENSE | B1 |
+| use-sidecar | 1.1.3 | MIT | node_modules/.pnpm/use-sidecar@1.1.3_@types+react@19.2.18_react@18.3.1/node_modules/use-sidecar/LICENSE | B1 |
 | use-sync-external-store | 1.6.0 | MIT | node_modules/.pnpm/use-sync-external-store@1.6.0_react@18.3.1/node_modules/use-sync-external-store/LICENSE | B1 |
 | vite | 5.4.21 | MIT | node_modules/.pnpm/vite@5.4.21_@types+node@22.20.1_lightningcss@1.33.0/node_modules/vite/LICENSE.md | B1 |
-| vite | 8.2.2 | MIT | node_modules/.pnpm/vite@8.2.2_@types+node@22.20.1_esbuild@0.28.2/node_modules/vite/LICENSE.md | B1 |
+| vite | 8.2.2 | MIT | node_modules/.pnpm/vite@8.2.2_@types+node@22.20.1_esbuild@0.28.2_jiti@2.7.0/node_modules/vite/LICENSE.md | B1 |
 | vite-node | 2.1.9 | MIT | node_modules/.pnpm/vite-node@2.1.9_@types+node@22.20.1_lightningcss@1.33.0/node_modules/vite-node/LICENSE | B1 |
 | vitest | 2.1.9 | MIT | node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1_happy-dom@20.14.0_lightningcss@1.33.0/node_modules/vitest/LICENSE.md | B1 |
 | void-elements | 3.1.0 | MIT | node_modules/.pnpm/void-elements@3.1.0/node_modules/void-elements/LICENSE | B1 |

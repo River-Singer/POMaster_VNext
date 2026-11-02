@@ -110,7 +110,7 @@ describe("studio-react design-tokens 对照页 · 生成器契约（R2/R3）", (
     }
   });
 
-  it("generateAll 分母随动：68 组件 + 1 对照页 = 69（foundations/design-tokens 产物在座）", () => {
+  it("generateAll 分母随动：68 组件 + 1 对照页 + 9 规范页 = 78（foundations/design-tokens 产物在座）", () => {
     const out = tempRoot("all");
     try {
       const counts = generateAll(out);
@@ -118,8 +118,9 @@ describe("studio-react design-tokens 对照页 · 生成器契约（R2/R3）", (
       expect(counts.foundations).toBe(1);
       expect(counts.tokenValues).toBe(44);
       expect(counts.tokenUnknowns).toBe(14);
+      expect(counts.standard).toBe(9);
       const tree = snapshotTree(out);
-      expect(tree.size).toBe(69);
+      expect(tree.size).toBe(78);
       expect(
         [...tree.keys()].some((path) =>
           path.split("\\").join("/").includes("foundations/DesignTokens.stories.tsx"),

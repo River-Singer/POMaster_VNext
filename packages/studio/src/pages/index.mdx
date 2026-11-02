@@ -47,12 +47,13 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 `packages/studio-react` 是独立 Storybook 实例（`@storybook/react-vite` + antd 5.x）：
 与 antdv 4.2.6 同设计系统的 React 活跃端，组件族清单与 Vue 侧对齐、逐页标注
-「Vue 对应件」做对照浏览。geist 官方 npm 包零 React 组件、社区库已归档——
-React 侧不建 geist 渲染实例，仅设诚实说明页（见该实例「Foundations/Geist」）。
+「Vue 对应件」做对照浏览。它的侧栏最上方是 React 栈的「规范」分区：Vercel Geist 预设
+（`packages/cli/seeds/design-standards/geist.yaml`），示例用按 Geist 主题着色的
+shadcn/ui + Tailwind CSS 4 实时渲染——Vercel 的官方 Geist 组件包没有公开发布，见该实例「Foundations/Geist」。
 
 ```bash
 corepack pnpm studio:dev        # Vue 主实例（本画廊，端口 6006）
-corepack pnpm studio:react:dev  # React sidecar（antd 对照，端口 6007）
+corepack pnpm studio:react:dev  # React sidecar（Geist 规范 + antd 对照，端口 6007）
 ```
 
 ## 生成器纪律
@@ -70,6 +71,6 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照，端口 6007）
 
 - archetype 是语义构件非可渲染组件——画廊以 MDX 语义卡呈现（Storybook MDX 实现
   是 React-only，Vue 实体只出现在 story 侧）。
-- geist 是 React 设计系统、无 Vue 组件库本体——只能做 foundations/token 呈现与
-  官方站参照，见「Foundations/Geist」页。
+- geist 是 React 设计系统、无 Vue 组件库本体——Vue 画廊只做 foundations/token 呈现与
+  官方站参照，见「Foundations/Geist」页；Geist 规范页在 React 画廊。
 - 业务组件/业务实体零出现；发现疑似业务面内容请按宪法 §32 冲突报告通路上报，不静默。

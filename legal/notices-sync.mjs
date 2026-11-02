@@ -184,6 +184,7 @@ const FAMILY_MAIN = [
   ["@oxc-parser/binding-", "oxc-parser"],
   ["@oxc-resolver/binding-", "oxc-resolver"],
   ["@rolldown/binding-", "rolldown"],
+  ["@tailwindcss/oxide-", "@tailwindcss/oxide"],
 ];
 
 /** B4 seed：未安装且无同族锚点的包 → registry license id。

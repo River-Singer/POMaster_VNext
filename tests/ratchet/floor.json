@@ -827,6 +827,14 @@
         "layer": "L1",
         "note": "D1a：规范分区真实挂载——逐领域与逐规则挂载生成 story，实时示例全部渲染、无错误边界、无未解析组件。无域（生成器契约面）。"
       },
+      "packages/studio-react/tests/standard.spec.ts": {
+        "layer": "L1",
+        "note": "R1：React 画廊规范分区（Vercel Geist 预设）生成器——页面与 AI 孪生同源同指纹、孪生新鲜度、与 CLI 归一化逐条对账、实时示例组件登记。无域（生成器契约面）。"
+      },
+      "packages/studio-react/tests/standard-mount.spec.ts": {
+        "layer": "L1",
+        "note": "R1：React 画廊规范分区真实挂载——逐领域与逐规则挂载生成 story，jsx 实时示例全部渲染在 .geist-root 里、无错误边界、无 React 报错。无域（生成器契约面）。"
+      },
       "packages/gauntlet-lite/test/typecheck-lint-adapter.spec.ts": {
         "layer": "L1"
       },

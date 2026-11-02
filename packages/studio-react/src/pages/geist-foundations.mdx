@@ -1,36 +1,43 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 
-<Meta title="Foundations/Geist（诚实说明）" />
+<Meta title="Foundations/Geist（说明）" />
 
-# Foundations：Geist——为什么 React sidecar 也没有渲染实例
+# Foundations：Geist 在 React 画廊里怎么呈现
 
-> **NON-AUTHORITATIVE** — 本页为边界诚实说明，非规范文本。
-> 权威源：`.trellis/tasks/09-06-studio-depth-react-geist-mapping/research/geist-react-surface.md`
-> （2026-09-06/07 npm registry + GitHub API + unpkg + vercel.com/geist 实抓）。
+> 本页说明 Geist 规范页用的组件从哪来、哪些是近似。规则本身在侧栏最上方的「规范」分区，
+> 规范源是 `packages/cli/seeds/design-standards/geist.yaml`。
 
-## 结论（S2 二次裁定的事实基础）
+## 选型（项目决策 D-S9）
 
-**官方 Geist 没有可引用的 React 组件**——本 React sidecar 因此不建 geist 渲染实例：
+React 栈的设计体系是 Vercel Geist，组件用 **shadcn/ui + Tailwind CSS 4**，图标用 **lucide-react**。
+这是项目的选型决策（D-S9），不是从 Geist 的参照里推出来的；摘要见 `docs/design-standard.md`。
 
-1. **官方 `geist` npm 包是纯字体分发**（v1.7.2，SIL OFL）：完整 exports 面仅 6 条
-   字体导出（font/sans/mono/pixel 系），React 组件数 = **0**；且字体加载器
-   peer 锁 `next >= 13.2.0`——纯 Vite React 环境连字体组件都不可经官方包使用。
-2. **vercel.com/geist 文档站 72 个组件全部无公开分发渠道**：文档站无任何 npm install
-   指令；`@vercel/geist-icons` npm 404；Vercel org 下 geist 相关 repo 仅字体项目——
-   判定为 Vercel 内部实现，外界不可引用。
-3. **社区 `@geist-ui/core` 不做底座**：GitHub 已正式归档（archived: true）、npm 停更
-   2022-03、文档站 404 下线、与现行官方 Geist token 体系不同代——不建死库仿制。
+## 为什么不是 Geist 官方组件
 
-## 本画廊对 Geist 的既有呈现（不动）
+1. **官方 Geist 组件包没有公开发布**：`@vercel/geistcn` 与图标包 `@vercel/geistcn-assets` 在 npm 上都查不到
+   （2026-11 核实）。公开后再评估替换，规范源里的 `ICON.LIBRARY` 已登记这个待替换项。
+2. **官方 `geist` npm 包只分发字体**，且字体加载器依赖 Next.js；本画廊改从 Google Fonts 加载
+   Geist 与 Geist Mono（字重 400–600），见 `.storybook/preview-head.html`。
+3. **社区 `@geist-ui/core` 已归档**，与现行 Geist 不同代，不用。
 
-- **Vue 主实例 foundations 增强页**：词表（70 组件清单）/Button variant 词表/
-  Best Practices 锚点——见主实例「Foundations/Geist（官方站参照）」页；
-- **字体**：真实消费走社区 fontsource 自托管方案（`@fontsource-variable/geist`，
-  MIT、框架无关）——属项目 design token 分层的 Owner 决策面，画廊不代选。
+## 哪些是近似
 
-## 边界纪律
+| 方面 | 本画廊的做法 | 与官方的关系 |
+| --- | --- | --- |
+| 颜色 | shadcn/ui neutral 主题的成对变量（`src/styles/geist.css`） | 近似：拿到 Geist 官方色板后替换 |
+| 排版 | `text-heading-*` / `text-button-*` / `text-label-*` / `text-copy-*` | 类名与字号取自 Geist 官方排版页；行高、字重、字距官方未公开，是规范里的项目决策位 |
+| 圆角 | 小件 6px、卡片 12px、浮层按材质分档 | 取自 Geist 官方材质页 |
+| 栅格 | 12 / 6 / 4 列 | 取自 Geist 官方栅格页 |
+| 间距 | Tailwind 4 的 0.25rem 阶梯 | Geist 没有公开间距 foundation，用 Tailwind 阶梯 |
+| 组件 | shadcn/ui 源码（`src/components/ui/`） | 外观按上面的主题变量走，不是 Geist 官方组件 |
 
-- 本 sidecar 的 React 渲染面 = **antd（React 原版）**——与 antdv 同设计系统两端，
-  承担「React 大件」的真实渲染；不得由此声称「渲染了 Geist 组件」。
-- Geist 为设计体系参照而非实现依赖——不得由 geist 参照推断框架、UI 组件库或
-  CSS 方案选型（overlay 引用纪律同 Vue 主实例）。
+## 与 antd 页同处一个 Storybook
+
+本实例同时渲染 antd 组件页（与 Vue 画廊对照浏览）。Tailwind 不加全局 preflight，只在 `.geist-root`
+里生效；antd 的 reset.css 放进最低的 CSS 层，免得它的元素选择器压过 Tailwind 工具类。两边互不影响，
+层序见 `.storybook/preview.css`。
+
+## 引用纪律
+
+- 本页和 Vue 画廊的「Foundations/Geist（官方站参照）」页一样，只说明来源，不是规范文本；规则以规范分区为准。
+- 引用 Geist 官方站的数值要带核实日期（规范源 `sources` 里的 `retrieved`），过期重新核实。

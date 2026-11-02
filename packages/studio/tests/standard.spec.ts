@@ -84,6 +84,7 @@ describe("规范分区 · 装载模型", () => {
             title_zh: example.title_zh,
             note_zh: example.note_zh,
             template: example.template,
+            jsx: example.jsx,
             code: example.code,
             lang: example.lang,
           })),

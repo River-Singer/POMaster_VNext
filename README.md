@@ -25,7 +25,7 @@ POMaster 把「软件项目当前可信的状态」当作一等公民来管理�
 
 「有哪些组件、长什么样、该写什么」一页可览——**41 张 archetype 语义卡**（页面/组件/后端/数据/运行时的标准件：职责、何时用、组合方式、研究锚，附「建议组件组合」逐条溯源映射）+ **71 个 ant-design-vue 组件真渲染（178 个 stories：默认形态 + disabled/loading/size/变体交互态矩阵）** + **18 页 overlay 能力清单** + foundations 边界页 + **Database Struct 占位分区**（该写什么：数据与事务主题 MUST/Checklist + baseline data 面导航——业务实体走 New Entity Gate，画廊不预置）。画廊全部由生成器从既有锚定物料**只读渲染**：不新增规范物料、不预置业务实体，页头自带 NON-AUTHORITATIVE 声明。
 
-另有 **React sidecar**（`packages/studio-react`，`corepack pnpm studio:react:dev`，端口 6007）：`antd@5.x` 真渲染，与 antdv 同设计系统两端逐族对齐、标注「Vue 对应件」对照浏览；geist 官方包零可渲染组件（诚实说明页在座）——「React 大件」由同设计系统活跃端承担。
+另有 **React sidecar**（`packages/studio-react`，`corepack pnpm studio:react:dev`，端口 6007）：`antd@5.x` 真渲染，与 antdv 同设计系统两端逐族对齐、标注「Vue 对应件」对照浏览；侧栏最上方是 React 栈的「规范」分区（Vercel Geist 预设，shadcn/ui + Tailwind CSS 4 实时渲染示例，见 `docs/design-standard.md`）。Vercel 的官方 Geist 组件包没有公开发布，示例组件是按 Geist 主题着色的 shadcn/ui。
 
 ![POMaster 组件画廊总览：五类页面构成与生成器纪律](docs/assets/studio/overview.png)
 
@@ -37,7 +37,7 @@ POMaster 把「软件项目当前可信的状态」当作一等公民来管理�
 
 ```bash
 corepack pnpm studio:dev        # Vue 主实例（生成产物自动重建）
-corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 6007）
+corepack pnpm studio:react:dev  # React sidecar（Geist 规范 + antd 对照浏览，端口 6007）
 ```
 
 - **在线版**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（GitHub Pages，push 到 main 自动发布）
@@ -348,7 +348,7 @@ pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
 pomaster scaffold validate/confirm/status/plan/generate/check   # check = 一致性门禁（规格治理 / 受管文件被手改或删除 / 已确认规格比上次生成新 / KEYBINDING 缺失 → 阻断；手工迁移只警告），closeout 与 check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；plan / generate = 只按已确认规格生成受管文件（数据库层：Flyway 迁移只追加，需要数据迁移的变化拒绝；授权脚本随规格更新），生成清单 .pomaster/scaffold/generation-manifest.json 记账，受管文件登记 KEYBINDING——活跃执行期内手改由 exec-guard 拦下，手改过的文件拒绝覆盖；confirm = Owner 确认 .pomaster/scaffold/domain-spec.yaml（--by human:<owner>；确认后语义变化即漂移，重确认只走 --change <CHANGE.*>，closeout 阻断 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT）；status = 规格治理态；validate <spec> = 脚手架领域规格校验（pomaster.domain-spec/v1）：原型须在 catalog、暴露操作须在后端原型清单内；admin（管理侧 / 内网）与 public（用户侧 / 外网）两个部署面——用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出归一化摘要（表名 / 类名 / 路径 / 权限码 / 分页档），只读
-pomaster design validate/show   # 前端设计规范（pomaster.design-standard/v1，Storybook「规范」分区的结构化源）：validate 闭世界校验——定值须带登记过的出处、token 引用须存在、硬规范锚点须逐字在原文里、门禁规则的检查须在词表内、实时示例只能引用已定的值；show 按领域 / 规则输出已解析的规范给 AI 读（--json 结构化全量），与 Storybook 规范页、AI 孪生同指纹；只读，未 init 用工具预设
+pomaster design validate/show   # 前端设计规范（pomaster.design-standard/v1，Storybook「规范」分区的结构化源）：validate 闭世界校验——定值须带登记过的出处、token 引用须存在、硬规范锚点须逐字在原文里、门禁规则的检查须在词表内、实时示例只能引用已定的值；show 按领域 / 规则输出已解析的规范给 AI 读（--json 结构化全量），与 Storybook 规范页、AI 孪生同指纹；只读，未 init 用工具预设（`--system antd|geist` 选 Vue / React 体系）
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement
 pomaster agents status/dispatch-pack

@@ -20,6 +20,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateDesignTokensStory } from "../packages/studio-react/scripts/lib/generate-design-tokens-story.mjs";
 import {
+  generateStandardPagesReact,
+  loadGeistModel,
+} from "../packages/studio-react/scripts/lib/standard.mjs";
+import {
   ALIGNED_FAMILY_COUNT,
   generateReactStories,
 } from "../packages/studio-react/scripts/lib/generate-react-stories.mjs";
@@ -29,8 +33,16 @@ const generatedDir = join(here, "..", "packages", "studio-react", "generated");
 const reactComponentsDir = join(generatedDir, "components");
 const foundationsDir = join(generatedDir, "foundations");
 const designTokensStoryPath = join(foundationsDir, "DesignTokens.stories.tsx");
+const standardDir = join(generatedDir, "standard");
 
 export default function setupStudioReactGenerated() {
+  // 规范页（Geist 预设）每次无条件重建：规范源改动必须立刻反映到挂载测试
+  // （standard-mount.spec 的 import.meta.glob 同样在 transform 期枚举候选文件）。
+  const standard = generateStandardPagesReact(standardDir, loadGeistModel());
+  console.log(
+    `[vitest-react-setup] studio-react 规范页重建：stories=${standard.count}（${standard.areas} 个领域 ${standard.rules} 条规则）`,
+  );
+
   let present = 0;
   if (existsSync(reactComponentsDir)) {
     present = readdirSync(reactComponentsDir).filter((f) =>
