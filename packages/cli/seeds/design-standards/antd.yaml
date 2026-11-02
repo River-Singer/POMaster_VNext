@@ -95,9 +95,84 @@ sources:
     retrieved: 2026-11-02
     note_zh: 不是外部权威，是为了全站一致而做的预设选择；项目可以改
 
+  SRC.ANTD.SPEC.FEEDBACK:
+    title_zh: Ant Design 设计规范 · 反馈
+    url: https://ant.design/docs/spec/feedback-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DATA_ENTRY:
+    title_zh: Ant Design 设计规范 · 数据录入
+    url: https://ant.design/docs/spec/data-entry.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DATA_DISPLAY:
+    title_zh: Ant Design 设计规范 · 数据展示
+    url: https://ant.design/docs/spec/data-display-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DATA_FORMAT:
+    title_zh: Ant Design 设计规范 · 数据格式
+    url: https://ant.design/docs/spec/data-format-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.COPYWRITING:
+    title_zh: Ant Design 设计规范 · 文案
+    url: https://ant.design/docs/spec/copywriting-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.BUTTONS:
+    title_zh: Ant Design 设计规范 · 按钮
+    url: https://ant.design/docs/spec/buttons-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DATA_LIST:
+    title_zh: Ant Design 设计规范 · 数据列表
+    url: https://ant.design/docs/spec/data-list-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.ALIGNMENT:
+    title_zh: Ant Design 设计原则 · 对齐
+    url: https://ant.design/docs/spec/alignment
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.CONTRAST:
+    title_zh: Ant Design 设计原则 · 对比
+    url: https://ant.design/docs/spec/contrast.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.REPETITION:
+    title_zh: Ant Design 设计原则 · 重复
+    url: https://ant.design/docs/spec/repetition
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DIRECT:
+    title_zh: Ant Design 设计原则 · 直截了当
+    url: https://ant.design/docs/spec/direct.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.STAY:
+    title_zh: Ant Design 设计原则 · 足不出户
+    url: https://ant.design/docs/spec/stay.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.LIGHTWEIGHT:
+    title_zh: Ant Design 设计原则 · 简化交互
+    url: https://ant.design/docs/spec/lightweight
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.INVITATION:
+    title_zh: Ant Design 设计原则 · 提供邀请
+    url: https://ant.design/docs/spec/invitation
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.TRANSITION:
+    title_zh: Ant Design 设计原则 · 巧用过渡
+    url: https://ant.design/docs/spec/transition.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.REACTION:
+    title_zh: Ant Design 设计原则 · 即时反应
+    url: https://ant.design/docs/spec/reaction
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.DETAIL_PAGE:
+    title_zh: Ant Design 模板文档 · 详情页
+    url: https://ant.design/docs/spec/detail-page-cn.md
+    retrieved: 2026-11-02
+  SRC.ANTD.SPEC.VISUALIZATION:
+    title_zh: Ant Design 模板文档 · 数据可视化页
+    url: https://ant.design/docs/spec/visualization-page-cn
+    retrieved: 2026-11-02
+
 specs:
   ui: themes/ui-presentation-and-design.md
   page: themes/page-composition-and-browser-environment.md
+  i18n: themes/internationalization-and-copywriting.md
+  perf: themes/performance-and-capacity.md
 
 areas:
   # ───────────────────────────── 基础 · 布局 ─────────────────────────────
@@ -709,6 +784,141 @@ areas:
               <a-button shape="circle"><template #icon><ReloadOutlined /></template></a-button>
             lang: vue
 
+  # ─────────────────────────── 设计模式 · 全局规则 · 反馈 ───────────────────────────
+  - key: feedback
+    title_zh: 反馈
+    group: patterns.global
+    prefix: FEEDBACK
+    summary_zh: 按反馈的重要程度和用户是否需要处理来选提示方式；失败要给恢复动作；加载、空状态、部分成功各有固定做法。
+    rules:
+      - id: FEEDBACK.CHOOSE
+        title_zh: 按重要程度选提示方式
+        statement_zh: 操作结果轻、用户不必等待时用全局提示（顶部居中，约 3 秒自动消失）；重要且必须处理的才用对话框；系统主动推送的消息用通知提醒框（右上角）；需要在页面上常驻的说明用警告提示（不自动消失）；操作前的二次确认用贴着按钮的气泡确认框。能立刻看到结果的简单操作可以不提示，不要过度反馈。
+        params:
+          channels:
+            value: { 轻量结果: message 全局提示, 必须处理: modal 对话框, 系统推送: notification 通知提醒框, 页面常驻说明: alert 警告提示, 操作前确认: popconfirm 气泡确认框 }
+            source: SRC.ANTD.SPEC.FEEDBACK
+            label_zh: 场景 → 提示方式
+          message_duration: { value: 3000, unit: ms, source: SRC.ANTD.SPEC.FEEDBACK, label_zh: 全局提示停留时长 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 页面常驻说明用警告提示
+            template: |-
+              <a-alert type="info" show-icon message="停用的车型不会出现在下单页，已有运单不受影响。" :style="{ maxWidth: '520px' }" />
+          - kind: do
+            title_zh: 轻量结果用全局提示
+            code: |-
+              message.success(t('vehicleModel.saved'))   // 「车型已保存」，约 3 秒后自动消失
+            lang: ts
+
+      - id: FEEDBACK.FAILURE
+        title_zh: 失败要留得住、给出路
+        statement_zh: 重要的失败不用会自动消失的全局提示，用警告提示或对话框，写清发生了什么，并给出恢复动作（重试、下载错误明细、联系管理员）；权限不足、离线也一样要给恢复动作。
+        anchors:
+          - { spec: ui, quote: MUST NOT 错误通知自动消失且不可恢复（除非用户可重新查看）。 }
+          - { spec: page, quote: error、permission 和 offline 提供恢复动作。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 警告提示 + 恢复动作
+            template: |-
+              <a-alert type="error" show-icon message="导入失败：第 12 行车型编码 VM-001 已存在" :style="{ maxWidth: '560px' }">
+                <template #action><a-button size="small">下载错误明细</a-button></template>
+              </a-alert>
+          - kind: dont
+            title_zh: 3 秒后消失、没有下一步
+            code: |-
+              message.error('导入失败')
+            lang: ts
+
+      - id: FEEDBACK.LOADING
+        title_zh: 超过 2 秒的操作要有加载反馈
+        statement_zh: 预计超过约 2 秒的操作立即给出加载反馈：短的用加载态（按钮 loading、局部 Spin），长的用进度条并允许取消；首屏加载用骨架屏，骨架保持主要布局尺寸，加载完成后页面不跳动。
+        params:
+          threshold: { value: 2000, unit: ms, source: SRC.ANTD.SPEC.FEEDBACK, label_zh: 需要加载反馈的耗时 }
+        anchors:
+          - { spec: page, quote: 首屏骨架保持主要布局尺寸。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按钮加载态、进度条、骨架屏
+            template: |-
+              <div :style="{ display: 'flex', flexDirection: 'column', gap: t['spacing.lg'] + 'px', maxWidth: '420px' }">
+                <a-button type="primary" loading>正在保存</a-button>
+                <a-progress :percent="45" status="active" />
+                <a-skeleton active :paragraph="{ rows: 2 }" />
+              </div>
+
+      - id: FEEDBACK.FIELD_ERROR
+        title_zh: 字段错误贴着字段、不消失
+        statement_zh: 校验错误显示在对应字段下方，用文字说明怎么改，用户修改前不消失；提交失败时页面顶部给出错误摘要并聚焦到第一个错误字段；不能只靠颜色、图标或全局提示表达字段错误；提交失败不清空已填内容。
+        anchors:
+          - { spec: ui, quote: 错误必须与字段关联，并以文本描述提供纠错建议；提交时提供错误摘要并聚焦第一个错误字段 }
+          - { spec: page, quote: MUST NOT 提交失败清空输入。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 错误文字贴着字段
+            template: |-
+              <a-form layout="horizontal" :label-col="{ span: 6 }" :wrapper-col="{ span: 14 }" :style="{ maxWidth: '520px' }">
+                <a-form-item label="车型编码" required validate-status="error" help="VM-001 已存在，换一个编码">
+                  <a-input value="VM-001" />
+                </a-form-item>
+              </a-form>
+
+      - id: FEEDBACK.EMPTY
+        title_zh: 空状态分清「没有数据」和「没有结果」
+        statement_zh: 还没有任何数据时，空状态引导第一步操作（如「新建车型」）；筛选或搜索没有结果时，说明没找到并提供「清除筛选」。两种情况文案和动作不同。
+        anchors:
+          - { spec: page, quote: empty 区分无数据与筛选无结果。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 还没有数据：引导第一步
+            template: |-
+              <a-empty description="还没有车型">
+                <a-button type="primary">新建车型</a-button>
+              </a-empty>
+          - kind: do
+            title_zh: 筛选无结果：提供清除筛选
+            template: |-
+              <a-empty description="没有符合条件的车型">
+                <a-button>清除筛选</a-button>
+              </a-empty>
+
+      - id: FEEDBACK.PARTIAL
+        title_zh: 部分成功要报数量和明细
+        statement_zh: 批量操作部分成功时，结果里写明成功、失败、跳过各多少条，并提供失败明细；不能只说「操作成功」或「操作失败」。
+        anchors:
+          - { spec: page, quote: partial success 提供成功/失败/跳过数量和明细。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 结果页写清三个数
+            template: |-
+              <a-result status="warning" title="导入完成，部分失败" sub-title="成功 120 条，失败 3 条，跳过 2 条">
+                <template #extra><a-button type="primary">下载失败明细</a-button></template>
+              </a-result>
+
+      - id: FEEDBACK.BADGE
+        title_zh: 徽标：重要用数字，次要用红点
+        statement_zh: 与用户强相关的重要信息（待审批数）用数字徽标，次要提醒用红点；有图标时放在图标右上角，没有图标时放在标题后。
+        params:
+          rule:
+            value: { 重要且与用户相关: 数字, 次要提醒: 红点 }
+            source: SRC.ANTD.SPEC.FEEDBACK
+            label_zh: 信息类型 → 徽标形式
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 数字与红点
+            template: |-
+              <div :style="{ display: 'flex', alignItems: 'center', gap: t['spacing.xxl'] + 'px', fontSize: t['typography.size.body_large'] + 'px' }">
+                <a-badge :count="5"><BellOutlined :style="{ fontSize: '20px' }" /></a-badge>
+                <a-badge dot><MailOutlined :style="{ fontSize: '20px' }" /></a-badge>
+              </div>
+
   # ─────────────────────────── 设计模式 · 全局规则 · 导航 ───────────────────────────
   - key: navigation
     title_zh: 导航
@@ -814,3 +1024,795 @@ areas:
             title_zh: 管理侧页码分页
             template: |-
               <a-pagination :total="1280" :page-size="p.admin_page_size" show-quick-jumper show-size-changer :page-size-options="[String(p.admin_page_size), '50', '100', String(p.admin_max_page_size)]" />
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 数据录入 ───────────────────────────
+  - key: data_entry
+    title_zh: 数据录入
+    group: patterns.global
+    prefix: ENTRY
+    summary_zh: 标签常驻可见、位置全系统一致；选择控件按选项数选；提示放对位置；校验分前后端；提交防重复且失败不丢输入。
+    rules:
+      - id: ENTRY.LABEL
+        title_zh: 每个输入都有常驻可见的标签
+        statement_zh: 每个输入都有常驻可见的标签，必填项有标记。管理侧表单默认标签在输入左侧、右对齐、带冒号；标签很长或界面是英文时放到输入上方；同一个系统只用一种。占位文字只是补充提示，不能代替标签。
+        surfaces: [admin]
+        params:
+          label_position: { value: 左侧，右对齐，带冒号, source: SRC.ANTD.SPEC.ALIGNMENT, label_zh: 标签位置 }
+        anchors:
+          - { spec: page, quote: 每个输入必须有持久可见且程序化关联的标签、格式说明和必要性提示；placeholder 不得替代标签。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标签在左、右对齐、带冒号
+            template: |-
+              <a-form layout="horizontal" :label-col="{ span: 6 }" :wrapper-col="{ span: 14 }" :style="{ maxWidth: '520px' }">
+                <a-form-item label="车型编码" required><a-input placeholder="如 VM-001" /></a-form-item>
+                <a-form-item label="车型名称" required><a-input /></a-form-item>
+                <a-form-item label="载重（吨）"><a-input-number :min="0" :style="{ width: '100%' }" /></a-form-item>
+              </a-form>
+          - kind: dont
+            title_zh: 只有占位文字，填了之后就不知道是什么
+            template: |-
+              <div :style="{ display: 'flex', flexDirection: 'column', gap: t['spacing.sm'] + 'px', maxWidth: '320px' }">
+                <a-input placeholder="车型编码" />
+                <a-input placeholder="车型名称" />
+              </div>
+
+      - id: ENTRY.CHOICE_CONTROL
+        title_zh: 选择控件按选项数选
+        statement_zh: 二选一、改了立即生效的用开关；选项多于 2 个、少于 5 个用单选按钮全部摆出来；多于 5 个用下拉选择；多选少量用复选框组，多了用多选下拉；需要精确数值时不用滑块，用数字输入。
+        params:
+          radio_range: { value: [3, 4], unit: count, source: SRC.ANTD.SPEC.DATA_ENTRY, label_zh: 单选按钮的选项数 }
+          select_above: { value: 5, unit: count, source: SRC.ANTD.SPEC.DATA_ENTRY, label_zh: 多于这个数用下拉 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 3 个选项用单选，选项多用下拉，即时生效用开关
+            template: |-
+              <div :style="{ display: 'flex', flexDirection: 'column', gap: t['spacing.lg'] + 'px', alignItems: 'flex-start' }">
+                <a-radio-group value="box" :options="[{ label: '厢式', value: 'box' }, { label: '平板', value: 'flat' }, { label: '冷藏', value: 'cold' }]" />
+                <a-select value="beijing" :style="{ width: '200px' }" :options="[{ label: '北京', value: 'beijing' }, { label: '上海', value: 'shanghai' }, { label: '广州', value: 'guangzhou' }, { label: '深圳', value: 'shenzhen' }, { label: '成都', value: 'chengdu' }, { label: '武汉', value: 'wuhan' }]" />
+                <a-switch checked checked-children="启用" un-checked-children="停用" />
+              </div>
+          - kind: dont
+            title_zh: 两个选项用下拉，多点一次还看不到全部
+            template: |-
+              <a-select value="enabled" :style="{ width: '200px' }" :options="[{ label: '启用', value: 'enabled' }, { label: '停用', value: 'disabled' }]" />
+
+      - id: ENTRY.SWITCH_IMMEDIATE
+        title_zh: 开关即时生效，不配保存按钮
+        statement_zh: 开关拨动即生效，旁边不放「保存」按钮，开关两侧文字写清当前状态（启用、停用）；需要和其他字段一起提交才生效的，用复选框。
+        params:
+          labels: { value: [启用, 停用], source: SRC.ANTD.SPEC.DATA_ENTRY, label_zh: 状态文字示例 }
+        enforcement: { kind: review }
+
+      - id: ENTRY.HINTS
+        title_zh: 提示放对位置
+        statement_zh: 短提示放在字段下方，不超过一句话；长说明收进字段旁的信息图标，悬停显示；收集身份证号、手机号等敏感信息时，写明为什么需要；能给合理默认值就给。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 字段下方一句话提示
+            template: |-
+              <a-form layout="horizontal" :label-col="{ span: 6 }" :wrapper-col="{ span: 14 }" :style="{ maxWidth: '520px' }">
+                <a-form-item label="联系电话" extra="用于司机到达前联系收货人，不会对外展示"><a-input /></a-form-item>
+              </a-form>
+
+      - id: ENTRY.VALIDATION
+        title_zh: 前端校格式，后端错误落到字段
+        statement_zh: 前端先校验格式（必填、长度、格式），后端返回的字段错误定位到对应字段并聚焦；提交中按钮进入加载态防止重复提交；提交失败保留已填内容。
+        anchors:
+          - { spec: page, quote: 前端先做格式校验，后端字段错误定位并聚焦字段。 }
+          - { spec: page, quote: 提交防重复并保留失败输入。 }
+        enforcement: { kind: review }
+
+      - id: ENTRY.UPLOAD
+        title_zh: 上传方式按文件类型选
+        statement_zh: 单个文件、不需要预览，用点击上传；图片用缩略图上传，达到数量上限后隐藏上传按钮；拖拽上传区写明允许的文件格式和大小，上传中显示进度。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 写明格式与大小
+            template: |-
+              <a-upload-dragger :before-upload="() => false" :style="{ maxWidth: '420px' }">
+                <p :style="{ margin: 0 }">点击或拖拽文件到这里上传</p>
+                <p :style="{ margin: 0, color: t['color.text.tertiary'] }">支持 xlsx，单个文件不超过 5 MB</p>
+              </a-upload-dragger>
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 数据展示 ───────────────────────────
+  - key: data_display
+    title_zh: 数据展示
+    group: patterns.global
+    prefix: DISPLAY
+    summary_zh: 表格列有稳定的类型、宽度与对齐；卡片一行最多 4 张；折叠、时间轴、轮播各有用法；每种展示都要设计超长与空数据。
+    rules:
+      - id: DISPLAY.TABLE_COLUMNS
+        title_zh: 表格列的类型、对齐与空值
+        statement_zh: 每列有稳定的 key、标题、值类型和宽度策略；时间、状态、操作列不换行；金额、数量右对齐，同列小数位一致，单位写在表头；空单元格显示「-」；长文本单行省略、悬停看全文。
+        params:
+          empty: { value: "-", source: SRC.ANTD.SPEC.DATA_DISPLAY, label_zh: 空值占位, note_zh: 数据格式页写的是「--」，全站只取一种，这里取「-」 }
+        anchors:
+          - { spec: ui, quote: 每列有稳定 key、标题、值类型、宽度策略、权限和导出规则。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 金额右对齐、单位在表头、空值用「-」
+            template: |-
+              <a-table size="small" :pagination="false" :style="{ maxWidth: '620px' }" row-key="code"
+                :columns="[
+                  { title: '车型编码', dataIndex: 'code', key: 'code', width: 110 },
+                  { title: '车型名称', dataIndex: 'name', key: 'name', ellipsis: true },
+                  { title: '运费（元）', dataIndex: 'fee', key: 'fee', align: 'right', width: 120 },
+                  { title: '状态', dataIndex: 'status', key: 'status', width: 80 }
+                ]"
+                :data-source="[
+                  { code: 'VM-001', name: '轻型厢式货车（国六，冷链改装版）', fee: '1,280.00', status: '启用' },
+                  { code: 'VM-002', name: '平板运输车', fee: '960.50', status: '启用' },
+                  { code: 'VM-003', name: '冷藏车', fee: p.empty, status: '停用' }
+                ]" />
+
+      - id: DISPLAY.CARD_GRID
+        title_zh: 卡片按栅格排，一行最多 4 张
+        statement_zh: 卡片用来把相关信息收拢成一块，按栅格排列，一行最多 4 张；卡片里的长文本截断，卡片之间间距一致。
+        params:
+          per_row_max: { value: 4, unit: count, source: SRC.ANTD.SPEC.DATA_DISPLAY, label_zh: 一行最多卡片数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 一行 4 张
+            template: |-
+              <a-row :gutter="16" :style="{ maxWidth: '760px' }">
+                <a-col v-for="n in p.per_row_max" :key="n" :span="24 / p.per_row_max">
+                  <a-card size="small" :title="'车型 ' + n">载重 1.5 吨</a-card>
+                </a-col>
+              </a-row>
+
+      - id: DISPLAY.COLLAPSE
+        title_zh: 长内容用折叠逐步展开
+        statement_zh: 长而不规则的内容用折叠面板逐步展开；各面板之间关系松散时用手风琴，一次只展开一个。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 手风琴
+            template: |-
+              <a-collapse accordion active-key="1" :style="{ maxWidth: '520px' }">
+                <a-collapse-panel key="1" header="规格参数">载重 1.5 吨，车厢长度 4.2 米。</a-collapse-panel>
+                <a-collapse-panel key="2" header="变更记录">2026-10-28 修改载重。</a-collapse-panel>
+              </a-collapse>
+
+      - id: DISPLAY.TIMELINE
+        title_zh: 时间轴最新的在上
+        statement_zh: 按时间记录的事件、任务用竖向时间轴，最新的在最上面。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 新的在上
+            template: |-
+              <a-timeline>
+                <a-timeline-item>2026-11-02 10:20 审核通过</a-timeline-item>
+                <a-timeline-item>2026-11-01 16:05 提交审核</a-timeline-item>
+                <a-timeline-item>2026-11-01 09:30 创建车型</a-timeline-item>
+              </a-timeline>
+
+      - id: DISPLAY.CAROUSEL
+        title_zh: 轮播 3 到 5 张
+        statement_zh: 轮播只放同级内容（图片、卡片），3 到 5 张，让用户看得出一共几张、往哪个方向切。管理侧工作页不用轮播。
+        params:
+          slides: { value: [3, 5], unit: count, source: SRC.ANTD.SPEC.DATA_DISPLAY, label_zh: 张数范围 }
+        enforcement: { kind: review }
+
+      - id: DISPLAY.EDGE_CASES
+        title_zh: 每种展示都设计超长和空数据
+        statement_zh: 每个展示组件都要设计两种边界情况：内容超长（截断、换行或展开）和没有数据（空状态）。按重要程度、使用频率和关联程度排列信息。
+        enforcement: { kind: review }
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 数据格式 ───────────────────────────
+  - key: data_format
+    title_zh: 数据格式
+    group: patterns.global
+    prefix: FORMAT
+    summary_zh: 数字、金额、日期时间、相对时间、脱敏各有固定格式，全部经格式化注册表输出，页面里不手拼。
+    rules:
+      - id: FORMAT.NUMBER
+        title_zh: 数字带千分位，单位小写
+        statement_zh: 数字默认带千分位；单位小写、紧跟数字（123,220kg）；比例用百分比（12.32%），进度用分数（12/30）；很大的数可以用「万」「亿」，不用「千」作单位；表格里的单位写在表头，不写在每个单元格。
+        params:
+          examples: { value: ['123,220kg', '12.32%', '12/30'], source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 写法示例 }
+          large_units: { value: [万, 亿], source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 可用的大数单位 }
+        enforcement: { kind: review }
+
+      - id: FORMAT.AMOUNT
+        title_zh: 金额用货币代码、两位小数、右对齐
+        statement_zh: 金额写成货币代码加数字（CNY 1,280.00），保留到分（两位小数），列表里右对齐并用等宽数字；货币代码用 ISO 4217，不在代码里写死 ¥、$ 符号；经格式化注册表输出。
+        params:
+          code: { value: CNY, source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 人民币代码 }
+          decimals: { value: 2, unit: count, source: SRC.POMASTER.PRESET, label_zh: 小数位 }
+        anchors:
+          - spec: i18n
+            quote: '货币代码使用 ISO 4217（`CNY`、`USD`、`EUR`）；禁止用 `$`、`￥` 符号硬编码。'
+        enforcement: { kind: gate, check: format.no-local-pattern }
+        examples:
+          - kind: do
+            title_zh: 经格式化注册表输出
+            code: |-
+              formatMoney(row.fee, { currency: 'CNY' })   // CNY 1,280.00
+            lang: ts
+          - kind: dont
+            title_zh: 页面里拼符号和小数
+            code: |-
+              '¥' + row.fee.toFixed(2)
+            lang: ts
+
+      - id: FORMAT.DATETIME
+        title_zh: 日期时间固定格式
+        statement_zh: 日期 YYYY-MM-DD，时间 24 小时制 HH:mm:ss，日期与时间之间一个空格；日期区间用「～」，两侧各一个空格；存储用 ISO 8601（UTC），显示按用户时区转换；全部经格式化注册表输出，页面里不手拼格式串。
+        params:
+          date: { value: YYYY-MM-DD, source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 日期 }
+          time: { value: "HH:mm:ss", source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 时间 }
+          datetime: { value: "YYYY-MM-DD HH:mm:ss", source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 日期时间 }
+          range_separator: { value: " ～ ", source: SRC.ANTD.SPEC.DATA_FORMAT, label_zh: 区间分隔 }
+        anchors:
+          - spec: i18n
+            quote: '日期、时间、相对时间通过 Formatter Registry 统一输出；禁止页面本地拼接 `YYYY-MM-DD` 或写死 "2 天前"。'
+          - { spec: i18n, quote: 存储时间使用 ISO 8601 / UTC；显示时间按用户 locale + 显式时区转换。 }
+        enforcement: { kind: gate, check: format.no-local-pattern }
+        examples:
+          - kind: do
+            title_zh: 注册表输出
+            code: |-
+              formatDateTime(row.updatedAt)              // 2026-11-02 14:08:00
+              formatDateRange(range.start, range.end)    // 2026-11-01 ～ 2026-11-30
+            lang: ts
+          - kind: dont
+            title_zh: 页面里手拼格式串
+            code: |-
+              dayjs(row.updatedAt).format('YYYY/MM/DD HH:mm')
+            lang: ts
+
+      - id: FORMAT.RELATIVE_TIME
+        title_zh: 消息里的相对时间
+        statement_zh: 消息、通知里的时间用相对时间：1 分钟内写「刚刚」，1 小时内写「N 分钟前」，24 小时内写「N 小时前」，超过 24 小时写「MM-DD HH:mm」，超过一年写「YYYY-MM-DD HH:mm」。同样经格式化注册表输出。
+        params:
+          tiers:
+            value: { 1 分钟内: 刚刚, 1 小时内: N 分钟前, 24 小时内: N 小时前, 超过 24 小时: "MM-DD HH:mm", 超过一年: "YYYY-MM-DD HH:mm" }
+            source: SRC.ANTD.SPEC.DATA_FORMAT
+            label_zh: 时间差 → 写法
+        enforcement: { kind: review }
+
+      - id: FORMAT.MASKING
+        title_zh: 个人信息按级别脱敏
+        statement_zh: 管理侧展示个人信息（领域规格里分级为 pii / sensitive_pii 的字段）时脱敏：用 * 替换并保持位数；金额、时间等高度敏感的值整体隐藏为 ***。各类信息保留的位数按下表，业务更严格时可以收紧。
+        surfaces: [admin]
+        params:
+          rules:
+            value: { 姓名: 两个字留首字，三个字及以上留首尾, 手机号: 留前 3 后 4, 证件号: 高留首尾各 1，中留前 3 后 3，低留前 6 后 4, 银行卡: 高留后 4，中留前 6 后 4，低留前 4 后 6, 邮箱: 留域名和账号前 3 位, 地址: 留到省市区 }
+            source: SRC.ANTD.SPEC.DATA_FORMAT
+            label_zh: 信息类型 → 保留位数
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 保持位数的部分脱敏
+            template: |-
+              <a-descriptions :column="1" size="small" bordered :style="{ maxWidth: '420px' }">
+                <a-descriptions-item label="收货人">张*明</a-descriptions-item>
+                <a-descriptions-item label="手机号">138****5678</a-descriptions-item>
+                <a-descriptions-item label="地址">广东省深圳市南山区***</a-descriptions-item>
+              </a-descriptions>
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 文案 ───────────────────────────
+  - key: copywriting
+    title_zh: 文案
+    group: patterns.global
+    prefix: COPY
+    summary_zh: 界面文字走文案字典；从用户视角、简洁一致地写；语气平和；报错说清怎么办；标点与用词统一。
+    rules:
+      - id: COPY.NO_LITERAL
+        title_zh: 界面文字走文案字典
+        statement_zh: 模板、组件、脚本里不写死界面文字，统一经文案字典的 key 取用（用户数据除外）；key 用稳定的点分标识，如 vehicleModel.form.code，不用文案本身作 key；插值用命名占位符 {name}。
+        anchors:
+          - { spec: i18n, quote: 禁止在模板/组件/脚本中硬编码任何自然语言文本（用户数据除外）。 }
+          - { spec: i18n, quote: key 使用稳定标识，禁止用中文/英文文案本身作为 key。 }
+        enforcement: { kind: gate, check: text.no-literal-copy }
+        examples:
+          - kind: do
+            title_zh: 经 key 取文案
+            code: |-
+              <a-form-item :label="t('vehicleModel.form.code')">
+            lang: vue
+          - kind: dont
+            title_zh: 模板里写死中文
+            code: |-
+              <a-form-item label="车型编码">
+            lang: vue
+
+      - id: COPY.USER_VIEW
+        title_zh: 站在用户这边写
+        statement_zh: 写用户能做什么、会得到什么，不写系统怎么实现；去掉用户已经知道的话；用常见、具体的词；同一事物全系统一个叫法，操作名称和它打开的页面标题一致；最重要的信息放在最前面。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 说结果
+            code: |-
+              停用后，这个车型不会出现在下单页。
+            lang: html
+          - kind: dont
+            title_zh: 说实现
+            code: |-
+              系统将把该车型的 status 字段更新为 DISABLED。
+            lang: html
+
+      - id: COPY.TONE
+        title_zh: 语气平和，不命令、不指责
+        statement_zh: 称呼用「你」，同一句里不混用「你」「我」；多给建议，少用「不能」「不要」「请勿」这类命令；出了问题聚焦怎么解决，不指责用户；「抱歉」只用在系统造成的问题上；不用「绝不」这类绝对化说法。
+        enforcement: { kind: review }
+
+      - id: COPY.ERROR_MESSAGE
+        title_zh: 报错说清发生了什么、怎么办
+        statement_zh: 报错写清两件事：发生了什么（客观描述，不只给错误码），用户下一步怎么做。错误码可以附在后面供排查。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 原因 + 下一步
+            template: |-
+              <a-alert type="error" show-icon message="车型编码 VM-001 已存在" description="换一个编码，或打开已有车型继续编辑。" :style="{ maxWidth: '480px' }" />
+          - kind: dont
+            title_zh: 只有错误码
+            template: |-
+              <a-alert type="error" show-icon message="操作失败（40901）" :style="{ maxWidth: '480px' }" />
+
+      - id: COPY.PUNCTUATION
+        title_zh: 标点与空格
+        statement_zh: 中文与数字、英文之间加一个空格（2 个、5 MB）；按钮、标题、输入提示、表格里的短句不加句号；感叹号只用于问候和祝贺；省略号用「…」；连接号用半角「-」；隐私遮挡用「*」。
+        enforcement: { kind: review }
+
+      - id: COPY.TERMS
+        title_zh: 用词统一，禁用错别字
+        statement_zh: 规范用词：写「其他」不写「其它」，写「登录」不写「登陆」，指代时「此」比「该」更明确；统计数字用阿拉伯数字。禁用词表随项目补充。
+        params:
+          banned: { value: { 其它: 其他, 登陆: 登录 }, source: SRC.ANTD.SPEC.COPYWRITING, label_zh: 禁用词 → 规范词 }
+        enforcement: { kind: gate, check: text.banned-terms }
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 按钮 ───────────────────────────
+  - key: buttons
+    title_zh: 按钮
+    group: patterns.global
+    prefix: BUTTON
+    summary_zh: 按用途选按钮类型；一个按钮区一个主按钮；推荐操作在前、风险操作在后、「更多」在最右；文案用动词。
+    rules:
+      - id: BUTTON.TYPES
+        title_zh: 按用途选按钮类型
+        statement_zh: 主按钮用于完成、推荐类操作；拿不准时用次按钮；表格操作列等大量重复的地方用文字按钮；引导「在这里添加」用虚线按钮；删除等有风险的操作用危险按钮；空间小、按钮多时用图标按钮，必须配文字提示；一个按钮里不放两个图标。
+        params:
+          map:
+            value: { 完成与推荐: 主按钮, 其余操作: 次按钮, 表格操作列: 文字按钮, 引导添加: 虚线按钮, 有风险: 危险按钮, 空间小: 图标按钮（配文字提示） }
+            source: SRC.ANTD.SPEC.BUTTONS
+            label_zh: 用途 → 类型
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 各类型的用途
+            template: |-
+              <div :style="{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: t['spacing.sm'] + 'px' }">
+                <a-button type="primary">保存</a-button>
+                <a-button>取消</a-button>
+                <a-button type="dashed"><template #icon><PlusOutlined /></template>添加规格</a-button>
+                <a-button type="link">查看</a-button>
+                <a-button danger>删除</a-button>
+              </div>
+
+      - id: BUTTON.SINGLE_PRIMARY
+        title_zh: 一个按钮区一个主按钮
+        statement_zh: 同一个按钮区（工具栏、弹窗底部、表单底部）最多一个主按钮，其余用次按钮或文字按钮。
+        params:
+          max_primary: { value: 1, unit: count, source: SRC.ANTD.SPEC.BUTTONS, label_zh: 每个按钮区主按钮上限 }
+        enforcement: { kind: gate, check: markup.single-primary-button }
+        examples:
+          - kind: do
+            title_zh: 一个主按钮
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button type="primary">提交审核</a-button><a-button>保存草稿</a-button><a-button>取消</a-button></div>
+          - kind: dont
+            title_zh: 三个主按钮，看不出该点哪个
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button type="primary">提交审核</a-button><a-button type="primary">保存草稿</a-button><a-button type="primary">取消</a-button></div>
+
+      - id: BUTTON.ORDER
+        title_zh: 推荐在前，风险在后，「更多」最右
+        statement_zh: 推荐的操作放在阅读起点，有风险的操作放最后，折叠起来的「更多」永远在最右；有返回含义的按钮放最左。工具栏按「推进业务（新建、保存、发布）→ 视图控制 → 其他（刷新、设置）→ 更多」排列。
+        anchors:
+          - { spec: page, quote: 主次操作、批量操作和状态信息位置一致。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 工具栏顺序
+            template: |-
+              <div :style="{ display: 'flex', justifyContent: 'flex-end', gap: t['spacing.sm'] + 'px', maxWidth: '620px' }">
+                <a-button type="primary"><template #icon><PlusOutlined /></template>新建车型</a-button>
+                <a-button><template #icon><DownloadOutlined /></template>导出</a-button>
+                <a-button aria-label="刷新"><template #icon><ReloadOutlined /></template></a-button>
+                <a-button aria-label="更多"><template #icon><MoreOutlined /></template></a-button>
+              </div>
+
+      - id: BUTTON.PLACEMENT
+        title_zh: 按钮跟着它作用的内容
+        statement_zh: 按钮放在它作用的内容旁边；工具栏的按钮靠右；页面底部的按钮区只用于两种情况：详情页推进流程（审批通过、驳回）和拆成多张卡片的复杂表单。
+        enforcement: { kind: review }
+
+      - id: BUTTON.COPY
+        title_zh: 按钮文案用动词，说清结果
+        statement_zh: 按钮文案用动词（下拉按钮除外），简短、说清点了会发生什么，如「发布」「保存车型」，少用「确定」「提交」这类泛词；主要操作本身是否定动作时点明后果，如「删除车型」。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 说清结果
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button danger type="primary">删除车型</a-button><a-button>取消</a-button></div>
+          - kind: dont
+            title_zh: 泛词，看不出后果
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button type="primary">确定</a-button><a-button>取消</a-button></div>
+
+      - id: BUTTON.GROUPING
+        title_zh: 用间距分组，不连成一组
+        statement_zh: 按钮之间用间距分组，确有需要才加分割线；不要把普通按钮拼接成一组，容易被当成切换按钮。
+        enforcement: { kind: review }
+
+  # ─────────────────────────── 设计模式 · 全局规则 · 数据列表 ───────────────────────────
+  - key: data_list
+    title_zh: 数据列表
+    group: patterns.global
+    prefix: LIST
+    summary_zh: 按数据选列表形态与查询方式；分页并记住位置；详情打开方式有选择规则；批量、新建、删除各有固定做法。
+    rules:
+      - id: LIST.FORM
+        title_zh: 列表形态按数据选
+        statement_zh: 多字段、需要比较的数据用表格；空间小（侧栏、下拉、小弹窗）时用竖向列表；展示型内容用卡片网格。
+        enforcement: { kind: review }
+
+      - id: LIST.QUERY
+        title_zh: 查询方式按使用习惯选
+        statement_zh: 多个条件组合后一起提交用查询表单；改条件立刻刷新结果用筛选；一个关键词跨多个字段找用搜索框。常用的查询放在列表工具栏里，复杂查询单独放一个区域。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 工具栏里的搜索与筛选
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px', maxWidth: '620px' }">
+                <a-input-search placeholder="搜索车型编码或名称" :style="{ width: '260px' }" />
+                <a-select value="all" :style="{ width: '140px' }" :options="[{ label: '全部状态', value: 'all' }, { label: '启用', value: 'enabled' }, { label: '停用', value: 'disabled' }]" />
+              </div>
+
+      - id: LIST.PAGING
+        title_zh: 分页加载并记住位置
+        statement_zh: 列表默认分页加载，只有一页时隐藏分页；从详情返回列表时恢复原来的页码、筛选和滚动位置，并标记看过的条目；信息流、消息类列表用同页加载更多。
+        anchors:
+          - { spec: ui, quote: 大数据使用服务端分页/筛选/排序及虚拟化。 }
+        enforcement: { kind: review }
+
+      - id: LIST.DETAIL_ENTRY
+        title_zh: 详情打开方式有规则
+        statement_zh: 点标题进入详情。内容一屏放得下就在行内展开；信息较多用抽屉；需要分享链接或沉浸处理用独立页面；需要在多条之间快速切换用左右两栏。
+        anchors:
+          - { spec: page, quote: 抽屉、弹窗和路由跳转有选择规则。 }
+        enforcement: { kind: review }
+
+      - id: LIST.BATCH
+        title_zh: 勾选后出现批量操作栏
+        statement_zh: 勾选行之后，工具栏位置出现批量操作栏，写明已选几项，并提供批量操作和取消选择；批量操作的位置全系统一致。
+        anchors:
+          - { spec: page, quote: 主次操作、批量操作和状态信息位置一致。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 已选数量 + 批量操作
+            template: |-
+              <div :style="{ display: 'flex', alignItems: 'center', gap: t['spacing.md'] + 'px', padding: t['spacing.sm'] + 'px ' + t['spacing.lg'] + 'px', background: t['color.surface.container'], border: '1px solid ' + t['color.border.subtle'], borderRadius: t['radius.md'] + 'px', maxWidth: '620px' }">
+                <span>已选 3 项</span>
+                <a-button size="small">批量停用</a-button>
+                <a-button size="small" danger>批量删除</a-button>
+                <a-button size="small" type="link">取消选择</a-button>
+              </div>
+
+      - id: LIST.CREATE
+        title_zh: 新建的两种入口
+        statement_zh: 右上角「新建」按钮打开弹窗、抽屉或新页面，新建成功后新条目排在列表第一并短暂高亮；在列表里就地添加时，用虚线「添加」按钮放在列表首或尾，新条目出现在按钮的位置。
+        enforcement: { kind: review }
+
+      - id: LIST.DELETE
+        title_zh: 删除：能撤销就撤销，不能撤销就就地确认
+        statement_zh: 能撤销的删除直接执行，并在约 1 分钟内提供撤销；不能撤销的删除用贴着按钮的气泡确认框确认，不弹模态框；破坏性很大的操作（批量删除、清空）要再做一次验证，如输入名称确认。
+        params:
+          undo_window: { value: 60000, unit: ms, source: SRC.ANTD.SPEC.STAY, label_zh: 撤销保留时长 }
+        anchors:
+          - { spec: ui, quote: 高风险操作必须提供确认、复核、撤销或等效防错机制 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 气泡确认框贴着按钮
+            template: |-
+              <a-popconfirm title="删除车型 VM-001？删除后不能恢复" ok-text="删除" cancel-text="取消">
+                <a-button danger>删除</a-button>
+              </a-popconfirm>
+
+  # ─────────────────────────── 设计模式 · 原则 ───────────────────────────
+  - key: proximity
+    title_zh: 亲密性
+    group: patterns.principles
+    prefix: PROXIMITY
+    summary_zh: 有关系的靠近，没关系的拉开；用间距的远近表达结构与层级。
+    rules:
+      - id: PROXIMITY.GROUPING
+        title_zh: 用间距远近表达分组
+        statement_zh: 关系紧密的元素靠在一起，读作一个整体；没关系的拉开距离。纵向间距按 8 的倍数取（8 + 8n），常用小 8、中 16、大 24 三档（见「间距」领域 SPACING.TIERS）；需要再拉开层次时加减一个基础单位，或加分割线。
+        params:
+          formula: { value: 8 + 8n（n ≥ 0）, source: SRC.ANTD.SPEC.PROXIMITY, label_zh: 纵向间距公式 }
+          small: { token: spacing.sm, unit: px, label_zh: 小 }
+          middle: { token: spacing.lg, unit: px, label_zh: 中 }
+          large: { token: spacing.xl, unit: px, label_zh: 大 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标签和值靠近，组与组拉开
+            template: |-
+              <div :style="{ display: 'flex', flexDirection: 'column', gap: p.large + 'px', color: t['color.text.primary'] }">
+                <div :style="{ display: 'flex', flexDirection: 'column', gap: p.small + 'px' }"><span :style="{ color: t['color.text.secondary'] }">车型编码</span><span>VM-001</span></div>
+                <div :style="{ display: 'flex', flexDirection: 'column', gap: p.small + 'px' }"><span :style="{ color: t['color.text.secondary'] }">载重</span><span>1.5 吨</span></div>
+              </div>
+
+  - key: alignment
+    title_zh: 对齐
+    group: patterns.principles
+    prefix: ALIGN
+    summary_zh: 文字左对齐共用起始边；横排表单标签右对齐带冒号；数字右对齐、小数位一致。
+    rules:
+      - id: ALIGN.TEXT
+        title_zh: 标题与正文左对齐
+        statement_zh: 标题和正文左对齐，共用同一条起始边；短段落、行距较松的内容尤其要对齐起点。只有在刻意强调标题与正文的区别时才打破这条线。
+        enforcement: { kind: review }
+      - id: ALIGN.FORM_LABEL
+        title_zh: 横排表单标签右对齐带冒号
+        statement_zh: 标签在输入左侧的表单，标签右对齐并带冒号，冒号连成一条竖线，引导视线从上到下填写。
+        surfaces: [admin]
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 冒号连成一条线
+            template: |-
+              <a-form layout="horizontal" :label-col="{ span: 6 }" :wrapper-col="{ span: 14 }" :style="{ maxWidth: '520px' }">
+                <a-form-item label="车型编码"><a-input /></a-form-item>
+                <a-form-item label="车厢长度（米）"><a-input /></a-form-item>
+              </a-form>
+      - id: ALIGN.NUMBERS
+        title_zh: 数字右对齐、小数位一致
+        statement_zh: 同一列的数字右对齐，小数位保持一致，方便上下比较（配合 TYPE.TABULAR_NUMS 的等宽数字）。
+        enforcement: { kind: review }
+
+  - key: contrast
+    title_zh: 对比
+    group: patterns.principles
+    prefix: CONTRAST
+    summary_zh: 主次分明；需要慎重的选择保持中立；状态靠颜色加形状或文字区分；对比要足够强。
+    rules:
+      - id: CONTRAST.PRIMARY_ACTION
+        title_zh: 突出主要操作，慎重的选择保持中立
+        statement_zh: 更重要、更常用的操作要突出，也可以靠弱化其他操作来突出它。需要用户慎重判断的选择（同意或拒绝一份申请）两个按钮用同样的样式，不引导用户选某一个。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 审批时两个选择同等对待
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button>通过</a-button><a-button>驳回</a-button></div>
+          - kind: dont
+            title_zh: 把「通过」做成主按钮，暗示用户选它
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-button type="primary">通过</a-button><a-button>驳回</a-button></div>
+      - id: CONTRAST.STATUS
+        title_zh: 状态不只靠颜色
+        statement_zh: 不同状态用不同颜色，同时配图标或文字，不能只靠颜色区分；交互状态（悬停、选中）的变化要明显。整页的标题与正文用字号、字重拉开层级，对比要足够强。
+        anchors:
+          - { spec: ui, quote: 颜色不得作为唯一信息来源 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 颜色 + 文字
+            template: |-
+              <div :style="{ display: 'flex', gap: t['spacing.sm'] + 'px' }"><a-tag color="success">启用</a-tag><a-tag color="default">停用</a-tag><a-tag color="warning">待审核</a-tag></div>
+
+  - key: repetition
+    title_zh: 重复
+    group: patterns.principles
+    prefix: REPEAT
+    summary_zh: 同类东西全系统长得一样、放在一样的位置，降低学习成本。
+    rules:
+      - id: REPEAT.CONSISTENCY
+        title_zh: 同类元素全系统一致
+        statement_zh: 同一类元素（分割线、颜色、形状、信息格式、间距）在全系统用同一种做法；同类页面用同样的结构，共性问题在共享结构里改，不在单个页面里改。
+        anchors:
+          - { spec: page, quote: 同类页面共性问题在共享结构层修复。 }
+        enforcement: { kind: review }
+
+  - key: direct
+    title_zh: 直截了当
+    group: patterns.principles
+    prefix: DIRECT
+    summary_zh: 在哪里看到就在哪里改；拖拽只沿一个方向，并提供不用拖拽的替代方式。
+    rules:
+      - id: DIRECT.INLINE_EDIT
+        title_zh: 在哪看就在哪改
+        statement_zh: 能就地编辑的不跳到另一页。偶尔改、以阅读为主的单个字段用点击编辑（悬停高亮，点开带确认和取消）；经常要改的用旁边的编辑图标或链接；多个字段一起改时进入行内编辑，切换前后表格列宽不跳动。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 单字段点击编辑
+            template: |-
+              <a-typography-paragraph editable :style="{ maxWidth: '360px', margin: 0 }" content="轻型厢式货车" />
+      - id: DIRECT.DRAG
+        title_zh: 拖拽只沿一个方向，并有替代方式
+        statement_zh: 可拖拽的条目悬停时出现拖拽手柄、指针变成手形，可放置的位置有明显外框；只沿一个方向拖（纵向或横向）；同时提供不用拖拽的替代方式（上移、下移按钮或序号输入）。
+        anchors:
+          - { spec: ui, quote: 依赖拖拽的操作必须提供无需拖拽的等价路径 }
+        enforcement: { kind: review }
+
+  - key: stay
+    title_zh: 足不出户
+    group: patterns.principles
+    prefix: STAY
+    summary_zh: 能在当前页完成的不跳页：确认用气泡确认框或撤销，补充信息用浮层或抽屉，流程尽量在一页内展开。
+    rules:
+      - id: STAY.ON_PAGE
+        title_zh: 能在当前页完成的不跳页
+        statement_zh: 能撤销的操作直接做并提供撤销，不能撤销的用贴着按钮的气泡确认框；补充信息用浮层或抽屉，悬停触发的浮层约 0.5 秒后出现、移开立即关闭；小的文字修改用就地浮层，点击外部即保存并关闭；多步任务尽量在一页内逐步展开，只有步骤必须依次完成时才用分步弹窗，不把每一步拆成独立页面。
+        params:
+          hover_delay: { value: 500, unit: ms, source: SRC.ANTD.SPEC.STAY, label_zh: 悬停浮层出现延迟 }
+          undo_window: { value: 60000, unit: ms, source: SRC.ANTD.SPEC.STAY, label_zh: 撤销保留时长 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 悬停看详情，不跳页
+            template: |-
+              <a-popover title="VM-001 轻型厢式货车" :mouse-enter-delay="p.hover_delay / 1000" content="载重 1.5 吨，车厢长度 4.2 米">
+                <a-button type="link">VM-001</a-button>
+              </a-popover>
+
+  - key: lightweight
+    title_zh: 简化交互
+    group: patterns.principles
+    prefix: LIGHT
+    summary_zh: 关键操作常驻可见；上下文操作悬停出现；非主流程工具进入编辑模式才出现；可点区域做大，工具靠近内容。
+    rules:
+      - id: LIGHT.TOOLS
+        title_zh: 工具按重要程度决定是否常驻
+        statement_zh: 关键操作始终可见，有清晰的可点区域和悬停、点击状态；只和某一行或某个对象相关的操作，悬停时才出现；不属于主流程的工具，进入编辑模式后才出现。关键操作不能藏在悬停或模式切换后面。
+        enforcement: { kind: review }
+      - id: LIGHT.HOTSPOT
+        title_zh: 可点区域做大，工具靠近内容
+        statement_zh: 优先放大可点区域，而不是放大按钮本身（比如整个单元格都能点）；工具放在它作用的内容旁边。触控目标至少 24×24 CSS px。
+        params:
+          min_target: { value: 24, unit: px, source: SRC.POMASTER.UI_SPEC, label_zh: 最小触控目标边长 }
+        anchors:
+          - { spec: ui, quote: 触控目标尺寸至少 24×24 CSS px }
+        enforcement: { kind: review }
+
+  - key: invitation
+    title_zh: 提供邀请
+    group: patterns.principles
+    prefix: INVITE
+    summary_zh: 拖拽、就地编辑这类不容易发现的交互，要主动给出提示。
+    rules:
+      - id: INVITE.DISCOVERABILITY
+        title_zh: 不易发现的交互要有邀请
+        statement_zh: 拖拽、就地编辑、上下文工具这类不容易发现的交互要给出提示：空状态引导第一步、悬停时提示可点或可编辑、未完成的任务提示继续。新功能引导只放几步，可跳过、可重看；不能拿引导来弥补交互本身的问题。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 未完成任务提示继续
+            template: |-
+              <a-alert type="info" show-icon message="车型资料还差 2 项未填（车厢尺寸、排放标准）" :style="{ maxWidth: '520px' }">
+                <template #action><a-button size="small" type="link">继续填写</a-button></template>
+              </a-alert>
+
+  - key: transition
+    title_zh: 巧用过渡
+    group: patterns.principles
+    prefix: TRANSITION
+    summary_zh: 用过渡说明刚刚发生了什么；新增、修改、删除各有提示；不动没变化的东西；尊重减少动效设置。
+    rules:
+      - id: TRANSITION.EXPLAIN
+        title_zh: 用过渡说明发生了什么
+        statement_zh: 切换视图时用滑动、展开等过渡保留上下文；新增的条目短暂高亮，修改过的单元格短暂着色后恢复，删除的元素平滑移除，高亮在几秒内淡出；不给没变化的元素加动画；用户系统开启「减少动效」时关闭或降级过渡。时长取动效 token。
+        params:
+          fast: { token: motion.fast, label_zh: 短 }
+          normal: { token: motion.normal, label_zh: 中 }
+          slow: { token: motion.slow, label_zh: 长 }
+        anchors:
+          - { spec: ui, quote: 尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级 }
+        enforcement: { kind: review }
+
+  - key: reaction
+    title_zh: 即时反应
+    group: patterns.principles
+    prefix: REACT
+    summary_zh: 输入时即时给出联想、校验与结果；加载样式随操作的频率与重要程度选；新内容到达时提示或短暂高亮。
+    rules:
+      - id: REACT.IMMEDIATE
+        title_zh: 输入时即时反应
+        statement_zh: 输入时给出联想、实时校验（如密码强度）、实时搜索结果，并做防抖、取消旧请求、丢弃过期响应；加载样式按操作的频率和重要程度选（按钮、表格、整页），不要所有操作都用同一种；有新内容时提示刷新，或在几秒内高亮新到的条目；提示逐步给，不要一次全摆出来。
+        anchors:
+          - { spec: perf, quote: 搜索防抖、旧请求取消、过期响应丢弃。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 输入联想
+            template: |-
+              <a-auto-complete :style="{ width: '260px' }" value="VM-00" :options="[{ value: 'VM-001 轻型厢式货车' }, { value: 'VM-002 平板运输车' }]" placeholder="输入车型编码" />
+
+  # ─────────────────────────── 设计模式 · 模板文档 ───────────────────────────
+  - key: visualization_page
+    title_zh: 数据可视化页
+    group: patterns.templates
+    prefix: VIZ
+    summary_zh: 概览、分析、明细三类；最重要的指标放左上；一屏 5 到 9 个模块；高度概括的数据用指标卡；一张卡片一个主题。
+    rules:
+      - id: VIZ.TYPES
+        title_zh: 先定页面类型
+        statement_zh: 数据可视化页分三类：概览（指标大盘、监控）、分析（多维分析）、明细（数据明细）。先定类型，再选模块。
+        enforcement: { kind: review }
+      - id: VIZ.LAYOUT
+        title_zh: 重要的放左上，一屏 5 到 9 个模块
+        statement_zh: 最重要的指标和视图放在页面顶部或左上；一屏控制在 5 到 9 个模块；高度概括的数据优先用指标卡（数值），而不是图表；一张卡片一个主题，相关度高的数据合并到一张卡片，用通栏分割线分开。
+        params:
+          modules: { value: [5, 9], unit: count, source: SRC.ANTD.SPEC.VISUALIZATION, label_zh: 一屏模块数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 顶部一排指标卡
+            template: |-
+              <a-row :gutter="16" :style="{ maxWidth: '760px' }">
+                <a-col :span="6"><a-card size="small"><a-statistic title="在途运单" :value="1280" /></a-card></a-col>
+                <a-col :span="6"><a-card size="small"><a-statistic title="准时率" :value="96.4" suffix="%" /></a-card></a-col>
+                <a-col :span="6"><a-card size="small"><a-statistic title="异常运单" :value="12" /></a-card></a-col>
+                <a-col :span="6"><a-card size="small"><a-statistic title="可用车辆" :value="342" /></a-card></a-col>
+              </a-row>
+      - id: VIZ.CHART
+        title_zh: 选对图表，讲清口径
+        statement_zh: 按要表达的关系选图表类型（趋势用折线，构成用堆叠，比较用柱状），必要时说明指标口径；用筛选让用户既能看全局，也能下钻到细节；页面之间用交互串联。
+        enforcement: { kind: review }
+
+  - key: detail_page
+    title_zh: 详情页
+    group: patterns.templates
+    prefix: DETAIL
+    summary_zh: 按信息复杂度选布局；信息平铺直给；用分割线、卡片、标签页分出层级；单据类流程操作放页脚。
+    rules:
+      - id: DETAIL.LAYOUT
+        title_zh: 按复杂度选布局
+        statement_zh: 内容简单时放在一张卡片里，用非通栏分割线分组；有多个复杂模块时每个模块一张卡片（审批单据类）；内容多到一页放不下时用标签页做导航；按阶段推进的内容用步骤组织。默认用最简单的那种。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 一张卡片，非通栏分割线分组
+            template: |-
+              <a-card title="车型详情" :style="{ maxWidth: '620px' }">
+                <a-descriptions :column="2" size="small" title="识别信息">
+                  <a-descriptions-item label="车型编码">VM-001</a-descriptions-item>
+                  <a-descriptions-item label="车型名称">轻型厢式货车</a-descriptions-item>
+                </a-descriptions>
+                <a-divider dashed />
+                <a-descriptions :column="2" size="small" title="规格参数">
+                  <a-descriptions-item label="载重">1.5 吨</a-descriptions-item>
+                  <a-descriptions-item label="车厢长度">4.2 米</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+      - id: DETAIL.FLAT
+        title_zh: 信息平铺，强相关的靠近
+        statement_zh: 信息平铺直给，没有必要不折叠、不隐藏；强相关的内容靠近，弱相关的拉开；同类详情页用同样的结构和模块。
+        enforcement: { kind: review }
+      - id: DETAIL.SEPARATORS
+        title_zh: 分隔方式对应层级
+        statement_zh: 组内用非通栏分割线，大段之间用通栏分割线，一个主题一张卡片，最高一级用标签页（按版本、意图或阶段）。
+        enforcement: { kind: review }
+      - id: DETAIL.ACTIONS
+        title_zh: 单据流程操作放页脚
+        statement_zh: 审批单据类详情页的流程操作（通过、驳回、转交、加签、挂起、撤回）放在页面底部按钮区；通过与驳回同等样式（见 CONTRAST.PRIMARY_ACTION）。
+        enforcement: { kind: review }
+

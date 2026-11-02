@@ -84,7 +84,7 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：7 个领域、36 条规则，基础 6 个领域 + 全局规则 · 导航", () => {
+  it("预设通过校验：26 个领域、101 条规则——基础 6 篇；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇（目录与 Ant Design 设计模式一致）", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -98,9 +98,28 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       ["typography", "foundations"],
       ["headings", "foundations"],
       ["icons", "foundations"],
+      ["feedback", "patterns.global"],
       ["navigation", "patterns.global"],
+      ["data_entry", "patterns.global"],
+      ["data_display", "patterns.global"],
+      ["data_format", "patterns.global"],
+      ["copywriting", "patterns.global"],
+      ["buttons", "patterns.global"],
+      ["data_list", "patterns.global"],
+      ["proximity", "patterns.principles"],
+      ["alignment", "patterns.principles"],
+      ["contrast", "patterns.principles"],
+      ["repetition", "patterns.principles"],
+      ["direct", "patterns.principles"],
+      ["stay", "patterns.principles"],
+      ["lightweight", "patterns.principles"],
+      ["invitation", "patterns.principles"],
+      ["transition", "patterns.principles"],
+      ["reaction", "patterns.principles"],
+      ["visualization_page", "patterns.templates"],
+      ["detail_page", "patterns.templates"],
     ]);
-    expect(loaded.summary).toEqual({ areas: 7, rules: 36, gate_rules: 17, review_rules: 19, pending_params: 5 });
+    expect(loaded.summary).toEqual({ areas: 26, rules: 101, gate_rules: 22, review_rules: 79, pending_params: 5 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -450,9 +469,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(36);
+    expect(envelope.result.summary.rules).toBe(101);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(7);
+    expect(envelope.result.normalized.areas).toHaveLength(26);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
 

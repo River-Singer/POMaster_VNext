@@ -32,22 +32,26 @@ function tempRoot(prefix: string): string {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("7 个领域、36 条规则；Storybook 标题与 id 按分区派生", () => {
-    expect(model.areas.map((area: { key: string }) => area.key)).toEqual([
-      "layout",
-      "grid",
-      "spacing",
-      "typography",
-      "headings",
-      "icons",
-      "navigation",
+  it("26 个领域、101 条规则；Storybook 标题与 id 按分区派生（目录与 Ant Design 设计模式一致）", () => {
+    expect(model.areas.length).toBe(26);
+    const titles = model.areas.map((area: { storybook: { title: string } }) => area.storybook.title);
+    expect(titles.filter((title: string) => title.startsWith("规范/基础/"))).toHaveLength(6);
+    expect(titles.filter((title: string) => title.startsWith("规范/设计模式/全局规则/"))).toEqual(
+      ["反馈", "导航", "数据录入", "数据展示", "数据格式", "文案", "按钮", "数据列表"].map((name) => `规范/设计模式/全局规则/${name}`),
+    );
+    expect(titles.filter((title: string) => title.startsWith("规范/设计模式/原则/"))).toEqual(
+      ["亲密性", "对齐", "对比", "重复", "直截了当", "足不出户", "简化交互", "提供邀请", "巧用过渡", "即时反应"].map((name) => `规范/设计模式/原则/${name}`),
+    );
+    expect(titles.filter((title: string) => title.startsWith("规范/设计模式/模板文档/"))).toEqual([
+      "规范/设计模式/模板文档/数据可视化页",
+      "规范/设计模式/模板文档/详情页",
     ]);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(36);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(101);
     const grid = model.areas[1];
     expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview" });
     expect(grid.rules[1].storybook).toEqual({ export: "GRID_GUTTER", id: "standard-foundations-grid--grid-gutter" });
-    const nav = model.areas[6];
-    expect(nav.storybook.title).toBe("规范/设计模式/全局规则/导航");
+    const nav = model.areas.find((area: { key: string }) => area.key === "navigation");
+    expect(nav.storybook.id).toBe("standard-patterns-global-navigation--overview");
     expect(model.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -112,7 +116,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 8, areas: 7, rules: 36 });
+      expect(result).toMatchObject({ count: 27, areas: 26, rules: 101 });
       const overview = readFileSync(join(out, "00-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);

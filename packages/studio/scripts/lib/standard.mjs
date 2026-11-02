@@ -55,6 +55,10 @@ export const CHECK_TITLES = {
   "grid.row-sum": "一行不超过 24 栅格",
   "grid.gutter-allowed": "gutter 取规范值",
   "icon.single-library": "只用一套图标库",
+  "markup.single-primary-button": "一个按钮区一个主按钮",
+  "text.no-literal-copy": "界面文字走文案字典",
+  "text.banned-terms": "不用禁用词",
+  "format.no-local-pattern": "日期数字走格式化注册表",
 };
 
 const DESIGN_SYSTEM_TITLES = { antd: "Ant Design", geist: "Vercel Geist" };

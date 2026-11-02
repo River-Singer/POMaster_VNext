@@ -83,6 +83,10 @@ export const DESIGN_CHECKS: readonly DesignCheckSpec[] = [
   { id: "grid.row-sum", title_zh: "一行不超过 24 栅格", description_zh: "同一 a-row 内静态 span 之和不超过 24", active: false },
   { id: "grid.gutter-allowed", title_zh: "gutter 取规范值", description_zh: "a-row 的 gutter 只能取规范允许的值", active: false },
   { id: "icon.single-library", title_zh: "只用一套图标库", description_zh: "图标只能从规范指定的图标库引入", active: false },
+  { id: "markup.single-primary-button", title_zh: "一个按钮区一个主按钮", description_zh: "同一个按钮区（同一父容器内的按钮组）里 type=primary 的按钮至多一个", active: false },
+  { id: "text.no-literal-copy", title_zh: "界面文字走文案字典", description_zh: "模板、组件、脚本里不写死自然语言文本，统一经 i18n key 取文案", active: false },
+  { id: "text.banned-terms", title_zh: "不用禁用词", description_zh: "文案字典与模板里不出现规范列出的错别字和弃用词（如「其它」「登陆」）", active: false },
+  { id: "format.no-local-pattern", title_zh: "日期数字走格式化注册表", description_zh: "页面里不手拼日期格式串、不硬编码货币符号，统一经格式化注册表输出", active: false },
 ];
 
 const CHECK_IDS = new Set(DESIGN_CHECKS.map((check) => check.id));
