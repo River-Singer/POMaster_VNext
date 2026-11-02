@@ -153,6 +153,37 @@ const MODE_ZH: Record<DesignSourceMode, string> = {
   preset: "工具预设（项目尚未落地规范）",
 };
 
+const LIVE_TOKEN_REFERENCE = /\bt\[\s*['"]/;
+
+/** 规范里有没有引用 token：参数取 token，或实时示例里写了 t['…']（按原始结构判断，规范未通过校验时同样适用）。 */
+function referencesTokens(raw: unknown): boolean {
+  if (typeof raw !== "object" || raw === null) return false;
+  const areas = (raw as { areas?: unknown }).areas;
+  if (!Array.isArray(areas)) return false;
+  return areas.some((area) => {
+    const rules = (area as { rules?: unknown } | null)?.rules;
+    return (
+      Array.isArray(rules) &&
+      rules.some((rule) => {
+        const params = (rule as { params?: unknown } | null)?.params;
+        const examples = (rule as { examples?: unknown } | null)?.examples;
+        const tokenParam =
+          typeof params === "object" &&
+          params !== null &&
+          Object.values(params).some((param) => typeof param === "object" && param !== null && "token" in param);
+        const tokenExample =
+          Array.isArray(examples) &&
+          examples.some((example) => {
+            if (typeof example !== "object" || example === null) return false;
+            const { template, jsx } = example as { template?: unknown; jsx?: unknown };
+            return [template, jsx].some((body) => typeof body === "string" && LIVE_TOKEN_REFERENCE.test(body));
+          });
+        return tokenParam || tokenExample;
+      })
+    );
+  });
+}
+
 /** 读源 + 校验（validate 与 show 共用）。 */
 export function loadDesignStandard(dir: string, input: DesignValidateInput): DesignValidateResult {
   const inputs = resolveDesignInputs(dir, input);
@@ -184,9 +215,10 @@ export function loadDesignStandard(dir: string, input: DesignValidateInput): Des
   const tokens = inputs.tokens_path === null ? null : readTokenGroups(inputs.tokens_path);
   const specTexts = inputs.specs_root === null ? null : readSpecTexts(inputs.specs_root, loaded.raw);
   const validation = validateDesignStandard(loaded.raw, { tokens: tokens?.groups ?? null, specTexts });
+  // token 表只在规范引用了 token 时进指纹（Geist 预设不引用 Ant Design 的 token 表）。
   const fingerprint = designStandardFingerprint([
     { path: DESIGN_STANDARD_RELATIVE, text: loaded.text },
-    ...(tokens === null ? [] : [{ path: DESIGN_TOKENS_RELATIVE, text: tokens.text }]),
+    ...(tokens === null || !referencesTokens(loaded.raw) ? [] : [{ path: DESIGN_TOKENS_RELATIVE, text: tokens.text }]),
   ]);
   return {
     ...inputs,

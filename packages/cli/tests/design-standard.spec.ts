@@ -508,15 +508,57 @@ describe("pomaster design validate / show", () => {
     expect(human.out).toContain("areas[1].rules[1].params.gutter.source");
   });
 
-  it("--system：未知体系 → DESIGN_SYSTEM_UNKNOWN；还没有预设的体系 → DESIGN_UNREADABLE 并说明原因", async () => {
+  it("--system：未知体系 → DESIGN_SYSTEM_UNKNOWN；某个体系还没有预设 → DESIGN_UNREADABLE 并说明原因", async () => {
     const unknown = await run(["--dir", dir, "design", "validate", "--system", "material", "--json"]);
     expect(unknown.code).toBe(1);
     expect(JSON.parse(unknown.out).errors.map((error: Raw) => error.code)).toEqual(["DESIGN_SYSTEM_UNKNOWN"]);
-    const geist = runDesignValidate(dir, { system: "geist" });
-    expect(geist.ok).toBe(false);
-    expect(geist.errors[0]!.code).toBe("DESIGN_UNREADABLE");
-    expect(geist.errors[0]!.message).toContain("geist 的工具预设尚未提供");
-    expect(runDesignValidate(dir, { system: "antd" }).ok).toBe(true);
+    const seeds = join(dir, "seeds-without-geist");
+    mkdirSync(join(seeds, "design-standards"), { recursive: true });
+    writeFileSync(join(seeds, "design-standards", "antd.yaml"), readFileSync(PRESET_PATH, "utf8"));
+    const missing = runDesignValidate(dir, { system: "geist", seedsRoot: seeds });
+    expect(missing.ok).toBe(false);
+    expect(missing.errors[0]!.code).toBe("DESIGN_UNREADABLE");
+    expect(missing.errors[0]!.message).toContain("geist 的工具预设尚未提供");
+  });
+
+  it("Geist 预设（React 栈）：通过校验，示例写 JSX；不引用 Ant Design 的 token 表，指纹只算规范源", async () => {
+    const { code, out } = await run(["--dir", dir, "design", "validate", "--system", "geist", "--json"]);
+    expect(code).toBe(0);
+    const result = JSON.parse(out).result;
+    expect(result.normalized.meta.design_system).toBe("geist");
+    expect(result.summary).toEqual({ areas: 8, rules: 17, gate_rules: 7, review_rules: 10, pending_params: 2 });
+    const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
+    expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
+    expect(examples.every((example: Raw) => example.template === null)).toBe(true);
+    const params = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.params));
+    expect(params.some((param: Raw) => param.kind === "token")).toBe(false);
+    const text = readFileSync(join(SEEDS, "design-standards", "geist.yaml"), "utf8");
+    expect(result.fingerprint).toBe(designStandardFingerprint([{ path: "baseline/frontend/design-standard.yaml", text }]));
+  });
+
+  it("实时示例里写了 t['…'] 也算引用 token：token 表进指纹，且引用的 token 要存在", () => {
+    const root = mkdtempSync(join(tmpdir(), "pvnext-design-live-token-"));
+    try {
+      const original = readFileSync(join(SEEDS, "design-standards", "geist.yaml"), "utf8");
+      const withToken = original.replace('<div className="grid gap-4"', "<div className=\"grid gap-4\" data-gap={t['spacing.lg']}");
+      expect(withToken).not.toBe(original);
+      const path = join(root, "geist.yaml");
+      writeFileSync(path, withToken);
+      const result = runDesignValidate(root, { file: path, system: "geist" });
+      expect(result.ok).toBe(true);
+      expect(result.result.fingerprint).toBe(
+        designStandardFingerprint([
+          { path: "baseline/frontend/design-standard.yaml", text: withToken },
+          { path: "baseline/frontend/design-tokens.yaml", text: readFileSync(TOKENS_PATH, "utf8") },
+        ]),
+      );
+      writeFileSync(path, original.replace('<div className="grid gap-4"', "<div className=\"grid gap-4\" data-gap={t['spacing.nope']}"));
+      const missing = runDesignValidate(root, { file: path, system: "geist" });
+      expect(missing.ok).toBe(false);
+      expect(missing.errors.map((error) => error.code)).toEqual(["DESIGN_EXAMPLE"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("显式文件：不是合法 YAML → DESIGN_UNREADABLE", async () => {

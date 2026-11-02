@@ -56,7 +56,7 @@ export type DesignSurface = (typeof DESIGN_SURFACES)[number];
 export const DESIGN_PARAM_UNITS = ["px", "em", "percent", "ratio", "count", "chars", "ms", "none"] as const;
 export type DesignParamUnit = (typeof DESIGN_PARAM_UNITS)[number];
 
-export const DESIGN_EXAMPLE_LANGS = ["vue", "ts", "css", "html"] as const;
+export const DESIGN_EXAMPLE_LANGS = ["vue", "ts", "tsx", "css", "html"] as const;
 export type DesignExampleLang = (typeof DESIGN_EXAMPLE_LANGS)[number];
 
 /** 机器门禁检查词表。`active` = 门禁已实现并接入；未接入的检查在规范页标「待接入」。 */
