@@ -823,6 +823,14 @@
         "layer": "L1",
         "note": "D1a：规范分区生成器——Storybook 规范页与 AI 孪生同源同指纹、孪生新鲜度、与 CLI 归一化逐条对账。无域（生成器契约面）。"
       },
+      "packages/studio/tests/standard-page.spec.ts": {
+        "layer": "L1",
+        "note": "D3：两个抽屉共用的规范页构建器与实验——目录与骨架一致、实时位可解析、外框样式类全在 standard.css 且只用类选择器；三个实验用手动时钟逐步驱动断言规则本身。无域（生成器契约面）。"
+      },
+      "packages/studio/tests/drawers.spec.ts": {
+        "layer": "L1",
+        "note": "D3：总 Storybook 的两个抽屉——未锁定两个都在、项目锁定或显式指定后只留一个、组合 refs 的 dev / 发布地址、编排脚本与工作流在座。无域（画廊编排契约面）。"
+      },
       "packages/studio/tests/standard-mount.spec.ts": {
         "layer": "L1",
         "note": "D1a：规范分区真实挂载——逐领域与逐规则挂载生成 story，实时示例全部渲染、无错误边界、无未解析组件。无域（生成器契约面）。"
