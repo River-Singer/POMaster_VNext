@@ -14,6 +14,9 @@ export default tseslint.config(
       // React sidecar（S2）：同款纪律。
       "packages/studio-react/generated/**",
       "packages/studio-react/dist-storybook/**",
+      // 总 Storybook（两个抽屉的组合）：静态导出产物。
+      "packages/studio-react/dist-host/**",
+      "dist-studio/**",
     ],
   },
   ...tseslint.configs.recommended,

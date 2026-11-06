@@ -4,13 +4,14 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # POMaster React Sidecar 画廊
 
-本实例（`packages/studio-react`）分两部分：
+本实例（`packages/studio-react`，总 Storybook 里的「React · Geist」抽屉）分两部分：
 
-- **规范**（侧栏最上方「规范」分区）：React 栈开发必须遵守的前端设计规范，Vercel Geist 预设——
-  字体、色彩、材质、栅格、间距、图标、动效、布局与可访问性。每条规则带编号、数值与出处、执行方式
-  （机器门禁 / 人工评审）和实时渲染的「这样做 / 别这样做」示例（shadcn/ui + Tailwind CSS 4）。
-  页面由 `packages/cli/seeds/design-standards/geist.yaml` 生成，AI 读同源的孪生
-  `packages/studio-react/twin/design-standard.geist.json`（或 `pomaster design show --system geist --json`）。
+- **规范**（侧栏最上方「规范」分区）：React 栈开发必须遵守的前端设计规范，Vercel Geist 预设——基础（色彩、
+  字体、标题层级、图标、材质、布局、栅格、间距、动效）、组件（按钮）、工程规范（状态管理）。每条规则带编号、
+  演示与对照表、数值与出处、执行方式（机器门禁 / 人工评审）和实时渲染的「这样做 / 别这样做」（shadcn/ui 起步、
+  按 Geist 配色与定尺寸的组件 + Tailwind CSS 4）；状态管理带可操作的实验。目录与 Vue · Ant Design 抽屉相同
+  （统一骨架），还没写的页标「待补」。页面由 `packages/cli/seeds/design-standards/geist.yaml` 生成，AI 读同源的
+  孪生 `packages/studio-react/twin/design-standard.geist.json`（或 `pomaster design show --system geist --json`）。
   改规范只改那份源：`pomaster design validate --system geist` 校验，`node packages/studio-react/run.mjs generate`
   重新生成。
 - **antd 对照画廊**（其余分区）：组件资产的可视化呈现面，非规范文本；权威语义以 catalog/seeds 锚定源为准。

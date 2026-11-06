@@ -1,0 +1,1308 @@
+/*
+ * 规范页外框样式（Vue · Ant Design 与 React · Geist 两个画廊共用同一份）。
+ *
+ * 两个抽屉的规范页结构、视觉完全一致：页面由 src/standard/page.ts 构建同一棵节点树，两边的运行时
+ * 只负责把它渲染成 Vue / React 元素，并把实时示例（antd 组件或 Geist 组件）放进示例位。外框按 Geist
+ * 的样子做：单色、Geist 字体、字号取 Geist 字阶（12 / 13 / 14 / 16 / 20 / 24 / 32）、间距取 4 的倍数、
+ * 圆角 6（小件）/ 12（卡片）。
+ *
+ * 只用类选择器，不写后代元素选择器：外框样式不会漏进实时示例。整份放在 std 层里，两边的 preview.css
+ * 都把 antd 的 reset 放进更低的 antd-reset 层，reset 的元素选择器压不过这里。
+ * 色值取自 Geist 浅色主题（vercel.com/geist/vercel-brand.css，与 geist.yaml 的色板同源）。
+ */
+@layer std {
+  :root {
+    --std-bg: oklch(1 0 0);
+    --std-bg-2: oklch(0.984 0 0);
+    --std-gray-100: oklch(0.961 0 0);
+    --std-gray-200: oklch(0.94 0 0);
+    --std-gray-400: oklch(0.937 0 0);
+    --std-gray-500: oklch(0.836 0 0);
+    --std-gray-700: oklch(0.65 0 0);
+    --std-gray-900: oklch(0.42 0 0);
+    --std-gray-1000: oklch(0.205 0 0);
+    --std-line: oklch(0 0 0 / 0.08);
+    --std-line-strong: oklch(0 0 0 / 0.21);
+    --std-blue-100: oklch(97.32% 0.0141 251.56);
+    --std-blue-700: oklch(57.61% 0.2508 258.23);
+    --std-blue-900: oklch(53.18% 0.2399 256.99);
+    --std-green-100: oklch(97.59% 0.0289 145.42);
+    --std-green-700: oklch(64.58% 0.1746 147.27);
+    --std-green-900: oklch(51.75% 0.1453 147.65);
+    --std-amber-100: oklch(97.48% 0.0331 85.79);
+    --std-amber-900: oklch(52.79% 0.1496 54.65);
+    --std-red-100: oklch(96.5% 0.0223 13.09);
+    --std-red-700: oklch(62.56% 0.2524 23.03);
+    --std-red-900: oklch(54.99% 0.232 25.29);
+    --std-font: "Geist", ui-sans-serif, system-ui, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --std-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  /* ── 页面骨架 ─────────────────────────────────────────────── */
+  .std-page {
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding: 40px 24px 64px;
+    background: var(--std-bg);
+    color: var(--std-gray-1000);
+    font-family: var(--std-font);
+    font-size: 14px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .std-layout {
+    display: flex;
+    gap: 48px;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .std-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 800px;
+  }
+
+  .std-page--overview .std-main,
+  .std-page--matrix .std-main {
+    max-width: 1120px;
+  }
+
+  .std-toc {
+    flex: 0 0 200px;
+    position: sticky;
+    top: 24px;
+    align-self: flex-start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+
+  @media (max-width: 1099px) {
+    .std-toc {
+      display: none;
+    }
+  }
+
+  .std-toc-title {
+    margin: 0 0 8px;
+    color: var(--std-gray-1000);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .std-toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .std-toc-item {
+    margin: 0;
+  }
+
+  .std-toc-link {
+    display: block;
+    padding: 4px 0;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    line-height: 16px;
+    text-decoration: none;
+  }
+
+  .std-toc-link:hover {
+    color: var(--std-gray-1000);
+  }
+
+  .std-toc-link--todo {
+    color: var(--std-gray-700);
+  }
+
+  /* ── 链接、焦点、行内代码 ─────────────────────────────────── */
+  .std-link {
+    color: var(--std-gray-1000);
+    text-decoration: underline;
+    text-decoration-color: var(--std-line-strong);
+    text-underline-offset: 3px;
+  }
+
+  .std-link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .std-link:focus-visible,
+  .std-toc-link:focus-visible,
+  .std-rule-anchor:focus-visible,
+  .std-code-summary:focus-visible,
+  .std-area-link:focus-visible,
+  .std-story-link:focus-visible {
+    outline: 2px solid var(--std-blue-700);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .std-code-inline {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--std-gray-100);
+    color: var(--std-gray-1000);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    line-height: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ── 页头 ─────────────────────────────────────────────────── */
+  .std-header {
+    margin-bottom: 40px;
+  }
+
+  .std-crumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .std-crumb-sep {
+    color: var(--std-gray-700);
+  }
+
+  .std-crumb-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .std-title {
+    margin: 0 0 12px;
+    color: var(--std-gray-1000);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 40px;
+    letter-spacing: -0.02em;
+  }
+
+  .std-lead {
+    max-width: 68ch;
+    margin: 0 0 16px;
+    color: var(--std-gray-900);
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .std-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px;
+  }
+
+  .std-counterparts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 16px;
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .std-counterparts-term {
+    margin: 0;
+    color: var(--std-gray-900);
+  }
+
+  .std-counterparts-desc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .std-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .std-story-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--std-line);
+    border-radius: 6px;
+    background: var(--std-bg);
+    color: var(--std-gray-1000);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-decoration: none;
+  }
+
+  .std-story-link:hover {
+    background: var(--std-gray-100);
+  }
+
+  /* ── 标记（徽标）────────────────────────────────────────── */
+  .std-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 9999px;
+    background: var(--std-gray-100);
+    color: var(--std-gray-1000);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  .std-tag--gate {
+    background: var(--std-blue-100);
+    color: var(--std-blue-900);
+  }
+
+  .std-tag--pending {
+    background: var(--std-amber-100);
+    color: var(--std-amber-900);
+  }
+
+  .std-tag--todo {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--std-line-strong);
+    color: var(--std-gray-900);
+  }
+
+  .std-tag--do {
+    background: var(--std-green-100);
+    color: var(--std-green-900);
+  }
+
+  .std-tag-code {
+    font-family: var(--std-mono);
+    font-weight: 400;
+  }
+
+  .std-note {
+    color: var(--std-gray-900);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  /* ── 规则（一条规则一节）──────────────────────────────────── */
+  .std-rule {
+    margin: 0;
+    padding: 40px 0 0;
+    scroll-margin-top: 16px;
+  }
+
+  .std-header + .std-rule {
+    padding-top: 0;
+  }
+
+  .std-rule + .std-rule {
+    margin-top: 40px;
+    border-top: 1px solid var(--std-line);
+  }
+
+  .std-rule-head {
+    margin-bottom: 12px;
+  }
+
+  .std-rule-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 8px;
+    color: var(--std-gray-1000);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+    letter-spacing: -0.01em;
+  }
+
+  .std-rule-title--page {
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -0.02em;
+  }
+
+  .std-rule-anchor {
+    color: var(--std-gray-700);
+    font-size: 20px;
+    font-weight: 400;
+    text-decoration: none;
+    opacity: 0;
+  }
+
+  .std-rule-title:hover .std-rule-anchor,
+  .std-rule-anchor:focus-visible {
+    opacity: 1;
+  }
+
+  .std-rule-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .std-rule-id {
+    color: var(--std-gray-900);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .std-statement {
+    max-width: 68ch;
+    margin: 0 0 12px;
+    color: var(--std-gray-1000);
+    font-size: 16px;
+    line-height: 26px;
+  }
+
+  .std-rationale {
+    max-width: 68ch;
+    margin: 0 0 12px;
+    color: var(--std-gray-900);
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .std-rule--todo .std-rule-title {
+    color: var(--std-gray-900);
+  }
+
+  .std-todo-text {
+    max-width: 68ch;
+    margin: 0;
+    color: var(--std-gray-900);
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  /* ── 区块（演示、对照表、色板、实验、数值）────────────────── */
+  .std-showcase {
+    margin: 24px 0 0;
+  }
+
+  .std-showcase-title {
+    margin: 0 0 4px;
+    color: var(--std-gray-1000);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+
+  .std-showcase-desc {
+    max-width: 68ch;
+    margin: 0 0 12px;
+    color: var(--std-gray-900);
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .std-showcase-source {
+    margin: 8px 0 0;
+    color: var(--std-gray-900);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  /* 演示卡片：舞台 + 「显示代码」条。 */
+  .std-demo-card,
+  .std-case-card,
+  .std-lab-frame {
+    overflow: hidden;
+    border: 1px solid var(--std-line);
+    border-radius: 12px;
+    background: var(--std-bg);
+  }
+
+  .std-demo-card + .std-showcase-title {
+    margin-top: 16px;
+  }
+
+  .std-stage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 120px;
+    padding: 32px 24px;
+    overflow-x: auto;
+  }
+
+  .std-stage--start {
+    justify-content: flex-start;
+  }
+
+  .std-code-toggle {
+    border-top: 1px solid var(--std-line);
+    background: var(--std-bg-2);
+  }
+
+  .std-code-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 16px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+
+  .std-code-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .std-code-summary:hover {
+    color: var(--std-gray-1000);
+  }
+
+  .std-code-hide,
+  .std-code-toggle[open] .std-code-show {
+    display: none;
+  }
+
+  .std-code-toggle[open] .std-code-hide {
+    display: inline;
+  }
+
+  .std-code-lang {
+    margin-left: auto;
+    color: var(--std-gray-700);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .std-code {
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    border-top: 1px solid var(--std-line);
+    background: var(--std-bg-2);
+    color: var(--std-gray-1000);
+    font-family: var(--std-mono);
+    font-size: 13px;
+    line-height: 20px;
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  .std-code--stage {
+    min-height: 120px;
+    border-top: 0;
+    background: var(--std-bg-2);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .std-code-text {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  /* 「这样做 / 别这样做」：两张卡片并排，说明在卡片下面。 */
+  .std-cases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px 16px;
+    margin: 24px 0 0;
+  }
+
+  .std-case {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .std-case--dont .std-case-card {
+    border-color: oklch(62.56% 0.2524 23.03 / 0.35);
+  }
+
+  .std-case-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .std-case-verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+  }
+
+  .std-case-verdict--do {
+    color: var(--std-green-900);
+  }
+
+  .std-case-verdict--dont {
+    color: var(--std-red-900);
+  }
+
+  .std-case-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    align-self: center;
+  }
+
+  .std-case-title {
+    color: var(--std-gray-1000);
+  }
+
+  .std-case-note {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .std-example-error {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--std-red-100);
+    color: var(--std-red-900);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  /* 对照表：示例｜名称｜用途。 */
+  .std-specimen,
+  .std-params,
+  .std-values,
+  .std-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .std-specimen-th,
+  .std-params-th,
+  .std-values-th,
+  .std-matrix-th {
+    padding: 8px 12px 8px 0;
+    border-bottom: 1px solid var(--std-line);
+    color: var(--std-gray-900);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .std-specimen-td,
+  .std-params-td,
+  .std-values-td,
+  .std-matrix-td {
+    padding: 12px 12px 12px 0;
+    border-bottom: 1px solid var(--std-line);
+    vertical-align: middle;
+  }
+
+  .std-specimen-sample {
+    width: 50%;
+    max-width: 0;
+    overflow-x: auto;
+    line-height: 1.25;
+  }
+
+  .std-specimen-text {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .std-specimen-name {
+    white-space: nowrap;
+  }
+
+  .std-specimen-label {
+    font-weight: 500;
+    white-space: normal;
+  }
+
+  .std-specimen-usage,
+  .std-params-origin,
+  .std-values-usage {
+    color: var(--std-gray-900);
+  }
+
+  .std-params-key {
+    display: block;
+    color: var(--std-gray-900);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .std-value {
+    font-family: var(--std-mono);
+    font-size: 13px;
+  }
+
+  .std-pending {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--std-amber-100);
+    color: var(--std-amber-900);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .std-map {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 0;
+  }
+
+  .std-map-term {
+    margin: 0;
+    color: var(--std-gray-900);
+  }
+
+  .std-map-desc {
+    margin: 0;
+  }
+
+  /* 色板：每个色阶一行色块。 */
+  .std-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .std-scale {
+    min-width: 0;
+  }
+
+  .std-scale-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .std-scale-label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .std-scale-name {
+    color: var(--std-gray-900);
+    font-family: var(--std-mono);
+    font-size: 12px;
+  }
+
+  .std-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .std-swatch {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .std-swatch-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px var(--std-line);
+  }
+
+  .std-swatch-chip--pending {
+    box-shadow: none;
+    border: 1px dashed var(--std-line-strong);
+    color: var(--std-gray-700);
+    font-size: 12px;
+  }
+
+  .std-swatch-step {
+    font-family: var(--std-mono);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .std-swatch-usage {
+    color: var(--std-gray-900);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .std-values-toggle {
+    margin-top: 16px;
+  }
+
+  .std-values-summary {
+    color: var(--std-gray-900);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .std-values-chip {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px var(--std-line);
+    vertical-align: -1px;
+  }
+
+  /* 动效演示（规范源里的 std-motion-track / std-motion-dot）。 */
+  .std-motion-track {
+    position: relative;
+    width: 240px;
+    height: 24px;
+    border-radius: 9999px;
+    background: var(--std-gray-100);
+  }
+
+  .std-motion-dot {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--std-gray-1000);
+    transition-property: transform;
+  }
+
+  .std-motion-track:hover .std-motion-dot {
+    transform: translateX(216px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .std-motion-dot {
+      transition-duration: 0s !important;
+    }
+  }
+
+  /* 状态矩阵：行 × 列的全部组合。 */
+  .std-matrix-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--std-line);
+    border-radius: 12px;
+    padding: 8px 16px;
+  }
+
+  .std-matrix-corner {
+    color: var(--std-gray-700);
+    font-family: var(--std-mono);
+    font-size: 12px;
+  }
+
+  .std-matrix-row-head {
+    color: var(--std-gray-900);
+    text-align: left;
+    font-family: var(--std-mono);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .std-matrix-cell {
+    min-height: 32px;
+  }
+
+  .std-matrix-tr:last-child .std-matrix-td {
+    border-bottom: 0;
+  }
+
+  /* 依据、修改、页脚。 */
+  .std-basis {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .std-basis-item {
+    margin: 0 0 8px;
+  }
+
+  .std-basis-quote {
+    margin: 0 0 4px;
+    padding-left: 12px;
+    border-left: 2px solid var(--std-line-strong);
+    color: var(--std-gray-1000);
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .std-basis-doc {
+    color: var(--std-gray-900);
+    font-family: var(--std-mono);
+    font-size: 12px;
+  }
+
+  .std-edit {
+    margin: 24px 0 0;
+    color: var(--std-gray-900);
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .std-footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--std-line);
+    color: var(--std-gray-900);
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .std-footer-line {
+    margin: 0 0 4px;
+  }
+
+  /* 待补的领域页。 */
+  .std-todo-card {
+    padding: 24px;
+    border: 1px dashed var(--std-line-strong);
+    border-radius: 12px;
+  }
+
+  .std-todo-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+
+  .std-todo-list {
+    margin: 12px 0 0;
+    padding-left: 20px;
+    color: var(--std-gray-900);
+  }
+
+  .std-todo-item {
+    margin: 4px 0;
+  }
+
+  /* 总览。 */
+  .std-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 0 0 40px;
+  }
+
+  .std-stat {
+    padding: 16px;
+    border: 1px solid var(--std-line);
+    border-radius: 12px;
+  }
+
+  .std-stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .std-stat-label {
+    color: var(--std-gray-900);
+    font-size: 13px;
+  }
+
+  .std-section {
+    margin: 0 0 40px;
+  }
+
+  .std-section-title {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+
+  .std-steps {
+    margin: 0;
+    padding-left: 20px;
+    line-height: 24px;
+  }
+
+  .std-step {
+    margin: 0 0 8px;
+  }
+
+  .std-legend {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 12px 16px;
+    margin: 0;
+  }
+
+  .std-legend-term {
+    margin: 0;
+  }
+
+  .std-legend-desc {
+    margin: 0;
+    color: var(--std-gray-900);
+  }
+
+  .std-area-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .std-area-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--std-line);
+    border-radius: 12px;
+  }
+
+  .std-area-card--todo {
+    border-style: dashed;
+  }
+
+  .std-area-link {
+    color: var(--std-gray-1000);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .std-area-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .std-area-summary {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    line-height: 20px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .std-area-meta {
+    color: var(--std-gray-700);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 实验：左边界面，右边状态检查器。 */
+  .std-lab {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  @media (max-width: 719px) {
+    .std-lab {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .std-lab-ui {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .std-lab-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border-left: 1px solid var(--std-line);
+    background: var(--std-bg-2);
+  }
+
+  .std-lab-label {
+    margin: 0;
+    color: var(--std-gray-900);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+  }
+
+  .std-lab-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .std-lab-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    background: var(--std-gray-100);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .std-lab-segment {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 8px;
+    background: var(--std-gray-100);
+  }
+
+  .std-lab-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--std-line);
+    border-radius: 6px;
+    background: var(--std-bg);
+    color: var(--std-gray-1000);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .std-lab-button:hover {
+    background: var(--std-gray-100);
+  }
+
+  .std-lab-button:disabled {
+    background: var(--std-gray-100);
+    color: var(--std-gray-700);
+    cursor: not-allowed;
+  }
+
+  .std-lab-button:focus-visible,
+  .std-lab-input:focus-visible,
+  .std-lab-segment-button:focus-visible {
+    outline: 2px solid var(--std-blue-700);
+    outline-offset: 2px;
+  }
+
+  .std-lab-button--primary {
+    border-color: transparent;
+    background: var(--std-gray-1000);
+    color: var(--std-bg);
+  }
+
+  .std-lab-button--primary:hover {
+    background: oklch(0.205 0 0 / 0.9);
+  }
+
+  .std-lab-segment-button {
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--std-gray-900);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .std-lab-segment-button[aria-pressed="true"] {
+    background: var(--std-bg);
+    color: var(--std-gray-1000);
+    box-shadow: 0 0 0 1px var(--std-line), 0 1px 2px oklch(0 0 0 / 0.06);
+  }
+
+  .std-lab-input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--std-line-strong);
+    border-radius: 6px;
+    background: var(--std-bg);
+    color: var(--std-gray-1000);
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .std-lab-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--std-line);
+    border-radius: 6px;
+  }
+
+  .std-lab-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .std-lab-list-item + .std-lab-list-item {
+    border-top: 1px solid var(--std-line);
+  }
+
+  .std-lab-empty {
+    padding: 16px 12px;
+    color: var(--std-gray-900);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .std-lab-state {
+    margin: 0;
+    padding: 12px;
+    overflow-x: auto;
+    border-radius: 6px;
+    background: var(--std-bg);
+    box-shadow: inset 0 0 0 1px var(--std-line);
+    font-family: var(--std-mono);
+    font-size: 12px;
+    line-height: 18px;
+    white-space: pre;
+  }
+
+  .std-lab-log {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .std-lab-log-item {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .std-lab-log-time {
+    flex: none;
+    width: 48px;
+    color: var(--std-gray-700);
+    font-family: var(--std-mono);
+  }
+
+  .std-lab-log-text {
+    min-width: 0;
+  }
+
+  .std-lab-log-item--ok .std-lab-log-text {
+    color: var(--std-green-900);
+  }
+
+  .std-lab-log-item--drop .std-lab-log-text {
+    color: var(--std-gray-700);
+    text-decoration: line-through;
+  }
+
+  .std-lab-log-item--bad .std-lab-log-text {
+    color: var(--std-red-900);
+  }
+
+  .std-lab-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 9999px;
+    background: var(--std-gray-100);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .std-lab-pill--fresh {
+    background: var(--std-green-100);
+    color: var(--std-green-900);
+  }
+
+  .std-lab-pill--stale {
+    background: var(--std-amber-100);
+    color: var(--std-amber-900);
+  }
+
+  .std-lab-pill--fetching {
+    background: var(--std-blue-100);
+    color: var(--std-blue-900);
+  }
+
+  .std-lab-pill--bad {
+    background: var(--std-red-100);
+    color: var(--std-red-900);
+  }
+
+  .std-lab-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* 实验场（Controls）。 */
+  .std-playground {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    padding: 48px;
+    background: var(--std-bg);
+  }
+}

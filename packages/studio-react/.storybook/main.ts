@@ -26,6 +26,8 @@ const config: StorybookConfig = {
   },
   viteFinal: (viteConfig) => ({
     ...viteConfig,
+    // 静态发布在子路径（总 Storybook 的 react/）时由 STORYBOOK_BASE 注入 vite base，与 Vue 画廊同款。
+    ...(process.env.STORYBOOK_BASE ? { base: process.env.STORYBOOK_BASE } : {}),
     plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
   }),
 };

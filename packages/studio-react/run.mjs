@@ -8,6 +8,8 @@
 // 用法（root scripts）：
 //   pnpm studio:react:dev   → node packages/studio-react/run.mjs dev
 //   pnpm studio:react:build → node packages/studio-react/run.mjs build
+//   总 Storybook（两个抽屉）由 scripts/studio.mjs 编排，它调用本脚本的 host-dev / host-build。
+// 静态构建的输出目录可由 STORYBOOK_OUTPUT_DIR 覆盖（总 Storybook 的编排把抽屉放进子路径）。
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -18,24 +20,26 @@ const studioRoot = fileURLToPath(new URL(".", import.meta.url));
 const require = createRequire(import.meta.url);
 
 const action = process.argv[2] ?? "";
-if (!["generate", "dev", "build"].includes(action)) {
-  console.error("用法: node packages/studio-react/run.mjs <generate|dev|build>");
+if (!["generate", "dev", "build", "host-dev", "host-build"].includes(action)) {
+  console.error("用法: node packages/studio-react/run.mjs <generate|dev|build|host-dev|host-build>");
   process.exit(1);
 }
+// host-dev / host-build：总 Storybook（两个抽屉的组合，配置在 .storybook-host/；编排见 scripts/studio.mjs）。
+const host = action.startsWith("host-");
 
 // 1) 生成产物（generated/ 不入库——dev/build 前自愈重建，幂等可重放）。
 const { generateAll } = await import("./scripts/lib/generate-all.mjs");
 const { writeGeistTwin } = await import("./scripts/lib/standard.mjs");
-const counts = generateAll();
+const counts = host ? null : generateAll();
 // 规范 AI 孪生（入库）：与规范页同一次生成、同一个指纹。
-const twin = writeGeistTwin();
-console.log(
+const twin = host ? null : writeGeistTwin();
+if (counts !== null && twin !== null) console.log(
   `[studio-react] 生成完成: antd 对齐族 stories=${counts.components} ` +
     `（antd 导出 ${counts.antdExportCount}；v5 已移除族 ${counts.missing.length}：` +
     `${counts.missing.map((entry) => entry.antdv).join("、")}）` +
     ` + design tokens 对照 story=${counts.foundations} ` +
     `（tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN）` +
-    ` + Geist 规范 story=${counts.standard}（${counts.standardAreas} 个领域 ${counts.standardRules} 条规则，指纹 ${twin.fingerprint}）`,
+    ` + Geist 规范 story=${counts.standard}（骨架 ${counts.standardAreas} 个领域，已写 ${counts.standardCovered} 个、${counts.standardRules} 条规则，指纹 ${twin.fingerprint}）`,
 );
 if (action === "generate") process.exit(0);
 
@@ -58,10 +62,12 @@ const storybookBin = join(studioRoot, "node_modules", "storybook", storybookBinR
 
 // 3) spawn（STORYBOOK_DISABLE_TELEMETRY=真源通道；stdio 直通；dev 端口 6007 错开
 // 主实例默认 6006；防漂移 --no-version-updates 与主实例同款）。
+const outputDir = process.env.STORYBOOK_OUTPUT_DIR || (host ? "dist-host" : "dist-storybook");
+const config = host ? ["--config-dir", ".storybook-host"] : [];
 const args =
-  action === "dev"
-    ? ["dev", "--port", "6007", "--no-open", "--no-version-updates"]
-    : ["build", "--output-dir", "dist-storybook"];
+  action === "dev" || action === "host-dev"
+    ? ["dev", ...config, "--port", host ? "6008" : "6007", "--no-open", "--no-version-updates"]
+    : ["build", ...config, "--output-dir", outputDir];
 const result = spawnSync(process.execPath, [storybookBin, ...args], {
   cwd: studioRoot,
   stdio: "inherit",

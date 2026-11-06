@@ -11,8 +11,11 @@ import { dump as dumpYaml, load as loadYaml } from "js-yaml";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   DESIGN_CHECKS,
+  DESIGN_LABS,
   designStandardFingerprint,
   lookupToken,
+  readDesignSkeleton,
+  validateDesignSkeleton,
   validateDesignStandard,
   type DesignStandardContext,
   type DesignStandardValidation,
@@ -23,6 +26,7 @@ import { runCli } from "@pomaster/cli";
 const SEEDS = fileURLToPath(new URL("../seeds", import.meta.url));
 const PRESET_PATH = join(SEEDS, "design-standards", "antd.yaml");
 const TOKENS_PATH = join(SEEDS, "baseline", "frontend", "design-tokens.yaml");
+const SKELETON_PATH = join(SEEDS, "design-standards", "skeleton.yaml");
 
 // 规范是 YAML 解析出的动态结构，测试里按路径改写，用 any 最直接。
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,44 +88,24 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：28 个领域、118 条规则——基础 6 篇；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇（目录与 Ant Design 设计模式一致）；工程规范 2 篇", () => {
+  it("预设通过校验：32 个领域、150 条规则——基础 9 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇；工程规范 2 篇；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
     expect(loaded.errors).toBe(0);
     const standard = loaded.normalized!;
     expect(standard.meta).toEqual({ origin: "preset", customized: false, design_system: "antd", ui_library: "ant-design-vue@4.2.6" });
-    expect(standard.areas.map((area) => [area.key, area.group])).toEqual([
-      ["layout", "foundations"],
-      ["grid", "foundations"],
-      ["spacing", "foundations"],
-      ["typography", "foundations"],
-      ["headings", "foundations"],
-      ["icons", "foundations"],
-      ["feedback", "patterns.global"],
-      ["navigation", "patterns.global"],
-      ["data_entry", "patterns.global"],
-      ["data_display", "patterns.global"],
-      ["data_format", "patterns.global"],
-      ["copywriting", "patterns.global"],
-      ["buttons", "patterns.global"],
-      ["data_list", "patterns.global"],
-      ["proximity", "patterns.principles"],
-      ["alignment", "patterns.principles"],
-      ["contrast", "patterns.principles"],
-      ["repetition", "patterns.principles"],
-      ["direct", "patterns.principles"],
-      ["stay", "patterns.principles"],
-      ["lightweight", "patterns.principles"],
-      ["invitation", "patterns.principles"],
-      ["transition", "patterns.principles"],
-      ["reaction", "patterns.principles"],
-      ["visualization_page", "patterns.templates"],
-      ["detail_page", "patterns.templates"],
-      ["state", "engineering"],
-      ["performance", "engineering"],
-    ]);
-    expect(loaded.summary).toEqual({ areas: 28, rules: 118, gate_rules: 26, review_rules: 92, pending_params: 10 });
+    const groups = standard.areas.map((area) => area.group);
+    expect(groups.filter((group) => group === "foundations")).toHaveLength(9);
+    expect(standard.areas.filter((area) => area.group === "components.general").map((area) => area.key)).toEqual(["button"]);
+    expect(groups.filter((group) => group === "patterns.global")).toHaveLength(8);
+    expect(groups.filter((group) => group === "patterns.principles")).toHaveLength(10);
+    expect(groups.filter((group) => group === "patterns.templates")).toHaveLength(2);
+    expect(standard.areas.filter((area) => area.group === "engineering").map((area) => area.key)).toEqual(["state", "performance"]);
+    const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
+    const keys = standard.areas.map((area) => area.key);
+    expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
+    expect(loaded.summary).toEqual({ areas: 32, rules: 150, gate_rules: 29, review_rules: 121, pending_params: 10 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -148,12 +132,12 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       area.rules.flatMap((r) => r.params.filter((param) => param.pending).map((param) => `${r.id}.${param.key}`)),
     );
     expect(pending).toEqual([
+      "TYPE.READING.max_chars",
+      "ICON.LIBRARY.public_library",
       "LAYOUT.CONTENT_REGION.page_padding",
       "LAYOUT.CONTENT_REGION.section_gap",
       "LAYOUT.CONTENT_REGION.content_max_width",
       "LAYOUT.Z_INDEX.layers",
-      "ICON.LIBRARY.public_library",
-      "STATE.SERVER_STATE.query_library",
       "PERF.BUDGET.initial_js",
       "PERF.BUDGET.route_chunk",
       "PERF.LARGE_LISTS.virtual_threshold",
@@ -476,9 +460,10 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(118);
-    expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(28);
+    expect(envelope.result.summary.rules).toBe(150);
+    expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_AREA_UNCOVERED", "DESIGN_CHECK_PENDING"]);
+    expect(envelope.result.normalized.areas).toHaveLength(32);
+    expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
 
@@ -495,7 +480,7 @@ describe("pomaster design validate / show", () => {
 
   it("项目规范有错：exit 1，逐条列出错误码与路标", async () => {
     seedProject((raw) => {
-      raw["areas"][1]["rules"][1]["params"]["gutter"]["source"] = "SRC.NOWHERE";
+      raw["areas"][6]["rules"][1]["params"]["gutter"]["source"] = "SRC.NOWHERE";
     });
     const json = await run(["--dir", dir, "design", "validate", "--json"]);
     expect(json.code).toBe(1);
@@ -505,7 +490,7 @@ describe("pomaster design validate / show", () => {
     const human = await run(["--dir", dir, "design", "validate"]);
     expect(human.code).toBe(1);
     expect(human.out).toContain("设计规范未通过");
-    expect(human.out).toContain("areas[1].rules[1].params.gutter.source");
+    expect(human.out).toContain("areas[6].rules[1].params.gutter.source");
   });
 
   it("--system：未知体系 → DESIGN_SYSTEM_UNKNOWN；某个体系还没有预设 → DESIGN_UNREADABLE 并说明原因", async () => {
@@ -521,19 +506,24 @@ describe("pomaster design validate / show", () => {
     expect(missing.errors[0]!.message).toContain("geist 的工具预设尚未提供");
   });
 
-  it("Geist 预设（React 栈）：通过校验，示例写 JSX；不引用 Ant Design 的 token 表，指纹只算规范源", async () => {
+  it("Geist 预设（React 栈）：通过校验，示例写 JSX；不引用 Ant Design 的 token 表，指纹只算规范源与骨架", async () => {
     const { code, out } = await run(["--dir", dir, "design", "validate", "--system", "geist", "--json"]);
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 8, rules: 17, gate_rules: 7, review_rules: 10, pending_params: 2 });
+    expect(result.summary).toEqual({ areas: 11, rules: 71, gate_rules: 19, review_rules: 52, pending_params: 6 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
     const params = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.params));
     expect(params.some((param: Raw) => param.kind === "token")).toBe(false);
     const text = readFileSync(join(SEEDS, "design-standards", "geist.yaml"), "utf8");
-    expect(result.fingerprint).toBe(designStandardFingerprint([{ path: "baseline/frontend/design-standard.yaml", text }]));
+    expect(result.fingerprint).toBe(
+      designStandardFingerprint([
+        { path: "baseline/frontend/design-standard.yaml", text },
+        { path: "design-standards/skeleton.yaml", text: readFileSync(SKELETON_PATH, "utf8") },
+      ]),
+    );
   });
 
   it("实时示例里写了 t['…'] 也算引用 token：token 表进指纹，且引用的 token 要存在", () => {
@@ -550,6 +540,7 @@ describe("pomaster design validate / show", () => {
         designStandardFingerprint([
           { path: "baseline/frontend/design-standard.yaml", text: withToken },
           { path: "baseline/frontend/design-tokens.yaml", text: readFileSync(TOKENS_PATH, "utf8") },
+          { path: "design-standards/skeleton.yaml", text: readFileSync(SKELETON_PATH, "utf8") },
         ]),
       );
       writeFileSync(path, original.replace('<div className="grid gap-4"', "<div className=\"grid gap-4\" data-gap={t['spacing.nope']}"));
@@ -573,7 +564,7 @@ describe("pomaster design validate / show", () => {
     expect(area.ok).toBe(true);
     expect(area.result!.areas.map((a) => a.key)).toEqual(["grid"]);
     const text = area.human.join("\n");
-    expect(text).toContain("基础 / 栅格（GRID，4 条）");
+    expect(text).toContain("基础 / 栅格（GRID，5 条）");
     expect(text).toContain("GRID.GUTTER");
     expect(text).toContain("允许的列间距：16px / 24px（出处 SRC.ANTD.SPEC.BASICS）");
     expect(text).toContain("门禁 grid.gutter-allowed（待接入，暂按评审执行）");
@@ -586,6 +577,7 @@ describe("pomaster design validate / show", () => {
     expect(missingArea.ok).toBe(false);
     expect(missingArea.errors[0]!.code).toBe("DESIGN_AREA_NOT_FOUND");
     expect(missingArea.errors[0]!.hint).toContain("layout");
+    expect(missingArea.errors[0]!.hint).toContain("button");
     const missingRule = runDesignShow(dir, { rule: "GRID.NOPE" });
     expect(missingRule.errors[0]!.code).toBe("DESIGN_RULE_NOT_FOUND");
   });
@@ -595,9 +587,236 @@ describe("pomaster design validate / show", () => {
     expect(show.code).toBe(0);
     const envelope = JSON.parse(show.out);
     const scale = envelope.result.areas[0].rules[0];
+    expect(envelope.result.areas[0].key).toBe("typography");
     expect(scale.id).toBe("TYPE.SCALE");
     expect(scale.params.find((param: Raw) => param.key === "scale").value).toEqual([12, 14, 16, 20, 24, 30, 38]);
     const validate = await run(["--dir", dir, "design", "validate", "--json"]);
     expect(envelope.result.fingerprint).toBe(JSON.parse(validate.out).result.fingerprint);
+  });
+});
+
+function miniSkeleton(areas: Raw[]) {
+  const validation = validateDesignSkeleton({ schema: "pomaster.design-skeleton/v1", areas });
+  expect(validation.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+  return validation.skeleton!;
+}
+
+const SKELETON_GRID = {
+  key: "grid",
+  title_zh: "栅格",
+  group: "foundations",
+  prefix: "GRID",
+  summary_zh: "栅格",
+  topics: [
+    { id: "GRID.COLUMNS", title_zh: "栅格列数" },
+    { id: "GRID.GUTTER", title_zh: "列间距" },
+  ],
+};
+const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
+
+describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
+  it("骨架通过校验：128 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
+    const read = readDesignSkeleton(SKELETON_PATH)!;
+    expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    const skeleton = read.skeleton!;
+    expect(skeleton.areas).toHaveLength(128);
+    const button = skeleton.areas.find((area) => area.key === "button")!;
+    expect(button.counterparts).toEqual({ antd: ["Button"], geist: ["Button", "ButtonLink"] });
+    expect(button.topics.map((topic) => topic.id)).toContain("CMP.BUTTON.ICON_ONLY");
+    expect(skeleton.areas.find((area) => area.key === "grid")!.counterparts).toBeNull();
+    for (const area of skeleton.areas) {
+      expect(area.counterparts === null).toBe(!area.group.startsWith("components."));
+      for (const topic of area.topics) expect(topic.id.startsWith(`${area.prefix}.`)).toBe(true);
+    }
+    // 两套预设都只写骨架里有的领域，按骨架顺序。
+    for (const system of ["antd", "geist"] as const) {
+      const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), { system });
+      expect(loaded.issues.filter((issue) => ["DESIGN_AREA_EXTRA", "DESIGN_TOPIC_EXTRA", "DESIGN_TOPIC_UNCOVERED"].includes(issue.code))).toEqual([]);
+      const keys = loaded.normalized!.areas.map((area) => area.key);
+      expect(keys).toEqual(skeleton.areas.map((area) => area.key).filter((key) => keys.includes(key)));
+    }
+  });
+
+  it("骨架形状：分区不在词表、组件领域缺 counterparts、非组件领域写 counterparts、条目编号不带领域前缀，都报错", () => {
+    const validation = validateDesignSkeleton({
+      schema: "pomaster.design-skeleton/v1",
+      areas: [
+        { ...SKELETON_GRID, group: "nowhere" },
+        { key: "button", title_zh: "按钮", group: "components.general", prefix: "CMP.BUTTON", summary_zh: "按钮", topics: [] },
+        { ...SKELETON_SPACING, counterparts: { antd: [], geist: [] }, topics: [{ id: "GRID.SCALE", title_zh: "间距阶梯" }] },
+      ],
+    });
+    expect(validation.skeleton).toBeNull();
+    expect(validation.issues.map((issue) => issue.path)).toEqual(
+      expect.arrayContaining(["areas[0].group", "areas[1].counterparts", "areas[2].counterparts", "areas[2].topics[0].id"]),
+    );
+    expect(validateDesignSkeleton({ schema: "pomaster.design-skeleton/v0", areas: [] }).issues[0]!.code).toBe("DESIGN_SKELETON_SHAPE");
+  });
+
+  it("规范对骨架：领域标题 / 分区 / 前缀 / 顺序、规则标题 / 顺序不一致报 DESIGN_AREA_SKELETON；骨架外的给警告；没写的领域与条目各汇总一条警告", () => {
+    const skeleton = miniSkeleton([SKELETON_GRID, SKELETON_SPACING]);
+    const ok = validateDesignStandard(minimal(), ctx({ skeleton }));
+    expect(ok.ok).toBe(true);
+    expect(codes(ok, "warning")).toEqual(["DESIGN_AREA_UNCOVERED", "DESIGN_TOPIC_UNCOVERED", "DESIGN_CHECK_PENDING"]);
+    expect(ok.issues.find((issue) => issue.code === "DESIGN_TOPIC_UNCOVERED")!.message).toContain("GRID.COLUMNS");
+
+    const renamed = minimal();
+    renamed["areas"][0]["title_zh"] = "网格";
+    rule(renamed)["title_zh"] = "间距";
+    const mismatch = validateDesignStandard(renamed, ctx({ skeleton }));
+    expect(mismatch.issues.filter((issue) => issue.code === "DESIGN_AREA_SKELETON").map((issue) => issue.path)).toEqual(["areas[0]", "areas[0].rules[0].title_zh"]);
+
+    const reordered = minimal();
+    reordered["areas"].unshift({ ...SKELETON_SPACING, rules: [{ id: "SPACING.SCALE", title_zh: "间距阶梯", statement_zh: "间距取阶梯。", enforcement: { kind: "review" } }] });
+    delete reordered["areas"][0]["topics"];
+    const order = validateDesignStandard(reordered, ctx({ skeleton }));
+    expect(order.issues.filter((issue) => issue.code === "DESIGN_AREA_SKELETON").map((issue) => issue.message)).toEqual(["领域 grid 的位置与统一骨架的顺序不一致"]);
+
+    const extra = minimal();
+    rule(extra)["id"] = "GRID.OTHER";
+    extra["areas"].push({ key: "motion", title_zh: "动效", group: "foundations", prefix: "MOTION", summary_zh: "动效", rules: [{ id: "MOTION.PURPOSE", title_zh: "动效要有理由", statement_zh: "默认静止。", enforcement: { kind: "review" } }] });
+    const outside = validateDesignStandard(extra, ctx({ skeleton }));
+    expect(outside.ok).toBe(true);
+    expect(codes(outside, "warning")).toEqual(expect.arrayContaining(["DESIGN_TOPIC_EXTRA", "DESIGN_AREA_EXTRA"]));
+  });
+
+  it("骨架找不到（传 null）：给 DESIGN_SKELETON_UNAVAILABLE 警告；不传骨架（最小规范的单测）不核对目录也不提示", () => {
+    expect(codes(validateDesignStandard(minimal(), ctx({ skeleton: null })), "warning")).toContain("DESIGN_SKELETON_UNAVAILABLE");
+    expect(codes(validateDesignStandard(minimal(), ctx()), "warning")).not.toContain("DESIGN_SKELETON_UNAVAILABLE");
+  });
+});
+
+describe("校验：展示块（演示 / 对照表 / 色板 / 实验）", () => {
+  function withShowcase(showcase: Raw[]): Raw {
+    const raw = minimal();
+    rule(raw)["showcase"] = showcase;
+    return raw;
+  }
+
+  it("四种展示块逐项归一化：演示与对照表的实时内容取已定参数；色块取定值 / token / 未公开三选一；实验编号取实验词表", () => {
+    const validation = validateDesignStandard(
+      withShowcase([
+        { kind: "demo", title_zh: "演示", description_zh: "说明", template: '<a-row :gutter="p.gutter[0]" />' },
+        {
+          kind: "specimen",
+          title_zh: "对照",
+          name_label_zh: "类名",
+          rows: [
+            { name: "gap-16", usage_zh: "组内", template: "<div :style=\"{ gap: p.gap + 'px' }\" />" },
+            { name: "text-label-14", sample_zh: "Label 14" },
+          ],
+        },
+        {
+          kind: "palette",
+          title_zh: "色板",
+          source: "SRC.TEST.SPEC",
+          scales: [
+            {
+              name: "gray",
+              label_zh: "灰",
+              swatches: [
+                { name: "gray-100", value: "#f2f2f2", usage_zh: "背景" },
+                { name: "gray-1000", token: "color.text.primary" },
+                { name: "gray-300", pending_zh: "未公开" },
+              ],
+            },
+          ],
+        },
+        { kind: "lab", lab: "state.race", title_zh: "实验", description_zh: "迟到的响应" },
+      ]),
+      ctx(),
+    );
+    expect(codes(validation)).toEqual([]);
+    const showcase = validation.standard!.areas[0]!.rules[0]!.showcase;
+    expect(showcase.map((block) => block.kind)).toEqual(["demo", "specimen", "palette", "lab"]);
+    const specimen = showcase[1] as Extract<(typeof showcase)[number], { kind: "specimen" }>;
+    expect(specimen.rows[1]).toEqual({ name: "text-label-14", usage_zh: null, sample_zh: "Label 14", template: null, jsx: null });
+    const palette = showcase[2] as Extract<(typeof showcase)[number], { kind: "palette" }>;
+    expect(palette.scales[0]!.swatches).toEqual([
+      { name: "gray-100", kind: "value", token: null, value: "#f2f2f2", pending_zh: null, usage_zh: "背景" },
+      { name: "gray-1000", kind: "token", token: "color.text.primary", value: "rgba(0, 0, 0, 0.88)", pending_zh: null, usage_zh: null },
+      { name: "gray-300", kind: "pending", token: null, value: null, pending_zh: "未公开", usage_zh: null },
+    ]);
+  });
+
+  it("展示块出错一次报全：实验不在词表、色块同时写两种取值、出处没登记、Ant Design 体系写了 jsx、类型不在词表", () => {
+    const validation = validateDesignStandard(
+      withShowcase([
+        { kind: "lab", lab: "state.nope", title_zh: "实验" },
+        { kind: "palette", source: "SRC.NOWHERE", scales: [{ name: "gray", swatches: [{ name: "gray-100", value: "#fff", token: "color.text.primary" }] }] },
+        { kind: "demo", title_zh: "演示", jsx: "<div />" },
+        { kind: "chart", title_zh: "图表" },
+      ]),
+      ctx(),
+    );
+    expect(codes(validation)).toEqual(["DESIGN_LAB_UNKNOWN", "DESIGN_SOURCE_UNKNOWN", "DESIGN_SHAPE", "DESIGN_EXAMPLE", "DESIGN_SHAPE"]);
+  });
+
+  it("实验词表：编号唯一，每个都有标题与说明（两个画廊都要实现，画廊测试对账）", () => {
+    expect(DESIGN_LABS.map((lab) => lab.id)).toEqual(["state.url-filters", "state.query-cache", "state.race"]);
+    for (const lab of DESIGN_LABS) {
+      expect(lab.title_zh.length).toBeGreaterThan(0);
+      expect(lab.description_zh.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("校验：组件实验场（playground）", () => {
+  function componentArea(playground: unknown): Raw {
+    const raw = minimal();
+    raw["areas"] = [
+      {
+        key: "button",
+        title_zh: "按钮",
+        group: "components.general",
+        prefix: "CMP.BUTTON",
+        summary_zh: "按钮",
+        playground,
+        rules: [{ id: "CMP.BUTTON.USAGE", title_zh: "何时用", statement_zh: "按钮触发动作。", enforcement: { kind: "review" } }],
+      },
+    ];
+    return raw;
+  }
+
+  it("枚举属性列出规范允许的取值与缺省值，布尔属性给缺省值；矩阵取两个不同的枚举属性", () => {
+    const validation = validateDesignStandard(
+      componentArea({
+        component: "a-button",
+        text_zh: "新建",
+        props: { type: { options: ["primary", "default"], default: "primary" }, size: { options: ["small", "middle"], default: "middle" }, danger: { boolean: true, default: false } },
+        matrix: { rows: "type", columns: "size" },
+      }),
+      ctx(),
+    );
+    expect(codes(validation)).toEqual([]);
+    expect(validation.standard!.areas[0]!.playground).toEqual({
+      component: "a-button",
+      text_zh: "新建",
+      props: [
+        { key: "type", kind: "options", options: ["primary", "default"], default: "primary" },
+        { key: "size", kind: "options", options: ["small", "middle"], default: "middle" },
+        { key: "danger", kind: "boolean", default: false },
+      ],
+      matrix: { rows: "type", columns: "size" },
+    });
+  });
+
+  it("缺省值不在取值里、布尔缺省不是布尔、矩阵引用布尔属性、非组件领域写 playground，都报错", () => {
+    const bad = validateDesignStandard(
+      componentArea({
+        component: "a-button",
+        props: { type: { options: ["primary"], default: "ghost" }, danger: { boolean: true, default: "no" }, size: { options: ["small"], default: "small" } },
+        matrix: { rows: "danger", columns: "size" },
+      }),
+      ctx(),
+    );
+    expect(bad.issues.filter((issue) => issue.severity === "error").map((issue) => issue.path)).toEqual([
+      "areas[0].playground.props.type.default",
+      "areas[0].playground.props.danger.default",
+      "areas[0].playground.matrix",
+    ]);
+    const misplaced = minimal();
+    misplaced["areas"][0]["playground"] = { component: "a-row", props: { gutter: { options: ["16"], default: "16" } } };
+    expect(validateDesignStandard(misplaced, ctx()).issues.map((issue) => issue.path)).toContain("areas[0].playground");
   });
 });

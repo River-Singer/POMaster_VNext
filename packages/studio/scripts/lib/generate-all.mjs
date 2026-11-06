@@ -38,6 +38,7 @@ export function generateAll(outRoot = GENERATED_DIR) {
     tokenUnknowns: foundations.unknownCount,
     standard: standard.count,
     standardAreas: standard.areas,
+    standardCovered: standard.covered,
     standardRules: standard.rules,
     standardFingerprint: standardModel.fingerprint,
   };

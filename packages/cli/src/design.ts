@@ -5,16 +5,18 @@
  * （包内 `seeds/design-standards/<设计体系>.yaml`，缺省 antd）。token 表与硬规范原文就近取：显式文件同目录的 design-tokens.yaml > 项目 > 预设。
  * 两个命令都只读、不写任何文件，不要求项目已 init。
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
+  DESIGN_SKELETON_RELATIVE,
   DESIGN_STANDARD_PRESETS_DIR,
   DESIGN_STANDARD_RELATIVE,
   DESIGN_SYSTEMS,
   DESIGN_TOKENS_RELATIVE,
   designStandardFingerprint,
+  readDesignSkeleton,
   readDesignStandardFile,
   readSpecTexts,
   readTokenGroups,
@@ -36,6 +38,8 @@ export interface DesignInputs {
   readonly standard_path: string;
   readonly tokens_path: string | null;
   readonly specs_root: string | null;
+  /** 统一骨架（总取工具 seeds 里的那份；两套设计体系共用）。 */
+  readonly skeleton_path: string | null;
 }
 
 export interface DesignSummary {
@@ -98,6 +102,7 @@ export function resolveDesignInputs(dir: string, input: DesignValidateInput): De
   const presetSpecs = seedsRoot === null ? null : join(seedsRoot, "specs", "hard");
   const firstExisting = (...paths: ReadonlyArray<string | null>): string | null =>
     paths.find((path): path is string => path !== null && existsSync(path)) ?? null;
+  const skeletonPath = firstExisting(seedsRoot === null ? null : join(seedsRoot, DESIGN_SKELETON_RELATIVE));
 
   if (input.file !== undefined) {
     const standardPath = isAbsolute(input.file) ? input.file : join(dir, input.file);
@@ -106,6 +111,7 @@ export function resolveDesignInputs(dir: string, input: DesignValidateInput): De
       standard_path: standardPath,
       tokens_path: firstExisting(join(dirname(standardPath), "design-tokens.yaml"), projectTokens, presetTokens),
       specs_root: firstExisting(projectSpecs, presetSpecs),
+      skeleton_path: skeletonPath,
     };
   }
   if (existsSync(projectStandard)) {
@@ -114,6 +120,7 @@ export function resolveDesignInputs(dir: string, input: DesignValidateInput): De
       standard_path: projectStandard,
       tokens_path: firstExisting(projectTokens),
       specs_root: firstExisting(projectSpecs),
+      skeleton_path: skeletonPath,
     };
   }
   return {
@@ -121,6 +128,7 @@ export function resolveDesignInputs(dir: string, input: DesignValidateInput): De
     standard_path: presetStandard ?? projectStandard,
     tokens_path: firstExisting(presetTokens),
     specs_root: firstExisting(presetSpecs),
+    skeleton_path: skeletonPath,
   };
 }
 
@@ -155,7 +163,21 @@ const MODE_ZH: Record<DesignSourceMode, string> = {
 
 const LIVE_TOKEN_REFERENCE = /\bt\[\s*['"]/;
 
-/** 规范里有没有引用 token：参数取 token，或实时示例里写了 t['…']（按原始结构判断，规范未通过校验时同样适用）。 */
+/** 一段原始结构里有没有 token 引用：template / jsx 里的 t['…']，或色块的 token。 */
+function mentionsTokens(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsTokens);
+  if (typeof node !== "object" || node === null) return false;
+  return Object.entries(node).some(([key, value]) => {
+    if ((key === "template" || key === "jsx") && typeof value === "string") return LIVE_TOKEN_REFERENCE.test(value);
+    if (key === "token" && typeof value === "string") return true;
+    return typeof value === "object" && value !== null && mentionsTokens(value);
+  });
+}
+
+/**
+ * 规范里有没有引用 token：参数取 token、实时内容里写了 t['…']、或色板的色块取 token
+ * （按原始结构判断，规范未通过校验时同样适用）。
+ */
 function referencesTokens(raw: unknown): boolean {
   if (typeof raw !== "object" || raw === null) return false;
   const areas = (raw as { areas?: unknown }).areas;
@@ -165,20 +187,9 @@ function referencesTokens(raw: unknown): boolean {
     return (
       Array.isArray(rules) &&
       rules.some((rule) => {
-        const params = (rule as { params?: unknown } | null)?.params;
-        const examples = (rule as { examples?: unknown } | null)?.examples;
-        const tokenParam =
-          typeof params === "object" &&
-          params !== null &&
-          Object.values(params).some((param) => typeof param === "object" && param !== null && "token" in param);
-        const tokenExample =
-          Array.isArray(examples) &&
-          examples.some((example) => {
-            if (typeof example !== "object" || example === null) return false;
-            const { template, jsx } = example as { template?: unknown; jsx?: unknown };
-            return [template, jsx].some((body) => typeof body === "string" && LIVE_TOKEN_REFERENCE.test(body));
-          });
-        return tokenParam || tokenExample;
+        if (typeof rule !== "object" || rule === null) return false;
+        const { params, showcase, examples } = rule as { params?: unknown; showcase?: unknown; examples?: unknown };
+        return mentionsTokens(params) || mentionsTokens(showcase) || mentionsTokens(examples);
       })
     );
   });
@@ -214,21 +225,26 @@ export function loadDesignStandard(dir: string, input: DesignValidateInput): Des
   }
   const tokens = inputs.tokens_path === null ? null : readTokenGroups(inputs.tokens_path);
   const specTexts = inputs.specs_root === null ? null : readSpecTexts(inputs.specs_root, loaded.raw);
-  const validation = validateDesignStandard(loaded.raw, { tokens: tokens?.groups ?? null, specTexts });
-  // token 表只在规范引用了 token 时进指纹（Geist 预设不引用 Ant Design 的 token 表）。
+  const skeletonRead = inputs.skeleton_path === null ? null : readDesignSkeleton(inputs.skeleton_path);
+  const skeletonIssues = (skeletonRead?.issues ?? []).map((issue) => ({ ...issue, path: issue.path.length > 0 ? `skeleton.${issue.path}` : "skeleton" }));
+  const validation = validateDesignStandard(loaded.raw, { tokens: tokens?.groups ?? null, specTexts, skeleton: skeletonRead?.skeleton ?? null });
+  const issues = [...skeletonIssues, ...validation.issues];
+  const ok = validation.ok && !skeletonIssues.some((issue) => issue.severity === "error");
+  // token 表只在规范引用了 token 时进指纹（Geist 预设不引用 Ant Design 的 token 表）；骨架决定页面目录，也进指纹。
   const fingerprint = designStandardFingerprint([
     { path: DESIGN_STANDARD_RELATIVE, text: loaded.text },
     ...(tokens === null || !referencesTokens(loaded.raw) ? [] : [{ path: DESIGN_TOKENS_RELATIVE, text: tokens.text }]),
+    ...(skeletonRead === null || inputs.skeleton_path === null ? [] : [{ path: DESIGN_SKELETON_RELATIVE, text: readFileSync(inputs.skeleton_path, "utf8") }]),
   ]);
   return {
     ...inputs,
-    ok: validation.ok,
-    errors: validation.issues.filter((issue) => issue.severity === "error").length,
-    warnings: validation.issues.filter((issue) => issue.severity === "warning").length,
-    issues: validation.issues,
+    ok,
+    errors: issues.filter((issue) => issue.severity === "error").length,
+    warnings: issues.filter((issue) => issue.severity === "warning").length,
+    issues,
     fingerprint,
-    summary: validation.standard === null ? null : summarize(validation.standard),
-    normalized: validation.standard,
+    summary: validation.standard === null || !ok ? null : summarize(validation.standard),
+    normalized: ok ? validation.standard : null,
   };
 }
 
@@ -281,6 +297,16 @@ function ruleLines(rule: DesignRule): string[] {
   const lines = [`  ${rule.id}  ${rule.title_zh}  [${enforcement} · ${surfaces}]`, `    ${rule.statement_zh}`];
   for (const param of rule.params) {
     lines.push(`    ${param.label_zh ?? param.key}：${formatDesignParam(param)}`);
+  }
+  for (const block of rule.showcase) {
+    if (block.kind === "demo") lines.push(`    演示：${block.title_zh}`);
+    else if (block.kind === "specimen") lines.push(`    对照表${block.title_zh === null ? "" : `「${block.title_zh}」`}：${block.rows.map((row) => row.name).join("、")}`);
+    else if (block.kind === "lab") lines.push(`    实验：${block.title_zh}（${block.lab}）`);
+    else {
+      for (const scale of block.scales) {
+        lines.push(`    色板 ${scale.label_zh ?? scale.name}：${scale.swatches.map((swatch) => `${swatch.name}=${swatch.value ?? "未公开"}`).join("，")}`);
+      }
+    }
   }
   for (const anchor of rule.anchors) {
     lines.push(`    依据：${anchor.doc}「${anchor.quote}」`);
@@ -362,6 +388,7 @@ export function runDesignShow(dir: string, input: DesignShowInput): CommandOutco
     standard_path: loaded.standard_path,
     tokens_path: loaded.tokens_path,
     specs_root: loaded.specs_root,
+    skeleton_path: loaded.skeleton_path,
     fingerprint: loaded.fingerprint,
     meta: standard.meta,
     areas,

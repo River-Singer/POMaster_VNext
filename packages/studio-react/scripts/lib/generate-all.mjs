@@ -25,6 +25,7 @@ export function generateAll(outRoot = GENERATED_DIR) {
     antdExportCount: components.antdExportCount,
     standard: standard.count,
     standardAreas: standard.areas,
+    standardCovered: standard.covered,
     standardRules: standard.rules,
     standardFingerprint: standardModel.fingerprint,
   };

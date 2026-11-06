@@ -1,7 +1,7 @@
-// React 画廊「规范」分区钉测（R1 · Vercel Geist 预设）：规范页与 AI 孪生同源同指纹、孪生新鲜、
-// 与 CLI 归一化逐条对账、实时示例只用登记过的组件。
+// React 画廊「规范」分区钉测（React · Geist 抽屉）：规范页与 AI 孪生同源同指纹、孪生新鲜、
+// 与 CLI 归一化逐条对账、目录与 Vue · Ant Design 抽屉相同（统一骨架）、实时内容只用登记过的组件。
 //
-// 孪生新鲜度是本文件的核心：geist.yaml 改了而没有重新生成孪生，本测试失败——修复方法是运行
+// 孪生新鲜度是本文件的核心：geist.yaml 或骨架改了而没有重新生成孪生，本测试失败——修复方法是运行
 // `node packages/studio-react/run.mjs generate`。
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,68 +19,93 @@ import {
   loadGeistModel,
   renderAreaStoryReact,
 } from "../scripts/lib/standard.mjs";
-import { STANDARD_TOKENS_PATH, renderTwinJson, renderTwinMarkdown } from "../../studio/scripts/lib/standard.mjs";
+import { STANDARD_TOKENS_PATH, liveBodiesOf, loadStandardModel, renderTwinJson, renderTwinMarkdown } from "../../studio/scripts/lib/standard.mjs";
 import { STUDIO_REACT_ROOT } from "../scripts/lib/paths.mjs";
 import { GEIST_TYPE_CLASS, cn } from "../src/lib/utils";
 
 // 生成器模型是 .mjs 产出的动态结构，测试里按字段读取，用 any 最直接。
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const model = loadGeistModel();
+const covered = model.areas.filter((area: any) => area.covered);
+
+function areaOf(key: string): any {
+  const area = model.areas.find((item: { key: string }) => item.key === key);
+  if (area === undefined) throw new Error(`领域 ${key} 缺席`);
+  return area;
+}
 
 function tempRoot(prefix: string): string {
   return mkdtempSync(join(tmpdir(), `pvnext-geist-standard-${prefix}-`));
 }
 
 describe("Geist 规范 · 装载模型", () => {
-  it("8 个领域、17 条规则，全部在「基础」分区；Storybook 标题与 id 按领域派生", () => {
+  it("目录取统一骨架：128 个领域，本体系写了基础 9 篇、按钮与状态管理，共 71 条规则；其余标为待补", () => {
     expect(model.meta).toMatchObject({ design_system: "geist", design_system_title_zh: "Vercel Geist", origin: "preset" });
-    expect(model.areas.map((area: { key: string }) => area.key)).toEqual([
-      "typography",
+    expect(model.areas.length).toBe(128);
+    expect(covered.map((area: { key: string }) => area.key)).toEqual([
       "color",
+      "typography",
+      "headings",
+      "icons",
       "materials",
+      "layout",
       "grid",
       "spacing",
-      "icons",
       "motion",
-      "layout",
+      "button",
+      "state",
     ]);
-    expect(model.areas.every((area: { group: string }) => area.group === "foundations")).toBe(true);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(17);
-    const grid = model.areas[3];
-    expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview" });
+    expect(covered.filter((area: { group: string }) => area.group === "foundations").length).toBe(9);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(71);
+    for (const area of covered) expect(area.topics.every((topic: { covered: boolean }) => topic.covered)).toBe(true);
+    const grid = areaOf("grid");
+    expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview", playground_id: null, matrix_id: null });
     expect(grid.rules[0].storybook).toEqual({ export: "GRID_COLUMNS", id: "standard-foundations-grid--grid-columns" });
+    expect(areaOf("button").playground).toMatchObject({ component: "Button", matrix: { rows: "variant", columns: "size" } });
     expect(model.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
-  it("不引用 token：指纹与输入清单只含 geist.yaml，实时示例里的 t 表为空", () => {
-    expect(model.inputs.map((input: { path: string }) => input.path)).toEqual(["packages/cli/seeds/design-standards/geist.yaml"]);
+  it("两个抽屉目录相同：领域键、标题、分区、条目与 Vue · Ant Design 抽屉逐一一致", () => {
+    const antd = loadStandardModel();
+    const outline = (areas: any[]) => areas.map((area) => [area.key, area.storybook.title, area.storybook.id, area.topics.map((topic: { id: string }) => topic.id)]);
+    expect(outline(model.areas)).toEqual(outline(antd.areas));
+  });
+
+  it("不引用 token：指纹与输入清单只含 geist.yaml 与骨架，实时内容里的 t 表为空", () => {
+    expect(model.inputs.map((input: { path: string }) => input.path)).toEqual([
+      "packages/cli/seeds/design-standards/geist.yaml",
+      "packages/cli/seeds/design-standards/skeleton.yaml",
+    ]);
     expect(model.ctx.tokens).toEqual({});
     const params = model.areas.flatMap((area: any) => area.rules.flatMap((rule: any) => rule.params));
     expect(params.some((param: any) => param.kind === "token")).toBe(false);
   });
 
-  it("与 CLI 归一化逐条对账：指纹、条文、参数（已定的值与待定）、锚点、执行方式、示例", () => {
+  it("与 CLI 归一化逐条对账：指纹、领域、实验场、条文、参数、锚点、执行方式、展示块、示例", () => {
     const cli = loadDesignStandard(join(tmpdir(), "pvnext-geist-standard-no-project"), { system: "geist" });
     expect(cli.ok).toBe(true);
     expect(model.fingerprint).toBe(cli.fingerprint);
     const cliAreas = cli.normalized!.areas;
-    expect(model.areas.map((area: { key: string }) => area.key)).toEqual(cliAreas.map((area) => area.key));
-    model.areas.forEach((area: Record<string, any>, areaIndex: number) => {
+    expect(covered.map((area: { key: string }) => area.key)).toEqual(cliAreas.map((area) => area.key));
+    covered.forEach((area: Record<string, any>, areaIndex: number) => {
       const cliArea = cliAreas[areaIndex]!;
-      expect([area.title_zh, area.group, area.prefix, area.summary_zh]).toEqual([cliArea.title_zh, cliArea.group, cliArea.prefix, cliArea.summary_zh]);
+      expect([area.title_zh, area.group, area.group_title_zh, area.prefix, area.summary_zh]).toEqual([
+        cliArea.title_zh,
+        cliArea.group,
+        cliArea.group_title_zh,
+        cliArea.prefix,
+        cliArea.summary_zh,
+      ]);
+      expect(area.playground).toEqual(cliArea.playground);
       area.rules.forEach((rule: Record<string, any>, ruleIndex: number) => {
         const cliRule = cliArea.rules[ruleIndex]!;
         expect(rule.id).toBe(cliRule.id);
-        expect([rule.title_zh, rule.statement_zh, rule.rationale_zh, rule.surfaces]).toEqual([
-          cliRule.title_zh,
-          cliRule.statement_zh,
-          cliRule.rationale_zh,
-          cliRule.surfaces,
-        ]);
+        expect([rule.title_zh, rule.statement_zh, rule.rationale_zh, rule.surfaces]).toEqual([cliRule.title_zh, cliRule.statement_zh, cliRule.rationale_zh, cliRule.surfaces]);
         expect(rule.params).toEqual(cliRule.params);
         expect(rule.anchors).toEqual(cliRule.anchors);
         const { kind, check, active } = rule.enforcement;
         expect(kind === "gate" ? { kind, check, active } : { kind }).toEqual(cliRule.enforcement);
+        expect(rule.showcase).toEqual(cliRule.showcase);
         expect(rule.examples).toEqual(
           cliRule.examples.map((example) => ({
             kind: example.kind,
@@ -96,10 +121,11 @@ describe("Geist 规范 · 装载模型", () => {
     });
   });
 
-  it("实时示例全是 jsx（React 栈），没有 Vue 模板", () => {
-    const examples = model.areas.flatMap((area: any) => area.rules.flatMap((rule: any) => rule.examples));
-    expect(examples.filter((example: any) => example.template !== null)).toEqual([]);
-    expect(examples.filter((example: any) => example.jsx !== null).length).toBe(11);
+  it("实时内容全是 jsx（React 栈），没有 Vue 模板：示例、演示、对照表的行", () => {
+    const bodies = model.areas.flatMap((area: any) => area.rules.flatMap((rule: any) => liveBodiesOf(rule)));
+    expect(bodies.filter((body: any) => body.template !== null)).toEqual([]);
+    expect(bodies.every((body: any) => body.jsx !== null)).toBe(true);
+    expect(bodies.length).toBeGreaterThan(60);
   });
 });
 
@@ -133,11 +159,24 @@ describe("Geist 规范 · 示例组件登记", () => {
     const icons = model.areas.find((area: { key: string }) => area.key === "icons");
     const story = renderAreaStoryReact(icons, model);
     expect(story).toContain("import { Button } from '../../src/components/ui/button';");
-    expect(story).toContain("import { PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react';");
+    expect(story).toContain("import { ChartColumnIcon, ClockIcon, CopyIcon, GitBranchIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react';");
     const motion = model.areas.find((area: { key: string }) => area.key === "motion");
     const motionStory = renderAreaStoryReact(motion, model);
     expect(motionStory).not.toContain("components/ui/");
-    expect(motionStory).not.toContain("lucide-react");
+    expect(motionStory).not.toContain("from 'lucide-react'");
+  });
+
+  it("组件领域：实验场与状态矩阵渲染登记过的组件，取值只列规范允许的", () => {
+    const story = renderAreaStoryReact(areaOf("button"), model);
+    expect(story).toContain("import { Button, ButtonLink } from '../../src/components/ui/button';");
+    expect(story).toContain('const CELL: StdCell = (values) => <Button {...values}>{"部署项目"}</Button>;');
+    expect(story).toContain("export const Playground: StoryObj");
+    expect(story).toContain("...playgroundControls(AREA.playground!)");
+    expect(story).toContain("export const Matrix: StoryObj");
+    expect(story).toContain("<AreaPage area={AREA} ctx={CTX} live={LIVE} cell={CELL} />");
+    const placeholder = renderAreaStoryReact(areaOf("split_button"), model);
+    expect(placeholder).toContain('name: "分裂按钮"');
+    expect(placeholder.match(/^export const /gm)).toEqual(["export const "]);
   });
 });
 
@@ -147,20 +186,21 @@ describe("Geist 规范 · Storybook 页面", () => {
     const second = tempRoot("pages-b");
     try {
       const result = generateStandardPagesReact(first, model);
-      expect(result).toMatchObject({ count: 9, areas: 8, rules: 17 });
+      expect(result).toMatchObject({ count: 129, areas: 128, covered: 11, rules: 71 });
       generateStandardPagesReact(second, model);
       const files = readdirSync(first).sort();
       expect(files).toEqual(readdirSync(second).sort());
       for (const file of files) expect(readFileSync(join(first, file), "utf8")).toBe(readFileSync(join(second, file), "utf8"));
-      const overview = readFileSync(join(first, "00-overview.stories.tsx"), "utf8");
+      const overview = readFileSync(join(first, "000-overview.stories.tsx"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);
-      const grid = readFileSync(join(first, "04-grid.stories.tsx"), "utf8");
+      const gridIndex = model.areas.findIndex((area: { key: string }) => area.key === "grid");
+      const grid = readFileSync(join(first, `${String(gridIndex + 1).padStart(3, "0")}-grid.stories.tsx`), "utf8");
       expect(grid).toContain('title: "规范/基础/栅格"');
       expect(grid).toContain('id: "standard-foundations-grid"');
       expect(grid).toContain("export const Overview: StoryObj");
       expect(grid).toContain('const P_0: Record<string, any> = {"desktop":12,"tablet":6,"mobile":4,"prose_span":[6,7]};');
-      for (const rule of model.areas[3].rules) {
+      for (const rule of areaOf("grid").rules) {
         expect(grid).toContain(`export const ${rule.storybook.export}: StoryObj`);
         expect(grid).toContain(rule.statement_zh);
       }
@@ -180,7 +220,7 @@ describe("Geist 规范 · Storybook 页面", () => {
       writeFileSync(path, mutated);
       const changed = loadGeistModel(path, STANDARD_TOKENS_PATH);
       expect(changed.fingerprint).not.toBe(model.fingerprint);
-      const story = renderAreaStoryReact(changed.areas[3], changed);
+      const story = renderAreaStoryReact(changed.areas.find((area: { key: string }) => area.key === "grid"), changed);
       expect(story).toContain("桌面 12 列，平板 6 列，手机 4 列");
       expect(story).toContain(changed.fingerprint);
     } finally {
@@ -190,7 +230,7 @@ describe("Geist 规范 · Storybook 页面", () => {
 });
 
 describe("Geist 规范 · AI 孪生", () => {
-  it("孪生新鲜：入库的孪生与当前规范源重新生成的结果逐字节一致（不一致就运行 node packages/studio-react/run.mjs generate）", () => {
+  it("孪生新鲜：入库的孪生与当前规范源、骨架重新生成的结果逐字节一致（不一致就运行 node packages/studio-react/run.mjs generate）", () => {
     expect(readFileSync(join(GEIST_TWIN_DIR, GEIST_TWIN_JSON), "utf8")).toBe(renderTwinJson(model));
     expect(readFileSync(join(GEIST_TWIN_DIR, GEIST_TWIN_MD), "utf8")).toBe(renderTwinMarkdown(model));
   });
@@ -202,25 +242,32 @@ describe("Geist 规范 · AI 孪生", () => {
     expect(twin.generator.path).toBe("packages/studio-react/scripts/lib/standard.mjs");
     expect(twin.edit).toEqual({
       source: "packages/cli/seeds/design-standards/geist.yaml",
+      skeleton: "packages/cli/seeds/design-standards/skeleton.yaml",
       validate: "pomaster design validate --system geist",
       regenerate: "node packages/studio-react/run.mjs generate",
       show: "pomaster design show --system geist --json",
     });
-    expect(twin.storybook).toEqual({ base_url: null, overview: "?path=/story/standard-overview--overview" });
-    const columns = twin.areas[3].rules[0];
+    expect(twin.storybook).toEqual({
+      base_url: "https://river-singer.github.io/POMaster_VNext/react/",
+      overview: "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-overview--overview",
+    });
+    const columns = twin.areas.find((area: { key: string }) => area.key === "grid").rules[0];
     expect(columns.id).toBe("GRID.COLUMNS");
-    expect(columns.storybook.url).toBe("?path=/story/standard-foundations-grid--grid-columns");
+    expect(columns.storybook.url).toBe("https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-grid--grid-columns");
+    const store = twin.areas.find((area: { key: string }) => area.key === "state").rules.find((rule: { id: string }) => rule.id === "STATE.GLOBAL_STORE");
+    expect(store.params[0]).toMatchObject({ key: "library", value: "Zustand", pending: false });
   });
 
   it("孪生 Markdown 覆盖每条规则：编号、条文、页面地址", () => {
     const md = renderTwinMarkdown(model);
     expect(md).toContain("# 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）");
-    for (const area of model.areas) {
+    for (const area of covered) {
       for (const rule of area.rules) {
         expect(md).toContain(`### ${rule.id} ${rule.title_zh}`);
         expect(md).toContain(rule.statement_zh);
         expect(md).toContain(`?path=/story/${rule.storybook.id}`);
       }
     }
+    expect(md).toContain("## 待补的领域（117 个）");
   });
 });

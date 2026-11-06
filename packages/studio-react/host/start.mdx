@@ -1,0 +1,30 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="开始" />
+
+# POMaster 前端规范与画廊
+
+侧栏里是两个抽屉，各自是一套前端技术栈的开发规范与组件画廊：
+
+- **Vue · Ant Design**：ant-design-vue 4.2.6，规范源 `packages/cli/seeds/design-standards/antd.yaml`。
+- **React · Geist**：React + shadcn/ui + Tailwind CSS 4，按 Vercel Geist 设计，规范源 `packages/cli/seeds/design-standards/geist.yaml`。
+
+两个抽屉的「规范」分区结构完全相同：领域、领域下的条目、组件清单取两套体系的并集（统一骨架
+`packages/cli/seeds/design-standards/skeleton.yaml`），页面的样子也一样（按 Geist 文档的样子做）；
+内容各是本体系的规则、数值与实时示例。某一套体系还没写的页显示「待补」。
+
+## 架构锁定以后
+
+项目定下前端架构、把规范落地到 `.pomaster/baseline/frontend/design-standard.yaml` 以后，总 Storybook 只留
+对应的抽屉，另一个不再出现。也可以用环境变量 `POMASTER_STUDIO_SYSTEM=antd` 或 `geist` 只看一个。
+
+## 本地运行
+
+```bash
+corepack pnpm studio:dev          # 总 Storybook（http://localhost:6008），两个抽屉同时起
+corepack pnpm studio:vue:dev      # 只起 Vue · Ant Design（6006）
+corepack pnpm studio:react:dev    # 只起 React · Geist（6007）
+```
+
+AI 读规范时不看页面，读同源的孪生：`packages/studio/twin/design-standard.json`（Ant Design）、
+`packages/studio-react/twin/design-standard.geist.json`（Geist），或运行 `pomaster design show --json`。

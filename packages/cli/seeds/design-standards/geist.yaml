@@ -2,21 +2,20 @@
 #
 # 预设不直接播种：项目落地后规范在 .pomaster/baseline/frontend/design-standard.yaml，
 # 未落地时 `pomaster design validate / show --system geist` 与 React 画廊（packages/studio-react）
-# 的规范页用本预设。
+# 的规范页用本预设。领域与条目按统一骨架（skeleton.yaml）组织，与 Ant Design 预设目录一致。
 #
-# 实现栈：React + Tailwind CSS 4 + shadcn/ui（组件源码进项目），按 Geist 配主题；图标 lucide-react。
-# Vercel 官方的 Geist 组件包 @vercel/geistcn 与图标包 @vercel/geistcn-assets 未公开发布
-# （2026-11-02 安装返回 404），所以不用。字体从 Google Fonts 加载 Geist 与 Geist Mono。
+# 实现栈：React + Tailwind CSS 4 + shadcn/ui（组件源码进项目，按 Geist 重新配色与定尺寸）；图标 lucide-react；
+# 服务端数据 @tanstack/react-query；全局 store Zustand。Vercel 文档里的组件包 @vercel/geistcn 与图标包
+# @vercel/geistcn-assets 在公开 npm 上装不到（2026-11-02 返回 404），所以不用。字体从 Google Fonts 加载。
 #
-# 数值纪律同 antd 预设：定值带出处；Geist 官网正文没给的数值（行高、字重、阴影、色板具体值）
-# 写成项目决策位，或注明是预设近似（shadcn/ui neutral 主题），拿到官方数值后替换。
+# 数值纪律同 antd 预设：定值带出处；Geist 没公开的数值写成项目决策位，或注明是 pomaster 预设取值。
+# 色值取自 vercel.com/geist/vercel-brand.css（Owner 2026-11-06 提供的副本），只公开了部分彩色档位。
 #
 # 怎么改：编辑本文件 → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`。
 #
-# 实时示例（examples[].jsx）是 JSX 片段，React 画廊里真渲染：`p` 是本条规则的参数（已解析的值）；
-# 可用的组件：Button、Badge、Card / CardHeader / CardTitle / CardDescription / CardContent / CardFooter、
-# Input、Label、Separator、Switch、Skeleton、Alert / AlertTitle / AlertDescription（shadcn/ui），
-# 以及 lucide-react 图标（写成 XxxIcon，如 SearchIcon）。
+# 实时内容（jsx）是 JSX 片段，React 画廊里真渲染：`p` 是本条规则的参数。可用组件见
+# packages/studio-react/scripts/lib/standard.mjs 的 UI_COMPONENTS，以及 lucide-react 图标（XxxIcon）。
+# Geist 色阶在 Tailwind 里是 ds- 前缀的颜色类：bg-ds-gray-100、text-ds-gray-900、border-ds-gray-alpha-400……
 schema: pomaster.design-standard/v1
 meta:
   origin: preset
@@ -27,37 +26,94 @@ meta:
 sources:
   SRC.GEIST.HOME:
     title_zh: Vercel Geist 设计体系
-    url: https://vercel.com/geist
-    retrieved: 2026-11-02
+    url: https://vercel.com/geist/introduction
+    retrieved: 2026-11-06
+  SRC.GEIST.COLORS:
+    title_zh: Geist · Colors（色阶、档位用途、gray 与 gray-alpha 的取舍）
+    url: https://vercel.com/geist/colors
+    retrieved: 2026-11-06
+  SRC.VERCEL.BRAND_CSS:
+    title_zh: Vercel 品牌样式表（派生自 GeistCN 源码，含 Geist 色阶色值）
+    url: https://vercel.com/geist/vercel-brand.css
+    retrieved: 2026-11-06
+    note_zh: Owner 提供的副本；GeistCN 源码快照 4f5d9c0；彩色色阶只公开了 100、400、700、900、1000 档
   SRC.GEIST.TYPOGRAPHY:
     title_zh: Geist · Typography
     url: https://vercel.com/geist/typography
-    retrieved: 2026-11-02
-    note_zh: 页面给出类名与用法；字号即类名中的数字（px），行高、字重、字距在 Geist Figma 里，正文未给出
+    retrieved: 2026-11-06
+    note_zh: 给出类名与用途；字号即类名中的数字（px）
   SRC.GEIST.MATERIALS:
     title_zh: Geist · Materials
     url: https://vercel.com/geist/materials
-    retrieved: 2026-11-02
+    retrieved: 2026-11-06
   SRC.GEIST.GRID:
     title_zh: Geist · Grid
     url: https://vercel.com/geist/grid
-    retrieved: 2026-11-02
-  SRC.GEIST.ICONS:
-    title_zh: Geist · Icons（图标包 @vercel/geistcn-assets）
-    url: https://vercel.com/geist/icons
-    retrieved: 2026-11-02
+    retrieved: 2026-11-06
+  SRC.GEIST.BUTTON:
+    title_zh: Geist · Button
+    url: https://vercel.com/geist/button
+    retrieved: 2026-11-06
+  SRC.GEIST.PIE_GAUGE:
+    title_zh: Geist · Pie Gauge（行内图标尺寸）
+    url: https://vercel.com/geist/pie-gauge
+    retrieved: 2026-11-06
+  SRC.GEIST.EMPTY_STATE:
+    title_zh: Geist · Empty State
+    url: https://vercel.com/geist/empty-state
+    retrieved: 2026-11-06
+  SRC.GEIST.MIDDLE_TRUNCATE:
+    title_zh: Geist · MiddleTruncate
+    url: https://vercel.com/geist/middle-truncate
+    retrieved: 2026-11-06
+  SRC.GEIST.TABLE:
+    title_zh: Geist · Table
+    url: https://vercel.com/geist/table
+    retrieved: 2026-11-06
+  SRC.GEIST.TOOLTIP:
+    title_zh: Geist · Tooltip
+    url: https://vercel.com/geist/tooltip
+    retrieved: 2026-11-06
+  SRC.GEIST.SEPARATOR:
+    title_zh: Geist · Separator
+    url: https://vercel.com/geist/separator
+    retrieved: 2026-11-06
   SRC.VERCEL.DESIGN_MD:
     title_zh: Vercel design.md（官方设计技能文档：栅格、间距角色、字体、色彩、动效、可访问性）
     url: https://vercel.com/design.md
     retrieved: 2026-11-02
   SRC.SHADCN.THEMING:
-    title_zh: shadcn/ui · Theming（neutral 主题 CSS 变量）
+    title_zh: shadcn/ui · Theming
     url: https://ui.shadcn.com/docs/theming
     retrieved: 2026-11-02
   SRC.TAILWIND.SPACING:
     title_zh: Tailwind CSS · 间距（--spacing 基数）
-    url: https://tailWindcss.com/docs/customizing-spacing
+    url: https://tailwindcss.com/docs/customizing-spacing
     retrieved: 2026-11-02
+  SRC.TAILWIND.BREAKPOINTS:
+    title_zh: Tailwind CSS · 响应式断点
+    url: https://tailwindcss.com/docs/responsive-design
+    retrieved: 2026-11-06
+  SRC.TAILWIND.TRANSITIONS:
+    title_zh: Tailwind CSS · 过渡（默认时长与缓动）
+    url: https://tailwindcss.com/docs/transition-property
+    retrieved: 2026-11-06
+  SRC.LUCIDE:
+    title_zh: lucide-react（线框图标，默认描边 2）
+    url: https://lucide.dev/guide/
+    retrieved: 2026-11-06
+  SRC.TANSTACK.QUERY:
+    title_zh: TanStack Query
+    url: https://tanstack.com/query/latest
+    retrieved: 2026-11-06
+  SRC.ZUSTAND:
+    title_zh: Zustand
+    url: https://zustand.docs.pmnd.rs/
+    retrieved: 2026-11-06
+  SRC.POMASTER.STACK_DECISION:
+    title_zh: 项目选型决策（Owner 2026-11-06：服务端数据用 TanStack Query，全局 store Vue 用 Pinia、React 用 Zustand）
+    url: repo:docs/design-standard.md
+    retrieved: 2026-11-06
   SRC.POMASTER.UI_SPEC:
     title_zh: pomaster 主题硬规范 · UI 呈现与设计
     url: repo:packages/cli/seeds/specs/hard/themes/ui-presentation-and-design.md
@@ -65,23 +121,302 @@ sources:
   SRC.POMASTER.PRESET:
     title_zh: pomaster 预设约定（Geist 体系）
     url: repo:packages/cli/seeds/design-standards/geist.yaml
-    retrieved: 2026-11-02
-    note_zh: 不是外部权威，是为了全站一致而做的预设选择；项目可以改
+    retrieved: 2026-11-06
+    note_zh: 不是外部权威，是 Geist 没公开时为全站一致而做的预设选择；项目可以改
 
 specs:
   ui: themes/ui-presentation-and-design.md
+  page: themes/page-composition-and-browser-environment.md
+  perf: themes/performance-and-capacity.md
+  state: themes/frontend-state-and-client-data.md
 
 areas:
+  # ───────────────────────────── 基础 · 色彩 ─────────────────────────────
+  - key: color
+    title_zh: 色彩
+    group: foundations
+    prefix: COLOR
+    summary_zh: 默认单色；每个色阶 10 档、每档用途固定；主操作用最深的灰，彩色只表达状态；颜色只经主题变量取，不用装饰性效果。
+    rules:
+      - id: COLOR.PALETTE
+        title_zh: 色板
+        statement_zh: 色彩体系共 10 个色阶：背景、灰、透明灰、蓝、红、琥珀、绿、青、紫、粉。除背景外每个色阶 10 档，100 到 1000 的用途固定：1–3 档是组件背景（默认、悬停、按下），4–6 档是边框（默认、悬停、按下），7–8 档是高对比背景，9–10 档是文字与图标。
+        params:
+          steps: { value: 10, unit: count, source: SRC.GEIST.COLORS, label_zh: 每个色阶的档数 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: palette
+            title_zh: 背景与灰阶
+            description_zh: 每个色阶 10 档，100 到 1000 各有固定用途（见灰阶的用途标注）。这里显示浅色主题的值。
+            source: SRC.VERCEL.BRAND_CSS
+            scales:
+              - name: background
+                label_zh: 背景
+                swatches:
+                  - { name: background-100, value: "oklch(1 0 0)", usage_zh: 默认背景 }
+                  - { name: background-200, value: "oklch(0.984 0 0)", usage_zh: 次级背景（少用） }
+              - name: gray
+                label_zh: 灰
+                swatches:
+                  - { name: gray-100, value: "oklch(0.961 0 0)", usage_zh: 默认背景 }
+                  - { name: gray-200, value: "oklch(0.94 0 0)", usage_zh: 悬停背景 }
+                  - { name: gray-300, value: "oklch(0.925 0 0)", usage_zh: 按下背景 }
+                  - { name: gray-400, value: "oklch(0.937 0 0)", usage_zh: 默认边框 }
+                  - { name: gray-500, value: "oklch(0.836 0 0)", usage_zh: 悬停边框 }
+                  - { name: gray-600, value: "oklch(0.732 0 0)", usage_zh: 按下边框 }
+                  - { name: gray-700, value: "oklch(0.65 0 0)", usage_zh: 高对比背景 }
+                  - { name: gray-800, value: "oklch(0.59 0 0)", usage_zh: 悬停高对比背景 }
+                  - { name: gray-900, value: "oklch(0.42 0 0)", usage_zh: 次要文字与图标 }
+                  - { name: gray-1000, value: "oklch(0.205 0 0)", usage_zh: 主要文字与图标 }
+              - name: gray-alpha
+                label_zh: 灰（透明）
+                swatches:
+                  - { name: gray-alpha-100, value: "oklch(0 0 0 / 0.05)" }
+                  - { name: gray-alpha-200, value: "oklch(0 0 0 / 0.081)" }
+                  - { name: gray-alpha-300, value: "oklch(0 0 0 / 0.1)" }
+                  - { name: gray-alpha-400, value: "oklch(0 0 0 / 0.08)" }
+                  - { name: gray-alpha-500, value: "oklch(0 0 0 / 0.21)" }
+                  - { name: gray-alpha-600, value: "oklch(0 0 0 / 0.24)" }
+                  - { name: gray-alpha-700, value: "oklch(0 0 0 / 0.44)" }
+                  - { name: gray-alpha-800, value: "oklch(0 0 0 / 0.51)" }
+                  - { name: gray-alpha-900, value: "oklch(0 0 0 / 0.7)" }
+                  - { name: gray-alpha-1000, value: "oklch(0 0 0 / 0.91)" }
+          - kind: palette
+            title_zh: 彩色色阶
+            description_zh: 彩色色阶同样按 100 到 1000 分档。官方样式表只公开了部分档位，其余标为未公开，拿到完整色值后回填。
+            source: SRC.VERCEL.BRAND_CSS
+            scales:
+              - name: blue
+                label_zh: 蓝
+                swatches:
+                  - { name: blue-100, value: "oklch(97.32% 0.0141 251.56)" }
+                  - { name: blue-200, pending_zh: 未公开 }
+                  - { name: blue-300, pending_zh: 未公开 }
+                  - { name: blue-400, value: "oklch(91.58% 0.0473 245.116)" }
+                  - { name: blue-500, pending_zh: 未公开 }
+                  - { name: blue-600, pending_zh: 未公开 }
+                  - { name: blue-700, value: "oklch(57.61% 0.2508 258.23)" }
+                  - { name: blue-800, pending_zh: 未公开 }
+                  - { name: blue-900, value: "oklch(53.18% 0.2399 256.99)" }
+                  - { name: blue-1000, value: "oklch(26.67% 0.1099 254.34)" }
+              - name: green
+                label_zh: 绿
+                swatches:
+                  - { name: green-100, value: "oklch(97.59% 0.0289 145.42)" }
+                  - { name: green-200, pending_zh: 未公开 }
+                  - { name: green-300, pending_zh: 未公开 }
+                  - { name: green-400, value: "oklch(91.49% 0.0976 146.24)" }
+                  - { name: green-500, pending_zh: 未公开 }
+                  - { name: green-600, pending_zh: 未公开 }
+                  - { name: green-700, value: "oklch(64.58% 0.1746 147.27)" }
+                  - { name: green-800, pending_zh: 未公开 }
+                  - { name: green-900, value: "oklch(51.75% 0.1453 147.65)" }
+                  - { name: green-1000, value: "oklch(29.15% 0.1197 147.38)" }
+              - name: amber
+                label_zh: 琥珀
+                swatches:
+                  - { name: amber-100, value: "oklch(97.48% 0.0331 85.79)" }
+                  - { name: amber-200, pending_zh: 未公开 }
+                  - { name: amber-300, pending_zh: 未公开 }
+                  - { name: amber-400, value: "oklch(91.02% 0.1322 88.25)" }
+                  - { name: amber-500, pending_zh: 未公开 }
+                  - { name: amber-600, pending_zh: 未公开 }
+                  - { name: amber-700, value: "oklch(81.87% 0.1969 76.46)" }
+                  - { name: amber-800, pending_zh: 未公开 }
+                  - { name: amber-900, value: "oklch(52.79% 0.1496 54.65)" }
+                  - { name: amber-1000, value: "oklch(30.83% 0.099 45.48)" }
+              - name: red
+                label_zh: 红
+                swatches:
+                  - { name: red-100, value: "oklch(96.5% 0.0223 13.09)" }
+                  - { name: red-200, pending_zh: 未公开 }
+                  - { name: red-300, pending_zh: 未公开 }
+                  - { name: red-400, value: "oklch(91.51% 0.0471 19.8)" }
+                  - { name: red-500, pending_zh: 未公开 }
+                  - { name: red-600, pending_zh: 未公开 }
+                  - { name: red-700, value: "oklch(62.56% 0.2524 23.03)" }
+                  - { name: red-800, pending_zh: 未公开 }
+                  - { name: red-900, value: "oklch(54.99% 0.232 25.29)" }
+                  - { name: red-1000, value: "oklch(24.8% 0.1041 18.86)" }
+              - name: teal
+                label_zh: 青
+                swatches:
+                  - { name: teal-100, pending_zh: 未公开 }
+                  - { name: teal-200, pending_zh: 未公开 }
+                  - { name: teal-300, pending_zh: 未公开 }
+                  - { name: teal-400, pending_zh: 未公开 }
+                  - { name: teal-500, pending_zh: 未公开 }
+                  - { name: teal-600, pending_zh: 未公开 }
+                  - { name: teal-700, pending_zh: 未公开 }
+                  - { name: teal-800, pending_zh: 未公开 }
+                  - { name: teal-900, pending_zh: 未公开 }
+                  - { name: teal-1000, pending_zh: 未公开 }
+              - name: purple
+                label_zh: 紫
+                swatches:
+                  - { name: purple-100, pending_zh: 未公开 }
+                  - { name: purple-200, pending_zh: 未公开 }
+                  - { name: purple-300, pending_zh: 未公开 }
+                  - { name: purple-400, pending_zh: 未公开 }
+                  - { name: purple-500, pending_zh: 未公开 }
+                  - { name: purple-600, pending_zh: 未公开 }
+                  - { name: purple-700, pending_zh: 未公开 }
+                  - { name: purple-800, pending_zh: 未公开 }
+                  - { name: purple-900, pending_zh: 未公开 }
+                  - { name: purple-1000, pending_zh: 未公开 }
+              - name: pink
+                label_zh: 粉
+                swatches:
+                  - { name: pink-100, pending_zh: 未公开 }
+                  - { name: pink-200, pending_zh: 未公开 }
+                  - { name: pink-300, pending_zh: 未公开 }
+                  - { name: pink-400, pending_zh: 未公开 }
+                  - { name: pink-500, pending_zh: 未公开 }
+                  - { name: pink-600, pending_zh: 未公开 }
+                  - { name: pink-700, pending_zh: 未公开 }
+                  - { name: pink-800, pending_zh: 未公开 }
+                  - { name: pink-900, pending_zh: 未公开 }
+                  - { name: pink-1000, pending_zh: 未公开 }
+
+      - id: COLOR.TOKENS_ONLY
+        title_zh: 颜色只经 token 取
+        statement_zh: 颜色只经主题变量取：Geist 色阶用 ds- 前缀的颜色类（bg-ds-gray-100、text-ds-gray-900），shadcn/ui 的成对变量（background / foreground、primary / primary-foreground）已映射到 Geist 色阶。不在组件里写死色值。
+        anchors:
+          - { spec: ui, quote: MUST NOT 写孤立色值、魔法间距和临时阴影。 }
+        enforcement: { kind: gate, check: style.no-raw-color }
+        examples:
+          - kind: do
+            title_zh: 用 Geist 色阶类
+            jsx: |-
+              <div className="flex gap-3">
+                <div className="rounded-md bg-ds-gray-1000 px-4 py-2 text-label-14 text-ds-background-100">gray-1000</div>
+                <div className="rounded-md bg-ds-gray-100 px-4 py-2 text-label-14 text-ds-gray-1000">gray-100</div>
+                <div className="rounded-md border border-ds-gray-400 px-4 py-2 text-label-14 text-ds-gray-900">gray-400 边框</div>
+              </div>
+          - kind: dont
+            title_zh: 写死色值
+            code: |-
+              <div style={{ background: "#171717", color: "#ededed" }}>部署</div>
+            lang: tsx
+
+      - id: COLOR.NEUTRAL_LAYERS
+        title_zh: 中性色分层
+        statement_zh: 页面用背景 1（background-100），背景 2 只在需要轻微区分时少量使用。组件放在背景 1 上时，用灰 100 作悬停背景、灰 200 作按下背景；徽标这类小元素用灰 200 或 300 作底。默认用实色灰；只有需要透出底色时（阴影、遮罩）才用透明灰。
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 档位与用途
+            name_label_zh: 类名
+            rows:
+              - name: bg-ds-background-100
+                usage_zh: 页面与组件的默认背景
+                jsx: |-
+                  <div className="h-10 w-28 rounded-md border border-ds-gray-400 bg-ds-background-100" />
+              - name: bg-ds-gray-100
+                usage_zh: 组件的悬停背景
+                jsx: |-
+                  <div className="h-10 w-28 rounded-md bg-ds-gray-100" />
+              - name: bg-ds-gray-200
+                usage_zh: 组件的按下背景；徽标底色
+                jsx: |-
+                  <div className="h-10 w-28 rounded-md bg-ds-gray-200" />
+              - name: border-ds-gray-400
+                usage_zh: 默认边框
+                jsx: |-
+                  <div className="h-10 w-28 rounded-md border border-ds-gray-400" />
+              - name: text-ds-gray-900
+                usage_zh: 次要文字与图标
+                jsx: |-
+                  <span className="text-label-14 text-ds-gray-900">3 分钟前部署</span>
+              - name: text-ds-gray-1000
+                usage_zh: 主要文字与图标
+                jsx: |-
+                  <span className="text-label-14 text-ds-gray-1000">pomaster-web</span>
+
+      - id: COLOR.BRAND
+        title_zh: 品牌色
+        statement_zh: Geist 默认单色，没有彩色的品牌主色：主操作用最深的灰（gray-1000）配背景色文字；蓝色只用于焦点环和信息提示，不用来装点主按钮或大面积背景。
+        params:
+          primary: { value: gray-1000, source: SRC.GEIST.BUTTON, label_zh: 主操作底色 }
+          focus: { value: blue-700, source: SRC.VERCEL.BRAND_CSS, label_zh: 焦点环 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 主操作是黑底按钮
+            jsx: |-
+              <div className="flex gap-2">
+                <Button>部署项目</Button>
+                <Button variant="secondary">查看日志</Button>
+              </div>
+          - kind: dont
+            title_zh: 给主按钮上彩色
+            code: |-
+              <Button className="bg-ds-blue-700">部署项目</Button>
+            lang: tsx
+
+      - id: COLOR.STATUS
+        title_zh: 状态色
+        statement_zh: 彩色只表达状态，含义固定：绿表示健康或成功，红表示错误，琥珀表示警告，蓝表示信息，灰表示中性。状态总伴随文字，颜色去掉后文字仍能读懂。
+        params:
+          success: { value: green-900, source: SRC.VERCEL.BRAND_CSS, label_zh: 成功 }
+          error: { value: red-700, source: SRC.VERCEL.BRAND_CSS, label_zh: 错误 }
+          warning: { value: amber-900, source: SRC.VERCEL.BRAND_CSS, label_zh: 警告 }
+          info: { value: blue-700, source: SRC.VERCEL.BRAND_CSS, label_zh: 信息 }
+        anchors:
+          - { spec: ui, quote: 颜色不得作为唯一信息来源 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 颜色配文字
+            jsx: |-
+              <div className="flex flex-wrap gap-4 text-label-14">
+                <span className="flex items-center gap-2 text-ds-green-900"><CircleCheckIcon />已就绪</span>
+                <span className="flex items-center gap-2 text-ds-red-700"><CircleXIcon />构建失败</span>
+                <span className="flex items-center gap-2 text-ds-amber-900"><TriangleAlertIcon />配额将满</span>
+                <span className="flex items-center gap-2 text-ds-blue-700"><InfoIcon />新版本可用</span>
+              </div>
+
+      - id: COLOR.BORDERS
+        title_zh: 边框
+        statement_zh: 边框默认用实色灰 400，只有边缘需要和表面融在一起时才用同档的透明灰。每条边只画一次：容器里的分割线画在边框里面，不让两条半透明边框交叠出更深的交点。
+        params:
+          default: { value: gray-400, source: SRC.GEIST.COLORS, label_zh: 默认边框 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 分割线在边框里面
+            jsx: |-
+              <div className="w-64 rounded-md border border-ds-gray-400 bg-ds-background-100">
+                <div className="border-b border-ds-gray-400 px-4 py-3 text-label-14">构建中…</div>
+                <div className="px-4 py-3 text-copy-13 text-ds-gray-900">部署很快就会就绪。</div>
+              </div>
+          - kind: dont
+            title_zh: 两条透明边框叠在一起
+            code: |-
+              <div className="border border-black/10"><div className="border border-black/10">…</div></div>
+            lang: tsx
+
+      - id: COLOR.NO_DECORATION
+        title_zh: 不用装饰性效果
+        statement_zh: 不用装饰性渐变、渐变文字、发光、色块、条纹、纹理、网格背景、毛玻璃，也不用装饰性或伪立体阴影。渐变只在表示连续数据刻度时使用，并且要标注。
+        enforcement: { kind: review }
+        examples:
+          - kind: dont
+            title_zh: 渐变文字加发光
+            code: |-
+              <h1 className="bg-linear-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Ship faster</h1>
+            lang: tsx
+
   # ───────────────────────────── 基础 · 字体 ─────────────────────────────
   - key: typography
     title_zh: 字体
     group: foundations
     prefix: TYPE
-    summary_zh: Geist Sans 与 Geist Mono 两套字体；字号只用 Geist 的四组排版类（标题、按钮、标签、正文），不自造字号和字重。
+    summary_zh: Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按钮、标签、正文）；单行用标签，多行用正文。
     rules:
       - id: TYPE.FAMILY
-        title_zh: 两套字体各管各的
-        statement_zh: 正文、标题、标签、控件、表格、图表都用 Geist Sans；Geist Mono 只用于代码、命令、路径、原始 token、时间戳和短标识。字体从 Google Fonts 加载 Geist 与 Geist Mono，字重 400 到 600。字体族只经 font-sans / font-mono（或带 -mono 的排版类）取，不写内联 font-family：主题里的字体栈带系统字体兜底，中文字形由系统无衬线字体补上。
+        title_zh: 字体族
+        statement_zh: 正文、标题、标签、控件、表格、图表都用 Geist Sans；Geist Mono 只用于代码、命令、路径、原始 token、时间戳和短标识。字体从 Google Fonts 加载，字重 400 到 600。字体族只经 font-sans / font-mono（或带 -mono 的排版类）取，不写内联 font-family：主题里的字体栈带系统字体兜底，中文字形由系统无衬线字体补上。
         params:
           sans: { value: Geist, source: SRC.VERCEL.DESIGN_MD, label_zh: 无衬线 }
           mono: { value: Geist Mono, source: SRC.VERCEL.DESIGN_MD, label_zh: 等宽 }
@@ -101,34 +436,87 @@ areas:
             lang: tsx
             note_zh: 只写一个字体名没有兜底，中文会落到浏览器默认字体（常是衬线体）。
 
-      - id: TYPE.ROLES
-        title_zh: 按角色选排版类
-        statement_zh: 字号只用 Geist 的四组排版类，类名里的数字就是字号：标题 text-heading-72 到 text-heading-14，用来开启页面或区块；按钮 text-button-16 / 14 / 12，只在按钮组件里用，14 是默认，12 只用于输入框里的小按钮；标签 text-label-20 到 text-label-12，用于单行文字，14 最常用；正文 text-copy-24 到 text-copy-13，用于多行文字，14 最常用。不自造字号，也不写数字字重。
+      - id: TYPE.SCALE
+        title_zh: 字阶
+        statement_zh: 字号只用 Geist 的四组排版类，类名里的数字就是字号。标题类开启页面或区块；按钮类只在按钮组件里用；标签类用于单行文字；正文类用于多行文字。不自造字号。
         params:
           heading: { value: [72, 64, 56, 48, 40, 32, 24, 20, 16, 14], unit: px, source: SRC.GEIST.TYPOGRAPHY, label_zh: 标题 }
           button: { value: [16, 14, 12], unit: px, source: SRC.GEIST.TYPOGRAPHY, label_zh: 按钮 }
           label: { value: [20, 18, 16, 14, 13, 12], unit: px, source: SRC.GEIST.TYPOGRAPHY, label_zh: 标签 }
           copy: { value: [24, 20, 18, 16, 14, 13], unit: px, source: SRC.GEIST.TYPOGRAPHY, label_zh: 正文 }
-          line_heights: { decision: 各排版类的行高、字重、字距取多少？（Geist 官方数值在 Figma 里，接入设计稿后回填）, label_zh: 行高 / 字重 / 字距 }
         enforcement: { kind: gate, check: style.font-size-scale }
+        showcase:
+          - kind: specimen
+            title_zh: 标题
+            description_zh: 用来开启页面或区块。
+            name_label_zh: 类名
+            rows:
+              - { name: text-heading-72, sample_zh: Heading 72 }
+              - { name: text-heading-64, sample_zh: Heading 64 }
+              - { name: text-heading-56, sample_zh: Heading 56 }
+              - { name: text-heading-48, sample_zh: Heading 48 }
+              - { name: text-heading-40, sample_zh: Heading 40 }
+              - { name: text-heading-32, sample_zh: Heading 32 }
+              - { name: text-heading-24, sample_zh: Heading 24 }
+              - { name: text-heading-20, sample_zh: Heading 20 }
+              - { name: text-heading-16, sample_zh: Heading 16 }
+              - { name: text-heading-14, sample_zh: Heading 14 }
+          - kind: specimen
+            title_zh: 按钮
+            description_zh: 只在渲染按钮的组件里用。
+            name_label_zh: 类名
+            rows:
+              - { name: text-button-16, sample_zh: Button 16, usage_zh: 最大的按钮 }
+              - { name: text-button-14, sample_zh: Button 14, usage_zh: 默认按钮 }
+              - { name: text-button-12, sample_zh: Button 12, usage_zh: 只用于放在输入框里的小按钮 }
+          - kind: specimen
+            title_zh: 标签
+            description_zh: 为单行文字设计，行高留得足，便于和图标对齐。
+            name_label_zh: 类名
+            rows:
+              - { name: text-label-20, sample_zh: Label 20 }
+              - { name: text-label-18, sample_zh: Label 18 }
+              - { name: text-label-16, sample_zh: Label 16, usage_zh: 用在标题里，与常规文字区分 }
+              - { name: text-label-14, sample_zh: Label 14, usage_zh: 最常用的文字样式，菜单里大量使用 }
+              - { name: text-label-14-mono, sample_zh: Label 14 Mono, usage_zh: 最大的等宽字号，和 14 以上的文字搭配 }
+              - { name: text-label-13, sample_zh: Label 13, usage_zh: 其他标签旁的次要一行；表达数字时用等宽数字 }
+              - { name: text-label-13-mono, sample_zh: Label 13 Mono, usage_zh: 和 Label 14 搭配的等宽字号 }
+              - { name: text-label-12, sample_zh: Label 12, usage_zh: 忙碌视图里的第三层文字，如评论、展开更多 }
+              - { name: text-label-12-mono, sample_zh: Label 12 Mono }
+          - kind: specimen
+            title_zh: 正文
+            description_zh: 为多行文字设计，行高比标签大。
+            name_label_zh: 类名
+            rows:
+              - { name: text-copy-24, sample_zh: Copy 24, usage_zh: 营销页的首屏 }
+              - { name: text-copy-20, sample_zh: Copy 20, usage_zh: 营销页的首屏 }
+              - { name: text-copy-18, sample_zh: Copy 18, usage_zh: 主要用于营销页、大段引语 }
+              - { name: text-copy-16, sample_zh: Copy 16, usage_zh: 对话框这类留白充足的视图 }
+              - { name: text-copy-14, sample_zh: Copy 14, usage_zh: 最常用的正文样式 }
+              - { name: text-copy-13, sample_zh: Copy 13, usage_zh: 次要文字，空间紧张的视图 }
+              - { name: text-copy-13-mono, sample_zh: Copy 13 Mono, usage_zh: 正文里提到的代码 }
         examples:
-          - kind: do
-            title_zh: 标题、标签、正文
-            jsx: |-
-              <div className="flex flex-col gap-2">
-                <h2 className="text-heading-24">项目设置</h2>
-                <span className="text-label-14">构建与部署</span>
-                <p className="text-copy-14 text-muted-foreground">推送到 main 分支时自动部署到生产环境。</p>
-              </div>
           - kind: dont
             title_zh: 自造的 15px 与 font-weight 650
             code: |-
               <p style={{ fontSize: 15, fontWeight: 650 }}>项目设置</p>
             lang: tsx
 
-      - id: TYPE.LABEL_VS_COPY
-        title_zh: 单行用标签，多行用正文
-        statement_zh: 单行文字（菜单项、表单标签、与图标并排的文字）用标签类，行高留得足；多行文字用正文类。标签旁的次要信息用 text-label-13，数字用等宽数字；忙碌视图里的第三层信息用 text-label-12；正文里提到代码用 text-copy-13-mono。
+      - id: TYPE.WEIGHT
+        title_zh: 字重
+        statement_zh: 字重跟着排版类走，不单独写 font-weight。需要在一段文字里强调时，在排版类里嵌套 strong 元素（Geist 的 Strong / Subtle 修饰）。
+        params:
+          class_metrics: { decision: 各排版类的行高、字重、字距取多少？（Geist 的完整数值在设计稿里，当前排版类只实现了字号）, label_zh: 行高 / 字重 / 字距 }
+        enforcement: { kind: gate, check: style.font-weight-allowed }
+        examples:
+          - kind: do
+            title_zh: 用 strong 强调
+            jsx: |-
+              <p className="text-copy-14">推送到 <strong>main</strong> 分支时自动部署到生产环境。</p>
+
+      - id: TYPE.LINE_ROLES
+        title_zh: 单行与多行
+        statement_zh: 单行文字（菜单项、表单标签、与图标并排的文字）用标签类，行高留得足；多行文字用正文类。标签旁的次要信息用 text-label-13；忙碌视图里的第三层信息用 text-label-12；正文里提到代码用 text-copy-13-mono。
         params:
           secondary: { value: text-label-13, source: SRC.GEIST.TYPOGRAPHY, label_zh: 次要单行 }
           tertiary: { value: text-label-12, source: SRC.GEIST.TYPOGRAPHY, label_zh: 第三层单行 }
@@ -136,118 +524,434 @@ areas:
         enforcement: { kind: review }
         examples:
           - kind: do
-            title_zh: 标签 + 次要信息
+            title_zh: 标签加次要信息
             jsx: |-
               <div className="flex items-baseline gap-2">
                 <span className="text-label-14">生产环境</span>
-                <span className="text-label-13 text-muted-foreground tabular-nums">3 分钟前</span>
+                <span className="text-label-13 text-ds-gray-900 tabular-nums">3 分钟前</span>
               </div>
 
-      - id: TYPE.READING
-        title_zh: 长文行宽 60 到 68 个字符
-        statement_zh: 长段落控制在每行 60 到 68 个字符；需要上下对比的数字用等宽数字（tabular-nums）。
+      - id: TYPE.COLOR
+        title_zh: 文字颜色
+        statement_zh: 文字只用两档：主要文字 gray-1000，次要文字 gray-900。更弱的灰只用于禁用态，不用来写说明文字。
         params:
-          line_length: { value: [60, 68], unit: chars, source: SRC.VERCEL.DESIGN_MD, label_zh: 长文行宽 }
-        enforcement: { kind: review }
-
-  # ───────────────────────────── 基础 · 色彩 ─────────────────────────────
-  - key: color
-    title_zh: 色彩
-    group: foundations
-    prefix: COLOR
-    summary_zh: 默认单色；颜色只经主题变量取得；状态色只表达状态，且不只靠颜色；不用装饰性渐变、发光、毛玻璃。
-    rules:
-      - id: COLOR.MONOCHROME
-        title_zh: 默认单色，颜色只走主题变量
-        statement_zh: 界面默认单色（黑、白、灰），颜色只经主题变量（background / foreground、primary、muted、border 等成对的变量）取得，不在组件里写死色值。主题变量当前取 shadcn/ui neutral 主题作为近似，拿到 Geist 官方色板后替换。
-        params:
-          theme: { value: shadcn/ui neutral, source: SRC.SHADCN.THEMING, label_zh: 主题变量近似来源 }
-          radius: { value: 0.625rem, source: SRC.SHADCN.THEMING, label_zh: shadcn 默认 --radius }
+          primary: { value: gray-1000, source: SRC.GEIST.COLORS, label_zh: 主要文字 }
+          secondary: { value: gray-900, source: SRC.GEIST.COLORS, label_zh: 次要文字 }
+        anchors:
+          - { spec: ui, quote: 颜色不得作为唯一信息来源；文本对比度至少 4.5:1 }
         enforcement: { kind: gate, check: style.no-raw-color }
         examples:
           - kind: do
-            title_zh: 成对变量：表面与其上的文字
+            title_zh: 两档文字色
             jsx: |-
-              <div className="flex gap-3">
-                <div className="rounded-md bg-primary px-4 py-2 text-primary-foreground text-label-14">primary</div>
-                <div className="rounded-md bg-muted px-4 py-2 text-muted-foreground text-label-14">muted</div>
-                <div className="rounded-md border border-border px-4 py-2 text-foreground text-label-14">border</div>
+              <div className="flex flex-col gap-1">
+                <span className="text-label-14 text-ds-gray-1000">pomaster-web</span>
+                <span className="text-label-13 text-ds-gray-900">由 river 在 3 分钟前部署</span>
               </div>
 
-      - id: COLOR.STATUS
-        title_zh: 状态色只表达状态
-        statement_zh: 蓝、绿、黄、红只用来表达信息、成功、警告、错误四种状态，并且同时给出文字或图标，不能只靠颜色。
+      - id: TYPE.TABULAR_NUMS
+        title_zh: 等宽数字
+        statement_zh: 需要上下对比的数字（表格的数字列、计数、用量、时间）用等宽数字（tabular-nums）或 Geist Mono，让各行的数位对齐。
         params:
-          statuses: { value: [info, success, warning, error], source: SRC.VERCEL.DESIGN_MD, label_zh: 状态 }
-        anchors:
-          - { spec: ui, quote: 颜色不得作为唯一信息来源 }
+          utility: { value: tabular-nums, source: SRC.GEIST.TABLE, label_zh: 工具类 }
         enforcement: { kind: review }
         examples:
           - kind: do
-            title_zh: 颜色 + 文字
+            title_zh: 数字列对齐
             jsx: |-
-              <div className="flex gap-2">
-                <Badge variant="secondary"><CircleCheckIcon className="size-3.5" />已就绪</Badge>
-                <Badge variant="destructive"><CircleXIcon className="size-3.5" />构建失败</Badge>
+              <div className="flex w-48 flex-col text-label-14 tabular-nums">
+                <div className="flex justify-between"><span>请求</span><span>1,204,511</span></div>
+                <div className="flex justify-between"><span>错误</span><span>311</span></div>
+                <div className="flex justify-between"><span>P95</span><span>48 ms</span></div>
               </div>
 
-      - id: COLOR.NO_DECORATION
-        title_zh: 不用装饰性效果
-        statement_zh: 不用装饰性渐变、渐变文字、发光、色块、条纹、纹理、网格背景、毛玻璃，也不用装饰性或伪立体阴影。渐变只在表示连续数据刻度时使用，并且要标注。
+      - id: TYPE.READING
+        title_zh: 长文行宽
+        statement_zh: 长段落控制在每行 60 到 68 个字符；表格、表单这类结构化内容不受此限。
+        params:
+          line_length: { value: [60, 68], unit: chars, source: SRC.VERCEL.DESIGN_MD, label_zh: 长文行宽 }
         enforcement: { kind: review }
         examples:
+          - kind: do
+            title_zh: 正文限制行宽
+            jsx: |-
+              <p className="max-w-[68ch] text-copy-14 text-ds-gray-900">预览部署会为每个拉取请求生成一个独立地址，评审人打开就能看到这次改动的真实效果，合并后预览地址保留，方便回溯。</p>
+
+      - id: TYPE.RICH_TEXT
+        title_zh: 富文本
+        statement_zh: 长文用正文类排版；正文里提到代码、路径、环境变量用 text-copy-13-mono；快捷键用键盘按键样式；多行源码用代码块，可复制的命令用命令片段，不用一段普通文字代替。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 行内代码与快捷键
+            jsx: |-
+              <p className="text-copy-14">在项目根目录设置 <code className="text-copy-13-mono">DATABASE_URL</code>，然后按 <kbd className="rounded-md border border-ds-gray-400 px-1 text-label-12-mono">⌘ K</kbd> 打开命令面板。</p>
+
+      - id: TYPE.OVERFLOW
+        title_zh: 文字溢出
+        statement_zh: 首尾都有信息的字符串（路径、地址、部署 ID、提交哈希）从中间省略，保留开头和结尾；句子、标题从末尾省略。被省略的值要能看到全文（文字提示）或一键复制。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 句子从末尾省略，悬停看全文
+            jsx: |-
+              <div className="w-64 truncate text-label-14" title="修复了在 Safari 中预览部署的登录跳转问题">修复了在 Safari 中预览部署的登录跳转问题</div>
+
+  # ───────────────────────────── 基础 · 标题层级 ─────────────────────────────
+  - key: headings
+    title_zh: 标题层级
+    group: foundations
+    prefix: HEADING
+    summary_zh: 应用界面最多三级标题；每个视图一个 h1；标题逐级下降；类名决定样子，元素决定层级。
+    rules:
+      - id: HEADING.APP_LEVELS
+        title_zh: 应用界面的标题级数
+        statement_zh: 应用界面最多三级标题：页面标题 text-heading-24 或 32，区块标题 text-heading-20，子区块 text-heading-16；更大的标题类留给营销页和文档首页。
+        params:
+          page: { value: [24, 32], unit: px, source: SRC.POMASTER.PRESET, label_zh: 页面标题 }
+          section: { value: 20, unit: px, source: SRC.POMASTER.PRESET, label_zh: 区块标题 }
+          subsection: { value: 16, unit: px, source: SRC.POMASTER.PRESET, label_zh: 子区块 }
+          max_levels: { value: 3, unit: count, source: SRC.POMASTER.PRESET, label_zh: 最多级数 }
+        enforcement: { kind: gate, check: markup.heading-level-max }
+        examples:
+          - kind: do
+            title_zh: 三级标题
+            jsx: |-
+              <div className="flex flex-col gap-3">
+                <h2 className="text-heading-24">项目设置</h2>
+                <h3 className="text-heading-20">构建与部署</h3>
+                <h4 className="text-heading-16">构建命令</h4>
+              </div>
+
+      - id: HEADING.SINGLE_H1
+        title_zh: 每个视图一个 h1
+        statement_zh: 每个页面视图只有一个 h1，就是页面标题；卡片、对话框里的标题从 h2 往下排。
+        enforcement: { kind: gate, check: markup.single-h1 }
+
+      - id: HEADING.ORDER
+        title_zh: 标题不跳级
+        statement_zh: 标题逐级下降，不从 h2 直接跳到 h4；视觉层级和标题层级一致。
+        anchors:
+          - { spec: ui, quote: 标题层级 h1–h6 与视觉层级一致，不跳过层级 }
+        enforcement: { kind: gate, check: markup.heading-order }
+
+      - id: HEADING.CONTENT_LEVELS
+        title_zh: 内容型页面的标题
+        statement_zh: 文档、营销这类内容型页面可以用更大的标题类：首屏 text-heading-48 到 72，章节 text-heading-32，小节 text-heading-24。同一页面里每一级只用一种类。
+        params:
+          hero: { value: [48, 72], unit: px, source: SRC.POMASTER.PRESET, label_zh: 首屏 }
+          chapter: { value: 32, unit: px, source: SRC.POMASTER.PRESET, label_zh: 章节 }
+          section: { value: 24, unit: px, source: SRC.POMASTER.PRESET, label_zh: 小节 }
+        enforcement: { kind: review }
+
+      - id: HEADING.REAL_ELEMENT
+        title_zh: 用真正的标题元素
+        statement_zh: 标题用 h1 到 h6 元素，排版类只决定样子；不用 div 加标题类假装标题，也不为了字号挑标题元素。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 元素定层级，类定样子
+            jsx: |-
+              <h2 className="text-heading-20">环境变量</h2>
           - kind: dont
-            title_zh: 渐变文字 + 发光
+            title_zh: div 假装标题
             code: |-
-              <h1 className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(168,85,247,0.6)]">Ship faster</h1>
+              <div className="text-heading-20">环境变量</div>
             lang: tsx
+
+  # ───────────────────────────── 基础 · 图标 ─────────────────────────────
+  - key: icons
+    title_zh: 图标
+    group: foundations
+    prefix: ICON
+    summary_zh: 一套线框图标；尺寸与间距跟随文字；颜色跟随文字；同一动作同一图标；纯图标按钮有名字。
+    rules:
+      - id: ICON.LIBRARY
+        title_zh: 图标库
+        statement_zh: 图标统一用 lucide-react，不混用第二套。Vercel 文档里的官方图标包 @vercel/geistcn-assets 在公开 npm 上装不到，能装后再评估替换。图标只在一个约定俗成的图标能让操作更快被认出时才用。
+        params:
+          library: { value: lucide-react, source: SRC.POMASTER.PRESET, label_zh: 图标库 }
+          official: { value: "@vercel/geistcn-assets（公开 npm 上装不到）", source: SRC.GEIST.HOME, label_zh: Geist 官方图标包 }
+        enforcement: { kind: gate, check: icon.single-library }
+
+      - id: ICON.STYLE
+        title_zh: 图标风格
+        statement_zh: 只用线框图标，描边保持默认的 2；不在同一界面混用实心和线框，也不单独改某个图标的描边粗细。
+        params:
+          stroke: { value: 2, unit: px, source: SRC.LUCIDE, label_zh: 描边 }
+        enforcement: { kind: review }
+
+      - id: ICON.SIZE
+        title_zh: 图标尺寸
+        statement_zh: 图标尺寸跟随相邻文字：16px 配 text-label-14 和 text-button-14（默认）；14px 配 text-label-13、徽标里的小图标；12px 只用于 tiny 按钮这类最紧凑的位置；空状态这类独立出现的图标用 32px。
+        params:
+          default: { value: 16, unit: px, source: SRC.GEIST.PIE_GAUGE, label_zh: 默认（配 14 号文字） }
+          compact: { value: 14, unit: px, source: SRC.POMASTER.PRESET, label_zh: 紧凑（配 13 号文字） }
+          tiny: { value: 12, unit: px, source: SRC.POMASTER.PRESET, label_zh: 最小 }
+          standalone: { value: 32, unit: px, source: SRC.GEIST.EMPTY_STATE, label_zh: 独立图标 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 尺寸
+            name_label_zh: 尺寸
+            rows:
+              - name: 12px · size-3
+                usage_zh: tiny 按钮这类最紧凑的位置
+                jsx: |-
+                  <span className="flex items-center gap-1 text-label-12"><PlusIcon className="size-3" />添加</span>
+              - name: 14px · size-3.5
+                usage_zh: 配 text-label-13，徽标里的图标
+                jsx: |-
+                  <span className="flex items-center gap-1.5 text-label-13"><GitBranchIcon className="size-3.5" />main</span>
+              - name: 16px · size-4
+                usage_zh: 默认，配 text-label-14 与按钮
+                jsx: |-
+                  <span className="flex items-center gap-2 text-label-14"><SearchIcon className="size-4" />搜索项目</span>
+              - name: 32px · size-8
+                usage_zh: 空状态这类独立出现的图标
+                jsx: |-
+                  <ChartColumnIcon className="size-8 text-ds-gray-900" />
+
+      - id: ICON.SPACING
+        title_zh: 图标与文字的间距
+        statement_zh: 图标和 14 号文字之间留 8px（gap-2），和 13、12 号文字之间留 6px 或 4px；按钮里的间距由组件给出，不手动加空格。
+        params:
+          gap: { value: 8, unit: px, source: SRC.POMASTER.PRESET, label_zh: 配 14 号文字 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 用 gap 留间距
+            jsx: |-
+              <span className="flex items-center gap-2 text-label-14"><GitBranchIcon />feature/design-standard</span>
+          - kind: dont
+            title_zh: 用空格隔开
+            code: |-
+              <span><GitBranchIcon />&nbsp;&nbsp;feature/design-standard</span>
+            lang: tsx
+
+      - id: ICON.COLOR
+        title_zh: 图标颜色
+        statement_zh: 图标跟随相邻文字的颜色（currentColor）：主要图标 gray-1000，次要图标 gray-900。彩色图标只用于状态，并且旁边有文字。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 次要图标跟随次要文字
+            jsx: |-
+              <span className="flex items-center gap-2 text-label-13 text-ds-gray-900"><ClockIcon className="size-3.5" />3 分钟前</span>
+
+      - id: ICON.SEMANTICS
+        title_zh: 同一动作同一图标
+        statement_zh: 同一个动作全系统用同一个图标（删除、复制、刷新、外链各一个），同一个图标不表示两种意思。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 复制一律用同一个图标
+            jsx: |-
+              <div className="flex gap-2">
+                <Button variant="secondary" size="small" prefix={<CopyIcon />}>复制地址</Button>
+                <Button variant="secondary" size="small" prefix={<CopyIcon />}>复制部署 ID</Button>
+              </div>
+
+      - id: ICON.BUTTON_LABEL
+        title_zh: 纯图标按钮的名称
+        statement_zh: 只有图标的按钮必须带 aria-label，名称写动作和对象（「复制部署地址」），不写图标名（「复制」）；悬停时用文字提示显示同样的文字。按钮已经有可见文字时不要再加 aria-label。
+        anchors:
+          - { spec: ui, quote: MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。 }
+        enforcement: { kind: gate, check: markup.icon-button-label }
+        examples:
+          - kind: do
+            title_zh: 带 aria-label
+            jsx: |-
+              <Button variant="secondary" svgOnly aria-label="刷新部署列表"><RefreshCwIcon /></Button>
 
   # ───────────────────────────── 基础 · 材质 ─────────────────────────────
   - key: materials
     title_zh: 材质
     group: foundations
     prefix: MATERIAL
-    summary_zh: 页面内表面与浮层各有固定圆角；只有提示气泡带指向三角；阴影只表达层级，不作装饰。
+    summary_zh: 圆角三档（6、12、16）；页面内四种表面、页面上四种浮层；只有提示气泡带指向三角；阴影半透明，只表达层级。
     rules:
+      - id: MATERIAL.RADIUS
+        title_zh: 圆角
+        statement_zh: 圆角只取三档：日常控件、小表面、提示气泡 6px；卡片、菜单、对话框 12px；全屏层 16px。
+        params:
+          small: { value: 6, unit: px, source: SRC.GEIST.MATERIALS, label_zh: 控件与小表面 }
+          large: { value: 12, unit: px, source: SRC.GEIST.MATERIALS, label_zh: 卡片、菜单、对话框 }
+          fullscreen: { value: 16, unit: px, source: SRC.GEIST.MATERIALS, label_zh: 全屏层 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 圆角
+            name_label_zh: 类名 · 半径
+            rows:
+              - name: rounded-md · 6px
+                usage_zh: 按钮、输入框、提示气泡
+                jsx: |-
+                  <div className="h-14 w-28 border border-ds-gray-400 bg-ds-background-100" style={{ borderRadius: p.small }} />
+              - name: rounded-xl · 12px
+                usage_zh: 卡片、菜单、对话框
+                jsx: |-
+                  <div className="h-14 w-28 border border-ds-gray-400 bg-ds-background-100" style={{ borderRadius: p.large }} />
+              - name: rounded-2xl · 16px
+                usage_zh: 全屏层
+                jsx: |-
+                  <div className="h-14 w-28 border border-ds-gray-400 bg-ds-background-100" style={{ borderRadius: p.fullscreen }} />
+
       - id: MATERIAL.SURFACES
-        title_zh: 页面内表面的圆角
-        statement_zh: 页面内的表面按抬升程度取圆角：base 与 small 用 6px，medium 与 large 用 12px。同一层级的表面圆角一致。
+        title_zh: 页面内的表面
+        statement_zh: 页面内的表面按抬升程度分四种：base（日常）与 small（略抬起）用 6px 圆角，medium 与 large（更高）用 12px。同一层级的表面圆角一致。
         params:
           base: { value: 6, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-base }
           small: { value: 6, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-small }
           medium: { value: 12, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-medium }
           large: { value: 12, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-large }
         enforcement: { kind: review }
-        examples:
-          - kind: do
-            title_zh: 6px 与 12px 两档
-            jsx: |-
-              <div className="flex gap-4">
-                <div className="border border-border bg-background px-4 py-3 text-label-14" style={{ borderRadius: p.base }}>base · {p.base}px</div>
-                <div className="border border-border bg-background px-4 py-3 text-label-14" style={{ borderRadius: p.medium }}>medium · {p.medium}px</div>
-              </div>
+        showcase:
+          - kind: specimen
+            title_zh: 页面内
+            name_label_zh: 材质
+            rows:
+              - name: material-base
+                usage_zh: 日常使用，圆角 6px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100" style={{ borderRadius: p.base }} />
+              - name: material-small
+                usage_zh: 略抬起，圆角 6px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-xs" style={{ borderRadius: p.small }} />
+              - name: material-medium
+                usage_zh: 更高，圆角 12px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-sm" style={{ borderRadius: p.medium }} />
+              - name: material-large
+                usage_zh: 更高，圆角 12px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-md" style={{ borderRadius: p.large }} />
 
       - id: MATERIAL.FLOATING
-        title_zh: 浮层的圆角与层级
-        statement_zh: 浮在页面之上的元素按层级取圆角：提示气泡 6px（阴影最轻，也是唯一带指向三角的浮层）；菜单 12px；对话框 12px（比菜单抬得更高）；全屏层 16px。阴影只表达层级，具体阴影值待项目决定。
+        title_zh: 浮层
+        statement_zh: 浮在页面之上的元素：提示气泡 6px（阴影最轻，也是唯一带指向三角的浮层）；菜单 12px；对话框 12px（比菜单抬得更高）；全屏层 16px（抬得最高）。
         params:
           tooltip: { value: 6, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-tooltip }
           menu: { value: 12, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-menu }
           modal: { value: 12, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-modal }
           fullscreen: { value: 16, unit: px, source: SRC.GEIST.MATERIALS, label_zh: material-fullscreen }
-          shadows: { decision: 各层级的阴影取什么值？（Geist 官网正文未给出）, label_zh: 阴影 }
         enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 页面之上
+            name_label_zh: 材质
+            rows:
+              - name: material-tooltip
+                usage_zh: 阴影最轻，圆角 6px，唯一带指向三角
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-sm" style={{ borderRadius: p.tooltip }} />
+              - name: material-menu
+                usage_zh: 从页面抬起，圆角 12px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-md" style={{ borderRadius: p.menu }} />
+              - name: material-modal
+                usage_zh: 抬得更高，圆角 12px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-lg" style={{ borderRadius: p.modal }} />
+              - name: material-fullscreen
+                usage_zh: 抬得最高，圆角 16px
+                jsx: |-
+                  <div className="h-14 w-36 border border-ds-gray-400 bg-ds-background-100 shadow-xl" style={{ borderRadius: p.fullscreen }} />
+
+      - id: MATERIAL.SHADOWS
+        title_zh: 阴影
+        statement_zh: 阴影只表达层级，并且保持半透明，和底色融在一起；不用不透明的灰色阴影（会留下一圈灰晕），也不用装饰性阴影。各层级的具体阴影值待项目决定，当前示例用 Tailwind 的阴影档近似。
+        params:
+          values: { decision: 各层级的阴影取什么值？（Geist 未公开）, label_zh: 阴影值 }
+        enforcement: { kind: review }
+        examples:
+          - kind: dont
+            title_zh: 不透明的灰色阴影
+            code: |-
+              <div style={{ boxShadow: "0 4px 12px #bbbbbb" }}>…</div>
+            lang: tsx
+
+  # ───────────────────────────── 基础 · 布局 ─────────────────────────────
+  - key: layout
+    title_zh: 布局
+    group: foundations
+    prefix: LAYOUT
+    summary_zh: 管理侧是顶栏加页内标签页；用户侧是移动端单列；先换行再缩小；外层管尺寸和滚动；层级只取预设档位。
+    rules:
+      - id: LAYOUT.ADMIN_SHELL
+        title_zh: 管理侧页面骨架
+        statement_zh: 管理侧页面是「顶栏（团队与项目切换）+ 页内标签页导航 + 内容区」；平级视图用标签页切换，不另开侧边菜单。内容区居中，最大宽度待项目决定。
+        params:
+          max_width: { decision: 内容区最大宽度取多少？, candidates: [1200, 1400], unit: px, label_zh: 内容区最大宽度 }
+        enforcement: { kind: review }
+
+      - id: LAYOUT.PUBLIC_SHELL
+        title_zh: 用户侧页面骨架
+        statement_zh: 用户侧以移动端单列为基准：一列内容、底部主操作；小屏上的筛选、单个表单这类短任务用底部抽屉，不用对话框。
+        enforcement: { kind: review }
+
+      - id: LAYOUT.ADAPTIVE
+        title_zh: 适配基准与验收宽度
+        statement_zh: 断点用 Tailwind 的默认档（sm 640、md 768、lg 1024、xl 1280）；验收至少覆盖 375、768、1280 三个宽度。
+        params:
+          breakpoints: { value: [640, 768, 1024, 1280], unit: px, source: SRC.TAILWIND.BREAKPOINTS, label_zh: 断点 }
+          acceptance: { value: [375, 768, 1280], unit: px, source: SRC.POMASTER.PRESET, label_zh: 验收宽度 }
+        enforcement: { kind: review }
+
+      - id: LAYOUT.CONTENT_REGION
+        title_zh: 内容区边距与宽度
+        statement_zh: 内容区左右边距随宽度取间距阶梯（手机 4 档、平板及以上 6 档），区块之间用 8 到 12 档；不同页面同一位置的边距一致。
+        params:
+          mobile_padding: { value: 4, unit: count, source: SRC.POMASTER.PRESET, label_zh: 手机边距（档） }
+          padding: { value: 6, unit: count, source: SRC.POMASTER.PRESET, label_zh: 平板及以上边距（档） }
+        enforcement: { kind: review }
+
+      - id: LAYOUT.REFLOW
+        title_zh: 先换行再缩小
+        statement_zh: 空间不够时先重新排布（换行、换列），不先缩小字号；源码顺序就是阅读顺序。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按钮组允许换行
+            jsx: |-
+              <div className="flex w-72 flex-wrap gap-2">
+                <Button variant="secondary" size="small">重新部署</Button>
+                <Button variant="secondary" size="small">查看日志</Button>
+                <Button variant="secondary" size="small">回滚</Button>
+                <Button variant="secondary" size="small">分配域名</Button>
+              </div>
+
+      - id: LAYOUT.OVERFLOW
+        title_zh: 尺寸与滚动的归属
+        statement_zh: 网格和弹性布局的子项设 min-width 0，避免被长内容撑破；需要滚动时由明确的外层容器负责，不用 overflow 隐藏把内容藏起来。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 子项 min-w-0，长文本截断
+            jsx: |-
+              <div className="flex w-72 items-center gap-2 rounded-md border border-ds-gray-400 p-3">
+                <div className="min-w-0 flex-1 truncate text-label-14">pomaster-web-git-feature-design-standard-team.vercel.app</div>
+                <Badge variant="secondary">Preview</Badge>
+              </div>
+
+      - id: LAYOUT.Z_INDEX
+        title_zh: 层级
+        statement_zh: 层级只取预设档位，从低到高：内容、吸顶元素、下拉与提示、抽屉、对话框、全局提示；不写任意的 z-index 数字。
+        params:
+          layers: { decision: 各层级的 z-index 取多少？, label_zh: 层级档位 }
+        enforcement: { kind: gate, check: style.no-raw-z-index }
 
   # ───────────────────────────── 基础 · 栅格 ─────────────────────────────
   - key: grid
     title_zh: 栅格
     group: foundations
     prefix: GRID
-    summary_zh: 桌面 12 列、平板 6 列、手机 4 列；长文占 6 到 7 列；带参考线的二维布局才用 Geist Grid 的画法。
+    summary_zh: 桌面 12 列、平板 6 列、手机 4 列；长文占 6 到 7 列；带参考线的二维布局才画参考线。
     rules:
       - id: GRID.COLUMNS
-        title_zh: 12 / 6 / 4 列
-        statement_zh: 外层栅格桌面 12 列、平板 6 列、手机 4 列；长文内容占 6 到 7 列，表格、图表、计算器和主要对比可以占满 12 列。
+        title_zh: 栅格列数
+        statement_zh: 外层栅格桌面 12 列、平板 6 列、手机 4 列；长文内容占 6 到 7 列，表格、图表和主要对比可以占满 12 列。
         params:
           desktop: { value: 12, unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 桌面 }
           tablet: { value: 6, unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 平板 }
@@ -259,13 +963,32 @@ areas:
             title_zh: 12 列里长文占 7 列
             jsx: |-
               <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${p.desktop}, minmax(0, 1fr))` }}>
-                <div className="rounded-md border border-border p-3 text-copy-13" style={{ gridColumn: `span ${p.prose_span[1]}` }}>长文 · {p.prose_span[1]} 列</div>
-                <div className="rounded-md bg-muted p-3 text-copy-13" style={{ gridColumn: `span ${p.desktop - p.prose_span[1]}` }}>侧栏 · {p.desktop - p.prose_span[1]} 列</div>
+                <div className="rounded-md border border-ds-gray-400 p-3 text-copy-13" style={{ gridColumn: `span ${p.prose_span[1]}` }}>长文 · {p.prose_span[1]} 列</div>
+                <div className="rounded-md bg-ds-gray-100 p-3 text-copy-13" style={{ gridColumn: `span ${p.desktop - p.prose_span[1]}` }}>侧栏 · {p.desktop - p.prose_span[1]} 列</div>
               </div>
 
+      - id: GRID.GUTTER
+        title_zh: 列间距
+        statement_zh: 列间距取间距阶梯，同一个栅格里固定一档，不随窗口缩放。
+        params:
+          gutter: { decision: 列间距取 16 还是 24？, candidates: [16, 24], unit: px, label_zh: 列间距 }
+        enforcement: { kind: gate, check: grid.gutter-allowed }
+
+      - id: GRID.ROW_SUM
+        title_zh: 一行的列数之和
+        statement_zh: 一行里各格占的列数加起来不超过栅格总列数；超过就换行，不靠缩小格子硬塞。
+        enforcement: { kind: gate, check: grid.row-sum }
+
+      - id: GRID.BREAKPOINTS
+        title_zh: 断点
+        statement_zh: 响应式布局在 sm、md、lg 三个断点都写明列数和行数，让格子在手机、平板、桌面之间按预期重排；只用 Tailwind 的断点档，不自造断点。
+        params:
+          breakpoints: { value: [sm, md, lg], source: SRC.GEIST.GRID, label_zh: 必写的断点 }
+        enforcement: { kind: gate, check: style.breakpoint-allowed }
+
       - id: GRID.GUIDES
-        title_zh: 参考线只在二维布局里用
-        statement_zh: 参考线和格子边框本身是设计的一部分时，才用带参考线的网格（Geist Grid 的画法）；普通的响应式内容用 Tailwind 的 grid 工具类。网格最多嵌套一层；参考线是装饰，标 aria-hidden；可点的格子有自己的焦点环，Tab 顺序按阅读顺序；参考线对比度不低于 3:1。
+        title_zh: 参考线
+        statement_zh: 参考线和格子边框本身是设计的一部分时（营销页、文档首页），才画带参考线的网格；普通的响应式内容用 Tailwind 的 grid 工具类。网格最多嵌套一层；参考线是装饰，标 aria-hidden；可点的格子有自己的焦点环；参考线对比度不低于 3:1。
         params:
           guide_contrast: { value: 3, unit: ratio, source: SRC.GEIST.GRID, label_zh: 参考线最低对比度 }
           max_nesting: { value: 1, unit: count, source: SRC.GEIST.GRID, label_zh: 最多嵌套层数 }
@@ -276,20 +999,61 @@ areas:
     title_zh: 间距
     group: foundations
     prefix: SPACING
-    summary_zh: 间距只取间距阶梯；组内、组间、区块、章节各用一段阶梯。
+    summary_zh: 间距只取间距阶梯（0.25rem 的整数倍）；组内、组间、区块、章节各用一段阶梯。
     rules:
       - id: SPACING.SCALE
-        title_zh: 间距只取阶梯，按关系选档
-        statement_zh: 间距只用间距阶梯（Tailwind 的 --spacing 基数 0.25rem 的整数倍），不写任意值。组内元素用第 2 到 4 档，组与组之间用第 6 到 8 档，大区块转折用第 8 到 12 档；第 16 档只用于真正的章节分隔，不作为页面默认间距。
+        title_zh: 间距阶梯
+        statement_zh: 间距只用间距阶梯（Tailwind 的 --spacing 基数 0.25rem 的整数倍），不写任意值。
         params:
           base: { value: 0.25rem, source: SRC.TAILWIND.SPACING, label_zh: 间距基数 --spacing }
+        anchors:
+          - { spec: ui, quote: MUST NOT 写孤立色值、魔法间距和临时阴影。 }
+        enforcement: { kind: gate, check: style.spacing-scale }
+        showcase:
+          - kind: specimen
+            title_zh: 常用档位
+            name_label_zh: 类名 · 像素
+            rows:
+              - name: gap-1 · 4px
+                usage_zh: 图标与 12 号文字
+                jsx: |-
+                  <div className="flex gap-1"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+              - name: gap-2 · 8px
+                usage_zh: 组内元素、图标与 14 号文字
+                jsx: |-
+                  <div className="flex gap-2"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+              - name: gap-4 · 16px
+                usage_zh: 组内较松的排布
+                jsx: |-
+                  <div className="flex gap-4"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+              - name: gap-6 · 24px
+                usage_zh: 组与组之间
+                jsx: |-
+                  <div className="flex gap-6"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+              - name: gap-8 · 32px
+                usage_zh: 组与组之间、区块转折
+                jsx: |-
+                  <div className="flex gap-8"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+              - name: gap-12 · 48px
+                usage_zh: 大区块转折
+                jsx: |-
+                  <div className="flex gap-12"><div className="size-6 rounded-md bg-ds-gray-200" /><div className="size-6 rounded-md bg-ds-gray-200" /></div>
+        examples:
+          - kind: dont
+            title_zh: 任意值
+            code: |-
+              <div className="mt-[13px] gap-[7px]">…</div>
+            lang: tsx
+
+      - id: SPACING.TIERS
+        title_zh: 间距分档
+        statement_zh: 按元素之间的关系选档：组内元素用第 2 到 4 档，组与组之间用第 6 到 8 档，大区块转折用第 8 到 12 档；第 16 档只用于真正的章节分隔，不作为页面默认间距。
+        params:
           within_group: { value: [2, 4], unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 组内档位 }
           between_groups: { value: [6, 8], unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 组间档位 }
           sections: { value: [8, 12], unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 区块档位 }
           chapter: { value: 16, unit: count, source: SRC.VERCEL.DESIGN_MD, label_zh: 章节档位 }
-        anchors:
-          - { spec: ui, quote: MUST NOT 写孤立色值、魔法间距和临时阴影。 }
-        enforcement: { kind: gate, check: style.spacing-scale }
+        enforcement: { kind: review }
         examples:
           - kind: do
             title_zh: 组内 gap-2，组间 gap-6
@@ -298,84 +1062,423 @@ areas:
                 <div className="flex flex-col gap-2"><Label>项目名称</Label><Input defaultValue="pomaster-web" /></div>
                 <div className="flex flex-col gap-2"><Label>根目录</Label><Input defaultValue="apps/web" /></div>
               </div>
-          - kind: dont
-            title_zh: 任意值
-            code: |-
-              <div className="mt-[13px] gap-[7px]">…</div>
-            lang: tsx
-
-  # ───────────────────────────── 基础 · 图标 ─────────────────────────────
-  - key: icons
-    title_zh: 图标
-    group: foundations
-    prefix: ICON
-    summary_zh: 只用一套图标库；图标只在能让操作更快被认出时使用；纯图标按钮要有名字。
-    rules:
-      - id: ICON.LIBRARY
-        title_zh: 只用 lucide-react
-        statement_zh: 图标统一用 lucide-react（shadcn/ui 的默认图标库），不混用第二套。Geist 官方图标包 @vercel/geistcn-assets 未公开发布，公开后再评估替换。图标只在一个约定俗成的图标能让操作更快被认出时才用。
-        params:
-          library: { value: lucide-react, source: SRC.POMASTER.PRESET, label_zh: 图标库 }
-          official: { value: "@vercel/geistcn-assets（未公开）", source: SRC.GEIST.ICONS, label_zh: Geist 官方图标包 }
-        enforcement: { kind: gate, check: icon.single-library }
-        examples:
-          - kind: do
-            title_zh: 图标与文字并排
-            jsx: |-
-              <div className="flex gap-2">
-                <Button variant="outline"><SearchIcon />搜索</Button>
-                <Button><PlusIcon />新建项目</Button>
-              </div>
-
-      - id: ICON.BUTTON_LABEL
-        title_zh: 纯图标按钮要有名字
-        statement_zh: 只有图标的按钮必须带 aria-label，悬停时用提示显示同样的文字。
-        anchors:
-          - { spec: ui, quote: MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。 }
-        enforcement: { kind: gate, check: markup.icon-button-label }
-        examples:
-          - kind: do
-            title_zh: 带 aria-label
-            jsx: |-
-              <Button variant="outline" size="icon" aria-label="刷新"><RefreshCwIcon /></Button>
 
   # ───────────────────────────── 基础 · 动效 ─────────────────────────────
   - key: motion
     title_zh: 动效
     group: foundations
     prefix: MOTION
-    summary_zh: 默认静止；动效只用来解释状态变化、保持连续、确认操作；尊重减少动效设置。
+    summary_zh: 默认静止；动效只用来解释状态变化、保持连续、确认操作；时长取过渡默认值；尊重减少动效设置。
     rules:
       - id: MOTION.PURPOSE
-        title_zh: 默认静止，动效要有理由
-        statement_zh: 界面默认静止。动效只用于三件事：解释状态变化、保持视觉连续、确认一个操作。不用跑马灯、打字光标、脉冲指示、弹跳、视差和滚动出现效果；用户开启「减少动效」时关闭或降级。
+        title_zh: 动效要有理由
+        statement_zh: 界面默认静止。动效只用于三件事：解释状态变化、保持视觉连续、确认一个操作。不用跑马灯、打字光标、脉冲指示、弹跳、视差和滚动出现效果。
+        enforcement: { kind: review }
+
+      - id: MOTION.DURATION
+        title_zh: 时长与缓动
+        statement_zh: 颜色、边框这类状态过渡用过渡工具类的默认时长与缓动；提示气泡、卡片浮层保留约 150ms 的出现延迟，避免鼠标扫过时闪烁。
+        params:
+          duration: { value: 150ms, source: SRC.TAILWIND.TRANSITIONS, label_zh: 默认过渡时长 }
+          easing: { value: "cubic-bezier(0.4, 0, 0.2, 1)", source: SRC.TAILWIND.TRANSITIONS, label_zh: 默认缓动 }
+          hover_delay: { value: 150ms, source: SRC.GEIST.TOOLTIP, label_zh: 提示出现延迟 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 过渡
+            description_zh: 把指针移到轨道上看速度。
+            name_label_zh: 时长
+            rows:
+              - name: 150ms
+                usage_zh: 颜色、边框、背景的状态过渡
+                jsx: |-
+                  <div className="std-motion-track"><span className="std-motion-dot" style={{ transitionDuration: p.duration, transitionTimingFunction: p.easing }} /></div>
+
+      - id: MOTION.REDUCED
+        title_zh: 减少动效
+        statement_zh: 用户开启「减少动效」时，关闭或降级动画、滚动和过渡；用 Tailwind 的 motion-safe / motion-reduce 变体写动效。
         anchors:
           - { spec: ui, quote: 尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级 }
         enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 只在允许动效时转动
+            code: |-
+              <Loader2Icon className="motion-safe:animate-spin" />
+            lang: tsx
 
-  # ───────────────────────────── 基础 · 布局与可访问性 ─────────────────────────────
-  - key: layout
-    title_zh: 布局与可访问性
-    group: foundations
-    prefix: LAYOUT
-    summary_zh: 一个 h1、标题有序；先换行再缩小；网格与弹性子项设 min-width 0；不藏溢出；源码顺序即阅读顺序。
+  # ───────────────────────────── 组件 · 通用 · 按钮 ─────────────────────────────
+  - key: button
+    title_zh: 按钮
+    group: components.general
+    prefix: CMP.BUTTON
+    summary_zh: 触发一个会改变状态的动作（部署、保存、删除）；改地址的跳转用链接按钮；一行有多个相关动作时用菜单或分裂按钮。
+    playground:
+      component: Button
+      text_zh: 部署项目
+      props:
+        variant: { options: [default, secondary, tertiary, error, warning], default: default }
+        size: { options: [tiny, small, medium, large], default: medium }
+        shape: { options: [square, rounded], default: square }
+        loading: { boolean: true, default: false }
+        disabled: { boolean: true, default: false }
+      matrix: { rows: variant, columns: size }
     rules:
-      - id: LAYOUT.HEADINGS
-        title_zh: 一个 h1，标题有序
-        statement_zh: 每个页面一个 h1，标题逐级下降；用地标元素、跳转到主内容的链接、原生控件、语义化表格和可见的焦点环，满足 WCAG AA。
-        anchors:
-          - { spec: ui, quote: 标题层级 h1–h6 与视觉层级一致，不跳过层级 }
-        enforcement: { kind: gate, check: markup.heading-order }
-
-      - id: LAYOUT.REFLOW
-        title_zh: 先换行，再缩小
-        statement_zh: 空间不够时先重新排布（换行、换列），不先缩小字号；网格和弹性布局的子项设 min-width 0，避免被长内容撑破；不用 overflow 隐藏把内容藏起来；源码顺序就是阅读顺序。
+      - id: CMP.BUTTON.USAGE
+        title_zh: 何时用
+        statement_zh: 按钮用于改变状态的动作（部署、保存、删除）；改变地址的导航用链接按钮。一行里有不止一个相关动作时，换成菜单或分裂按钮。
         enforcement: { kind: review }
         examples:
           - kind: do
-            title_zh: 子项 min-w-0，长文本截断
+            title_zh: 一个主操作配一个次要操作
             jsx: |-
-              <div className="flex w-72 items-center gap-2 rounded-md border border-border p-3">
-                <div className="min-w-0 flex-1 truncate text-label-14">pomaster-web-git-feature-design-standard-team.vercel.app</div>
-                <Badge variant="secondary">Preview</Badge>
+              <div className="flex gap-2">
+                <Button>部署项目</Button>
+                <Button variant="secondary">查看日志</Button>
               </div>
+
+      - id: CMP.BUTTON.VARIANTS
+        title_zh: 变体
+        statement_zh: 五种变体：default 是主操作；secondary 是辅助操作；tertiary 用于最次要的操作；error 用于破坏性的确认；warning 用于需要留意后果的操作。没有 primary、success、ghost 这类变体。
+        params:
+          variants: { value: [default, secondary, tertiary, error, warning], source: SRC.GEIST.BUTTON, label_zh: variant 取值 }
+        enforcement: { kind: gate, check: markup.single-primary-button }
+        showcase:
+          - kind: specimen
+            title_zh: 五种变体
+            name_label_zh: variant
+            rows:
+              - name: default
+                usage_zh: 主操作，一个操作区一个
+                jsx: |-
+                  <Button>部署项目</Button>
+              - name: secondary
+                usage_zh: 辅助操作
+                jsx: |-
+                  <Button variant="secondary">查看日志</Button>
+              - name: tertiary
+                usage_zh: 最次要的操作
+                jsx: |-
+                  <Button variant="tertiary">取消</Button>
+              - name: error
+                usage_zh: 破坏性的确认
+                jsx: |-
+                  <Button variant="error">删除项目</Button>
+              - name: warning
+                usage_zh: 需要留意后果的操作
+                jsx: |-
+                  <Button variant="warning">回滚部署</Button>
+
+      - id: CMP.BUTTON.DANGER
+        title_zh: 危险操作
+        statement_zh: 破坏性的确认用 error 变体，文案是「动词 + 对象」，并且和完成后的提示一一对应：按钮「删除项目」，提示「项目已删除」。高风险操作（删除生产资源、吊销密钥）要求输入资源名确认。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 动词加对象
+            jsx: |-
+              <Button variant="error">删除项目</Button>
+          - kind: dont
+            title_zh: 只有一个「删除」
+            jsx: |-
+              <Button variant="error">删除</Button>
+
+      - id: CMP.BUTTON.SIZES
+        title_zh: 尺寸
+        statement_zh: 四种尺寸：tiny、small、medium（默认）、large。同一个操作区尺寸一致；tiny 只用于放在输入框里的小按钮。
+        params:
+          heights: { value: [24, 32, 40, 48], unit: px, source: SRC.POMASTER.PRESET, label_zh: 高度, note_zh: Geist 未公开像素高度，按 tiny / small / medium / large 取预设值 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 四种尺寸
+            name_label_zh: size
+            rows:
+              - name: tiny
+                usage_zh: 输入框里的小按钮
+                jsx: |-
+                  <Button size="tiny">复制</Button>
+              - name: small
+                usage_zh: 表格行、卡片角落
+                jsx: |-
+                  <Button size="small">部署项目</Button>
+              - name: medium
+                usage_zh: 默认
+                jsx: |-
+                  <Button>部署项目</Button>
+              - name: large
+                usage_zh: 营销页、单列页面的主操作
+                jsx: |-
+                  <Button size="large">部署项目</Button>
+
+      - id: CMP.BUTTON.SHAPES
+        title_zh: 形状
+        statement_zh: 默认是圆角矩形；纯图标按钮可以是方形或圆形；胶囊形（rounded）配阴影，只用于营销页。
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 形状
+            jsx: |-
+              <div className="flex items-center gap-3">
+                <Button>部署项目</Button>
+                <Button variant="secondary" svgOnly aria-label="上一页"><ArrowLeftIcon /></Button>
+                <Button variant="secondary" shape="circle" svgOnly aria-label="下一页"><ArrowRightIcon /></Button>
+                <Button shape="rounded" shadow>开始部署</Button>
+              </div>
+
+      - id: CMP.BUTTON.ICONS
+        title_zh: 搭配图标
+        statement_zh: 图标通过前缀、后缀放进按钮：前缀图标表达动作本身，后缀图标表达去向（箭头、外链）。同一个按钮区要么都带图标，要么都不带。
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 前缀与后缀
+            jsx: |-
+              <div className="flex gap-3">
+                <Button variant="secondary" prefix={<ArrowLeftIcon />}>返回</Button>
+                <Button variant="secondary" suffix={<ArrowRightIcon />}>下一步</Button>
+                <Button variant="secondary" suffix={<ExternalLinkIcon />}>打开预览</Button>
+              </div>
+
+      - id: CMP.BUTTON.ICON_ONLY
+        title_zh: 纯图标按钮
+        statement_zh: 纯图标按钮设 svgOnly，并且必须带 aria-label；名称写动作和对象（「复制部署地址」），不写图标名。
+        anchors:
+          - { spec: ui, quote: MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。 }
+        enforcement: { kind: gate, check: markup.icon-button-label }
+        examples:
+          - kind: do
+            title_zh: 有名称
+            jsx: |-
+              <Button variant="secondary" svgOnly aria-label="复制部署地址"><CopyIcon /></Button>
+          - kind: dont
+            title_zh: 读屏只能读出「按钮」
+            code: |-
+              <Button variant="secondary" svgOnly><CopyIcon /></Button>
+            lang: tsx
+
+      - id: CMP.BUTTON.LOADING
+        title_zh: 加载
+        statement_zh: 进行中的操作用按钮自身的 loading，按钮保持可聚焦并向读屏报告忙碌状态；不要把按钮换成一个单独的转圈图标。
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 加载状态
+            jsx: |-
+              <div className="flex gap-3">
+                <Button loading>部署中</Button>
+                <Button variant="secondary" loading>保存中</Button>
+              </div>
+
+      - id: CMP.BUTTON.DISABLED
+        title_zh: 禁用
+        statement_zh: 只有动作此刻做不了（缺少输入、权限不够）才禁用，并配文字提示说明原因。
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 禁用的五种变体
+            jsx: |-
+              <div className="flex flex-wrap gap-3">
+                <Button disabled>部署项目</Button>
+                <Button variant="secondary" disabled>查看日志</Button>
+                <Button variant="tertiary" disabled>取消</Button>
+                <Button variant="error" disabled>删除项目</Button>
+                <Button variant="warning" disabled>回滚部署</Button>
+              </div>
+
+      - id: CMP.BUTTON.LINK
+        title_zh: 链接按钮
+        statement_zh: 改变地址的导航用链接按钮（与按钮同样的属性，渲染成链接）；不用按钮的点击事件去跳转。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 链接按钮
+            jsx: |-
+              <ButtonLink variant="secondary" href="#/deployments">查看全部部署</ButtonLink>
+          - kind: dont
+            title_zh: 点击事件里跳转
+            code: |-
+              <Button onClick={() => router.push("/deployments")}>查看全部部署</Button>
+            lang: tsx
+
+      - id: CMP.BUTTON.WIDTH
+        title_zh: 宽度
+        statement_zh: 按钮宽度由文字决定；需要固定宽度时设宽度，单列表单的主操作可以占满整行。
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 占满整行
+            jsx: |-
+              <div className="w-80"><Button className="w-full">继续</Button></div>
+
+      - id: CMP.BUTTON.SUBMIT
+        title_zh: 表单提交
+        statement_zh: 表单的提交按钮设 type="submit"，回车即可提交；一个表单一个提交按钮。项目里的按钮用 variant 选变体（对应 Geist 文档里的 type 属性），原生 type 照常写。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 提交按钮
+            code: |-
+              <form onSubmit={onSave}>
+                <Input name="name" />
+                <Button type="submit">保存项目</Button>
+              </form>
+            lang: tsx
+
+      - id: CMP.BUTTON.LABEL
+        title_zh: 文案
+        statement_zh: 文案说清会发生什么：「部署项目」「邀请成员」「轮换密钥」；不用光秃秃的「提交」，也不用「确定」「好的」这类泛泛的确认。切换方式的按钮加「改用」：「改用恢复码」。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 说清会发生什么
+            jsx: |-
+              <Button>邀请成员</Button>
+          - kind: dont
+            title_zh: 泛泛的「确定」
+            jsx: |-
+              <Button>确定</Button>
+
+  # ───────────────────────────── 工程规范 · 状态管理 ─────────────────────────────
+  - key: state
+    title_zh: 状态管理
+    group: engineering
+    prefix: STATE
+    summary_zh: 每份状态先定属主再定存放处：服务端数据进 TanStack Query，跨页稳定状态进 Zustand，可分享的视图状态进 URL，表单用表单模型。
+    rules:
+      - id: STATE.OWNERSHIP
+        title_zh: 状态放哪
+        statement_zh: 每份状态都说清楚：谁拥有、谁能改、放在哪、活多久、什么时候清理。组件自己的状态用 useState / useReducer 留在组件里；接口数据进查询缓存；跨页稳定的状态进全局 store；可分享的视图状态进 URL；表单进表单模型。
+        anchors:
+          - { spec: state, quote: 每个状态声明 owner、更新者、存储位置、生命周期和清理策略。 }
+          - { spec: state, quote: MUST NOT 将组件状态放入全局 store。 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 这份状态放哪
+            name_label_zh: 状态
+            rows:
+              - name: 接口返回的数据
+                usage_zh: "@tanstack/react-query 查询缓存"
+                jsx: |-
+                  <code className="text-label-13-mono">useQuery(&#123; queryKey, queryFn &#125;)</code>
+              - name: 跨页、少变（当前用户、团队、偏好）
+                usage_zh: Zustand 全局 store
+                jsx: |-
+                  <code className="text-label-13-mono">useSessionStore()</code>
+              - name: 可分享的筛选、页码、标签页
+                usage_zh: URL 查询参数
+                jsx: |-
+                  <code className="text-label-13-mono">?status=ready&amp;page=2</code>
+              - name: 正在编辑的表单
+                usage_zh: 表单模型
+                jsx: |-
+                  <code className="text-label-13-mono">useForm()</code>
+              - name: 组件内的临时状态（展开、悬停）
+                usage_zh: 组件局部状态
+                jsx: |-
+                  <code className="text-label-13-mono">useState()</code>
+
+      - id: STATE.SERVER_STATE
+        title_zh: 服务端数据
+        statement_zh: 从接口来的数据由 @tanstack/react-query 管理（缓存 key、过期、重新获取、失效都在这一层），组件直接从查询读；不把接口数据复制进全局 store 再手动同步。
+        params:
+          query_library: { value: "@tanstack/react-query", source: SRC.POMASTER.STACK_DECISION, label_zh: 查询缓存库 }
+        anchors:
+          - { spec: state, quote: server state 由查询缓存层管理。 }
+          - { spec: state, quote: MUST NOT 复制 server state 到全局 store 手动同步。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 组件从查询读
+            code: |-
+              const { data, isPending } = useQuery({ queryKey: ["deployments", { status, page }], queryFn: () => api.listDeployments({ status, page }) })
+            lang: tsx
+          - kind: dont
+            title_zh: 拉回来塞进全局 store
+            code: |-
+              useEffect(() => { api.listDeployments(query).then((list) => useDeployStore.setState({ list })) }, [query])
+            lang: tsx
+
+      - id: STATE.GLOBAL_STORE
+        title_zh: 全局 store
+        statement_zh: 全局 store 用 Zustand，只放跨页面且稳定的状态（当前用户、团队、偏好设置）；每个 store 一个文件，文件头写明属主；组件用选择器只订阅自己用到的字段。
+        params:
+          library: { value: Zustand, source: SRC.POMASTER.STACK_DECISION, label_zh: 全局状态库 }
+        anchors:
+          - { spec: state, quote: 全局 store 只保存稳定跨页面状态。 }
+        enforcement: { kind: gate, check: state.store-library }
+        examples:
+          - kind: do
+            title_zh: 用选择器订阅
+            code: |-
+              const team = useSessionStore((state) => state.team)
+            lang: tsx
+
+      - id: STATE.URL
+        title_zh: URL 状态
+        statement_zh: 列表的筛选条件、页码、排序、当前标签页这类可分享、刷新后要恢复的状态放进 URL 查询参数；敏感信息和没提交的表单不进 URL。
+        anchors:
+          - { spec: state, quote: 可分享和可恢复状态进入 URL。 }
+          - { spec: state, quote: MUST NOT 将敏感或未提交表单写入 URL。 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: lab
+            lab: state.url-filters
+            title_zh: 实验：筛选条件进 URL
+            description_zh: 改筛选和页码，地址栏跟着变；点「刷新页面」，视图从 URL 原样恢复。
+
+      - id: STATE.REQUESTS
+        title_zh: 请求入口
+        statement_zh: 组件不直接调用 fetch，一律经生成的接口客户端（类型与 OpenAPI 同源）和查询；展示组件不请求接口、不改路由、不改全局状态，数据从属性传入。
+        anchors:
+          - { spec: ui, quote: MUST NOT 让展示组件偷偷请求接口、改路由或全局状态。 }
+        enforcement: { kind: gate, check: state.no-direct-request }
+        examples:
+          - kind: dont
+            title_zh: 组件里直接 fetch
+            code: |-
+              useEffect(() => { fetch("/api/deployments").then((r) => r.json()).then(setRows) }, [])
+            lang: tsx
+
+      - id: STATE.CACHE_KEYS
+        title_zh: 缓存 key 与失效
+        statement_zh: 查询 key 包含所有影响结果的筛选条件和上下文（团队、数据范围）；每个写操作声明它会让哪些查询失效，成功后 invalidateQueries；切换团队或身份时清掉可能越权的缓存。
+        anchors:
+          - { spec: state, quote: Query Key 包含所有影响结果的筛选和上下文。 }
+          - { spec: state, quote: 写操作定义依赖失效矩阵。 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: lab
+            lab: state.query-cache
+            title_zh: 实验：查询缓存与失效
+            description_zh: 切换筛选看缓存命中；点「新建一条」后，对应的 key 失效并重新拉取。
+
+      - id: STATE.CLEANUP
+        title_zh: 清理与竞态
+        statement_zh: 订阅、计时器、请求在组件卸载和身份切换时清理（useEffect 返回清理函数，请求带 AbortSignal）；已取消的请求和旧身份下的迟到结果不得写入当前状态。
+        anchors:
+          - { spec: state, quote: MUST NOT 让已取消请求、旧订阅或旧身份上下文的迟到结果继续写入当前状态。 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: lab
+            lab: state.race
+            title_zh: 实验：迟到的响应不写回
+            description_zh: 快速输入会发出多个请求，响应乱序到达；只有最新一次的结果写进列表。打开「错误做法」看旧结果覆盖新结果。
+
+      - id: STATE.FORM_MODEL
+        title_zh: 表单模型
+        statement_zh: 表单用独立的表单模型和类型化的校验 schema，不直接绑定接口返回的 DTO；区分初始值、当前值、是否改过、错误和提交中。
+        params:
+          form_library: { decision: 表单模型用哪个库？, candidates: ["react-hook-form + zod", "TanStack Form"], label_zh: 表单库 }
+        anchors:
+          - { spec: page, quote: 使用独立 FormModel 和 typed schema。 }
+          - { spec: page, quote: MUST NOT 直接绑定 DTO。 }
+        enforcement: { kind: review }
+
+      - id: STATE.BROWSER_STORAGE
+        title_zh: 浏览器存储
+        statement_zh: 存进浏览器（localStorage、IndexedDB）的每一项都登记用途、隔离 key（按用户、团队）、版本、大小、过期时间和清理时机；读回来先校验版本和身份；脚本可读的存储里不放会话标识、刷新令牌等凭据。
+        anchors:
+          - { spec: state, quote: 可被脚本读取的存储不得持久化 session identifier、refresh token、secret 或等价凭据 }
+        enforcement: { kind: review }

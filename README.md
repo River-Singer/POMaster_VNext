@@ -25,7 +25,7 @@ POMaster 把「软件项目当前可信的状态」当作一等公民来管理�
 
 「有哪些组件、长什么样、该写什么」一页可览——**41 张 archetype 语义卡**（页面/组件/后端/数据/运行时的标准件：职责、何时用、组合方式、研究锚，附「建议组件组合」逐条溯源映射）+ **71 个 ant-design-vue 组件真渲染（178 个 stories：默认形态 + disabled/loading/size/变体交互态矩阵）** + **18 页 overlay 能力清单** + foundations 边界页 + **Database Struct 占位分区**（该写什么：数据与事务主题 MUST/Checklist + baseline data 面导航——业务实体走 New Entity Gate，画廊不预置）。画廊全部由生成器从既有锚定物料**只读渲染**：不新增规范物料、不预置业务实体，页头自带 NON-AUTHORITATIVE 声明。
 
-另有 **React sidecar**（`packages/studio-react`，`corepack pnpm studio:react:dev`，端口 6007）：`antd@5.x` 真渲染，与 antdv 同设计系统两端逐族对齐、标注「Vue 对应件」对照浏览；侧栏最上方是 React 栈的「规范」分区（Vercel Geist 预设，shadcn/ui + Tailwind CSS 4 实时渲染示例，见 `docs/design-standard.md`）。Vercel 的官方 Geist 组件包没有公开发布，示例组件是按 Geist 主题着色的 shadcn/ui。
+`corepack pnpm studio:dev` 起的是**总 Storybook**：侧栏里两个抽屉——**Vue · Ant Design**（`packages/studio`）与 **React · Geist**（`packages/studio-react`；另有 `antd@5.x` 对照画廊）。两个抽屉最上方都是「规范」分区（开发必须遵守的前端设计规范）：目录相同（统一骨架，两套体系的领域、条目、组件取并集），页面样子相同（按 Geist 文档的样子：演示卡片 + 显示代码、对照表、色板、并排的「这样做 / 别这样做」、状态管理的可操作实验），内容各是本体系的规则与实时示例；某一套还没写的页标「待补」。项目锁定前端架构后只留对应的抽屉。详见 `docs/design-standard.md`。
 
 ![POMaster 组件画廊总览：五类页面构成与生成器纪律](docs/assets/studio/overview.png)
 
@@ -36,8 +36,9 @@ POMaster 把「软件项目当前可信的状态」当作一等公民来管理�
 怎么看：
 
 ```bash
-corepack pnpm studio:dev        # Vue 主实例（生成产物自动重建）
-corepack pnpm studio:react:dev  # React sidecar（Geist 规范 + antd 对照浏览，端口 6007）
+corepack pnpm studio:dev        # 总 Storybook（http://localhost:6008）：Vue · Ant Design 与 React · Geist 两个抽屉
+corepack pnpm studio:vue:dev    # 只起 Vue · Ant Design（端口 6006，生成产物自动重建）
+corepack pnpm studio:react:dev  # 只起 React · Geist（端口 6007）
 ```
 
 - **在线版**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（GitHub Pages，push 到 main 自动发布）
@@ -397,7 +398,7 @@ init 幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `
 
 **接手已有项目？init 走 task-first Brownfield 路径**：检测到 worktree 非空且无 `.pomaster` 时，init 不要求用户先猜框架或逐项回答技术栈，而是自动运行 recon 三腿（`import-graph` / `migrations` / `sbom`）并创建唯一 `TASK.INIT_PROJECT_IDENTIFICATION`。SessionStart/next-action 把该 TASK 排在普通开发之前；Agent 用 `report` 提交项目用途、架构候选、技术栈、关键目录、命令、证据与 unknowns。只有 human Owner 执行 `confirm` 后才生成架构 profile、差异化治理内容并回填 stack；文件冲突时 TASK 保持 reported，修复后可重放，不会以完成态掩盖未生成治理。
 
-**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
+**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（总 Storybook，Vue · Ant Design 与 React · Geist 两个抽屉）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
 
 > 产物全表 / 目录宪法 / 播种语义 / 重入口细节 / 问卷与 confirm 机制 / doctor 探针矩阵：详见 [docs/init-reference.md](docs/init-reference.md)。
 
