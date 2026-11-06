@@ -224,7 +224,7 @@ export async function doctorProbes(store: Store): Promise<DoctorReport> {
     : {
         probe: "vocab_lock_consistency",
         status: "defect",
-        detail: `指纹失配：${mismatched.map(([key]) => key).join("/")}——索引由旧词表写入或词表镜像已变更；走词汇表 PR（勿手改指纹，D24）`,
+        detail: `指纹失配：${mismatched.map(([key]) => key).join("/")}——索引由旧词表写入或指纹被手改；内容若满足当前词表，下一次写入（pomaster maintain 或任一事务）自动迁移指纹、不拦截；内容含词表外的词时装载即 VOCAB_MISMATCH，走词汇表 PR（勿手改指纹，D24）`,
       };
 
   // —— 2) dead_producers_empty（heartbeat 重算，C5） ——

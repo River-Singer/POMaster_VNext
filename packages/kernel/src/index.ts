@@ -556,7 +556,14 @@ export interface TransactionResult {
  * 事务内自动维护：seq/rev 分配（A4 单调，禁墙钟）、body_sha256/content_digest 重算（D24）；
  * 同 inputs 重放 → 零写入短路；DENOMINATOR 删除请求 → FATAL 并引导 supersede（只许 supersede 不许删除）。
  */
-export { applyTransaction } from "./store.js";
+export { applyTransaction, CONCURRENT_REPLAY_LIMIT } from "./store.js";
+
+/**
+ * vocab_lock 漂移的纯读查询：内容已满足当前词表、只是指纹落后时返回漂移项（下一次事务自动
+ * 迁移）；内容不满足当前词表时装载即 VOCAB_MISMATCH。空数组 = 一致。
+ */
+export { inspectVocabDrift } from "./store.js";
+export type { VocabDrift } from "./store.js";
 
 // ============================================================
 // 转移引擎

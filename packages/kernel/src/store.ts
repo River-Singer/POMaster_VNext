@@ -14,8 +14,11 @@
  * - 原子性：staged 写入（tmp+rename）+ 失败回滚；回滚依据写入前捕获的原字节，
  *   不凭 exists() 推断删除原件（staged-replace 事故教训）。
  * - A1 并发防线：提交前重读 truth-index 的 generation.seq 复核世代（P20 红队发现 4
- *   同族修复，对照 locks.swapLockCas）——世代推进 → CONCURRENT_WRITE_DETECTED
- *   显式拒绝（本事务零落盘，重开 store 重放即收敛），绝不静默丢事务。
+ *   同族修复，对照 locks.swapLockCas）——世代推进 → 本次零落盘，内核按最新世代自动整笔
+ *   重放（≤ CONCURRENT_REPLAY_LIMIT 次，事实判卷全部重跑），连续冲突超限才
+ *   CONCURRENT_WRITE_DETECTED 显式失败；绝不静默丢事务（Owner 2026-11-06：非事实冲突不拦截）。
+ * - vocab_lock 指纹：内容满足当前词表（schema 校验通过）时指纹漂移只是元数据过期 → 放行，
+ *   下一次事务迁移到当前指纹并 WARN；内容不满足当前词表才 VOCAB_MISMATCH。
  * - A2 journal 纪律：TX_APPLIED 在 staged 批提交成功后 appendLine 原子追加
  *   （locks/execution/session 同款；RMW 覆写会把并发 appendLine 家族刚写的整行抹掉）。
  *   「index 先行、journal 缺行」= 可检出残态，比「journal 有幽灵行、index 未提交」诚实。
@@ -318,16 +321,58 @@ function getIndexValidator(): ValidateFunction {
   return indexValidator as ValidateFunction;
 }
 
+/** vocab_lock 指纹漂移的一项（存储值 ≠ 当前词表镜像）。 */
+export interface VocabDrift {
+  readonly key: "state_axes" | "kinds" | "prefixes";
+  readonly stored: string | null;
+  readonly expected: string;
+}
+
+/** 当前词表镜像的 vocab_lock 块（snake 词形，与索引同形）。 */
+function currentVocabLock(): UnknownRecord {
+  const fingerprints = vocabFingerprints();
+  return { state_axes: fingerprints.stateAxes, kinds: fingerprints.kinds, prefixes: fingerprints.prefixes };
+}
+
+/** 逐键比对存储的 vocab_lock 与当前词表镜像；vocab_lock 缺席或不是对象时返回空（交给 schema 判结构）。 */
+function vocabDriftOf(raw: UnknownRecord): VocabDrift[] {
+  const stored = raw.vocab_lock;
+  if (stored === null || typeof stored !== "object" || Array.isArray(stored)) return [];
+  const expected = currentVocabLock();
+  const drift: VocabDrift[] = [];
+  for (const key of ["state_axes", "kinds", "prefixes"] as const) {
+    const value = (stored as UnknownRecord)[key];
+    if (value !== expected[key]) drift.push({ key, stored: typeof value === "string" ? value : null, expected: expected[key] as string });
+  }
+  return drift;
+}
+
 /**
- * 01 schema 校验 + vocab_lock 三指纹对账（不一致=FATAL，D24 read_only_service 的
- * identity 抽验，非写阻断）+ REF_INTEGRITY 基础项。
+ * 01 schema 校验 + vocab_lock 三指纹对账 + REF_INTEGRITY 基础项。
+ *
+ * 指纹对账只拦「违背项目事实」的情形（Owner 2026-11-06：maintain 不因文件校验/哈希一致性
+ * 等非事实原因拦截）：
+ * - 索引内容满足当前 01 schema（schema 逐值镜像 closed-world 词表：kind / 四轴 / id 前缀
+ *   全部是 enum 或 pattern）→ 指纹漂移只是元数据过期（旧版本写入或手改指纹），不是事实冲突：
+ *   放行，返回漂移项；下一次事务把 vocab_lock 迁移到当前词表（WARN 留痕，见 applyTransaction）。
+ * - 索引内容不满足 schema 且指纹漂移 → VOCAB_MISMATCH（索引里有当前词表不认识的词，真冲突）。
+ * - 索引内容不满足 schema、指纹一致 → SCHEMA_INVALID。
  */
-function validateRawIndex(paths: StorePaths, raw: UnknownRecord): void {
+function validateRawIndex(paths: StorePaths, raw: UnknownRecord): VocabDrift[] {
   const validate = getIndexValidator();
+  const drift = vocabDriftOf(raw);
   if (!validate(raw)) {
     const errors = (validate.errors ?? [])
       .map((error) => `${error.instancePath} ${error.message ?? ""}`)
       .join("; ");
+    if (drift.length > 0) {
+      throw new GovernanceError(
+        "VOCAB_MISMATCH",
+        `truth-index 含当前词表不认识的内容（vocab_lock 指纹 ${drift.map((item) => item.key).join("/")} 同时漂移，索引由不同词表版本写入）：${errors}`,
+        "索引里的词不在当前词表里：升级/回退 pomaster 到写入该索引的版本，或走词汇表 PR 收编这些词（vocab-lock 与 @pomaster/schemas 同 commit）；勿手改指纹（D24：human_touch=forbidden）",
+        { key: drift[0]!.key, keys: drift.map((item) => item.key), errors: (validate.errors ?? []).length },
+      );
+    }
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `truth-index 不满足 01-truth-index schema：${errors}`,
@@ -335,30 +380,20 @@ function validateRawIndex(paths: StorePaths, raw: UnknownRecord): void {
       { errors: (validate.errors ?? []).length },
     );
   }
-  const fingerprints = vocabFingerprints();
-  const vocabLock = raw.vocab_lock as UnknownRecord;
-  const stored: UnknownRecord = {
-    state_axes: vocabLock.state_axes,
-    kinds: vocabLock.kinds,
-    prefixes: vocabLock.prefixes,
-  };
-  const expected: UnknownRecord = {
-    state_axes: fingerprints.stateAxes,
-    kinds: fingerprints.kinds,
-    prefixes: fingerprints.prefixes,
-  };
-  for (const key of Object.keys(expected)) {
-    if (stored[key] !== expected[key]) {
-      throw new GovernanceError(
-        "VOCAB_MISMATCH",
-        `vocab_lock 指纹对账失败：${key} 存储值 ${String(stored[key])} ≠ 当前词表镜像 ${String(expected[key])}`,
-        "索引由旧词表写入或词表代码镜像已变更：走词汇表 PR 流程（vocab-lock 与 @pomaster/schemas 同 commit），勿手改指纹（D24：human_touch=forbidden）",
-        { key },
-      );
-    }
-  }
   assertRefIntegrityBasics(raw);
   void paths;
+  return drift;
+}
+
+/**
+ * 纯读查询：store 的 vocab_lock 是否落后于当前词表（内容已满足当前词表时才会返回漂移项；
+ * 不满足时装载本身就会 VOCAB_MISMATCH）。空数组 = 一致。下一次事务自动迁移。
+ */
+export function inspectVocabDrift(store: Store): readonly VocabDrift[] {
+  const paths = pathsOf(store);
+  const raw = readRawIndex(paths);
+  if (raw === null) return [];
+  return validateRawIndex(paths, raw);
 }
 
 /** REF_INTEGRITY 基础项（v0 四项；全量十三项归后续 REF_INTEGRITY 规则集）。 */
@@ -867,11 +902,49 @@ function assertAuthorityBoundaries(paths: StorePaths, raw: UnknownRecord, tx: Tr
   }
 }
 
+/** 并发世代冲突的自动重放上限（每次重放都从磁盘重读最新世代、整笔重算）。 */
+export const CONCURRENT_REPLAY_LIMIT = 3;
+
 /**
  * 唯一写入路径。语义见 docs/kernel-api.md §1（seq/rev 单调、digest 自动维护、
  * 幂等短路、DENOMINATOR 只许 supersede 不许删除、staged+回滚）。
+ *
+ * 并发世代冲突（CONCURRENT_WRITE_DETECTED）不是事实冲突：本事务零落盘，按最新世代整笔重算
+ * 即收敛——内核自动重放（≤ CONCURRENT_REPLAY_LIMIT 次）；重放时一切事实判卷（转移矩阵、
+ * 权威闸、schema 复验……）照常对最新世代再跑一遍。连续冲突超过上限才显式失败。
  */
 export async function applyTransaction(
+  store: Store,
+  tx: Transaction,
+): Promise<TransactionResult> {
+  let replays = 0;
+  for (;;) {
+    try {
+      const result = await applyTransactionOnce(store, tx);
+      if (replays === 0) return result;
+      return {
+        ...result,
+        digestWarnings: [
+          ...result.digestWarnings,
+          `concurrent generation advance detected ${replays}× — transaction replayed against the latest generation（零落盘重放，非事实冲突不拦截）`,
+        ],
+      };
+    } catch (error) {
+      if (!(error instanceof GovernanceError) || error.code !== "CONCURRENT_WRITE_DETECTED") throw error;
+      if (replays >= CONCURRENT_REPLAY_LIMIT) {
+        throw new GovernanceError(
+          "CONCURRENT_WRITE_DETECTED",
+          `${error.message.replace(/^\[CONCURRENT_WRITE_DETECTED\] /, "").replace(/ — hint: .*$/s, "")}（已自动重放 ${replays} 次仍被并发写抢先）`,
+          "另一会话在持续写同一 store：经 change/unit 锁互斥（pomaster lock acquire）后重试；本事务零落盘",
+          { ...error.details, replays },
+        );
+      }
+      replays += 1;
+    }
+  }
+}
+
+async function applyTransactionOnce(
   store: Store,
   tx: Transaction,
 ): Promise<TransactionResult> {
@@ -885,7 +958,7 @@ export async function applyTransaction(
       { rootDir: store.rootDir },
     );
   }
-  validateRawIndex(paths, raw);
+  const vocabDrift = validateRawIndex(paths, raw);
   const curSeq = seqOfRaw(raw);
 
   // —— 事务级执行身份盖章校验（P21-Enforcement；先于幂等短路——盖章位携带即
@@ -896,7 +969,7 @@ export async function applyTransaction(
 
   // —— 幂等短路：同 inputs 重放 = 零写入（字节稳定，seq 不动） ——
   const fingerprint = inputsFingerprintOf(tx);
-  if (fingerprint === (raw.generation as UnknownRecord).inputs_fingerprint) {
+  if (vocabDrift.length === 0 && fingerprint === (raw.generation as UnknownRecord).inputs_fingerprint) {
     return {
       appliedSeq: curSeq,
       shortCircuited: true,
@@ -926,6 +999,14 @@ export async function applyTransaction(
 
   // —— D24 防篡改抽验（只读服务；失配 → WARN + auto-regen，永不阻断） ——
   sweepDigestTampering(workspace);
+
+  // —— vocab_lock 迁移：内容已通过当前词表的 schema，指纹漂移只是元数据过期 → 改写为当前指纹 ——
+  if (vocabDrift.length > 0) {
+    working.vocab_lock = currentVocabLock();
+    workspace.digestWarnings.push(
+      `vocab_lock drift (${vocabDrift.map((item) => item.key).join("/")}) — index content validates against the current vocab; fingerprints migrated（D24：WARN + auto-regen，非事实冲突不拦截）`,
+    );
+  }
 
   // —— 顺序执行 ops（全部只改 working/计划，最后统一 staged 落盘） ——
   for (const op of tx.ops) {

@@ -11,10 +11,12 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSyn
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  CONCURRENT_REPLAY_LIMIT,
   GovernanceError,
   applyTransaction,
   createStore,
   doctorProbes,
+  inspectVocabDrift,
   loadTruthIndex,
   type Store,
   type Transaction,
@@ -153,13 +155,32 @@ describe("createStore / loadTruthIndex（打开与初始化）", () => {
     });
   });
 
-  it("手改 vocab 指纹 → loadTruthIndex VOCAB_MISMATCH（枚举多头拷贝免疫）", async () => {
+  it("手改 vocab 指纹、内容仍满足当前词表 → 不拦截：装载照常，漂移可查，下一次事务迁移指纹并 WARN", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
     const path = join(root, ".pomaster", "state", "truth-index.json");
     const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-    const vocabLock = raw.vocab_lock as Record<string, unknown>;
-    vocabLock.kinds = `sha256:${"00".repeat(32)}`;
+    const expectedKinds = (raw.vocab_lock as Record<string, unknown>).kinds;
+    (raw.vocab_lock as Record<string, unknown>).kinds = `sha256:${"00".repeat(32)}`;
     writeFileSync(path, JSON.stringify(raw, null, 2));
-    await expect(loadTruthIndex(store)).rejects.toMatchObject({ code: "VOCAB_MISMATCH" });
+    await expect(loadTruthIndex(store)).resolves.toMatchObject({ generation: { seq: 1 } });
+    expect(inspectVocabDrift(store).map((item) => item.key)).toEqual(["kinds"]);
+    // 同一笔事务重放（inputs 指纹相等）也不短路：迁移本身就是变化
+    const migrated = await applyTransaction(store, txOf(upsertPage()));
+    expect(migrated.shortCircuited).toBe(false);
+    expect(migrated.digestWarnings.some((warning) => warning.includes("vocab_lock drift (kinds)"))).toBe(true);
+    expect((readIndex(root).vocab_lock as Record<string, unknown>).kinds).toBe(expectedKinds);
+    expect(inspectVocabDrift(store)).toEqual([]);
+  });
+
+  it("指纹漂移且索引含当前词表不认识的词 → VOCAB_MISMATCH（真冲突照拦）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const path = join(root, ".pomaster", "state", "truth-index.json");
+    const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    (raw.vocab_lock as Record<string, unknown>).kinds = `sha256:${"00".repeat(32)}`;
+    ((raw.objects as Record<string, unknown>[])[0]!.axes as Record<string, unknown>).lifecycle = "ACCEPTED";
+    writeFileSync(path, JSON.stringify(raw, null, 2));
+    await expect(loadTruthIndex(store)).rejects.toMatchObject({ code: "VOCAB_MISMATCH", details: { key: "kinds" } });
+    await expect(applyTransaction(store, txOf(upsertPage({ id: gid("PAGE.SETTINGS"), titleZh: "设置" })))).rejects.toMatchObject({ code: "VOCAB_MISMATCH" });
   });
 
   it("损坏的索引 JSON → SCHEMA_INVALID（禁静默当空索引）", async () => {
@@ -966,15 +987,45 @@ const claimOp = (overrides: Record<string, unknown> = {}): Transaction["ops"] =>
 ];
 
 describe("A1 提交时世代复核（并发写防线，P20 红队发现 4 同族）", () => {
-  it("开卷后落盘前 truth-index seq 被并发方推进 → CONCURRENT_WRITE_DETECTED，本事务零落盘", async () => {
+  it("开卷后落盘前 truth-index seq 被并发方推进 → 本次零落盘，内核按最新世代自动重放并成功（非事实冲突不拦截）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    // 模拟并发提交方：在「staged 计划就绪 → 落盘」窗口内把磁盘 index 的 seq 推进一次
+    // （其余内容不动——复核只对账世代 seq）。
+    let advanced = false;
+    ioInterceptor.beforeCaptureOriginal = (path) => {
+      if (!advanced && path.endsWith("truth-index.json")) {
+        advanced = true;
+        const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+        ((raw.generation) as Record<string, unknown>).seq = 99;
+        writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
+      }
+    };
+    let result: Awaited<ReturnType<typeof applyTransaction>>;
+    try {
+      result = await applyTransaction(store, txOf(upsertPage({ id: gid("PAGE.SETTINGS"), titleZh: "设置" })));
+    } finally {
+      ioInterceptor.beforeCaptureOriginal = null;
+    }
+    // 重放基于并发方的新世代：seq 接在 99 之后，本事务对象落盘，journal 只有一行 TX_APPLIED（无幽灵行）
+    expect(result.shortCircuited).toBe(false);
+    expect(result.appliedSeq).toBe(100);
+    expect(result.digestWarnings.some((warning) => warning.includes("replayed against the latest generation"))).toBe(true);
+    const disk = readIndex(root);
+    expect((disk.generation as Record<string, unknown>).seq).toBe(100);
+    expect((disk.objects as Record<string, unknown>[]).map((row) => row.id)).toContain("PAGE.SETTINGS");
+    const applied = readJournal(root).trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>).filter((event) => event.type === "TX_APPLIED");
+    expect(applied.map((event) => event.seq)).toEqual([1, 100]);
+  });
+
+  it("并发方持续抢先超过重放上限 → CONCURRENT_WRITE_DETECTED，本事务零落盘", async () => {
     await applyTransaction(store, txOf(upsertPage()));
     const journalBefore = readJournal(root);
-    // 模拟并发提交方：在「staged 计划就绪 → 落盘」窗口内把磁盘 index 的 seq 推进
-    // （其余内容不动——复核只对账世代 seq）。
+    let bump = 50;
     ioInterceptor.beforeCaptureOriginal = (path) => {
       if (path.endsWith("truth-index.json")) {
         const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-        ((raw.generation) as Record<string, unknown>).seq = 99;
+        bump += 1;
+        ((raw.generation) as Record<string, unknown>).seq = bump;
         writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
       }
     };
@@ -986,14 +1037,12 @@ describe("A1 提交时世代复核（并发写防线，P20 红队发现 4 同族
     }
     expect(bad).toBeInstanceOf(GovernanceError);
     expect((bad as GovernanceError).code).toBe("CONCURRENT_WRITE_DETECTED");
-    // 本事务零落盘：journal 无新行、磁盘 index 无本事务对象（并发方的推进如实留盘）
+    expect((bad as GovernanceError).details).toMatchObject({ replays: CONCURRENT_REPLAY_LIMIT });
     expect(readJournal(root)).toBe(journalBefore);
-    const disk = readIndex(root);
-    const ids = (disk.objects as Record<string, unknown>[]).map((row) => row.id);
+    const ids = (readIndex(root).objects as Record<string, unknown>[]).map((row) => row.id);
     expect(ids).not.toContain("PAGE.SETTINGS");
     // store 仍可用：重开读到的就是并发新世代，重放事务正常收敛
     const reopened = await createStore(root);
-    expect(reopened.currentSeq).toBe(99);
     const ok = await applyTransaction(reopened, txOf(upsertPage({ id: gid("PAGE.SETTINGS"), titleZh: "设置" })));
     expect(ok.shortCircuited).toBe(false);
   });

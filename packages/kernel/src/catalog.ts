@@ -18,8 +18,9 @@
  *    （幂等重算 sha256 是 D24 工具侧动作非治理事实——无授权闸、零时戳、字节幂等）；
  * 2) 项目治理产物（.pomaster/**）= D24 只报不拦：reconcile content_drift 呈现，
  *    写作流程不禁（Project Truth 的修正走治理面显式事务，不靠哈希闸拦写作）；
- * 3) 词表/schema = VOCAB_MISMATCH FATAL：closed-world 根不属「项目文档」，词形外
- *    值显式爆（本模块五节 loader 的词表闸同根）。
+ * 3) 词表/schema = 词形外值显式爆（VOCAB_MISMATCH / SCHEMA_INVALID；closed-world 根不属
+ *    「项目文档」，本模块五节 loader 的词表闸同根）；只是 vocab_lock 指纹过期而内容满足当前
+ *    词表 = 下一次事务自动迁移、不拦截（store.ts validateRawIndex，Owner 2026-11-06）。
  *
  * catalog-lock（read-side 指纹，D24 / x-digest-ethics）对账口径：
  * - content_sha256 = sha256(文件 utf-8 字节)——materialize_catalog_pilot.py /

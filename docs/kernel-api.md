@@ -46,7 +46,7 @@
 - DENOMINATOR 删除请求 → FATAL 并引导 supersede（只许 supersede 不许删除，C2）；
 - digest 失配/手改 → WARN + auto-regen hint（进 `digestWarnings`，永不 BLOCK）。
 - **D-4 权威维度闸（2026-09-08，裁决 18——显式推翻裁决 11⑤/B3 warning-only）**：指纹短路后、ops 执行前校验 tx sources 对 ops 涉及对象/维度是否 authoritative，非权威 → `AUTHORITY_BOUNDARY_DENY`（确定性 BLOCK，事务零落盘零 journal）。判据三面：触及对象集（upsert primary + payload.affected_objects——T2 Task Contract 编译产出；transition id + 既有 payload.affected_objects）× 对象维度（authority owner 在 authority.json map 的 scope 申报）× 来源轴（payload.source_refs 引用在册 sources/index.yaml 来源的 non_authoritative_for 与对象维度相交）+ boundary_rules deny 规则 scope 命中对象维度。与 permit scope 闸正交互补（permit=谁可写哪些对象，kernel checkPermit 判卷函数承载、exec-guard 命令面在 harness 落笔前调用；authority=哪些来源可驱动哪些维度，本闸住 applyTransaction）。registry 损坏 → `SCHEMA_INVALID` fail-closed；registry 缺席 = opt-in 平面显式跳过（D2 语义）；owner/维度未申报 = 显式中立不构成 deny。
-- 实现要求：staged 写入 + 失败回滚；清理路径不得凭存在性推断删除原件（staged-replace 事故教训）；提交前对事务产出复验 01 schema（op 层漏检在此拦截，失败 `SCHEMA_INVALID` 且零落盘，防 store 变砖）+ 重读 truth-index `generation.seq` 复核开卷世代（并发方已推进 → `CONCURRENT_WRITE_DETECTED` 拒绝提交）。journal 事件（TX_APPLIED 等）在正文/台账 staged 批提交成功后以 `appendLine` 原子追加——「index 先行、journal 缺行」为可检出残态（禁 RMW 覆写：会把并发 appendLine 家族刚写的整行抹掉）。
+- 实现要求：staged 写入 + 失败回滚；清理路径不得凭存在性推断删除原件（staged-replace 事故教训）；提交前对事务产出复验 01 schema（op 层漏检在此拦截，失败 `SCHEMA_INVALID` 且零落盘，防 store 变砖）+ 重读 truth-index `generation.seq` 复核开卷世代（并发方已推进 → 本次零落盘，内核按最新世代自动整笔重放，至多 `CONCURRENT_REPLAY_LIMIT`=3 次，事实判卷全部重跑；连续冲突超限才 `CONCURRENT_WRITE_DETECTED`）。vocab_lock 指纹：内容满足当前词表时漂移只是元数据过期，放行并在下一次事务迁移到当前指纹（`digestWarnings` 留痕，`inspectVocabDrift(store)` 纯读可查）；内容含当前词表不认识的词才 `VOCAB_MISMATCH`。journal 事件（TX_APPLIED 等）在正文/台账 staged 批提交成功后以 `appendLine` 原子追加——「index 先行、journal 缺行」为可检出残态（禁 RMW 覆写：会把并发 appendLine 家族刚写的整行抹掉）。
 
 `TransactionOp` 判别联合：`upsert_object` / `transition_object` / `register_producer` / `heartbeat`（追加 runtime 侧车，不进 hash）/ `append_denominator` / `record_claim` / `record_gate_run` / `verify_claim` / `record_advance` / `supersede_claim` / `reassess_baseline_scope`。
 
@@ -153,8 +153,8 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 | 信号 | 语义 | 通道 |
 |---|---|---|
 | FATAL | 词表外值 / 未知前缀 / 非法迁移 / 幽灵 owner / DENOMINATOR 删除 / notApplicable 缺席 | throw（GovernedIdParseError 等）或显式 outcome |
-| FATAL | 提交时世代复核失败（并发写检出）；证据记录 id 冲突禁覆写（record 通道） | throw GovernanceError（`CONCURRENT_WRITE_DETECTED` / `EVIDENCE_ALREADY_EXISTS`） |
-| WARN + auto-regen hint | digest 失配/手改（D24 violation_treatment） | `TransactionResult.digestWarnings`，永不阻断 |
+| FATAL | 并发写连续抢先超过自动重放上限；证据记录 id 冲突禁覆写（record 通道）；索引含当前词表不认识的词 | throw GovernanceError（`CONCURRENT_WRITE_DETECTED` / `EVIDENCE_ALREADY_EXISTS` / `VOCAB_MISMATCH`） |
+| WARN + auto-regen hint | digest 失配/手改（D24 violation_treatment）；vocab_lock 指纹过期（内容满足当前词表，自动迁移）；并发世代冲突已自动重放 | `TransactionResult.digestWarnings`，永不阻断 |
 | 显式缺席 | 门禁 not_run/not_configured/skipped_blindspot；Permit expired/unknown_permit | 七态 verdict / PermitCheckResult outcome |
 | CLAIMED | 一切自报值 | `Claimed<T>`，落库必经事务 |
 
@@ -1298,7 +1298,7 @@ PREFIX_FAMILY_MAP：16 前缀→12 family 全总映射（PAGE/COMPONENT→UI；C
 
 ## 31. Engineering Catalog 读取与 relock 恢复键（P14 + P-v06 批次 2.5 · PRD §44.10 + §92.2 + D24）
 
-- 完整性三层（批次 2.5 成文）——哈希校验的是 pomaster 自身资产与治理状态的「未被静默篡改」，不是项目过程文档的写作流程：①工具自身资产（catalog/ 受控五节）= hash 强呈现（catalog status 漂移 exit 1 体检异常显性 + `pomaster catalog relock` 恢复键）；②项目治理产物（.pomaster/**）= D24 只报不拦（reconcile content_drift 呈现，修正走治理面显式事务）；③词表/schema = VOCAB_MISMATCH FATAL（closed-world 根不属「项目文档」）。
+- 完整性三层（批次 2.5 成文）——哈希校验的是 pomaster 自身资产与治理状态的「未被静默篡改」，不是项目过程文档的写作流程：①工具自身资产（catalog/ 受控五节）= hash 强呈现（catalog status 漂移 exit 1 体检异常显性 + `pomaster catalog relock` 恢复键）；②项目治理产物（.pomaster/**）= D24 只报不拦（reconcile content_drift 呈现，修正走治理面显式事务）；③词表/schema = 词表外的词 VOCAB_MISMATCH FATAL（closed-world 根不属「项目文档」）；只是指纹过期而内容满足当前词表 = 自动迁移不拦截（Owner 2026-11-06）。
 - `relockCatalog(catalogRoot)`（P-v06 批次 2.5 新增；纯计算零写盘——返回 next 内容，落盘归 CLI 层，分层纪律同 status/explain）：扫描 CATALOG_SECTIONS 五节全部 *.json（逐文件读 id——缺失/非字符串 SCHEMA_INVALID fail-closed；id 跨节重复 SCHEMA_INVALID）+ content_sha256 = sha256OfUtf8(文件字节)（与 verifyCatalogLock / materialize producer 同一口径，复用单一实现）；entries = 扫描条目按 id 排序（source_ref 沿 previous 同路径条目——provenance 不重写历史，全新条目 = `package://catalog/<path>` 确定性缺省）；controlled_children.allowed = required = 全部扫描路径排序；catalog_version/profile/x-digest-ethics/note 等扩展键原样保留（原键序）；generated_by 幂等追加 CATALOG_RELOCK_GENERATED_BY_NOTE（`pomaster catalog relock（CLI 恢复键；幂等重锁不含时戳——A4）`——已含则不重复，无时戳故同物料两次 relock next 字节全等）。返回 { previous, next, added, removed, refreshed }（路径级 diff，refreshed = 同路径 hash 变化）。边界 fail-closed：lock 缺失/坏形透传 NOT_CONFIGURED/SCHEMA_INVALID（relock 不是初始化工具）。
 - `pomaster catalog relock`（CLI；无授权闸——Owner 裁决 2026-09-03：幂等重算 sha256 是 D24 工具侧动作非治理事实）：kernel relockCatalog → CLI 字节落盘（indent=2 + 非 ASCII 原文 + 尾换行，与 materialize producer 落盘形态一致）→ 写后 verifyCatalogLock 复验 ok → 人读呈现 diff 计数与路径（≤10 条全列，超出到 10 条+省略行）+ `catalog-lock: relocked & verified（N entries）`；--json 走 §45 五键信封（result = catalog_root/entries_total/added/removed/refreshed）。写后复验非 ok → CATALOG_LOCK_DRIFT fail-closed（重锁产物对账不过绝不假绿）。status 漂移保持 exit 1（体检命令异常显性），修复点 = 恢复键。
 - 漂移 hint 全扫改指恢复键：cli driftError 与 kernel readCatalogLock/verifyCatalogLock 的 detail/hint 首选 `pomaster catalog relock`（catalog/tools/materialize_*.py 提法降为次选）。
