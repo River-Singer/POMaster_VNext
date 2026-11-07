@@ -35,6 +35,24 @@ export function lockedSystem(projectDir) {
   return DRAWERS.some((drawer) => drawer.system === system) ? system : null;
 }
 
+/**
+ * 项目落地的规范：POMASTER_STUDIO_PROJECT 指向的项目里，体系与 system 一致的
+ * .pomaster/baseline/frontend/design-standard.yaml。画廊的「规范」分区据此生成，看到的就是项目自己的规范
+ * （改过的参数、定下的决策位）；没有就用工具预设。token 表取项目的，项目没有再退回预设。
+ */
+export function projectStandard(system, env = process.env) {
+  const dir = env.POMASTER_STUDIO_PROJECT;
+  if (!dir || lockedSystem(dir) !== system) return null;
+  const base = join(dir, ".pomaster", "baseline", "frontend");
+  const tokens = join(base, "design-tokens.yaml");
+  return {
+    standardPath: join(base, "design-standard.yaml"),
+    tokensPath: existsSync(tokens) ? tokens : null,
+    pointer: ".pomaster/baseline/frontend/design-standard.yaml",
+    tokensPointer: ".pomaster/baseline/frontend/design-tokens.yaml",
+  };
+}
+
 /** 当前应出现的抽屉，以及为什么（给编排脚本打印、给说明页展示）。 */
 export function resolveDrawers(env = process.env) {
   const explicit = env.POMASTER_STUDIO_SYSTEM;

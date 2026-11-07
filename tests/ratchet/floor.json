@@ -835,6 +835,10 @@
         "layer": "L1",
         "note": "设计规范门禁：按规范的门禁条文扫 Vue / TSX / 样式 / Tailwind，阈值取条文参数（决策位未定的检查记待定）；注释不算；带理由的豁免生效；存量基线只拦新增；design check、closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷（没落地规范 not_configured，规范坏了 blocked）"
       },
+      "packages/cli/tests/design-adopt.spec.ts": {
+        "layer": "L1",
+        "note": "设计规范落到项目与开发中改它：adopt 要先 init、体系按依赖推断、不覆盖已有规范、--baseline 记存量；set 只改一行参数、出处记项目决策、决策位定下后门禁生效、决定人必须是 human；update spec 界面呈现类写进设计规范领域新规则、工程规则按路由表写进主题文档对应语气章节、同句不重复、认不出失败、update 子命令经 runCli 可达。无域（规范维护契约面）。"
+      },
       "packages/studio/tests/drawers.spec.ts": {
         "layer": "L1",
         "note": "D3：总 Storybook 的两个抽屉——未锁定两个都在、项目锁定或显式指定后只留一个、组合 refs 的 dev / 发布地址、编排脚本与工作流在座。无域（画廊编排契约面）。"

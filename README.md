@@ -293,7 +293,7 @@ pomaster status
 pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
-pomaster update --check/--yes
+pomaster update spec   # 不带子命令 = CLI 自更新（--check / --yes）；spec = 新规范落位：界面呈现类写进项目设计规范所属领域的新规则（Storybook 规范页与 design show 可见），其余按 themes/index.md 路由表写进硬规范主题文档的 MUST / MUST NOT / SHOULD 章节
 pomaster baseline set/confirm/retire/unretire   # retire/unretire = Owner 把确认目标标为不适用 / 恢复（--not-applicable --reason --by human:<owner>；ADVANCE 留痕，退役目标不进确认/漂移/范围分母）；set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
 
 # ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
@@ -349,7 +349,7 @@ pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
 pomaster scaffold validate/confirm/status/plan/generate/check   # check = 一致性门禁（规格治理 / 受管文件被手改或删除 / 已确认规格比上次生成新 / KEYBINDING 缺失 → 阻断；手工迁移只警告），closeout 与 check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；plan / generate = 只按已确认规格生成受管文件（数据库层：Flyway 迁移只追加，需要数据迁移的变化拒绝；授权脚本随规格更新），生成清单 .pomaster/scaffold/generation-manifest.json 记账，受管文件登记 KEYBINDING——活跃执行期内手改由 exec-guard 拦下，手改过的文件拒绝覆盖；confirm = Owner 确认 .pomaster/scaffold/domain-spec.yaml（--by human:<owner>；确认后语义变化即漂移，重确认只走 --change <CHANGE.*>，closeout 阻断 SCAFFOLD_SPEC_INVALID / NOT_CONFIRMED / DRIFT）；status = 规格治理态；validate <spec> = 脚手架领域规格校验（pomaster.domain-spec/v1）：原型须在 catalog、暴露操作须在后端原型清单内；admin（管理侧 / 内网）与 public（用户侧 / 外网）两个部署面——用户侧只暴露 public 分级字段、写操作只许 access: owner；通过时输出归一化摘要（表名 / 类名 / 路径 / 权限码 / 分页档），只读
-pomaster design validate/show/check   # 前端设计规范（pomaster.design-standard/v1，Storybook「规范」分区的结构化源）：validate 闭世界校验——定值须带登记过的出处、token 引用须存在、硬规范锚点须逐字在原文里、门禁规则的检查须在词表内、实时示例只能引用已定的值；show 按领域 / 规则输出已解析的规范给 AI 读（--json 结构化全量），与 Storybook 规范页、AI 孪生同指纹；只读，未 init 用工具预设（`--system antd|geist` 选 Vue / React 体系）；check 按规范的门禁条文静态扫描前端源码（阈值取条文参数，决策位未定的检查记待定，带理由的 pomaster-design-ignore 豁免），与 check --gates 的 GATE.DESIGN.STANDARD、closeout 同一判卷
+pomaster design validate/show/adopt/set/check   # 前端设计规范（pomaster.design-standard/v1，Storybook「规范」分区的结构化源）：validate 闭世界校验——定值须带登记过的出处、token 引用须存在、硬规范锚点须逐字在原文里、门禁规则的检查须在词表内、实时示例只能引用已定的值；show 按领域 / 规则输出已解析的规范给 AI 读（--json 结构化全量），与 Storybook 规范页、AI 孪生同指纹；只读，未 init 用工具预设（`--system antd|geist` 选 Vue / React 体系）；adopt 把预设落到项目（体系按依赖推断，--baseline 记存量违规）；set 定决策位或改取值（--by human:<名字>，出处记为项目决策）；check 按规范的门禁条文静态扫描前端源码（阈值取条文参数，决策位未定的检查记待定，带理由的 pomaster-design-ignore 豁免），与 check --gates 的 GATE.DESIGN.STANDARD、closeout 同一判卷
 pomaster prototype ingest/check  # 原型转换（设计规范「工程规范 / 原型转换」）：ingest 读 BA 交来的 HTML 原型与 spec，去掉表现（样式、栅格、字体、组件长相），抽出业务事实、信息结构与交互意图（大纲 + 事实清单带出处 + 冲突提问 + UX 中间表示草稿，写到 .pomaster/prototype/<名字>/；--render 用 Playwright 渲染后读脚本生成的内容）；check 用同一个抽取器读按规范重绘后的页面，与事实清单逐条对账（缺失 / 改动 / 新增 / 调序为零才算完成）
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement

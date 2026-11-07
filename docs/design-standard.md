@@ -25,15 +25,24 @@
 - **样子相同**：两边的页面由同一个构建器 `packages/studio/src/standard/page.ts` 生成同一棵节点树，外框样式是同一份 `packages/studio/src/standard/standard.css`（按 Geist 文档的样子做：标题 + 一句话说明、演示卡片带「显示代码」、对照表、色板、并排的「这样做 / 别这样做」、说明在卡片下面、右侧本页目录）。两个运行时只负责把节点树渲染成 Vue / React 元素，并把实时位换成本体系的组件（antd 或 Geist）。
 - **组件按并集补齐**：骨架的组件领域标出两套体系各自对应的现成组件（`counterparts`）；某套体系没有现成组件时为空表，由该体系自行设计。Ant Design 的组件类型更多，Geist 一侧按同样的数量做设计；Geist 规范了图标尺寸，Ant Design 一侧同样规范图标尺寸——依此类推。
 
-**架构锁定以后**：项目定下前端架构、规范落地到 `.pomaster/baseline/frontend/design-standard.yaml` 后，总 Storybook 只留对应的抽屉。编排脚本 `scripts/studio.mjs` 读 `POMASTER_STUDIO_PROJECT` 指向的项目里那份规范的 `meta.design_system`；也可以用 `POMASTER_STUDIO_SYSTEM=antd|geist` 直接指定（规则见 `packages/studio/scripts/lib/drawers.mjs`）。
+**架构锁定以后**：项目定下前端架构、规范落地到 `.pomaster/baseline/frontend/design-standard.yaml` 后，总 Storybook 只留对应的抽屉。编排脚本 `scripts/studio.mjs` 读 `POMASTER_STUDIO_PROJECT` 指向的项目里那份规范的 `meta.design_system`；也可以用 `POMASTER_STUDIO_SYSTEM=antd|geist` 直接指定（规则见 `packages/studio/scripts/lib/drawers.mjs`）。设了 `POMASTER_STUDIO_PROJECT` 时，留下的那个抽屉的「规范」分区也从项目这份规范生成（`projectStandard()`）：项目改过的参数、定下的决策位、补的条文都在页面上。
 
 ## 怎么改
 
-人和 AI 走同一条路，页面和孪生都不手改：
+人和 AI 走同一条路，页面和孪生都不手改。
+
+**工具预设**（本仓库）：
 
 1. 编辑规范源：改条文、改数值、补演示与示例。要加领域或条目，先改骨架，再分别补两份预设；
 2. `pomaster design validate [--system geist]`：所有问题一次报全；
 3. 按上表重新生成：Storybook 页面与 AI 孪生一起更新。
+
+**项目规范**（开发中）：
+
+1. `pomaster design adopt [--system antd|geist] [--baseline]`：把预设拷进项目。体系缺省按依赖推断（vue → antd，react → geist）；`--baseline` 顺手把现有代码的违规记成存量（见「规范门禁」）。输出列出还没定的决策位。
+2. `pomaster design set <规则>.<参数> <值> --by human:<名字> [--note 理由]`：定下决策位或改一个已有取值。只改那一行参数，出处记为项目决策源 `SRC.PROJECT.DECISIONS`（第一次用时自动登记），谁、哪天、为什么写进参数的 `note_zh`，`meta` 标为 `customized`；改完立即校验，不通过原样退回。按这条参数判卷的门禁下次就用新值，「待定」的检查随之生效。
+3. `pomaster update spec "<一句规范>" --by <human|agent>:<名字>`：开发中定下的新规范落位。界面怎么呈现的（间距、颜色、圆角、组件的样子与交互……）写进项目规范所属领域的一条新规则（`<前缀>.PROJECT_<n>`，评审执行）；其余工程规则按 `.pomaster/specs/hard/themes/index.md` 的路由表写进主题文档的 `MUST` / `MUST NOT` / `SHOULD` 章节（「项目补充」块，不新建平行文件）。识别用路由表关键词与规范领域、条目标题的双字词项计分，原文带具体视觉量时偏向设计规范；语气按措辞判。`--dry-run` 只看识别结果与候选，`--area` / `--theme` 指定去处，同一句不重复写，认不出就失败。
+4. 查：AI 读 `pomaster design show`（`--json` 全量）；人看 Storybook（`POMASTER_STUDIO_PROJECT=<项目目录>` 起画廊，规范页从项目规范生成）。
 
 孪生没重新生成时，`packages/studio/tests/standard.spec.ts`（Ant Design）或 `packages/studio-react/tests/standard.spec.ts`（Geist）让 CI 失败；规范源、骨架或 CLI 种子改动合入 main 后，总 Storybook（两个抽屉）自动重新发布。
 
@@ -208,5 +217,8 @@ BA 交来的 spec 与 HTML 原型结构、风格、样式各不相同，规则�
 | `DESIGN_CHECK_VIOLATIONS` | `design check`：源码违反门禁条文（超出存量基线的部分） |
 | `DESIGN_STANDARD_INVALID` | `design check`：规范没通过校验，无法据此判卷 |
 | `DESIGN_BASELINE_UNREADABLE` | `design check`：存量基线文件坏了 |
+| `DESIGN_ALREADY_ADOPTED` / `DESIGN_NOT_ADOPTED` | `design adopt`：项目已有规范（`--force` 覆盖）；`design set` / `update spec`：项目还没采用规范 |
+| `DESIGN_SET_ACTOR` / `DESIGN_SET_TARGET` | `design set`：决定人不是 `human:<名字>`；规则或参数不存在 |
+| `SPEC_UPDATE_TEXT` / `SPEC_UPDATE_ACTOR` / `SPEC_UPDATE_UNRECOGNIZED` / `SPEC_UPDATE_TARGET` | `update spec`：原文太短；记录人不合规；认不出去处；指定的领域 / 主题文档 / 编号不可用 |
 
 警告：`DESIGN_DECISION_PENDING`（待定参数清单）、`DESIGN_CHECK_PENDING`（检查待接入的门禁规则）、`DESIGN_AREA_UNCOVERED` / `DESIGN_TOPIC_UNCOVERED`（骨架里还没写的领域 / 条目）、`DESIGN_AREA_EXTRA` / `DESIGN_TOPIC_EXTRA`（骨架外的领域 / 条目）、`DESIGN_SKELETON_UNAVAILABLE`、`DESIGN_TOKENS_UNAVAILABLE`、`DESIGN_SPECS_UNAVAILABLE`；`design check` 另有 `DESIGN_SUPPRESSION_REASON_MISSING`、`DESIGN_BASELINE_TIGHTENABLE`、`DESIGN_CHECK_ROOT_MISSING`、`DESIGN_CHECK_TRUNCATED`、`DESIGN_CHECK_FILE_SKIPPED`。

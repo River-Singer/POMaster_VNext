@@ -327,6 +327,8 @@ import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
 import { runDesignShow, runDesignValidate } from "./design.js";
 import { runDesignCheck } from "./design-check.js";
+import { runDesignAdopt, runDesignSet } from "./design-adopt.js";
+import { runSpecUpdate } from "./spec-update.js";
 import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
@@ -1013,6 +1015,10 @@ export {
   discoverDesignRoots,
   IMPLEMENTED_DESIGN_CHECKS,
 } from "./design-check.js";
+export { runDesignAdopt, runDesignSet, detectDesignSystem, PROJECT_DECISION_SOURCE } from "./design-adopt.js";
+export type { DesignAdoptResult, DesignSetResult } from "./design-adopt.js";
+export { runSpecUpdate, recognizeSpec, readSpecRoutes, modalityOf } from "./spec-update.js";
+export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-update.js";
 export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
 export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
 export { parseHtml, outlineOf, factsOf, specFactsOf, questionsOf, diffFacts, extractPrototype, outlineMarkdown } from "./prototype-extract.js";
@@ -1888,10 +1894,10 @@ export function createProgram(
   // —— CLI 自更新（F2）：缺省 --check 查 registry 比对版本；--yes 才执行全局安装 ——
   // 判卷纯本地（semver 比较）；registry 不可达 fail-closed 显式呈现，禁假报「已是最新」；
   // npm 执行面 stdio inherit 透传。--json 信封 {current, latest, updateAvailable, check}。
-  program
+  const update = program
     .command("update")
     .description(
-      "检查/执行 CLI 自更新：缺省 --check（npm view 比对 semver，registry 不可达显式呈现禁假绿）；--yes = 更新可用时 npm install -g pomaster@latest（npm 失败透传 exit 1；完成后重新 pomaster init 刷新入口）",
+      "检查/执行 CLI 自更新（子命令 spec = 把新规范写进设计规范或硬规范）：缺省 --check（npm view 比对 semver，registry 不可达显式呈现禁假绿）；--yes = 更新可用时 npm install -g pomaster@latest（npm 失败透传 exit 1；完成后重新 pomaster init 刷新入口）",
     )
     .option("--check", "检查更新（缺省行为，显式词形兼容）")
     .option("--yes", "检查到更新时执行 npm install -g pomaster@latest")
@@ -1903,6 +1909,35 @@ export function createProgram(
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });
+    });
+  // 新规范落位：界面呈现类写进项目设计规范的所属领域（Storybook 规范页与 design show 可见），
+  // 其余按 themes/index.md 路由表写进主题文档的 MUST / MUST NOT / SHOULD 章节（就地编辑，不新建平行文件）。
+  update
+    .command("spec")
+    .description(
+      "把开发中定下的新规范写到该在的地方：识别（路由表关键词 + 设计规范领域与条目标题计分；带具体视觉量偏向设计规范）→ 界面呈现类写进项目设计规范所属领域的新规则（review），其余写进硬规范主题文档的 MUST / MUST NOT / SHOULD 章节「项目补充」块；语气按措辞判（禁止/不得 → MUST NOT，建议/尽量 → SHOULD）；已有同句不重复写；--dry-run 只看识别结果。错误码：SPEC_UPDATE_TEXT / SPEC_UPDATE_ACTOR / SPEC_UPDATE_UNRECOGNIZED / SPEC_UPDATE_TARGET / DESIGN_NOT_ADOPTED / DESIGN_STANDARD_INVALID / NOT_INITIALIZED",
+    )
+    .argument("<text>", "规范原文（一句完整的规则）")
+    .requiredOption("--by <actor>", "记录人：human:<名字> 或 agent:<名字>")
+    .option("--target <target>", "auto（缺省）/ design / spec")
+    .option("--area <key>", "写进设计规范的这个领域（如 table）")
+    .option("--theme <theme>", "写进这个硬规范主题文档（如 security）")
+    .option("--id <suffix>", "设计规范新规则编号的后半段（缺省 PROJECT_<n>）")
+    .option("--title <title>", "设计规范新规则的标题（缺省取原文第一句）")
+    .option("--dry-run", "只输出识别结果与要写的内容，不写")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((text: string, opts, command) => {
+      const outcome = runSpecUpdate(resolveDir(command), {
+        text,
+        by: opts.by as string,
+        ...(opts.target !== undefined ? { target: opts.target as "auto" | "design" | "spec" } : {}),
+        ...(opts.area !== undefined ? { area: opts.area as string } : {}),
+        ...(opts.theme !== undefined ? { theme: opts.theme as string } : {}),
+        ...(opts.id !== undefined ? { id: opts.id as string } : {}),
+        ...(opts.title !== undefined ? { title: opts.title as string } : {}),
+        dryRun: opts.dryRun === true,
+      });
+      record({ command: "update spec", outcome, asJson: command.optsWithGlobals().json === true });
     });
 
   program
@@ -2973,7 +3008,7 @@ export function createProgram(
   const design = program
     .command("design")
     .description(
-      "前端设计规范命令面：validate = 校验规范源 pomaster.design-standard/v1；show = 按领域 / 规则输出规范（已解析的数值、出处、硬规范锚点、执行方式），与 Storybook 规范页、AI 孪生同源同指纹；check = 按规范的门禁条文扫描前端源码",
+      "前端设计规范命令面：validate = 校验规范源 pomaster.design-standard/v1；show = 按领域 / 规则输出规范（已解析的数值、出处、硬规范锚点、执行方式），与 Storybook 规范页、AI 孪生同源同指纹；adopt = 把预设落到项目；set = 定决策位 / 改取值；check = 按规范的门禁条文扫描前端源码",
     );
   design
     .command("validate")
@@ -3006,6 +3041,44 @@ export function createProgram(
         ...(opts.rule !== undefined ? { rule: opts.rule as string } : {}),
       });
       record({ command: "design show", outcome, asJson: command.opts().json === true });
+    });
+  design
+    .command("adopt")
+    .description(
+      "把一套工具预设落到项目里（.pomaster/baseline/frontend/design-standard.yaml）：之后 design show / Storybook 规范页（POMASTER_STUDIO_PROJECT）/ design check / closeout / check --gates 都以它为准。体系缺省从依赖推断（vue → antd，react → geist）；--baseline 把现有违规记成存量。错误码：NOT_INITIALIZED / DESIGN_SYSTEM_UNKNOWN / DESIGN_ALREADY_ADOPTED / DESIGN_UNREADABLE",
+    )
+    .option("--system <system>", "antd（Vue + ant-design-vue）/ geist（React + shadcn/ui）；缺省按依赖推断")
+    .option("--force", "项目已有规范时覆盖（会丢掉项目里的改动）")
+    .option("--baseline", "采用后把现有违规记为存量基线（之后只拦新增）")
+    .option("--root <dir>", "记存量时扫描的源码目录（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runDesignAdopt(resolveDir(command), {
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
+        force: opts.force === true,
+        baseline: opts.baseline === true,
+        ...(opts.root !== undefined ? { roots: opts.root as string[] } : {}),
+      });
+      record({ command: "design adopt", outcome, asJson: command.opts().json === true });
+    });
+  design
+    .command("set")
+    .description(
+      "改项目规范的一个参数：定下决策位或改已有取值（只改那一行，出处记为 SRC.PROJECT.DECISIONS，决定人、日期、理由写进 note_zh；改完立即校验，不通过原样退回）。值按 JSON 解析（16、[16, 24]、\"Pinia\"），解析不了当字符串。错误码：DESIGN_NOT_ADOPTED / DESIGN_SET_ACTOR / DESIGN_SET_TARGET 及校验错误码",
+    )
+    .argument("<target>", "规则编号.参数键（如 GRID.GUTTER.gutter）")
+    .argument("<value>", "新值")
+    .requiredOption("--by <actor>", "决定人：human:<名字>")
+    .option("--note <text>", "为什么这样定")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((target: string, value: string, opts, command) => {
+      const outcome = runDesignSet(resolveDir(command), {
+        target,
+        value,
+        by: opts.by as string,
+        ...(opts.note !== undefined ? { note: opts.note as string } : {}),
+      });
+      record({ command: "design set", outcome, asJson: command.opts().json === true });
     });
   design
     .command("check")
