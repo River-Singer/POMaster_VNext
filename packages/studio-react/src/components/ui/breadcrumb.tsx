@@ -27,8 +27,8 @@ export function Breadcrumb({ items, maxItems = 4, className, ...props }: Breadcr
   );
   const sep = <ChevronRightIcon aria-hidden="true" className="size-3.5 text-ds-gray-700" />;
   return (
-    <nav data-slot="breadcrumb" aria-label="面包屑" className={className} {...props}>
-      <ol className="flex flex-wrap items-center gap-1 text-copy-14">
+    <nav data-slot="breadcrumb" aria-label="面包屑" className={cn("text-copy-14", className)} {...props}>
+      <ol className="flex flex-wrap items-center gap-1">
         {head.map((item) => (
           <li key={item.label} className="flex items-center gap-1">
             {link(item)}
