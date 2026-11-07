@@ -80,6 +80,8 @@ export const CAPABILITY_TIP_POOL: readonly string[] = [
   "Agent 行为要回归：pomaster eval --suite behavioral 跑行为评测种子（fail-closed，失败 exit 1）",
   "单对象想看证据谱系：pomaster inspect <governed-id> 纯读呈现正文+证据+谱系",
   "catalog 漂移有恢复键：pomaster catalog status 查构成，pomaster catalog relock 幂等重算重锁",
+  "前端照规范写也照规范验：pomaster design show 查条文与取值，pomaster design check 按门禁条文扫源码（closeout 同一判卷）",
+  "BA 给了 HTML 原型：pomaster prototype ingest 抽出业务事实与信息结构，重绘后 pomaster prototype check 逐条对账",
 ];
 
 /**

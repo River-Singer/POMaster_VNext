@@ -391,6 +391,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "",
   "# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate；D-5，裁决 18）",
   "pomaster brainstorm start/question-gate/status/decide/promote",
+  "pomaster prototype ingest <html...> --spec <md>   # BA 的 HTML 原型 + spec → 业务事实 / 信息结构 / 冲突提问（去掉表现）",
+  'pomaster update spec "<一句规范>" --by <actor>    # 新规范落位：界面呈现进设计规范，其余进硬规范主题文档',
   "",
   "# ② FRAMEWORK —— 许可签发/判卷/显式接管/台账",
   "pomaster permit issue/check/steal/list",
@@ -401,6 +403,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "# ④ EXECUTE —— 写路径机器执行点 / 受控变更",
   "pomaster exec-guard --attempt <file|->",
   "pomaster maintain <change-or-task> --ops <tx>",
+  "pomaster design show/adopt/set     # 前端按设计规范写：查条文与取值 / 把预设落到项目 / 定决策位",
+  "pomaster scaffold validate/confirm/status/plan/generate/check",
   "",
   "# ⑤ VERIFY —— 验证计划编译与执行 / 失败诊断 / 控件数据流审计 / 证据入账",
   "pomaster plan compile --task <TASK.*>",
@@ -410,6 +414,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster check --fast",
   "pomaster check --gates",
   "pomaster record gate-run/claim",
+  "pomaster design check              # 设计规范门禁扫前端源码（closeout、check --gates 同一判卷）",
+  "pomaster prototype check <facts.json> <page.html...>   # 重绘页面与原型事实逐条对账",
   "",
   "# ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账",
   "pomaster reconcile --permit <PERMIT.*>",
@@ -466,7 +472,7 @@ export interface CapabilityEntry {
 }
 
 /**
- * 能力速览八条（PRD 09-06 Owner 裁定面位 C1：Grill 讨论/基线确认/任务收口/组件画廊/
+ * 能力速览九条（设计规范 D2 增「前端按设计规范实现与验收」；PRD 09-06 Owner 裁定面位 C1：Grill 讨论/基线确认/任务收口/组件画廊/
  * doctor 自检/resolve 标准件选型/graph 对象图/验证计划执行——每次 init 全量展示，不做 NO_CHANGE
  * 精简；D-1/D-5 裁决 18 2026-09-08：原「判档」条随 triage 退役删除，Brainstorm 条
  * 即八拍① 单入口）。command 词形全部在 CLI 注册表在座（tests/capability-surfacing
@@ -513,6 +519,11 @@ export const CAPABILITY_OVERVIEW: readonly CapabilityEntry[] = [
     scene: "按验证计划执行真实工具并审计前端控件数据链",
     command: "pomaster plan run",
     detail: "执行 gate 并写入 GRN；CONTROL_DATA_FLOW 静态结论与运行时确认分层，非绿可自动进入失败诊断",
+  },
+  {
+    scene: "前端按设计规范实现与验收（规范即标准，Storybook 规范页与 AI 视图同源）",
+    command: "pomaster design show",
+    detail: "design adopt 落地规范、design set 定决策位、update spec 落新规范、design check 按门禁条文扫源码；BA 的 HTML 原型用 prototype ingest / check 抽事实并对账",
   },
 ];
 
@@ -732,12 +743,25 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- `ATTEMPT_MALFORMED` 修正 JSON；`expired` 回 FRAMEWORK LOCK 显式接管或重签；`unknown_permit` 先查台账；denied/`PERMIT_SCOPE_DENIED` 保留拒绝并回到既有授权流程，不换目标或直写 store。",
       "- 实现代码后运行与改动风险相称的局部检查；未运行或失败如实记录。产品失败继续修复，环境/权限/独立性缺口保持阻断，不把 NOT_RUN 改写成通过。",
       "",
+      "## 前端改动",
+      "",
+      "- 设计规范是标准不是参考：动手前 `pomaster design show --area <领域>`（或 `--rule <编号>`）读条文与已解析的取值，间距、字号、圆角、阴影、颜色、栅格、组件用法、状态反馈、加载、报错、缓存、并发、安全一律照条文；取值是决策位（待定）就停下问 Owner，定了用 `design set` 记下，不自己挑默认值。项目还没有规范时先 `design adopt`。",
+      "- 有 BA 交来的 HTML 原型：先 `prototype ingest` 抽出业务事实与信息结构（读 `*.outline.md` 与 `facts.json`），按规范重绘；原型的 class、样式、栅格、字体不进实现，事实一条不少。",
+      "- 开发中定下了新规范（用户说「以后都这样」「统一改成」）：`update spec` 写到该在的地方，不只留在对话里。",
+      "- 交接前自检 `pomaster design check`；确属例外的写带理由的 `pomaster-design-ignore <检查编号>: 理由`。",
+      "",
       "产物包含代码改动、局部检查和 `execution handoff` 的 changed paths、summary、known gaps、verification requests。交接只是实现者声明，不等于 VERIFIED。交接成功后同一轮重取 next-action，完整加载 pomaster-verify 并执行验证；不得等待用户再发消息。",
       "",
       ...commandBlock([
         "pomaster exec-guard --attempt <file|-> --json",
         "pomaster maintain <change-or-task> --ops <tx-file> [--execution-id <AGX-n>] --json",
         "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
+        "pomaster design show [--area <key>] [--rule <id>] [--json]",
+        "pomaster design adopt [--system antd|geist] [--baseline]",
+        "pomaster design set <RULE.param> <value> --by human:<name> [--note <text>]",
+        'pomaster update spec "<一句规范>" --by <human|agent>:<name> [--dry-run]',
+        "pomaster prototype ingest <html...> --spec <md> [--render]",
+        "pomaster design check [--root <dir>]",
       ]),
     ],
   },
@@ -767,7 +791,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "4. `finalize status` 读取当前阶段；`finalize run` 可重入推进机器验证，但独立 replay、独立 verification 与 Human ACCEPT 缺失时返回 pending 和 next_actions，禁止代签。",
       "5. 验证链满足后加载 pomaster-reconcile，按当前 permit 对账并判读漂移；再按路由进入 compact/closeout。reconcile 不能替代验证，也不能自行接受漂移。",
       "6. 已判定的 claim 因基线 / 源码变化而证据过期（DOD_CLAIM_EVIDENCE_UNQUALIFIED）时不要新开 CLM 手改验收：`record requalify --clm <CLM> --by <type:name> --reason <text>` 取得后继 CLM（旧判定不改写、验收自动重绑），重新产出证据后由另一主体 `record verification` 后继。",
-      "7. 任务声明了 baseline 依赖范围、而相关基线已经治理通路合法变更（closeout BASELINE_DRIFT「任务声明的历史 digest 已失效」）或任务影响面变化时：`task reassess-baseline <TASK> --lanes <…> --reason <text> --by <type:name>` 以当前确认快照重写范围（新相关目标须无漂移、无在途批），再按输出对列出的 claim 走第 6 步；不要用 maintain 手改 baseline_dependencies。",
+      "7. 前端改动按设计规范找缺陷：`pomaster design check` 逐条门禁条文扫源码（违规给文件、行列与条文编号，与 closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷；参数是决策位的检查记待定，不算通过也不算违规）；有 BA 原型的页面再跑 `pomaster prototype check <facts.json> <渲染后的页面.html>`，缺失 / 改动 / 新增 / 调序为零才算还原了业务事实。两者的结果作为验证证据，违规转 pomaster-execute 修。",
+      "8. 任务声明了 baseline 依赖范围、而相关基线已经治理通路合法变更（closeout BASELINE_DRIFT「任务声明的历史 digest 已失效」）或任务影响面变化时：`task reassess-baseline <TASK> --lanes <…> --reason <text> --by <type:name>` 以当前确认快照重写范围（新相关目标须无漂移、无在途批），再按输出对列出的 claim 走第 6 步；不要用 maintain 手改 baseline_dependencies。",
       "",
       "失败恢复按 diagnostics 分类：确认的产品缺陷转 pomaster-execute，工具/环境缺失修绑定或保持 NOT_RUN，输入漂移重新 inspect/context/handoff，权限与独立主体缺失保持 pending。只重跑受影响步骤，保留 partial GRN。产物包括 plan fingerprint、每项 verdict、证据引用和 pending actor/action；退出条件以 finalize 真实阶段为准，再主动重取 next-action 进入 reconcile/closeout 或准确停在人工边界。",
       "",
@@ -784,6 +809,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster record verification --clm <CLM-n> --verifier <type:name> --evidence <ref> [--execution-id <AGX-n>]",
         "pomaster record requalify --clm <CLM-n> --by <type:name> --reason <text> [--evidence <GRN-n>]",
         "pomaster task reassess-baseline <TASK.*> --lanes <frontend,backend,data,platform> --reason <text> --by <type:name>",
+        "pomaster design check [--root <dir>] [--only <check>] [--json]",
+        "pomaster prototype check <facts.json> <page.html...> [--render]",
       ]),
     ],
     browserEyes: true,
@@ -852,7 +879,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "## 判读与恢复",
       "",
-      "`COMPLETED` 才表示施断成功；已完成任务重放保持完成。缺 claim、未 VERIFIED、gate 未通过、baseline 漂移、独立性冲突或 Human ACCEPT 缺失/损坏/过期都会 pending/阻断，并保留具体 error/hint。可选 gate 未过只在明确排除且非 required 时降为诊断提醒。",
+      "`COMPLETED` 才表示施断成功；已完成任务重放保持完成。缺 claim、未 VERIFIED、gate 未通过、baseline 漂移、独立性冲突、Human ACCEPT 缺失/损坏/过期、脚手架不一致或前端违反已落地的设计规范（DESIGN_CHECK_VIOLATIONS，超出存量基线的部分）都会 pending/阻断，并保留具体 error/hint。可选 gate 未过只在明确排除且非 required 时降为诊断提醒。",
       "",
       "按错误回 verify/finalize 生成新证据或等待对应独立主体/Owner；不得覆写旧 claim、把 NOT_RUN 改绿或由编排器代签。交付最终状态、阻断码与下一责任人。",
       "",
@@ -895,6 +922,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 需求讨论 / 想法澄清 / brainstorm / 怎么规划 / 新功能探索 / 拷问需求——用户想先把问题想清楚，而不是直接改代码。",
       "- 需求含糊或有多种可行路径、权衡未定（范围/可靠性/成本）、用户自己也不知道最佳选项。",
       "- 横切：research 产物判读（五级 Evidence）；Agent 行为评测（fail-closed）。",
+      "- BA 交来 spec 与 HTML 原型：`pomaster prototype ingest <page.html...> --spec <spec.md>` 去掉表现读出业务事实、信息结构与交互意图；`questions.json` 里 spec 与原型的冲突按 Question Gate 分类（BLOCKING_AUTHORITY 问 Owner，其余带默认口径），事实清单就是后续验收的对账基准。",
+      "- 讨论中定下的长期规范（「以后表格都…」「接口一律…」）：`pomaster update spec \"<一句规范>\" --by <actor>` 落位到设计规范或硬规范主题文档，`--dry-run` 先看识别结果。",
       "",
       "## 第一层 · 方法论主轴：Grill Strategy（先 Ground 后 Grill）",
       "",
