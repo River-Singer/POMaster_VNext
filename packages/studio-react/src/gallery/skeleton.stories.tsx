@@ -3,9 +3,9 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Skeleton> = {
-  title: "Geist 组件/Skeleton 骨架屏",
+  title: "Geist 组件/反馈/Skeleton 骨架屏",
   component: Skeleton,
-  parameters: describe("占位块：与真实内容同几何（同样的行高、列宽、卡片尺寸），只覆盖还没到的区块。规则见「规范/工程规范/页面加载」与「设计模式/体验管理/状态反馈」。源码 src/components/ui/skeleton.tsx。"),
+  parameters: describe("占位块：与真实内容同几何（同样的行高、列宽、卡片尺寸），只覆盖还没到的区块。规则见「规范/工程规范/页面加载」与「设计模式/体验管理/状态反馈」。源码 src/components/ui/skeleton.tsx。", "skeleton"),
 };
 export default meta;
 type Story = StoryObj<typeof Skeleton>;

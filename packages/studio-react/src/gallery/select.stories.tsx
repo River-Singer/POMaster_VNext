@@ -4,9 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Select> = {
-  title: "Geist 组件/Select 选择器",
+  title: "Geist 组件/数据录入/Select 选择器",
   component: Select,
-  parameters: describe("Radix Select：键盘上下选择、输入首字跳转，弹层在 Portal 里。选项值用稳定编码，停用的选项禁用而不隐藏。规则见「规范/组件/数据录入/选择器」。源码 src/components/ui/select.tsx。"),
+  parameters: describe("Radix Select：键盘上下选择、输入首字跳转，弹层在 Portal 里。选项值用稳定编码，停用的选项禁用而不隐藏。规则见「规范/组件/数据录入/选择器」。源码 src/components/ui/select.tsx。", "select"),
 };
 export default meta;
 type Story = StoryObj<typeof Select>;

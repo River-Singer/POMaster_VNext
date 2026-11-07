@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Card> = {
-  title: "Geist 组件/Card 卡片",
+  title: "Geist 组件/数据展示/Card 卡片",
   component: Card,
-  parameters: describe("信息分组的容器：标题说清内容，补充说明放描述，底部只放与卡片内容相关的动作。规则见「规范/组件/数据展示/卡片」。源码 src/components/ui/card.tsx。"),
+  parameters: describe("信息分组的容器：标题说清内容，补充说明放描述，底部只放与卡片内容相关的动作。规则见「规范/组件/数据展示/卡片」。源码 src/components/ui/card.tsx。", "card"),
 };
 export default meta;
 type Story = StoryObj<typeof Card>;

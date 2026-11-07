@@ -3,9 +3,9 @@ import { Progress } from "../components/ui/progress";
 import { Column, describe } from "./frame";
 
 const meta: Meta<typeof Progress> = {
-  title: "Geist 组件/Progress 进度条",
+  title: "Geist 组件/反馈/Progress 进度条",
   component: Progress,
-  parameters: describe("Radix Progress：取值经 aria-valuenow 报给读屏，进度条带可读名称（aria-label）。有确切进度时旁边写数量或剩余时间。规则见「规范/组件/反馈/进度条」与「设计模式/体验管理/加载条」。源码 src/components/ui/progress.tsx。"),
+  parameters: describe("Radix Progress：取值经 aria-valuenow 报给读屏，进度条带可读名称（aria-label）。有确切进度时旁边写数量或剩余时间。规则见「规范/组件/反馈/进度条」与「设计模式/体验管理/加载条」。源码 src/components/ui/progress.tsx。", "progress"),
   argTypes: { value: { control: { type: "range", min: 0, max: 100, step: 1 } } },
   args: { value: 26 },
 };

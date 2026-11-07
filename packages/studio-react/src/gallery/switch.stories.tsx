@@ -4,9 +4,9 @@ import { Switch } from "../components/ui/switch";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Switch> = {
-  title: "Geist 组件/Switch 开关",
+  title: "Geist 组件/数据录入/Switch 开关",
   component: Switch,
-  parameters: describe("Radix Switch：只用于立即生效的设置，标签写它控制什么。需要随表单提交的选择用多选框。规则见「规范/组件/数据录入/开关」。源码 src/components/ui/switch.tsx。"),
+  parameters: describe("Radix Switch：只用于立即生效的设置，标签写它控制什么。需要随表单提交的选择用多选框。规则见「规范/组件/数据录入/开关」。源码 src/components/ui/switch.tsx。", "switch"),
   argTypes: { disabled: { control: "boolean" } },
   args: { disabled: false },
 };

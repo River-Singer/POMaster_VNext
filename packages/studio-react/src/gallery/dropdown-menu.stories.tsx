@@ -12,9 +12,9 @@ import {
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof DropdownMenu> = {
-  title: "Geist 组件/DropdownMenu 下拉菜单",
+  title: "Geist 组件/导航/DropdownMenu 下拉菜单",
   component: DropdownMenu,
-  parameters: describe("Radix DropdownMenu：方向键移动、输入首字跳转、Esc 关闭并把焦点还给触发按钮。危险项用 destructive 变体并用分隔线隔开放最后。规则见「规范/组件/导航/下拉菜单」。源码 src/components/ui/dropdown-menu.tsx。"),
+  parameters: describe("Radix DropdownMenu：方向键移动、输入首字跳转、Esc 关闭并把焦点还给触发按钮。危险项用 destructive 变体并用分隔线隔开放最后。规则见「规范/组件/导航/下拉菜单」。源码 src/components/ui/dropdown-menu.tsx。", "dropdown"),
 };
 export default meta;
 type Story = StoryObj<typeof DropdownMenu>;

@@ -4,9 +4,9 @@ import { Label } from "../components/ui/label";
 import { Column, describe } from "./frame";
 
 const meta: Meta<typeof Input> = {
-  title: "Geist 组件/Input 输入框",
+  title: "Geist 组件/数据录入/Input 输入框",
   component: Input,
-  parameters: describe("单行输入：标签在上（Label 用 htmlFor 关联），占位符只给格式示例；校验失败时标 aria-invalid 并在下方写明规则。规则见「规范/组件/数据录入/输入框」。源码 src/components/ui/input.tsx、label.tsx。"),
+  parameters: describe("单行输入：标签在上（Label 用 htmlFor 关联），占位符只给格式示例；校验失败时标 aria-invalid 并在下方写明规则。规则见「规范/组件/数据录入/输入框」。源码 src/components/ui/input.tsx、label.tsx。", "input"),
 };
 export default meta;
 type Story = StoryObj<typeof Input>;

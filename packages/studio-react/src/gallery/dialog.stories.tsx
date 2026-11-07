@@ -6,9 +6,9 @@ import { Label } from "../components/ui/label";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Dialog> = {
-  title: "Geist 组件/Dialog 对话框",
+  title: "Geist 组件/反馈/Dialog 对话框",
   component: Dialog,
-  parameters: describe("Radix Dialog：打开时焦点进入、Tab 不出框、Esc 关闭、关闭后焦点回到触发按钮。标题写动作或问题，危险动作的主按钮用 error 变体，默认焦点在取消上。规则见「规范/组件/反馈/对话框」。源码 src/components/ui/dialog.tsx。"),
+  parameters: describe("Radix Dialog：打开时焦点进入、Tab 不出框、Esc 关闭、关闭后焦点回到触发按钮。标题写动作或问题，危险动作的主按钮用 error 变体，默认焦点在取消上。规则见「规范/组件/反馈/对话框」。源码 src/components/ui/dialog.tsx。", "modal"),
 };
 export default meta;
 type Story = StoryObj<typeof Dialog>;

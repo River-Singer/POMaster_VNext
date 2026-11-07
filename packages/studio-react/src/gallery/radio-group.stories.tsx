@@ -4,9 +4,9 @@ import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof RadioGroup> = {
-  title: "Geist 组件/RadioGroup 单选组",
+  title: "Geist 组件/数据录入/RadioGroup 单选组",
   component: RadioGroup,
-  parameters: describe("Radix RadioGroup：方向键在选项间移动，组内只有一个 Tab 停留点。2–5 个互斥选项且要一眼看全时用。规则见「规范/组件/数据录入/单选」。源码 src/components/ui/radio-group.tsx。"),
+  parameters: describe("Radix RadioGroup：方向键在选项间移动，组内只有一个 Tab 停留点。2–5 个互斥选项且要一眼看全时用。规则见「规范/组件/数据录入/单选」。源码 src/components/ui/radio-group.tsx。", "radio"),
 };
 export default meta;
 type Story = StoryObj<typeof RadioGroup>;

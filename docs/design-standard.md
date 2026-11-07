@@ -168,14 +168,14 @@ areas:
 - **设计模式**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
 - **工程规范**（15 篇）：前端架构（按 React 栈写：函数组件 + hooks、shadcn 组件源码进项目、TanStack Query、react-hook-form + zod、路由描述带 handle；路由库是项目决策位）、状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
 
-- 组件：项目内的组件源码（`packages/studio-react/src/components/ui/`，shadcn/ui 起步，按 Geist 重新配色与定尺寸）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 在公开 npm 上装不到，能装后再评估替换。
+- 组件：项目内的组件源码（`packages/studio-react/src/components/ui/`，shadcn/ui 起步，按 Geist 重新配色与定尺寸）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 在公开 npm 上装不到，能装后再评估替换。组件类型取两套设计系统的并集：统一骨架的 97 个组件领域在「Geist 组件」分区各有一页（按骨架分组排），Geist / shadcn / Radix 有的直接用，只有 Ant Design 有的（级联选择、穿梭框、树选择、评分、提及、水印、固钉、二维码、全局配置……）按 antd 的能力用 Geist 的 token 自己做；`tests/gallery.spec.ts` 核对每个组件领域都有且只有一页。
 - 颜色：Geist 色阶取自 `vercel.com/geist/vercel-brand.css`（浅色主题）；官方样式表只公开了彩色色阶的 100 / 400 / 700 / 900 / 1000 档，其余档位与青、紫、粉色阶在色板上标「未公开」。
 - 排版：`text-heading-*`、`text-button-*`、`text-label-*`、`text-copy-*`（类名里的数字就是字号，见 `src/styles/geist.css`）；字体 Geist / Geist Mono 经 Google Fonts 加载（两个抽屉的外框也用它）。
 - 图标：lucide-react。
 
 官方没公开的（排版类的行高与字重、阴影值、内容区宽度、层级、列间距、表单库）是项目决策位；按钮的像素高度是 pomaster 的预设取值。其余 83 个骨架领域待补。
 
-Geist 示例和 antd 组件页在同一个 React Storybook 里：Tailwind 不加全局 preflight，preflight 只作用在 `.geist-root` 里；两个画廊都把 antd 的 reset.css 放进最低的 CSS 层（`antd-reset`），规范页外框在它上面的 `std` 层，外框只用类选择器，不漏进实时示例。
+React · Geist 抽屉只放 React 栈自己的规范与组件（不引 antd）：Tailwind 不加全局 preflight，preflight 只作用在 `.geist-root` 里，以及经 Radix Portal 挂到 body 下的弹层（按 data-slot 纳入）；规范页外框在最低的 `std` 层，外框只用类选择器，不漏进实时示例。
 
 ## 原型转换（BA 的 spec + HTML）
 
