@@ -793,18 +793,18 @@ describe("doctor 感知回执计数呈现（R6/C9）", () => {
 // ============================================================
 
 describe("doctor 播种分面计数呈现（B6e；B7-THEME 四分面）", () => {
-  it("init 后四分面计数 = 播种清单分母（21/38/20/26；B6H h5 stacks 36→38）+ human 行呈现；README 预铺物不计（baseline 25→26：R3/ADR-20 增 design-tokens.yaml）", async () => {
+  it("init 后四分面计数 = 播种清单分母（21/42/20/26；B6H h5 stacks 36→38，B8-VNEXT react / tailwind 38→42）+ human 行呈现；README 预铺物不计（baseline 25→26：R3/ADR-20 增 design-tokens.yaml）", async () => {
     mkdirSync(dir, { recursive: true });
     await runInit(dir);
     const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
     expect(outcome.result.seeded_assets).toEqual({
       specs_hard_themes: 21,
-      specs_hard_stacks: 38,
+      specs_hard_stacks: 42,
       specs_evidence: 20,
       baseline: 26,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: themes 21 / stacks 38 / evidence 20 / baseline 26",
+      "seeded assets: themes 21 / stacks 42 / evidence 20 / baseline 26",
     );
   });
 

@@ -683,6 +683,7 @@ export {
   SEEDED_ASSET_FACETS,
   SEEDABLE_STORE_DIRS,
   STACK_SEED_SLUGS,
+  VNEXT_NATIVE_STACK_SLUGS,
   countLegacySpecFiles,
   countSeededAssets,
   legacySpecsHumanLine,

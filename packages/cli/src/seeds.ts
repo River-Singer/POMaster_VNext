@@ -69,14 +69,22 @@ export const STACK_SEED_SLUGS: readonly string[] = [
   "mysql",
   "nginx",
   "postgresql",
+  "react",
   "redis",
   "spring-batch",
   "spring-boot",
   "spring-mvc",
   "spring-webflux",
+  "tailwind",
   "tomcat",
   "vue3",
 ];
+
+/**
+ * VNext 自有的 stack overlay（B8-VNEXT）：vendor（旧包 pomaster/components）没有对应件，
+ * 「slug 集 == vendor 目录」的三面对账不覆盖它们；source pin 是正文自指 sha256。
+ */
+export const VNEXT_NATIVE_STACK_SLUGS: readonly string[] = ["react", "tailwind"];
 
 export const SEEDABLE_STORE_DIRS: readonly string[] = [
   "baseline",

@@ -6,7 +6,7 @@
  * （B6D 批 25→26）；B6H h5 同步 +2；= 清单 105 条全量分母；seed-manifest.ts 单一装载实现）。
  *
  * 钉面（09-05-spec-thematic-reorg Owner 裁定 D1-D8 / theme-mapping §6 + R3 增量）：
- * - 分母钉：105/105（themes 21 + stacks 38 + baseline 26 + evidence 20；批次合并清单
+ * - 分母钉：109/109（themes 21 + stacks 42 + baseline 26 + evidence 20；批次合并清单
  *   B6C/B6D/B6E/B6F/B6G/B7-THEME，逐批名单 manifest.batches；B6B-1/B6B-2 随退役删除）；
  * - provenance pin（R1 漂移缓解）：移植件清单逐条 source_sha256（hex64）+ source_bytes；
  *   stacks 资产 frontmatter seed_source/seed_source_sha256 与清单双锚一致（fail-closed）；
@@ -207,21 +207,22 @@ const B6E_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6E");
 const B6F_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6F");
 const B6G_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6G");
 const B6H_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6H");
+const B8_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B8-VNEXT");
 const B7_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B7-THEME");
 /** 移植件（specs 面 57——有统一 frontmatter 的条目）。 */
 const PORTED_ENTRIES = manifest.entries.filter((e) => !e.authoring);
 
-describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THEME + R3 补位 + B6H h5 全量 105）", () => {
-  it("schema 词形 + 分母钉 105/105（themes 21 + stacks 38 + baseline 26 + evidence 20；batch=B7-THEME）", () => {
+describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THEME + R3 补位 + B6H h5 + B8-VNEXT react/tailwind 全量 109）", () => {
+  it("schema 词形 + 分母钉 109/109（themes 21 + stacks 42 + baseline 26 + evidence 20；batch=B7-THEME）", () => {
     expect(manifest.schema).toBe(SEED_MANIFEST_SCHEMA);
     expect(manifest.batch).toBe("B7-THEME");
-    expect(manifest.denominator.planted).toBe(105);
-    expect(manifest.denominator.planted_total).toBe(105);
+    expect(manifest.denominator.planted).toBe(109);
+    expect(manifest.denominator.planted_total).toBe(109);
     expect(manifest.denominator.batch_new).toBe(21);
-    expect(manifest.entries).toHaveLength(105);
+    expect(manifest.entries).toHaveLength(109);
     // 逐批名单（provenance 文档位）：B6C = 28（stacks 后端族；BE 33 随 D3 退役）、
     // B6D = 26（含 R3 design-tokens.yaml 补位）、B6E = 20、B6F = 6、B6G = 2、
-    // B6H = 2（h5 / 移动端，pomaster P7-1 同步）、B7-THEME = 21，恰好划分 105。
+    // B6H = 2（h5 / 移动端，pomaster P7-1 同步）、B7-THEME = 21、B8-VNEXT = 4（VNext 自有 react / tailwind），恰好划分 109。
     const b3 = manifest.batches?.["B6C"] ?? [];
     const b4 = manifest.batches?.["B6D"] ?? [];
     const b5 = manifest.batches?.["B6E"] ?? [];
@@ -229,6 +230,7 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
     const b7 = manifest.batches?.["B6G"] ?? [];
     const b8 = manifest.batches?.["B7-THEME"] ?? [];
     const b9 = manifest.batches?.["B6H"] ?? [];
+    const b10 = manifest.batches?.["B8-VNEXT"] ?? [];
     expect(manifest.batches?.["B6B-1"]).toBeUndefined();
     expect(manifest.batches?.["B6B-2"]).toBeUndefined();
     expect(b3).toHaveLength(28);
@@ -238,17 +240,18 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
     expect(b7).toHaveLength(2);
     expect(b8).toHaveLength(21);
     expect(b9).toHaveLength(2);
-    expect(new Set([...b3, ...b4, ...b5, ...b6, ...b7, ...b8, ...b9]).size).toBe(105);
+    expect(b10).toHaveLength(4);
+    expect(new Set([...b3, ...b4, ...b5, ...b6, ...b7, ...b8, ...b9, ...b10]).size).toBe(109);
   });
 
-  it("lane/分面划分：themes 21 + stacks 38（B6c 后端 28 + B6f/B6G/B6H 前端 10）+ baseline 26（1+8+8+5+4）+ evidence 20；PORTED = 59", () => {
+  it("lane/分面划分：themes 21 + stacks 42（B6c 后端 28 + B6f/B6G/B6H/B8 前端 14）+ baseline 26（1+8+8+5+4）+ evidence 20；PORTED = 63", () => {
     expect(THEME_ENTRIES).toHaveLength(21);
     expect(THEME_DOCS).toHaveLength(20);
     expect(THEME_NAV).toHaveLength(1);
-    expect(STACK_ENTRIES).toHaveLength(38);
+    expect(STACK_ENTRIES).toHaveLength(42);
     expect(BASELINE_ENTRIES).toHaveLength(26);
     expect(EVIDENCE_ENTRIES).toHaveLength(20);
-    expect(PORTED_ENTRIES).toHaveLength(59);
+    expect(PORTED_ENTRIES).toHaveLength(63);
     const LANE_VALUES = ["frontend", "backend", "frontend,backend"] as const;
     for (const entry of [...THEME_ENTRIES, ...STACK_ENTRIES]) {
       expect(LANE_VALUES).toContain(entry.lane);
@@ -261,8 +264,8 @@ describe("B6/B7 播种清单：分母与形态（seed-once 清单单源；B7-THE
       expect(entry.authoring).toBeUndefined();
     }
     // stacks：19 slug × (index + overlay) 恰好划分 38；slug 子目录词形（B6c 守卫 ADR）。
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(19);
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(19);
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(21);
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(21);
     for (const entry of STACK_ENTRIES) {
       expect(/^specs\/hard\/stacks\/[^/]+\/[^/]+\.md$/.test(entry.asset), entry.asset).toBe(
         true,
@@ -874,6 +877,43 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     }
   });
 
+  it("B8-VNEXT VNext 自有 overlay（react / tailwind）：统一 9 字段 + legacy 6 字段 + x-research-anchors；source pin = 正文自指 sha256（vendor 无对应件，不做 vendor 对账）", () => {
+    expect(B8_ENTRIES.map((e) => e.asset).sort()).toEqual([
+      "specs/hard/stacks/react/index.md",
+      "specs/hard/stacks/react/react-framework-overlay.md",
+      "specs/hard/stacks/tailwind/index.md",
+      "specs/hard/stacks/tailwind/tailwind-css-overlay.md",
+    ]);
+    const expected: Record<string, { legacy: string; capability: string }> = {
+      react: { legacy: "frontend-stack:react", capability: "application-framework" },
+      tailwind: { legacy: "frontend-stack:tailwind", capability: "css-system" },
+    };
+    for (const doc of B8_ENTRIES) {
+      const slug = doc.asset.split("/")[3]!;
+      const { body } = seedSplit(doc.asset);
+      expect(doc.source_path).toBe(`POMaster_VNext/packages/cli/seeds/${doc.asset}`);
+      expect(createHash("sha256").update(body, "utf8").digest("hex"), `${doc.asset} 正文自指 pin`).toBe(doc.source_sha256);
+      expect(Buffer.byteLength(body, "utf8")).toBe(doc.source_bytes);
+      const fm = frontmatterYaml(doc.asset);
+      if (doc.asset.endsWith("/index.md")) {
+        expect(Object.keys(fm).sort()).toEqual([...UNIFIED_FIELDS].sort());
+        expect(body).toContain(`\`${expected[slug]!.legacy}\``);
+        continue;
+      }
+      expect(Object.keys(fm).sort()).toEqual([...UNIFIED_FIELDS, ...OVERLAY_LEGACY_FIELDS, "x-research-anchors"].sort());
+      expect(fm["legacy_id"]).toBe(expected[slug]!.legacy);
+      expect(fm.capability).toBe(expected[slug]!.capability);
+      expect(fm.stages).toEqual(["prepare", "implement", "check", "release"]);
+      const anchors = fm["x-research-anchors"] as { note: string; sources: Array<{ url: string }> };
+      expect(anchors.note).toContain("VNext 自有 overlay");
+      for (const source of anchors.sources) expect(source.url.startsWith("https://"), source.url).toBe(true);
+      for (const section of ["## Scope", "## Rules", "## Checklist"]) {
+        expect(body.includes(`\n${section}\n`), `${doc.asset} 缺段 ${section}`).toBe(true);
+      }
+      expect(doc.porting_notes[0]).toContain("B8-VNEXT");
+    }
+  });
+
   it("marker-free：播种件字节零生成标记（项目可编辑物，不进入 marker 重写生命周期）", () => {
     for (const entry of loaded) {
       expect(entry.content.includes("GENERATED")).toBe(false);
@@ -899,11 +939,11 @@ describe("播种件字节形态：统一 frontmatter + 正文忠实（themes 聚
     ).toThrow();
   });
 
-  it("清洗与登记留痕（B7 重构后）：porting_notes 在册（stacks 19 overlay installed/bound 注记 + B7 21 条主题/导航登记注记）；清洗词形与 A1 档位词形全分母（104 件）零命中", () => {
+  it("清洗与登记留痕（B7 重构后）：porting_notes 在册（stacks 21 overlay installed/bound 注记 + B7 21 条主题/导航登记注记）；清洗词形与 A1 档位词形全分母（104 件）零命中", () => {
     const noted = PORTED_ENTRIES.filter((e) => e.porting_notes.length > 0);
     const stackNoted = noted.filter((e) => e.asset.startsWith("specs/hard/stacks/"));
     const themeNoted = noted.filter((e) => e.asset.startsWith("specs/hard/themes/"));
-    expect(stackNoted).toHaveLength(19);
+    expect(stackNoted).toHaveLength(21);
     expect(themeNoted).toHaveLength(21);
     for (const entry of stackNoted) {
       expect(entry.asset.endsWith("-overlay.md")).toBe(true);
