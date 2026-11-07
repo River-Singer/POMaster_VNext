@@ -43,3 +43,18 @@
   line-height: 20px;
   text-align: center;
 }
+
+/* 悬停与聚焦时出现的行操作（HOVER.REVEAL 的示例样式；不支持悬停的设备上常显）。 */
+.antd-live .std-reveal-actions {
+  opacity: 1;
+  transition: opacity 0.1s;
+}
+@media (hover: hover) {
+  .antd-live .std-reveal-row .std-reveal-actions {
+    opacity: 0;
+  }
+  .antd-live .std-reveal-row:hover .std-reveal-actions,
+  .antd-live .std-reveal-row:focus-within .std-reveal-actions {
+    opacity: 1;
+  }
+}

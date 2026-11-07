@@ -819,6 +819,8 @@ const GROUP_ORDER = [
   "patterns.global",
   "patterns.principles",
   "patterns.templates",
+  "patterns.experience",
+  "patterns.data",
   "engineering",
 ];
 

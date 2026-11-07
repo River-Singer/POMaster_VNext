@@ -63,9 +63,18 @@ export const UI_COMPONENTS = {
   CardFooter: "card",
   Input: "input",
   Label: "label",
+  NumberTicker: "number-ticker",
   Separator: "separator",
   Skeleton: "skeleton",
   Switch: "switch",
+  Table: "table",
+  TableHeader: "table",
+  TableBody: "table",
+  TableFooter: "table",
+  TableRow: "table",
+  TableHead: "table",
+  TableCell: "table",
+  TableCaption: "table",
 };
 const ICON_COMPONENT = /^[A-Z][A-Za-z0-9]*Icon$/;
 const COMPONENT_TAG = /<([A-Z][A-Za-z0-9]*)\b/g;
@@ -147,6 +156,7 @@ export function renderAreaStoryReact(area, model) {
   const icons = new Set();
   const blocks = [];
   const liveEntries = [];
+  let usesState = false;
   area.rules.forEach((rule, ruleIndex) => {
     let paramsDeclared = false;
     for (const body of liveBodiesOf(rule)) {
@@ -161,6 +171,9 @@ export function renderAreaStoryReact(area, model) {
       used.icons.forEach((name) => icons.add(name));
       const usesP = /\bp\./.test(body.jsx);
       const usesT = /\bt\[/.test(body.jsx);
+      const usesS = /\bs\./.test(body.jsx);
+      const usesSet = /\bset\(/.test(body.jsx);
+      if (usesS || usesSet) usesState = true;
       if (usesP && !paramsDeclared) {
         blocks.push(`const P_${ruleIndex}: Record<string, any> = ${JSON.stringify(settledParams(rule))};`);
         paramsDeclared = true;
@@ -170,6 +183,8 @@ export function renderAreaStoryReact(area, model) {
         `function ${name}() {`,
         ...(usesP ? [`  const p = P_${ruleIndex};`] : []),
         ...(usesT ? [`  const t: Record<string, any> = CTX_TOKENS;`] : []),
+        ...(usesS || usesSet ? [`  const [${usesS ? "s" : ""}${usesSet ? ", setS" : ""}] = useState<Record<string, any>>({});`] : []),
+        ...(usesSet ? [`  const set = (patch: Record<string, any>) => setS((prev) => ({ ...prev, ...patch }));`] : []),
         `  return (`,
         `    <>`,
         indent(body.jsx, 6),
@@ -189,6 +204,7 @@ export function renderAreaStoryReact(area, model) {
   const types = ["StdArea", "StdContext", "StdLiveMap"];
   if (area.playground !== null) types.push("StdCell");
   const lines = [...headerLines(model), `import type { Meta, StoryObj } from '@storybook/react';`];
+  if (usesState) lines.push(`import { useState } from 'react';`);
   const byModule = new Map();
   for (const name of [...ui].sort()) {
     const module = UI_COMPONENTS[name];

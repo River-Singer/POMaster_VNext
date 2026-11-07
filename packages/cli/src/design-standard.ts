@@ -47,6 +47,8 @@ export const DESIGN_AREA_GROUPS = {
   "patterns.global": "设计模式/全局规则",
   "patterns.principles": "设计模式/原则",
   "patterns.templates": "设计模式/模板文档",
+  "patterns.experience": "设计模式/体验管理",
+  "patterns.data": "设计模式/数据呈现",
   engineering: "工程规范",
 } as const;
 export type DesignAreaGroup = keyof typeof DESIGN_AREA_GROUPS;
@@ -131,6 +133,14 @@ export const DESIGN_CHECKS: readonly DesignCheckSpec[] = [
   { id: "perf.lazy-load", title_zh: "路由与重组件按需加载", description_zh: "路由组件用动态 import；应用入口不同步引入重型依赖", active: false },
   { id: "perf.no-full-library-import", title_zh: "组件库按需引入", description_zh: "不整包注册或引入组件库（如 app.use(Antd)、全量引入 Vant、整包引入图标库）", active: false },
   { id: "format.no-local-pattern", title_zh: "日期数字走格式化注册表", description_zh: "页面里不手拼日期格式串、不硬编码货币符号，统一经格式化注册表输出", active: false },
+  { id: "motion.transform-only", title_zh: "过渡只动 transform 与透明度", description_zh: "transition / animation 不作用于 width、height、top、left、margin 等触发重排的属性", active: false },
+  { id: "motion.reduced-motion", title_zh: "关键帧动画有减少动效分支", description_zh: "定义了 @keyframes 的样式文件同时写 prefers-reduced-motion 分支", active: false },
+  { id: "security.no-unsafe-html", title_zh: "不进危险渲染", description_zh: "不用 v-html / innerHTML / dangerouslySetInnerHTML，富文本只经登记的净化组件输出", active: false },
+  { id: "security.safe-link", title_zh: "外链与跳转安全", description_zh: "target=_blank 的链接带 rel=noopener noreferrer；window.open 带 noopener；不出现 javascript: 链接", active: false },
+  { id: "security.no-eval", title_zh: "不用动态执行", description_zh: "不用 eval、new Function、字符串形式的 setTimeout / setInterval", active: false },
+  { id: "security.no-token-storage", title_zh: "凭据不进浏览器存储", description_zh: "localStorage / sessionStorage / IndexedDB 不写入 token、session、refresh 一类凭据键", active: false },
+  { id: "error.no-empty-catch", title_zh: "不吞错误", description_zh: "不写空 catch，catch 里不能只有 console 输出", active: false },
+  { id: "guard.route-meta", title_zh: "路由声明访问要求", description_zh: "路由表的每一项都声明访问要求（meta / handle 里的 auth、permission）", active: false },
 ];
 
 const CHECK_IDS = new Set(DESIGN_CHECKS.map((check) => check.id));
@@ -149,6 +159,14 @@ export const DESIGN_LABS: readonly DesignLabSpec[] = [
   { id: "state.url-filters", title_zh: "筛选条件进 URL", description_zh: "改筛选与页码时 URL 同步更新；「刷新页面」后从 URL 恢复出同样的视图" },
   { id: "state.query-cache", title_zh: "查询缓存与失效", description_zh: "同样条件命中缓存、过期后后台刷新；新建一条后让对应 key 失效并重新拉取" },
   { id: "state.race", title_zh: "迟到的响应不写回", description_zh: "连续输入发出多个请求，响应乱序到达；只有最新一次的结果写进界面" },
+  { id: "context.restore", title_zh: "返回列表时恢复位置", description_zh: "从列表进详情再返回，页码、筛选与选中行原样恢复" },
+  { id: "loading.delay", title_zh: "加载条的延迟出现与最短停留", description_zh: "快请求不出现加载条，慢请求的加载条出现后至少停留一段时间" },
+  { id: "error.boundary", title_zh: "区块级错误边界", description_zh: "一个区块出错只替换这一块并能重试，页面其余部分照常可用" },
+  { id: "guard.route", title_zh: "保护页与回跳", description_zh: "访客去登录后回到原页面，无权限看到 403，站外回跳地址被拒绝" },
+  { id: "async.retry", title_zh: "重试与退避", description_zh: "可重试的错误按指数退避重试并有上限；不幂等的提交不自动重试" },
+  { id: "concurrency.pool", title_zh: "在途合并与并发上限", description_zh: "同一份数据的并发请求合并为一个；批量任务经并发池，同时进行的数量有上限" },
+  { id: "click.guard", title_zh: "防重复点击", description_zh: "连点提交只发出一个请求，并复用同一个幂等键" },
+  { id: "prototype.convert", title_zh: "原型转换与事实对账", description_zh: "BA 原型去掉表现后抽出事实；按规范重绘的页面用同一个抽取器对账，缺失、改动、调序逐条报出" },
 ];
 
 const LAB_IDS = new Set(DESIGN_LABS.map((lab) => lab.id));

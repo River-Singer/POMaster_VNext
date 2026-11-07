@@ -2,10 +2,12 @@
 //
 // 页面结构不在这里：src/standard/page.ts 构建与框架无关的节点树（两个抽屉共用），本模块只做两件事——
 //   1. 把节点树渲染成 Vue 元素（toVNode）；
-//   2. 把实时位换成 antd 组件：规范源里的 Vue 模板按需编译（`p` 是本条规则已定的参数，`t` 是 token 表），
+//   2. 把实时位换成 antd 组件：规范源里的 Vue 模板按需编译（`p` 是本条规则已定的参数，`t` 是 token 表，
+//      `s` 是这个示例自己的一份可写状态，演示展开收起、切换状态这类交互用），
 //      实验（labs.ts）由一个小宿主组件订阅刷新，状态矩阵的每一格渲染实验场组件。
 // 样式见 standard.css（外框，两个抽屉共用）与 .storybook/preview.css（实时位里的 antd 语境 .antd-live）。
-import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, shallowRef, type Component, type VNode, type VNodeChild } from "vue";
+import { defineComponent, h, onBeforeUnmount, onErrorCaptured, reactive, ref, shallowRef, type Component, type VNode, type VNodeChild } from "vue";
+import { LIVE_EXTRAS } from "./live-extras";
 import { createLab } from "./labs";
 import {
   areaPage as buildAreaPage,
@@ -100,9 +102,9 @@ function compiled(template: string, rule: StdRule, ctx: StdContext, icons: Icons
   const p = paramValues(rule);
   return defineComponent({
     name: "StdLive",
-    components: icons,
+    components: { ...LIVE_EXTRAS, ...icons },
     setup() {
-      return { p, t: ctx.tokens };
+      return { p, t: ctx.tokens, s: reactive<Record<string, unknown>>({}) };
     },
     template,
   });

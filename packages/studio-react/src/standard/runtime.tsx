@@ -44,13 +44,27 @@ export type StdCell = (values: Record<string, string | boolean>) => ReactNode;
 
 type LiveResolver = (key: string) => ReactNode;
 
-const ATTR_ALIASES: Readonly<Record<string, string>> = { class: "className", for: "htmlFor", colspan: "colSpan", rowspan: "rowSpan", tabindex: "tabIndex" };
+const ATTR_ALIASES: Readonly<Record<string, string>> = { class: "className", for: "htmlFor", colspan: "colSpan", rowspan: "rowSpan", tabindex: "tabIndex", maxlength: "maxLength", minlength: "minLength", readonly: "readOnly", autocomplete: "autoComplete" };
 
 function propName(key: string): string {
   const alias = ATTR_ALIASES[key];
   if (alias !== undefined) return alias;
   if (key.startsWith("data-") || key.startsWith("aria-") || !key.includes("-")) return key;
   return key.replace(/-([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+}
+
+/** 节点树里的 style 是 CSS 文本（Vue 直接收），React 要对象：「width: 40%; --x: 1」→ { width: "40%", "--x": "1" }。 */
+export function styleObject(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const declaration of text.split(";")) {
+    const at = declaration.indexOf(":");
+    if (at < 0) continue;
+    const property = declaration.slice(0, at).trim();
+    const value = declaration.slice(at + 1).trim();
+    if (property === "") continue;
+    out[property.startsWith("--") ? property : property.replace(/-([a-z])/g, (_match, letter: string) => letter.toUpperCase())] = value;
+  }
+  return out;
 }
 
 /** 节点树 → React 元素。onInput 处理器收到的是输入框的值（React 里挂在 onChange 上）。 */
@@ -65,6 +79,8 @@ export function toReact(node: StdNode, live: LiveResolver, key?: number): ReactN
     if (name === "onInput" && typeof value === "function") {
       const handler = value as (input: string) => void;
       props["onChange"] = (event: { target: { value: string } }) => handler(event.target.value);
+    } else if (name === "style" && typeof value === "string") {
+      props["style"] = styleObject(value);
     } else {
       props[propName(name)] = value;
     }

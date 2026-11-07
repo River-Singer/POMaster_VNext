@@ -88,7 +88,7 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：32 个领域、150 条规则——基础 9 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇；工程规范 2 篇；顺序与统一骨架一致", () => {
+  it("预设通过校验：55 个领域、318 条规则——基础 9 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -101,11 +101,15 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     expect(groups.filter((group) => group === "patterns.global")).toHaveLength(8);
     expect(groups.filter((group) => group === "patterns.principles")).toHaveLength(10);
     expect(groups.filter((group) => group === "patterns.templates")).toHaveLength(2);
-    expect(standard.areas.filter((area) => area.group === "engineering").map((area) => area.key)).toEqual(["state", "performance"]);
+    expect(standard.areas.filter((area) => area.group === "patterns.experience").map((area) => area.key)).toEqual(["ui_stills", "component_motion", "bento_grid", "state_feedback", "context", "sidebar", "card_hover", "loading_bar"]);
+    expect(standard.areas.filter((area) => area.group === "patterns.data").map((area) => area.key)).toEqual(["data_grid", "charts", "reports"]);
+    expect(standard.areas.filter((area) => area.group === "engineering").map((area) => area.key)).toEqual([
+      "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake",
+    ]);
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 32, rules: 150, gate_rules: 29, review_rules: 121, pending_params: 10 });
+    expect(loaded.summary).toEqual({ areas: 55, rules: 318, gate_rules: 41, review_rules: 277, pending_params: 31 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -138,10 +142,31 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       "LAYOUT.CONTENT_REGION.section_gap",
       "LAYOUT.CONTENT_REGION.content_max_width",
       "LAYOUT.Z_INDEX.layers",
+      "CMOTION.STAGGER.interval",
+      "CMOTION.STAGGER.total",
+      "LBAR.DELAY.delay",
+      "LBAR.DELAY.min_visible",
+      "DGRID.WHEN.grid_library",
+      "DGRID.VIRTUAL.virtual_threshold",
+      "CHART.LIBRARY.library",
+      "CHART.PERF.max_points",
       "PERF.BUDGET.initial_js",
       "PERF.BUDGET.route_chunk",
       "PERF.LARGE_LISTS.virtual_threshold",
       "PERF.INPUT.debounce",
+      "SESSION.COOKIE.same_site",
+      "SESSION.TIMEOUT.idle",
+      "SESSION.TIMEOUT.absolute",
+      "SESSION.TIMEOUT.warn_before",
+      "TAMPER.REPLAY.window",
+      "ROBUST.TIMEOUT.timeout",
+      "GUARD.BUTTON.mode",
+      "CACHE.FRESHNESS.dict_stale",
+      "ASYNC.RETRY.max_attempts",
+      "ASYNC.RETRY.base_delay",
+      "ASYNC.DEBOUNCE.debounce",
+      "ASYNC.DEBOUNCE.throttle",
+      "CONC.LIMIT.pool",
     ]);
     expect(loaded.issues.filter((issue) => issue.code === "DESIGN_DECISION_PENDING")).toHaveLength(1);
   });
@@ -460,9 +485,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(150);
+    expect(envelope.result.summary.rules).toBe(318);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_AREA_UNCOVERED", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(32);
+    expect(envelope.result.normalized.areas).toHaveLength(55);
     expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
@@ -511,7 +536,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 11, rules: 71, gate_rules: 19, review_rules: 52, pending_params: 6 });
+    expect(result.summary).toEqual({ areas: 35, rules: 247, gate_rules: 33, review_rules: 214, pending_params: 32 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
@@ -615,11 +640,11 @@ const SKELETON_GRID = {
 const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
 
 describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
-  it("骨架通过校验：128 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
+  it("骨架通过校验：151 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
     const read = readDesignSkeleton(SKELETON_PATH)!;
     expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);
     const skeleton = read.skeleton!;
-    expect(skeleton.areas).toHaveLength(128);
+    expect(skeleton.areas).toHaveLength(151);
     const button = skeleton.areas.find((area) => area.key === "button")!;
     expect(button.counterparts).toEqual({ antd: ["Button"], geist: ["Button", "ButtonLink"] });
     expect(button.topics.map((topic) => topic.id)).toContain("CMP.BUTTON.ICON_ONLY");
@@ -753,7 +778,9 @@ describe("校验：展示块（演示 / 对照表 / 色板 / 实验）", () => {
   });
 
   it("实验词表：编号唯一，每个都有标题与说明（两个画廊都要实现，画廊测试对账）", () => {
-    expect(DESIGN_LABS.map((lab) => lab.id)).toEqual(["state.url-filters", "state.query-cache", "state.race"]);
+    expect(DESIGN_LABS.map((lab) => lab.id)).toEqual([
+      "state.url-filters", "state.query-cache", "state.race", "context.restore", "loading.delay", "error.boundary", "guard.route", "async.retry", "concurrency.pool", "click.guard", "prototype.convert",
+    ]);
     for (const lab of DESIGN_LABS) {
       expect(lab.title_zh.length).toBeGreaterThan(0);
       expect(lab.description_zh.length).toBeGreaterThan(0);

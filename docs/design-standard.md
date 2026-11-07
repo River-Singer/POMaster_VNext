@@ -116,51 +116,64 @@ areas:
 | `demo` | 演示卡片：舞台 + 「显示代码」 | `title_zh`、可选 `description_zh`，实时内容 `template` 或 `jsx` |
 | `specimen` | 对照表：示例｜名称（类名 / token）｜用途 | `rows: [{ name, usage_zh, template / jsx / sample_zh }]`；`sample_zh` 是简写：用 `name` 作类名渲染这段文字（如 Geist 的排版类） |
 | `palette` | 色板：每个色阶一行色块，附色值表 | `scales: [{ name, label_zh, swatches: [{ name, value / token / pending_zh, usage_zh }] }]`；有定值时写 `source` |
-| `lab` | 实验：可操作的小实验 + 状态检查器 | `lab` 取实验词表 `DESIGN_LABS`：`state.url-filters`（筛选进 URL）、`state.query-cache`（查询缓存与失效）、`state.race`（迟到的响应不写回） |
+| `lab` | 实验：可操作的小实验 + 状态检查器 | `lab` 取实验词表 `DESIGN_LABS`：`state.url-filters`（筛选进 URL）、`state.query-cache`（查询缓存与失效）、`state.race`（迟到的响应不写回）、`context.restore`（返回列表恢复位置）、`loading.delay`（加载条的延迟出现与最短停留）、`error.boundary`（区块级错误边界）、`guard.route`（保护页与回跳）、`async.retry`（重试与退避）、`concurrency.pool`（在途合并与并发上限）、`click.guard`（防重复点击）、`prototype.convert`（原型转换与事实对账） |
 
-实验在两个画廊共用一份实现（`packages/studio/src/standard/labs.ts`：小状态机 + 返回节点树的视图），假服务端用内存数据与定时器；缓存实验的缓存是演示用的简化实现，行为对齐 TanStack Query。新实验要先在 `DESIGN_LABS` 登记，再在 `labs.ts` 实现，两个画廊的测试对账。
+实验在两个画廊共用一份实现（`packages/studio/src/standard/labs.ts` 与 `labs-more.ts`，公共部件在 `lab-kit.ts`：小状态机 + 返回节点树的视图；每个实验都有「正确做法 / 错误做法」两种模式），假服务端用内存数据与定时器；缓存实验的缓存是演示用的简化实现，行为对齐 TanStack Query。新实验要先在 `DESIGN_LABS` 登记，再在 `labs.ts` 实现，两个画廊的测试对账。
 
 ### 实时内容
 
 示例、演示、对照表的行都可以是实时内容：
 
-- `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系），包在 `.antd-live` 里（antd 的字体、字色与行高）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`）；只能引用已定的值，不能有 `<script>` / `<style>`。
-- `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），包在 `.geist-root` 里。同样用 `p` / `t` 取值；只能用 `packages/studio-react/src/components/ui/` 里登记的组件（Button、ButtonLink、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。Geist 色阶在 Tailwind 里是 `ds-` 前缀的颜色类（`bg-ds-gray-100`、`text-ds-gray-900`）。
+- `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系），包在 `.antd-live` 里（antd 的字体、字色与行高）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`），`s` 是这个示例自己的一份可写状态（演示展开收起、切换状态：`@click="s.open = !s.open"`）；除 antd 组件与图标外还能用 `<std-number-roll>`（数字滚动，`packages/studio/src/standard/live-extras.ts`）；只能引用已定的值，不能有 `<script>` / `<style>`。
+- `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），包在 `.geist-root` 里。同样用 `p` / `t` 取值，可写状态是 `s` 与 `set({ … })`；只能用 `packages/studio-react/src/components/ui/` 里登记的组件（Button、ButtonLink、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton、Table 一组、NumberTicker——收录自 affectUI，MIT，见 `THIRD_PARTY_NOTICES.md`）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。Geist 色阶在 Tailwind 里是 `ds-` 前缀的颜色类（`bg-ds-gray-100`、`text-ds-gray-900`）。
 - `code` + `lang`：只展示的代码片段（`vue` / `ts` / `tsx` / `css` / `html`）。
 
 一个体系只收自己的实时内容形态：Ant Design 预设写 `template`，Geist 预设写 `jsx`。示例的 `kind` 只有 `do`（这样做）和 `dont`（别这样做）。
 
 ## 当前预设（Ant Design · Vue）
 
-32 个领域、150 条规则：
+55 个领域、318 条规则：
 
 - **基础**（9 篇）：色彩、字体、标题层级、图标、材质、布局、栅格、间距、动效；
 - **组件 · 通用**：按钮（何时用、变体、危险操作、尺寸、形状、搭配图标、纯图标按钮、加载、禁用、链接按钮、宽度、表单提交、文案；带实验场与状态矩阵）；
 - **设计模式 · 全局规则**（8 篇）：反馈、导航、数据录入、数据展示、数据格式、文案、按钮、数据列表；
 - **设计模式 · 原则**（10 篇）：亲密性、对齐、对比、重复、直截了当、足不出户、简化交互、提供邀请、巧用过渡、即时反应；
 - **设计模式 · 模板文档**（2 篇）：数据可视化页、详情页；
-- **工程规范**（2 篇）：状态管理（属主、服务端数据用 @tanstack/vue-query、全局 store 用 Pinia、URL 状态、请求入口、缓存 key 与失效、清理与竞态、表单模型、浏览器存储；三个实验）、性能。
+- **设计模式 · 体验管理**（8 篇）：界面静帧、组件动效、Bento 栅格、状态反馈、上下文管理、侧边栏管理、卡片悬停、加载条（静帧、动效、Bento 借鉴了 Stageshow 的取法，数字滚动借鉴了 affectUI，条文自行改写）；
+- **设计模式 · 数据呈现**（3 篇）：数据网格、图表、报表；
+- **工程规范**（14 篇）：状态管理（三个实验）、性能、安全、会话与凭据（Cookie）、防篡改与防劫持、健壮性、报错管理、保护页、页面加载、缓存、异步处理、高并发、防重复点击、原型转换（各篇的机制配实验：返回恢复、加载条、错误边界、保护页、重试、并发、防重复点击、原型转换）。
 
-数值取自 Ant Design 设计规范与 ant-design-vue 主题源码（色板由 @ant-design/colors 的算法从种子色派生）；官方没给数值的是项目决策位。其余 96 个骨架领域（主要是组件）待补。
+数值取自 Ant Design 设计规范与 ant-design-vue 主题源码（色板由 @ant-design/colors 的算法从种子色派生）；官方没给数值的是项目决策位。其余 96 个骨架领域（组件）待补。
 
 ## 当前预设（Vercel Geist · React）
 
-11 个领域、71 条规则：
+35 个领域、247 条规则：
 
 - **基础**（9 篇）：色彩（Geist 色阶与每档用途）、字体（四组排版类）、标题层级、图标（含尺寸）、材质、布局、栅格、间距、动效；
 - **组件 · 通用**：按钮（与 Ant Design 一侧同样 13 条；变体 default / secondary / tertiary / error / warning，尺寸 tiny / small / medium / large；带实验场与状态矩阵）；
-- **工程规范**：状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand，其余同 Ant Design 一侧；三个实验）。
+- **设计模式**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
+- **工程规范**（14 篇）：状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
 
 - 组件：项目内的组件源码（`packages/studio-react/src/components/ui/`，shadcn/ui 起步，按 Geist 重新配色与定尺寸）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 在公开 npm 上装不到，能装后再评估替换。
 - 颜色：Geist 色阶取自 `vercel.com/geist/vercel-brand.css`（浅色主题）；官方样式表只公开了彩色色阶的 100 / 400 / 700 / 900 / 1000 档，其余档位与青、紫、粉色阶在色板上标「未公开」。
 - 排版：`text-heading-*`、`text-button-*`、`text-label-*`、`text-copy-*`（类名里的数字就是字号，见 `src/styles/geist.css`）；字体 Geist / Geist Mono 经 Google Fonts 加载（两个抽屉的外框也用它）。
 - 图标：lucide-react。
 
-官方没公开的（排版类的行高与字重、阴影值、内容区宽度、层级、列间距、表单库）是项目决策位；按钮的像素高度是 pomaster 的预设取值。其余 117 个骨架领域待补。
+官方没公开的（排版类的行高与字重、阴影值、内容区宽度、层级、列间距、表单库）是项目决策位；按钮的像素高度是 pomaster 的预设取值。其余 116 个骨架领域待补。
 
 Geist 示例和 antd 组件页在同一个 React Storybook 里：Tailwind 不加全局 preflight，preflight 只作用在 `.geist-root` 里；两个画廊都把 antd 的 reset.css 放进最低的 CSS 层（`antd-reset`），规范页外框在它上面的 `std` 层，外框只用类选择器，不漏进实时示例。
 
-后续：组件按类分批补齐（两边同步），Geist 的设计模式与性能篇，规范门禁接入。
+## 原型转换（BA 的 spec + HTML）
+
+BA 交来的 spec 与 HTML 原型结构、风格、样式各不相同，规则「工程规范 / 原型转换」规定读什么、怎么读，命令是 `pomaster prototype`：
+
+1. `pomaster prototype ingest <page.html...> --spec <spec.md...> [--render]`：去掉表现读出四层——业务事实（字段、操作、状态、提示）、信息结构（页面、区域、分组、顺序）、交互意图（隐藏的弹窗、点什么打开什么）原样保留；样式、栅格、字体、组件长相丢掉；星号、红绿状态字、删除线、右对齐、固定列这类「表现里藏着的事实」翻译成语义（必填、语气、作废、数值列、冻结列）。产物在 `.pomaster/prototype/<名字>/`：大纲（`*.outline.md` 给人和 agent 读）、事实清单 `facts.json`（每条带出处）、冲突 `questions.json`（Question Gate 申报分类 + 默认口径：业务规则以 spec 为准，信息结构以 HTML 为准，呈现以规范为准）、UX 中间表示草稿 `ux-ir.json`（区域到规范模式与规则编号的初步映射）。`--render` 用 Playwright 渲染后再读（表格行、导航常是脚本生成的），并展开组件库的下拉记下选项。
+2. agent 按规范重绘：布局、间距、字号、组件全部取本规范，原型的 class、样式、字体、颜色不进实现。
+3. `pomaster prototype diff <facts.json> <重绘后的页面.html> [--render]`：用同一个抽取器读重绘后的页面（任何组件库的 DOM 都按 ARIA 与语义元素读），与事实清单逐条对账：缺失、改动、新增、调序都为零才算完成，结果作为 verify 证据。
+
+抽取器在 `packages/cli/src/prototype-extract.ts`（纯函数，零依赖），Storybook 的 `prototype.convert` 实验用同一份代码。
+
+后续：组件按类分批补齐（两边同步），规范门禁接入。
 
 ## 错误码
 

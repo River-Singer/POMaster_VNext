@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:0ca96bd32d6cbde90807dcde8dae075addabb292ecb6ec6ab973d41933a80b83`；状态 origin=preset。
+> 规范指纹 `sha256:eede4685219d9daa2fed42d9685f95237cdbaed6b764beb2391fa55433685db1`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -722,6 +722,730 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - 示例（别这样做）：泛泛的「确定」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-general-button--cmp-button-label
 
+## 设计模式/体验管理 / 界面静帧（STILL）
+
+文档、功能卡片、空状态与引导里的产品静帧：像真产品、只给故事主角真实文字、裁切有意图、一个焦点、按展示尺寸设计、动画先定封面帧、用规范组件与图标。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--overview
+
+### STILL.WHEN 什么时候用静帧
+
+要在文档配图、功能介绍卡片、空状态或新手引导里说明「产品长什么样、这里会发生什么」时，用规范组件搭一张产品静帧，不贴真实截图：截图很快过期、带着真实数据、换主题就不对。一张静帧只讲一件事。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：组件搭出来的功能卡片
+- 示例（别这样做）：贴一张产品截图
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-when
+
+### STILL.RESTRAINT 只给故事主角真实文字
+
+一张静帧里真实的字通常只有 3 到 7 处：标题、被操作的对象、输入的内容和结果；其余位置用占位条，占位条的宽度逐行变化。不要每行都塞真实文本和数字——细节越多越像拼凑的假图；视线落点上不放占位条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：真实文字处数 `p.real_strings` = 3–7（Stageshow（Benji Taylor 的 agent skill，MIT））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-restraint
+
+### STILL.FRAMING 裁切与出血
+
+裁到故事发生的那块区域，窗口从画面的一边或两边出血；窗口保持原本的比例，不压扁、不整体缩小塞进卡片再四周留等宽空白；页面本身已有底色时不再垫一块底板；画面里不留空着的角落。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-framing
+
+### STILL.FOCAL 一个焦点
+
+每张静帧只有一个主角，最重的视觉（实色、字重、阴影）落在它身上；辅助对象（一张回执、一个小卡片）至多一个，压在主体边缘；不用描边光晕去「指」主角，用产品自己的选中态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-focal
+
+### STILL.SCALE 按展示尺寸设计
+
+按最终显示尺寸 1:1 设计：功能卡片约 400×300，侧栏插图更小；手机宽度的版本重新排布，只留动作和可读的字，不是整体缩小——缩小后的小字没人看得清。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：功能卡片尺寸 `p.card` = 400×300（Stageshow（Benji Taylor 的 agent skill，MIT））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-scale
+
+### STILL.POSTER 动画先定封面帧
+
+静帧做成小动画时，先定封面帧：缩略图、截图和减少动效模式都只看到这一帧，它要能单独讲完故事——结果留在画面上，不是变化途中的一帧；动画只演一件事，回到开头时要有看得见的原因（撤销、关闭）或在被遮住时复位。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-poster
+
+### STILL.REAL_PARTS 用规范组件与图标
+
+静帧里的按钮、徽标、头像、输入框都用 src/components/ui 的组件，不手画；图标只用 lucide-react，同一尺寸、同一描边；不发明 logo（色块里放一个字母不是 logo）；AI 功能不用闪光、魔杖和紫色当装饰，直接展示它做了什么。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-ui-stills--still-real-parts
+
+## 设计模式/体验管理 / 组件动效（CMOTION）
+
+动效只说明变化：每个动作有原因；出现和离开都有过渡；动关系而不只动对象；数字与文字就地变化；成组只在首次出现时错峰；可以打断；只动 transform 与透明度；减少动效时状态变化仍看得见。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--overview
+
+### CMOTION.CAUSE 每个动作有原因
+
+动效由用户操作或数据变化触发，用来说明「刚才发生了什么」；不做自动循环的吸睛动画（呼吸灯、无限脉冲）；同一屏同一时刻只有一处在动。界面反馈和真实产品一样快，只有讲故事的演示动画才放慢。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（别这样做）：无限脉冲吸引注意
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-cause
+
+### CMOTION.ENTER_EXIT 出现与离开
+
+会出现又消失的元素保持挂载，用状态切换显隐，让离开也有过渡；离开比出现快；面板打开时带着内容一起出现，不先出一块空白再填内容；不要「啪」地插入或消失。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：出现 `p.enter` = 200ms（pomaster 预设约定（Geist 体系））
+- 参数：离开 `p.exit` = 150ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 参数：缓动 `p.ease` = cubic-bezier(0.4, 0, 0.2, 1)（Tailwind CSS · 过渡（默认时长与缓动））
+- 演示：展开与收起：同一个按钮、内容一起出现——点按钮：面板高度与透明度一起过渡，收起比展开快；按钮文字在同一个按钮上变化。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-enter-exit
+
+### CMOTION.RELATIONSHIP 动关系而不只动对象
+
+新增一行时，下面的行一起让位（新行的高度从 0 展开），不是新行凭空出现、其余行跳位；删除时先收起占位再移除；尺寸变化的容器不拉伸里面的文字（用网格行或高度过渡，不用 scale）；列表重排用位置过渡。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：让位时长 `p.duration` = 200ms（pomaster 预设约定（Geist 体系））
+- 参数：缓动 `p.ease` = cubic-bezier(0.4, 0, 0.2, 1)（Tailwind CSS · 过渡（默认时长与缓动））
+- 演示：新增一行：其余行一起让位
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-relationship
+
+### CMOTION.VALUE_CHANGE 数字与文字就地变化
+
+数值变化用数字滚动：只滚变化的位，货币符号与千分位不动，用等宽数字，最终值停住；状态词变化（排队中→运行中→已通过）在同一位置滚动或淡入淡出，并按最长的词预留宽度，邻居不跳；按钮文字变化发生在同一个按钮上，不换成另一个按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：数字滚动——点按钮：金额只滚动变化的数位（NumberTicker，收录自 affectUI，MIT）。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-value-change
+
+### CMOTION.STAGGER 成组错峰只在首次出现
+
+只有一组元素首次一起出现时才错峰：按阅读顺序、间隔小、总时长有上限；刷新数据、翻页、筛选时整组一次出现，不逐行飞入；栅格卡片首次进入视口时可以错峰一次。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：错峰间隔 `p.interval`：待项目决定——同组错峰间隔取多少毫秒？（候选 40ms / 60ms / 80ms）
+- 参数：总时长上限 `p.total`：待项目决定——一组错峰的总时长上限取多少毫秒？（候选 300ms / 400ms）
+- 示例（别这样做）：每次刷新逐行飞入
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-stagger
+
+### CMOTION.INTERRUPT 可以打断
+
+动画进行中用户再次操作，从当前状态反向或继续，不排队等上一段放完；动画期间控件保持可用；状态切换用 CSS transition（天然可打断），不用固定时长的关键帧动画表达状态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-interrupt
+
+### CMOTION.PERF 只动 transform 与透明度
+
+过渡只作用于 transform 和 opacity，高度展开用 grid-template-rows 过渡；不过渡 width、height、top、left、margin 这类触发重排的属性；will-change 只在动画期间加在动的那个元素上，不全局铺。
+
+- 执行：机器门禁 `motion.transform-only`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 示例（这样做）：位移与透明度
+- 示例（别这样做）：过渡布局属性
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-perf
+
+### CMOTION.REDUCED 减少动效时保留状态变化
+
+减少动效模式下状态变化仍要看得见：淡入淡出或直接切换，去掉位移、缩放、视差和自动播放；数字滚动直接显示最终值；每段关键帧动画都写 prefers-reduced-motion 分支（全局降级见 MOTION.REDUCED）。
+
+- 执行：机器门禁 `motion.reduced-motion`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级」
+- 示例（这样做）：关键帧动画的降级分支
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-reduced
+
+## 设计模式/体验管理 / Bento 栅格（BENTO）
+
+一组格子拼成一张图：一个主角格；格子不全是界面截图，邻格类型交替；同一套外框；跨度取栅格整数；数字格一行写完；窄屏重新排；可点的格整格可点。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--overview
+
+### BENTO.WHEN 什么时候用
+
+功能概览、首页看板入口、发布说明和特性墙用 Bento；表单、明细列表、需要逐项对比的数据不用 Bento，用表格、描述列表或卡片列表。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-when
+
+### BENTO.HERO 一个主角格
+
+一格最大（跨两列或两行），放最主要的信息或画面，其余格支撑它；格子大小相同时，内容和分量要有明显差别，不排成五块一样重的卡片。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：主角格 + 数字格 + 组件格 + 一句话——主角格跨两列并整格可点；数字格一行写完；组件格只截一个控件；一句话格用正文大字。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-hero
+
+### BENTO.KINDS 邻格类型交替
+
+界面格（只截一个组件或一小块界面，不放整个窗口）约占三分之一到一半，其余是大数字、一句话、对象、示意图或一组标志；相邻的格类型不同；窗口外框在一组栅格里至多出现一次；同一段真实文字不在两格里重复。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：界面格占比 `p.ui_share` = 1/3–1/2（Stageshow（Benji Taylor 的 agent skill，MIT））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-kinds
+
+### BENTO.FRAME 同一套外框
+
+所有格的圆角、格间距、内边距、文案位置一致（文案都在上或都在下）；格间距等于格内边距或其整数分之一；一组栅格只选一种家族：带间距的圆角格，或无间距、用细分割线分格。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：格间距（gap-4） `p.gap` = 16px（Tailwind CSS · 间距（--spacing 基数））
+- 参数：格圆角（rounded-xl） `p.radius` = 12px（Geist · Materials）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-frame
+
+### BENTO.SPANS 跨度取栅格整数
+
+用 CSS grid 分格，列数取 12 列栅格的约数（常用 3 列，即每格 4/12），格子跨度是整数列（col-span-2）；行高用统一基准；不给格子手写像素宽度。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（别这样做）：手写像素宽度拼格子
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-spans
+
+### BENTO.STAT 数字格一行写完
+
+数字格是一个大数字加一句短标签，数字和单位不换行（white-space: nowrap）；用真实数字，不用「10x」「无限」这类填充；数字紧跟标签或撑满格子，不要钉在高格底部、上面留一大片空。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-stat
+
+### BENTO.RESPONSIVE 窄屏重新排
+
+每格都读得清时才保留两列；手机宽度变单列，主角格在最前；按内容决定断点，不整体等比缩小；窄格里的界面画面重新取景，而不是缩小。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-responsive
+
+### BENTO.CLICK 可点的格整格可点
+
+一格对应一个去处时整格就是一个链接（a 或 button 包住整格），焦点环画在格上；格内不再放第二个去同一处的按钮；悬停反馈按卡片悬停的规则。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-bento-grid--bento-click
+
+## 设计模式/体验管理 / 状态反馈（SFB）
+
+每个数据视图都有完整的状态；反馈出现在动作发生的地方；确认的力度跟操作的分量走；乐观更新只用于可回滚的小操作；能撤销就不弹确认；长操作给进度；读屏能感知状态变化。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--overview
+
+### SFB.STATES 每个视图都有完整状态
+
+每个数据视图都设计并实现这些状态：加载中、空、出错、部分成功、正常，以及无权限和禁用；每种状态在 Storybook 里都能单独看到。空状态给下一步动作，出错给原因和恢复入口。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：同一个视图的五种状态——切换看每种状态：骨架保持内容的几何；空状态给动作；出错保留筛选并给重试；部分成功说清成功几条、失败的怎么办。
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「State Matrix：默认、加载、空、错误、权限、禁用、长文本和小屏等状态。」
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「hover、active、focus、disabled、loading、empty、error 状态完整。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-states
+
+### SFB.IN_PLACE 反馈出现在动作发生的地方
+
+按钮自己进入加载并在原位给出结果；字段错误挂在字段上；行内操作的结果出现在那一行；不把所有结果都弹到页面顶部，也不用一个轻提示处理所有错误。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 用一个 Toast 处理所有错误。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-in-place
+
+### SFB.WEIGHT 确认的力度跟操作的分量走
+
+轻操作（收藏、切换显示）就地变化，不弹提示；普通保存用 Toast 轻提示；会影响他人或不可逆的操作用结果页或带操作的 Toast；失败比成功更显眼，并且停留到用户处理。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-weight
+
+### SFB.OPTIMISTIC 乐观更新只用于可回滚的小操作
+
+点赞、标星、拖动排序这类成功率高、可回滚、影响范围小的操作可以先改界面再发请求，失败时回滚并就地说明；金额、库存、审批、权限这类以服务端结果为准，等返回再更新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：useMutation 的 onMutate / onError 回滚
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-optimistic
+
+### SFB.UNDO 能撤销就不弹确认
+
+可以撤销的删除、归档用「已删除 · 撤销」的提示代替二次确认；真正不可逆的操作才要确认，确认框说清后果（删掉什么、影响谁）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「删除、提交、转账等高风险动作必须提供复核、确认、撤销或等效防错」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-undo
+
+### SFB.PROGRESS 长操作给进度
+
+超过 1 秒的操作给加载反馈；预计超过 10 秒的给确定进度（百分比或步骤）和预计剩余时间，并允许离开当前页面：转为后台任务，完成后通知并能回到结果。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：需要加载反馈 `p.busy` = 1000ms（Nielsen Norman Group · Response Times: The 3 Important Limits）
+- 参数：需要确定进度 `p.determinate` = 10000ms（Nielsen Norman Group · Response Times: The 3 Important Limits）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「长任务异步执行并可恢复。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-progress
+
+### SFB.LIVE 读屏能感知状态变化
+
+异步结果和进度变化写进 aria-live 区（一般用 polite，阻断性错误用 assertive），不抢焦点；颜色不是唯一的信号，状态都有文字。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「动态状态、异步结果、进度变化必须可在不抢夺焦点的前提下被辅助技术识别」
+- 示例（这样做）：状态写进 live 区
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-state-feedback--sfb-live
+
+## 设计模式/体验管理 / 上下文管理（CTX）
+
+保住用户的位置（分页、筛选、滚动、选中）；未保存的内容有去处；就地操作与工具栏一致；当前位置始终可见；切换团队或身份时显式清理；代码里的上下文只放稳定的跨层依赖。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--overview
+
+### CTX.PRESERVE 保住用户的位置
+
+从列表进详情再返回，恢复原来的页码、筛选、排序、滚动位置和选中行（筛选与页码在 URL 里，滚动位置用路由的滚动恢复）；能在当前页完成的查看用侧边抽屉，不离开列表。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `context.restore`：实验：返回列表时恢复位置——翻到第 3 页、选中一行、打开详情再返回：正确做法回到原来的页和那一行；错误做法回到第 1 页。
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「返回恢复分页、筛选、排序和必要视图状态。」
+- 示例（这样做）：路由层恢复滚动位置
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-preserve
+
+### CTX.DRAFTS 未保存的内容有去处
+
+表单有改动时离开要提示（页内跳转和关闭页签都拦）；长表单自动保存草稿，草稿按用户隔离、带版本与过期时间，提交成功后清掉；失败的提交保留用户的输入。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「dirty 离开、草稿隔离和版本冲突有策略。」
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「提交防重复并保留失败输入。」
+- 示例（这样做）：离开前拦截
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-drafts
+
+### CTX.INLINE_ACTIONS 就地操作与工具栏一致
+
+行上的「更多」菜单、右键菜单里的操作与工具栏、详情页同名同图标；右键菜单只是快捷方式，不是唯一入口；批量操作出现在选中后的批量栏里，并显示选中了几条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-inline-actions
+
+### CTX.WAYFINDING 当前位置始终可见
+
+页面标题、导航高亮、面包屑三者一致并与路由同源；每个可分享的视图有深链接，打开深链接得到同样的视图（含筛选与标签页）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-wayfinding
+
+### CTX.SCOPE_SWITCH 切换团队或身份时显式清理
+
+团队、租户、环境的切换入口全局可见，当前作用域显示在顶部；切换后清掉旧作用域的查询缓存、草稿和订阅，回到新作用域下安全的页面，不把旧数据带到新作用域。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「用户、角色、组织和数据范围切换时清理风险缓存。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-scope-switch
+
+### CTX.PROVIDER 代码里的上下文只放稳定的跨层依赖
+
+React Context 只放跨多层、变化少的依赖（主题、当前团队、权限判断函数）；按关注点拆成多个 Context；Provider 的 value 用 useMemo 固定引用，避免整棵树重渲染；频繁变化的数据走 Zustand 选择器或查询缓存。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：固定 value 引用
+- 示例（别这样做）：每次渲染新建 value
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-context--ctx-provider
+
+## 设计模式/体验管理 / 侧边栏管理（SIDEBAR）
+
+宽度取规范值；收起后只留图标并有名字；收起状态按用户记住；窄屏变抽屉；当前项与路由同源；最多两级；分组按使用频率；自己滚动、底部固定；键盘可操作。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--overview
+
+### SIDEBAR.WIDTH 宽度取规范值
+
+侧边栏展开宽度 16rem、手机上的抽屉宽度 18rem（shadcn/ui Sidebar 的缺省值）；收起成图标栏的宽度由项目定；不按页面各自调宽度。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：展开宽度 `p.width` = 16rem（shadcn/ui · Sidebar）
+- 参数：手机抽屉宽度 `p.mobile_width` = 18rem（shadcn/ui · Sidebar）
+- 参数：收起宽度 `p.collapsed_width`：待项目决定——收起成图标栏时宽度取多少？（候选 3rem）
+- 演示：收起与展开——点按钮收起：只留图标，每项有名字；当前项保持高亮。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-width
+
+### SIDEBAR.COLLAPSE 收起与展开
+
+收起后只留图标，每项有 title 或 tooltip 显示名字；收起状态按用户记住（shadcn/ui Sidebar 用 sidebar_state Cookie，项目可换成偏好存储）；手机宽度下变成抽屉，点遮罩或按 Esc 关闭。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：记住收起状态的 Cookie `p.persist` = sidebar_state（shadcn/ui · Sidebar）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-collapse
+
+### SIDEBAR.ACTIVE 当前项与路由同源
+
+高亮哪一项由当前路由决定，不另存一份「选中项」状态；刷新后保持；子页面高亮它所属的一级项，父级自动展开。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/permission-and-authorization.md「菜单、路由、按钮、字段和接口使用同一权限语义。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-active
+
+### SIDEBAR.DEPTH 最多两级
+
+侧边栏最多两级；第三级用页内的标签页或二级导航，不在侧边栏里继续嵌套；只有一个子项的分组不展开，直接放这一项。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-depth
+
+### SIDEBAR.GROUPS 分组按使用频率
+
+菜单按任务分组、按使用频率排序，最常用的在上；分组标题不可点、不当链接；无权限的菜单项不显示（不显示禁用的菜单项让人猜）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-groups
+
+### SIDEBAR.SCROLL 自己滚动、底部固定
+
+侧边栏独立滚动，不跟着内容区滚；账户、设置、帮助固定在底部；当前项在可视区外时自动滚到可见。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-scroll
+
+### SIDEBAR.KEYBOARD 键盘可操作
+
+收起/展开用 Cmd/Ctrl + B（shadcn/ui Sidebar 的缺省快捷键），按钮提示里写出；菜单可以用 Tab 进入、方向键移动；收起展开后焦点留在切换按钮上。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：收起快捷键 `p.shortcut` = Mod+B（shadcn/ui · Sidebar）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-keyboard
+
+## 设计模式/体验管理 / 卡片悬停（HOVER）
+
+悬停只表示可点；幅度克制（边框或阴影升一级，不缩放）；不引起布局移动；键盘焦点的反馈不弱于悬停；触屏不依赖悬停；悬停才出现的操作不挤开内容；时长取 token。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--overview
+
+### HOVER.SIGNAL 悬停只表示可点
+
+只有可点的卡片做悬停效果；不可点的卡片悬停没有任何变化，避免让人以为能点。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：可点与不可点——把指针移到两张卡片上对比；用 Tab 键聚焦可点的那张。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-signal
+
+### HOVER.SUBTLE 幅度克制
+
+悬停时边框加深一档（gray-400 → gray-500）或阴影升一级；位移不超过 1px，不缩放卡片、不放大内容。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-subtle
+
+### HOVER.NO_SHIFT 不引起布局移动
+
+悬停不改卡片尺寸、不改边框宽度、不显示会挤开内容的元素；需要强调时用阴影、outline 或改变边框颜色，宽度不变。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（别这样做）：悬停加粗边框，整排卡片抖动
+- 示例（这样做）：只换颜色或加阴影
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-no-shift
+
+### HOVER.FOCUS_PARITY 焦点反馈不弱于悬停
+
+可点的卡片能用键盘聚焦（链接或按钮包住整卡，或 tabindex=0 并响应 Enter/空格）；:focus-visible 的反馈不弱于悬停，并且不被遮挡。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 移除焦点轮廓而无同等级可见替代。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-focus-parity
+
+### HOVER.TOUCH 触屏不依赖悬停
+
+悬停才显示的操作，在不支持悬停的设备上常显或放进「更多」菜单（用 @media (hover: hover) 区分）；关键信息不只放在悬停提示里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 仅通过颜色、hover 或 tooltip 传递关键信息。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-touch
+
+### HOVER.REVEAL 悬停出现的操作不挤开内容
+
+行或卡片上悬停才出现的操作占位预留（透明度从 0 到 1，不从无到有插入），键盘聚焦到行内时同样出现；离开后收起。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：悬停与聚焦都显示行操作——指针移到行上或用 Tab 聚焦到行内按钮，操作出现；在触屏设备上常显。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-reveal
+
+### HOVER.TIMING 时长取 token
+
+悬停过渡 150ms（Tailwind 缺省时长），离开同档；不额外加延迟（文字提示除外）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：悬停过渡 `p.duration` = 150ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-card-hover--hover-timing
+
+## 设计模式/体验管理 / 加载条（LBAR）
+
+选对加载形态；快的请求不显示加载条，出现后至少停留一会儿；不确定进度时缓慢推进、完成时补满；全局只有一条；有确切进度时显示百分比与剩余并能取消；读屏能感知。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--overview
+
+### LBAR.KIND 选对加载形态
+
+页面切换用顶部细加载条；区块首次加载用骨架（保持内容的几何）；按钮触发的操作用按钮自己的加载态；有确切进度的（上传、导出、导入）用确定进度条；不用整页转圈遮住已有内容。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「首屏骨架保持主要布局尺寸。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-kind
+
+### LBAR.DELAY 快的不显示，出现了停一会儿
+
+请求在延迟阈值内完成就不显示加载条，避免一闪；一旦显示，至少停留最短时长再淡出；两个值全局统一，在 HTTP 客户端或路由层实现，页面不各自写。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：出现延迟 `p.delay`：待项目决定——加载条延迟多少毫秒出现？（候选 100ms / 200ms / 300ms）
+- 参数：最短停留 `p.min_visible`：待项目决定——加载条出现后至少停留多少毫秒？（候选 300ms / 400ms / 500ms）
+- 实验 `loading.delay`：实验：加载条的延迟出现与最短停留——分别发一个快请求和一个慢请求：快的不出现加载条；慢的出现后至少停留一会儿再收起。打开「错误做法」看快请求让加载条一闪而过。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-delay
+
+### LBAR.TRICKLE 不确定进度时缓慢推进
+
+不知道总量时，加载条先快后慢地推进但停在 100% 之前；完成时补满并淡出；失败时也要收起，并在出错的位置给反馈。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-trickle
+
+### LBAR.SINGLE 全局只有一条
+
+页面级加载条全局只有一个，用计数管理：每个请求开始加一、结束减一，归零才收起；并发请求不各自起一条，也不互相提前收起。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「SHOULD 让 loading 来源唯一，避免重复状态。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-single
+
+### LBAR.DETERMINATE 确定进度显示百分比与剩余
+
+上传、导出、导入这类有确切进度的操作显示百分比和预计剩余时间，可以取消；超过 10 秒的转后台任务并在完成时通知（见 SFB.PROGRESS）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：确定进度：百分比、剩余时间、可取消
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-determinate
+
+### LBAR.A11Y 读屏能感知
+
+进度条带 role=progressbar 与 aria-valuenow（不确定进度时不写 valuenow，所在区域标 aria-busy）；完成和失败写进 aria-live 区。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-a11y
+
+## 设计模式/数据呈现 / 数据网格（DGRID）
+
+先分清表格与数据网格；列的对齐、冻结与宽度有规则；排序筛选在服务端并进 URL；跨页选择说清范围；大数据虚拟滚动；行内编辑可撤回；密度三档按用户记住；空与加载保持列结构。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--overview
+
+### DGRID.WHEN 表格还是数据网格
+
+只读、列不多、一屏看得完的列表用普通表格；需要列配置、冻结列、行内编辑、海量数据滚动、键盘逐格移动的用数据网格；同一个产品里数据网格只用一种实现。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：数据网格实现 `p.grid_library`：待项目决定——数据网格用哪个实现？（候选 TanStack Table + TanStack Virtual / AG Grid）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-when
+
+### DGRID.COLUMNS 列的对齐、冻结与宽度
+
+文本左对齐，数字和金额右对齐并用等宽数字，日期统一格式；首列（标识列）冻结在左、操作列冻结在右；列宽有最小值，内容超出时省略并能看全文；用户调整的列宽、顺序、显示的列按用户记住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：冻结首列与操作列，数字右对齐——横向滚动时首列与操作列保持可见；金额列右对齐、等宽数字。
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「表格、图表、弹层、焦点和状态随主题同步。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-columns
+
+### DGRID.SORT_FILTER 排序与筛选在服务端并进 URL
+
+数据量超过一页时排序和筛选由服务端完成；当前排序的列有标识、可以取消；筛选条件、排序、页码进 URL，刷新和分享后恢复；表头的列筛选与筛选条共享同一套条件。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「大列表服务端分页，宽表虚拟化。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「可分享和可恢复状态进入 URL。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-sort-filter
+
+### DGRID.SELECTION 跨页选择说清范围
+
+勾选只作用于本页时写明「已选本页 N 条」；需要选中全部结果时给「选择全部 M 条」的明确入口，批量操作按筛选条件在服务端执行，不在前端拉全量；翻页、筛选变化后说清选择是否保留。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-selection
+
+### DGRID.VIRTUAL 大数据虚拟滚动
+
+行数超过阈值时启用虚拟滚动，行高固定，表头与冻结列保持；不一次渲染全部行；滚动时不做重计算。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——多少行以上启用虚拟滚动？（候选 200 个 / 500 个）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-virtual
+
+### DGRID.EDIT 行内编辑可撤回
+
+单元格就地编辑：Enter 提交、Esc 取消、Tab 到下一格；校验错误挂在单元格上并能定位；保存失败回滚到原值并说明原因；有未保存的修改时离开要提示；批量粘贴先校验再提交。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「Field Error：可定位到字段/单元格的错误。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-edit
+
+### DGRID.DENSITY 密度三档按用户记住
+
+紧凑、默认、宽松三档（行高 32 / 40 / 48px，与按钮尺寸对齐），默认取中档，用户的选择按用户记住；同一页的多个表格用同一档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-density
+
+### DGRID.EMPTY_LOADING 空与加载保持列结构
+
+首次加载显示与真实行同高的骨架行，表头和列宽不变；重新查询时保留旧数据并标出「更新中」，不清空闪烁；空结果在表格内给原因和下一步（清除筛选、新建）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「SHOULD 在后台刷新时保留可用旧数据并标识 stale。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-empty-loading
+
+## 设计模式/数据呈现 / 图表（CHART）
+
+图表库全项目一个；按问题选图；配色取 token、不只靠颜色区分；坐标轴与单位写清，柱状图从 0 开始；提示给精确值与口径；空、加载、出错与列表一致；提供数据表替代；大数据降采样；随容器重绘、卸载时销毁。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--overview
+
+### CHART.LIBRARY 图表库全项目一个
+
+全项目只用一个图表库，经一个封装层（主题、空与出错态、尺寸监听、销毁）使用；图表库按需引入，不在应用入口同步加载。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：图表库 `p.library`：待项目决定——图表用哪个库？（候选 Recharts / visx / ECharts（按需引入））
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-library
+
+### CHART.CHOOSE 按问题选图
+
+先问图要回答什么：随时间的趋势用折线，类别之间比较用柱，构成用堆叠柱（饼图只在 5 类以内、强调占比时用），分布用直方图或箱线图，两个量的关系用散点；一张图只回答一个问题；需要精确值时直接给表格。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：饼图最多类别 `p.pie_max` = 5 个（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-choose
+
+### CHART.COLOR 配色取 token、不只靠颜色
+
+分类色取规范色板的顺序，系列数有上限，超出合并为「其他」；连续值用单色深浅，正负对比用发散色；状态色只表示状态；不只靠颜色区分系列（加图例、直接标注或线型），对比度满足要求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「颜色不得作为唯一信息来源」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-color
+
+### CHART.AXES 坐标轴与单位写清
+
+柱状图纵轴从 0 开始，折线图可以截断但要标明；单位写在轴标题或图注里；刻度 4 到 6 个，数字格式与数据格式规范一致（千分位、单位缩写）；时间轴按时间等距，不按数据点等距。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：纵轴从 0 开始、单位写在图注
+- 示例（别这样做）：柱状图纵轴从 40 开始，差距被放大
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-axes
+
+### CHART.TOOLTIP 提示给精确值与口径
+
+悬停显示该点的精确值、单位和口径说明，多系列时同一时刻的值放在一个提示里；图例可点击切换系列；触屏上点按显示提示；关键结论不只放在提示里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-tooltip
+
+### CHART.STATES 空、加载、出错与列表一致
+
+图表区域在加载、空、出错时保持尺寸不变：加载用骨架，空数据说明原因（时间范围内没有数据），出错给重试；不渲染一张空坐标轴冒充「没有数据」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 只处理页面背景而遗漏 portal/图表。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-states
+
+### CHART.A11Y 提供数据表替代
+
+每张图有一句话的文字摘要（aria-label 或图注），并能切换到数据表视图或下载数据；颜色之外还有文字或图形区分。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「SHOULD 为复杂图表、媒体提供数据表格、长描述或音频描述。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-a11y
+
+### CHART.PERF 大数据降采样
+
+点数超过阈值时先在服务端聚合或降采样；大量点用 canvas 渲染；聚合计算不放在主线程的渲染路径里；实时图表合并更新、按帧刷新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：单系列点数上限 `p.max_points`：待项目决定——单条折线最多渲染多少个点？（候选 1000 个 / 2000 个）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-perf
+
+### CHART.LIFECYCLE 随容器重绘、卸载时销毁
+
+图表跟随容器尺寸重绘（ResponsiveContainer 或 ResizeObserver，加防抖）；组件卸载时销毁实例并解除监听；主题切换时重新应用主题。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「状态拥有的监听器、计时器、观察器、请求、流、连接、Worker 和对象 URL 必须声明释放时机，并在卸载、身份切换或能力关闭时清理。」
+- 示例（这样做）：清理函数里销毁
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-lifecycle
+
+## 设计模式/数据呈现 / 报表（REPORT）
+
+报表结构固定（标题与口径、筛选、指标、明细）；口径与数据截至时间写清；筛选与对比期进 URL；合计与小计规则明确；数字格式统一；导出与页面同口径并受权限控制；打印有专门样式；大报表服务端聚合。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--overview
+
+### REPORT.STRUCTURE 报表结构固定
+
+从上到下：报表名称与数据截至时间、筛选与对比、关键指标、图表、明细表；每块都能单独加载和出错；同类报表结构一致，用户换一张报表不用重新学。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：标题与截至时间、筛选、指标、带合计的明细
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-structure
+
+### REPORT.DEFINITIONS 口径与截至时间写清
+
+每个指标都有口径说明（悬停或「口径」入口）：计算公式、包含与排除、统计时区；页面显示数据截至时间和数据延迟；口径变化时标出变化点，不把新旧口径的数据画成一条线。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-definitions
+
+### REPORT.FILTERS 筛选与对比期进 URL
+
+时间范围、维度筛选、对比期（环比、同比）进 URL，可分享可恢复；默认时间范围固定且写明；对比结果同时给绝对值和变化率。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「可分享和可恢复状态进入 URL。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-filters
+
+### REPORT.TOTALS 合计与小计规则明确
+
+合计行固定在明细底部（或顶部，全项目一致）；比率类指标的合计按分子分母重新计算，不对各行百分比求和或求平均；不同单位的值不相加；分组小计与总计的口径一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-totals
+
+### REPORT.NUMBERS 数字格式统一
+
+金额、数量、比率按数据格式规范输出：千分位、固定小数位、单位写在表头或指标名里、负数格式统一；空值显示「—」，和 0 区分开；数字右对齐、用等宽数字。
+
+- 执行：机器门禁 `format.no-local-pattern`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-numbers
+
+### REPORT.EXPORT 导出与页面同口径并受权限控制
+
+导出的数据与页面使用同一组筛选和口径，文件名带报表名与时间范围；大数据量导出走后台任务，给进度并在完成时通知；导出受权限控制并按规则脱敏，导出操作留审计。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 对复制、导出、打印功能实施权限控制与脱敏策略；高敏感字段导出需审计与额外授权。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-export
+
+### REPORT.PRINT 打印有专门样式
+
+需要打印的报表提供打印样式：去掉导航与交互控件，表头在每页重复，行不被分页截断，打印页脚写明报表名、筛选条件与截至时间。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：打印样式
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-print
+
+### REPORT.PERF 大报表服务端聚合
+
+聚合在服务端完成，前端只拿结果；明细分页或懒加载；同一报表的多个区块并行请求；结果可以缓存，页面显示缓存的生成时间并能手动刷新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-perf
+
 ## 工程规范 / 状态管理（STATE）
 
 每份状态先定属主再定存放处：服务端数据进 TanStack Query，跨页稳定状态进 Zustand，可分享的视图状态进 URL，表单用表单模型。
@@ -821,7 +1545,900 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「可被脚本读取的存储不得持久化 session identifier、refresh token、secret 或等价凭据」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-state--state-browser-storage
 
-## 待补的领域（117 个）
+## 工程规范 / 性能（PERF）
+
+先定预算；路由与重组件按需加载；组件与图标按需引入；大列表分页与虚拟化；输入防抖并丢弃过期响应；初始化请求并行；渲染里不做重计算；度量分清实验室与真实用户数据。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--overview
+
+### PERF.BUDGET 性能预算
+
+上线前定好预算：真实用户第 75 百分位 LCP ≤ 2.5 s、INP ≤ 200 ms、CLS ≤ 0.1（项目可以凭证据收紧）；首屏脚本体积和单个路由分包体积由项目定上限，构建时检查。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：LCP（p75） `p.lcp` = 2500ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：INP（p75） `p.inp` = 200ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：CLS（p75） `p.cls` = 0.1（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 参数：首屏脚本体积 `p.initial_js`：待项目决定——首屏脚本（压缩后）体积上限是多少 KB？
+- 参数：路由分包体积 `p.route_chunk`：待项目决定——单个路由分包（压缩后）体积上限是多少 KB？
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「定义首屏、包体、交互和核心页面预算。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-budget
+
+### PERF.LAZY_LOAD 按需加载
+
+路由一律懒加载（lazy 路由或 React.lazy）；图表、富文本编辑器、大表格等重组件在用到的页面里按需加载；应用入口不同步引入这些重型依赖。
+
+- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
+- 示例（这样做）：路由懒加载
+- 示例（别这样做）：入口同步引入图表库
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-lazy-load
+
+### PERF.ON_DEMAND_LIBRARY 组件库按需引入
+
+组件按文件引入（shadcn/ui 的组件本来就在 src/components/ui 下按文件存在）；lucide-react 按图标名具名引入，不整包引入或用动态名字查整个图标表。
+
+- 执行：机器门禁 `perf.no-full-library-import`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 示例（这样做）：具名引入图标
+- 示例（别这样做）：整包引入图标表
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-on-demand-library
+
+### PERF.LARGE_LISTS 大列表
+
+大列表走服务端分页、筛选、排序；行数多或列很多的表格用虚拟滚动（TanStack Virtual）；不用 map 一次渲染全量数据；列表项有稳定的 key。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——表格多少行以上启用虚拟滚动？（候选 200 个 / 500 个）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「大列表服务端分页，宽表虚拟化。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-large-lists
+
+### PERF.INPUT 输入与过期响应
+
+搜索、联想等随输入触发的请求做防抖，或用 useDeferredValue 让输入保持跟手；新请求发出时取消旧请求；过期的响应不覆盖新状态（查询 key 带上关键字时由查询缓存层处理）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-input
+
+### PERF.PARALLEL_INIT 并行初始化
+
+页面初始化需要的多个请求并行发出（多个 useQuery 天然并行，或 useQueries），或由后端聚合成一个；不在 useEffect 里串行等待彼此无关的请求，不造成请求瀑布。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
+- 示例（别这样做）：请求瀑布
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-parallel-init
+
+### PERF.COMPUTE 渲染计算
+
+渲染里不做复杂计算：派生值在渲染时直接算（轻量的）或用 useMemo（昂贵的）；对大数据全集的计算放到后端或 Web Worker；只订阅用到的状态（Zustand 选择器），避免整树重渲染。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 在 render 中执行复杂计算。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-compute
+
+### PERF.MEASURE 度量口径
+
+性能结论分清实验室数据和真实用户数据，记录设备、网络、浏览器、样本量和统计口径，放行看第 75 百分位；同一数据量下对比前后结果，不拿平均值或单次本地耗时下结论；用 React Profiler 定位重渲染。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「性能预算必须区分实验室数据与真实用户数据」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-measure
+
+## 工程规范 / 安全（SEC）
+
+不可信内容不进危险渲染；链接与跳转走白名单；状态变更请求带 CSRF 防护；不用 eval 一类动态执行；第三方脚本登记并校验完整性；前端隐藏不是鉴权；敏感值不出现在 URL、日志、埋点和剪贴板；跨窗口消息校验来源。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--overview
+
+### SEC.XSS 不可信内容不进危险渲染
+
+不用 dangerouslySetInnerHTML 渲染用户输入或接口返回的富文本；确实要渲染富文本时，经项目唯一的净化组件（白名单 sanitizer，如 DOMPurify）输出；不拼接 HTML 字符串。
+
+- 执行：机器门禁 `security.no-unsafe-html`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 使用 `v-html` / `innerHTML` / `dangerouslySetInnerHTML` 渲染不可信内容；富文本必须使用白名单 sanitizer。」
+- 示例（别这样做）：直接渲染接口返回的 HTML
+- 示例（这样做）：经净化组件
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-xss
+
+### SEC.LINKS 链接与跳转走白名单
+
+用户或接口提供的链接只接受 http、https、mailto 协议（拒绝 javascript:、data:）；登录后的回跳地址只接受站内相对路径；新窗口打开外链一律带 rel="noopener noreferrer"。
+
+- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 示例（这样做）：回跳地址只认站内路径
+- 示例（这样做）：外链
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-links
+
+### SEC.CSRF 状态变更请求带 CSRF 防护
+
+所有改变状态的请求（表单、AJAX、上传、批量操作）由 HTTP 客户端统一带上 CSRF token 和自定义请求头；token 不放 URL、不存进脚本可读的存储；业务代码不自己拼这些头。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 在表单提交、AJAX/Fetch、上传、批量操作、GraphQL mutation 中携带 CSRF token。」
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 让业务请求自行决定 CSRF/token 头格式。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-csrf
+
+### SEC.NO_EVAL 不用动态执行
+
+不用 eval、new Function、字符串形式的 setTimeout / setInterval，不用内联事件属性；生产环境按严格 CSP 部署（script-src 不含 'unsafe-inline' 和 'unsafe-eval'）。
+
+- 执行：机器门禁 `security.no-eval`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 部署 CSP，默认 `default-src 'self'`；脚本/样式/img/font/connect/frame 按业务最小白名单开放。」
+- 示例（别这样做）：字符串当代码执行
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-no-eval
+
+### SEC.THIRD_PARTY 第三方脚本登记并校验完整性
+
+第三方脚本、iframe、SDK 先登记（负责人、来源域、权限、数据范围、版本、撤除方式）再引入；从 CDN 加载的脚本带 SRI（integrity + crossorigin）；iframe 用 sandbox 收紧能力。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 加载无 SRI/无来源清单的第三方脚本或 iframe。」
+- 示例（这样做）：带完整性校验
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-third-party
+
+### SEC.AUTHZ_UI 前端隐藏不是鉴权
+
+按权限隐藏或禁用按钮、菜单只是体验；每个接口由后端强制鉴权；前端不拿全量敏感数据再自己过滤或用 CSS 藏起来，按权限脱敏由后端完成。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 用前端隐藏菜单或按钮替代后端鉴权。」
+- 硬规范依据：specs/hard/themes/security.md「MUST 后端返回字段按权限脱敏，前端不得获取全量敏感数据后再自行过滤或仅 CSS 隐藏。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-authz-ui
+
+### SEC.SENSITIVE 敏感值不外泄
+
+token、密码、身份证号这类敏感原值不写进 console、日志、埋点、错误上报、剪贴板、URL 和下载文件名；错误提示不暴露堆栈、内部路径和内部 ID。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 将敏感原值写入浏览器 console、日志、埋点、错误监控、剪贴板、URL、localStorage、下载文件。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-sensitive
+
+### SEC.POSTMESSAGE 跨窗口消息校验来源
+
+postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin 在白名单内，再按结构解析数据；收到的内容不进 eval 或 innerHTML。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST NOT 使用 `postMessage('*')` 或在跨窗口消息中直接执行 eval/innerHTML。」
+- 示例（这样做）：校验来源
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-postmessage
+
+## 工程规范 / 会话与凭据（SESSION）
+
+凭据放在脚本读不到的地方；Cookie 属性收紧；登录后换会话；空闲与绝对超时；敏感操作重新验证；静默刷新只试一次；登出全面清理并同步到所有标签页；非必要 Cookie 先征得同意。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--overview
+
+### SESSION.STORAGE 凭据放在脚本读不到的地方
+
+会话标识与刷新令牌放在 HttpOnly Cookie 里，由后端设置；短期访问令牌只放内存（模块变量或状态库里不持久化的字段）；不存进 localStorage、sessionStorage、IndexedDB，不放进 URL 和 URL 片段。
+
+- 执行：机器门禁 `security.no-token-storage`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 禁止将 session identifier、refresh token、access token、secret、密码等价凭据持久化到 localStorage/sessionStorage/IndexedDB（除非经安全 Owner 批准的短期例外）。」
+- 示例（别这样做）：令牌存进 localStorage
+- 示例（这样做）：令牌只放内存
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-storage
+
+### SESSION.COOKIE Cookie 属性收紧
+
+会话类 Cookie 一律 HttpOnly、Secure、SameSite（默认 Lax，跨站场景不需要时用 Strict），优先用 __Host- 前缀（必须 Secure、Path=/、不带 Domain）；Path 与 Domain 取最小范围；Cookie 里不放业务数据和个人信息；前端代码不读写会话 Cookie。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：SameSite `p.same_site`：待项目决定——会话 Cookie 的 SameSite 取 Lax 还是 Strict？（候选 Lax / Strict）
+- 参数：Cookie 名前缀 `p.prefix` = __Host-（MDN · Using HTTP cookies（Cookie 前缀与属性））
+- 硬规范依据：specs/hard/themes/security.md「MUST 使用双重提交 cookie 或同步器 token；token 必须每次会话/请求不可预测且由后端验证。」
+- 示例（这样做）：后端下发的会话 Cookie
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-cookie
+
+### SESSION.ROTATE 登录后换会话
+
+登录成功、切换租户、提升权限后由后端签发新的会话标识并作废旧的（防会话固定）；前端在这些时刻丢弃内存里的旧令牌和旧的 CSRF token，重新获取。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 在登录、切换租户、敏感操作后轮换 CSRF token。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-rotate
+
+### SESSION.TIMEOUT 空闲与绝对超时
+
+会话同时有空闲超时和绝对超时；空闲超时到期前提示「即将退出」并允许续期；超时后保存可恢复的现场（当前路由、未提交表单的草稿），重新登录后回到原处。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：空闲超时 `p.idle`：待项目决定——空闲多久自动退出？（候选 30 分钟 / 2 小时）
+- 参数：绝对超时 `p.absolute`：待项目决定——登录后最长多久必须重新登录？（候选 8 小时 / 24 小时）
+- 参数：到期提醒 `p.warn_before`：待项目决定——到期前多久提示？（候选 2 分钟 / 5 分钟）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-timeout
+
+### SESSION.STEP_UP 敏感操作重新验证
+
+修改密码、改绑手机、导出敏感数据、批量删除、审批这类高影响操作前要求重新验证身份（输入密码或二次验证），验证结果只对这一次操作有效。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 对导出、删除、审批、批量操作等高影响动作增加二次确认或后端 challenge。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-step-up
+
+### SESSION.REFRESH 静默刷新只试一次
+
+请求返回 401 时，HTTP 客户端用刷新令牌静默刷新一次（并发的 401 共用同一次刷新），成功后重放原请求；刷新失败就清理会话并带回跳地址去登录；刷新逻辑只在 HTTP 客户端里写一处。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 在 token 即将过期前使用 silent refresh 或显式重新认证，不得在 URL 中传递 token。」
+- 示例（这样做）：并发 401 共用一次刷新
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-refresh
+
+### SESSION.LOGOUT 登出全面清理并同步
+
+登出时调用后端注销接口，清空内存令牌、查询缓存、状态库、按用户隔离的存储、订阅、Worker 和长连接；用 BroadcastChannel 通知其他标签页同步登出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 实现统一登出：清除服务端会话、客户端内存 token、触发所有标签页/Worker 登出事件。」
+- 示例（这样做）：多标签页同步登出
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-logout
+
+### SESSION.CONSENT 非必要 Cookie 先征得同意
+
+统计、广告等非必要 Cookie 和本地存储在用户同意之前不写入；同意可以撤回，撤回后停止加载对应脚本并清理它写下的数据；必要 Cookie 在隐私说明里列明用途。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 在用户撤回同意或第三方 SDK 不再需要时停止加载并清理其状态/缓存。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-session--session-consent
+
+## 工程规范 / 防篡改与防劫持（TAMPER）
+
+前端的一切都可被篡改：价格、权限、状态以服务端为准；关键写请求防重放；传输全程 HTTPS 与 HSTS；页面不被别人嵌套（防点击劫持）；外链防反向标签页劫持；本地数据读回先校验；前端混淆不是安全措施。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--overview
+
+### TAMPER.SERVER_TRUTH 以服务端为准
+
+金额、价格、折扣、库存、权限、审批状态这类业务事实由服务端计算和判定；前端提交用户的意图（选了哪个商品、改成什么），不提交可被改写的结论（总价、是否有权限）；客户端校验只是体验，服务端再校验一遍。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 将客户端校验仅视为 UX 辅助，服务端校验为权威；前端仍需执行同步/异步校验以提升体验。」
+- 示例（别这样做）：提交前端算的总价
+- 示例（这样做）：只提交意图，总价由后端算
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-server-truth
+
+### TAMPER.REPLAY 关键写请求防重放
+
+支付、审批、转账这类关键写请求带一次性随机数和时间戳，由后端校验时效并拒绝重复；需要时对请求体签名（密钥不在前端代码里，由后端按会话下发短期签名凭据）；重放保护与幂等键一起使用。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：时间窗口 `p.window`：待项目决定——时间戳允许的偏差是多少？（候选 60 秒 / 300 秒）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-replay
+
+### TAMPER.TRANSPORT 传输全程 HTTPS
+
+全站 HTTPS 并启用 HSTS；页面不加载任何 HTTP 资源（无混合内容）；接口地址、WebSocket 地址都用 https / wss；证书错误不提供「继续访问」的旁路。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 配置 TLS 1.2+；HTTPS 页面不得加载 HTTP 资源（混合内容）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-transport
+
+### TAMPER.FRAMING 页面不被别人嵌套
+
+响应头设置 CSP frame-ancestors（或 X-Frame-Options），默认禁止被其他站点嵌入 iframe，防点击劫持；确需被嵌入的页面列出允许的来源。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 使用 `X-Frame-Options: DENY/SAMEORIGIN` 或 CSP `frame-ancestors` 防止点击劫持。」
+- 示例（这样做）：禁止被嵌入
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-framing
+
+### TAMPER.TABNABBING 外链防反向标签页劫持
+
+target=_blank 的链接一律带 rel="noopener noreferrer"；用 window.open 打开外部页面时传 noopener；不把 window.opener 交给外部页面。
+
+- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 示例（这样做）：window.open 带 noopener
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-tabnabbing
+
+### TAMPER.LOCAL_DATA 本地数据读回先校验
+
+从 localStorage、IndexedDB、URL 参数读回的数据当作不可信输入：校验结构、版本和所属用户，不符合就丢弃并回到默认值；不把本地数据当成权限或业务判定的依据。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「持久化状态必须区分用户/租户/环境命名空间，并在登出、权限收缩或版本不兼容时失效或迁移。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-local-data
+
+### TAMPER.OBFUSCATION 前端混淆不是安全措施
+
+代码混淆、禁用右键、反调试只能增加一点阅读成本，不能保护任何秘密：前端代码里不放密钥、内部接口凭据和不该给用户看到的规则；source map 不公开发布（随版本上传到错误监控并限制访问）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/observability-and-analytics.md「source map 与版本对应且受权限保护。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-obfuscation
+
+## 工程规范 / 健壮性（ROBUST）
+
+接口数据在边界按契约解析；渲染不怕空值与缺字段；每个请求有超时；离线和弱网有处理；非核心模块失败不影响主流程；界面承受重复与乱序；资源在卸载时清理；输入上限前端先拦。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--overview
+
+### ROBUST.PARSE 接口数据在边界按契约解析
+
+接口响应在 HTTP 客户端或接口层按契约 schema 解析（类型由 OpenAPI 生成，运行时用 zod 一类校验关键结构）；解析失败归为「契约错误」走错误处理，不把畸形数据交给组件去崩。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「传输成功与业务成功必须分别判断；HTTP 非成功状态、契约解析失败、取消、超时、离线和业务错误不得混为一类。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-parse
+
+### ROBUST.NULLS 渲染不怕空值与缺字段
+
+可选字段用可选链和明确的默认显示（「—」）；列表字段为空数组、null 或缺失时都能渲染；数字字段区分 0 与空；不在模板里写多层取值链而不设防。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：明确的空值显示
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-nulls
+
+### ROBUST.TIMEOUT 每个请求有超时
+
+HTTP 客户端给每个请求设超时（上传、导出等长请求单独设）；超时、取消、离线、服务端错误分别处理与提示；超时的请求不自动重发非幂等写操作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：请求超时（秒） `p.timeout`：待项目决定——普通请求的超时取多少秒？（候选 10 / 15 / 30）
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「HTTP Client 统一处理 base URL、认证、超时、取消、trace 和 envelope。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-timeout
+
+### ROBUST.OFFLINE 离线和弱网有处理
+
+监听 online / offline：离线时顶部提示并暂停轮询，已输入的内容不丢；恢复后重新校验数据新鲜度并重试读请求；页面从后台或前进后退缓存恢复时同样重新校验。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「页面必须兼容 `pagehide` / `pageshow`、可见性变化和 bfcache 恢复；恢复后重新校验连接、缓存、权限与数据新鲜度。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-offline
+
+### ROBUST.DEGRADE 非核心模块失败不影响主流程
+
+推荐位、统计 SDK、客服挂件、图表这类非核心模块失败时只在它自己的位置降级（隐藏或显示占位），不阻塞首屏和主流程；第三方 SDK 初始化失败静默降级并上报。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/observability-and-analytics.md「MUST NOT 让 SDK 初始化、遥测缓存或发送重试阻塞首屏、用户操作或错误恢复。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-degrade
+
+### ROBUST.REPEAT_ORDER 承受重复与乱序
+
+同一事件触发两次、响应乱序到达、组件重复挂载，界面状态都保持正确：请求结果写回前核对请求序号与上下文（见 ASYNC.LATEST），订阅与监听的数量有上限、不随重复挂载增长。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「重复进入、挂载、恢复或重试必须保持资源数量有界，并有自动化证据证明不会重复订阅或产生开放句柄。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-repeat-order
+
+### ROBUST.CLEANUP 资源在卸载时清理
+
+定时器、事件监听、订阅、观察器、WebSocket、对象 URL 在 useEffect 的清理函数里释放；路由离开和身份切换时取消进行中的请求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「路由离开、组件销毁、注销、切换账号/租户、权限变化和功能关闭必须清理对应资源与敏感上下文。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-cleanup
+
+### ROBUST.LIMITS 输入上限前端先拦
+
+长度、文件大小、文件类型、数量、数值范围的上限与后端契约一致，在前端先拦截并说清限制（还能输入多少字、最大 20 MB）；后端仍是最终校验。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「上传声明 multipart 字段、类型、大小、数量、文件名、校验阶段和安全错误。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-limits
+
+## 工程规范 / 报错管理（ERRH）
+
+错误归一成统一结构；按状态码分别处理；路由级与区块级错误边界，局部失败不白屏；全局兜底捕获并脱敏上报；文案说清发生了什么、怎么办；不吞错误；错误码到界面状态的映射只有一份。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--overview
+
+### ERRH.NORMALIZE 错误归一成统一结构
+
+HTTP 客户端把所有失败归一成一个结构：类别（网络、超时、取消、契约、业务、权限……）、稳定错误码、可显示的文案、traceId、是否可重试、字段错误、建议的恢复动作；页面只消费这个结构，不解析原始响应。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「将原始错误归一化为稳定 code、trace、fieldErrors、retryable 和 recoverAction。」
+- 示例（这样做）：统一的错误结构
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-normalize
+
+### ERRH.MAPPING 按状态码分别处理
+
+401 走静默刷新或去登录；403 显示无权限状态；404 显示资源不存在；409 给冲突解决（重新加载或比较合并）；422 把字段错误挂到字段；429 按 Retry-After 稍后重试；5xx 与网络错误显示可重试的错误；取消不提示。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「401、403、404、409、422、429、5xx 和网络错误分别处理。」
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「错误码到 UI 状态的映射必须维护在单一事实源 `outputs/frontend/10_planned/api-error-mapping.yaml`，并与契约版本同步。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-mapping
+
+### ERRH.BOUNDARY 局部失败不白屏
+
+路由级和区块级都有错误边界（ErrorBoundary 包住每个独立区块，路由用 errorElement）：一个区块渲染失败只替换这个区块并给重试，页面其余部分照常可用。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `error.boundary`：实验：区块级错误边界——让「回款趋势」区块出错：正确做法只有这一块显示错误并能重试；错误做法整页白屏。
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「分层设置错误边界，局部失败不得导致整页白屏。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-boundary
+
+### ERRH.GLOBAL 全局兜底捕获并脱敏上报
+
+注册 window.onerror 与 unhandledrejection（根组件外再包一层 ErrorBoundary），捕获到的错误先过滤敏感字段再上报，带 traceId、版本、路由；兜底只记录和提示，不吞掉错误继续假装正常。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 在前端异常捕获（Error Boundary、window.onerror、unhandledrejection）中过滤敏感字段后再上报监控。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-global
+
+### ERRH.MESSAGE 文案说清发生了什么、怎么办
+
+错误文案用用户的话说清发生了什么和下一步（重试、检查网络、联系管理员）；不显示堆栈、内部错误码原文和接口路径；需要反馈时给 traceId 方便复制；同一种错误全站同一句话。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/security.md「MUST 禁止在错误消息、Toast、Modal、URL、日志、监控 payload 中暴露 token、密码、PII、内部 ID。」
+- 示例（别这样做）：把原始错误抛给用户
+- 示例（这样做）：说清怎么办
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-message
+
+### ERRH.NO_SWALLOW 不吞错误
+
+catch 之后要么处理并告知用户，要么继续向上抛；不写空 catch，不只 console.log 了事；不用 try/catch 包住整段代码掩盖问题。
+
+- 执行：机器门禁 `error.no-empty-catch`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 吞掉字段错误、冲突或 TraceId。」
+- 示例（别这样做）：空 catch
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-no-swallow
+
+### ERRH.REPORT 上报可定位、不刷屏
+
+错误上报带版本、环境、页面、操作和 traceId，按去重键合并同类错误并采样；白屏、根组件渲染失败、接口失败率有告警；上报本身失败不影响用户操作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/observability-and-analytics.md「采集并分类运行错误、Promise rejection、资源失败、接口错误、白屏和根组件渲染失败」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-report
+
+## 工程规范 / 保护页（GUARD）
+
+每个路由声明访问要求；守卫集中在路由层；未登录去登录再回来；无权限与不存在有统一的页面；判定完成前不渲染受保护内容；会话过期保住现场；按钮级权限规则统一。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--overview
+
+### GUARD.DECLARE 每个路由声明访问要求
+
+路由定义的 handle（或路由配置的元数据）里声明这个页面要求什么：是否登录、权限码、功能开关、布局；没有声明的路由在开发期就报错，不默认放行。
+
+- 执行：机器门禁 `guard.route-meta`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
+- 示例（这样做）：路由声明访问要求
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-declare
+
+### GUARD.CENTRAL 守卫集中在路由层
+
+访问判定只在路由层做一次（根路由的 loader 或统一的守卫组件，读 handle 与当前会话、权限），页面组件不各自判断；直接输入地址打开的页面同样经过守卫。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `guard.route`：实验：保护页与回跳——以访客、只读成员、管理员身份打开受保护页面：访客去登录并在登录后回到原页面；只读成员看到无权限页；伪造的站外回跳地址被拒绝。
+- 硬规范依据：specs/hard/themes/permission-and-authorization.md「直达 URL 仍经过页面权限守卫。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-central
+
+### GUARD.LOGIN_REDIRECT 未登录去登录再回来
+
+未登录访问受保护页面时跳到登录页并带上当前地址作回跳；登录成功后回到原页面；回跳地址只接受站内相对路径（见 SEC.LINKS）；登录页本身不再要求登录。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-login-redirect
+
+### GUARD.FORBIDDEN 无权限与不存在有统一的页面
+
+无权限显示统一的 403 页（说明缺什么权限、找谁申请），资源不存在显示统一的 404 页（给返回列表的入口）；按安全要求，对不该知道存在与否的资源统一显示 404，不泄露它是否存在。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「401、403、404、500 和资源删除有统一路由策略。」
+- 硬规范依据：specs/hard/themes/security.md「MUST 对 401/403/404/409/422/429/5xx 分别处理，避免通过错误差异泄露权限/存在性信息。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-forbidden
+
+### GUARD.NO_FLASH 判定完成前不渲染受保护内容
+
+会话和权限还在确认时显示页面级加载，不先渲染受保护内容再跳走（避免闪现敏感信息）；权限数据随会话一次取回并缓存，路由切换时不重复拉取。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-no-flash
+
+### GUARD.EXPIRED 会话过期保住现场
+
+停留期间会话过期，下一次请求 401 时先静默刷新一次（见 SESSION.REFRESH）；仍失败就保存现场（路由与未提交的草稿）再去登录，登录后恢复；其他标签页同步处理。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-expired
+
+### GUARD.BUTTON 按钮级权限规则统一
+
+页面内的操作按同一套权限判断：没有权限的操作隐藏，或禁用并说明原因（全项目选一种并写明）；同一个操作在列表、详情、右键菜单里的权限判断一致；后端仍然校验。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：无权限操作的呈现 `p.mode`：待项目决定——无权限的操作是隐藏，还是禁用并说明原因？（候选 隐藏 / 禁用并说明原因）
+- 硬规范依据：specs/hard/themes/permission-and-authorization.md「SHOULD 对禁用动作展示只读原因。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-button
+
+## 工程规范 / 页面加载（PLOAD）
+
+路由分包并预取；首屏骨架保持布局；先框架后数据、核心优先；异步加载的边界给全加载、出错、超时；分包加载失败能自愈；不跳布局；字体与图片有加载策略。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--overview
+
+### PLOAD.SPLIT 路由分包并预取
+
+每个路由懒加载成独立分包（lazy 路由或 React.lazy）；导航链接在悬停或进入视口时预取目标路由；首屏只加载当前路由需要的代码。
+
+- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-split
+
+### PLOAD.SKELETON 首屏骨架保持布局
+
+首次加载用与真实内容同几何的骨架（同样的行高、列宽、卡片尺寸），不用整页转圈；骨架只覆盖还没到的区块，已经有的内容先显示。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「首屏骨架保持主要布局尺寸。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-skeleton
+
+### PLOAD.PROGRESSIVE 先框架后数据、核心优先
+
+页面框架（导航、标题、工具栏）立即出现；核心数据最先请求并渲染；图表、历史、推荐等非核心区块延后加载或进入视口再加载；多个区块的请求并行。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-progressive
+
+### PLOAD.ASYNC_BOUNDARY 异步边界给全加载、出错、超时
+
+Suspense 的 fallback 用区块骨架，外面包 ErrorBoundary 处理加载失败；数据加载给超时与重试入口。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：Suspense 外包错误边界
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-async-boundary
+
+### PLOAD.CHUNK_ERROR 分包加载失败能自愈
+
+发布新版本后旧分包不存在（动态 import 失败）时，识别分包加载错误，提示「有新版本」并刷新一次到目标地址；同一会话只自动刷新一次，避免循环。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-chunk-error
+
+### PLOAD.NO_SHIFT 不跳布局
+
+图片、广告位、异步区块预留尺寸（宽高或 aspect-ratio）；字体加载不引起明显跳动；新内容插在用户视线下方或由用户触发；累计布局偏移守住性能预算。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：CLS（p75） `p.cls` = 0.1（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-no-shift
+
+### PLOAD.ASSETS 字体与图片有加载策略
+
+字体用 font-display: swap 并只加载用到的字重；首屏大图预加载，其余图片懒加载（loading="lazy"）并给出响应式尺寸；图标走图标库的按需引入，不加载整套字体图标。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-assets
+
+## 工程规范 / 缓存（CACHE）
+
+分清每一层缓存的用途；每类数据定新鲜度；先显示旧数据、后台刷新；写后失效；按身份隔离；持久化只存可过期的非敏感数据；静态资源带指纹、入口页不缓存。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--overview
+
+### CACHE.LAYERS 分清每一层缓存
+
+HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；持久化缓存（localStorage、IndexedDB）只管偏好和离线需要的数据；Service Worker 只在明确需要离线时启用。同一份数据不在两层各缓存一份再手动同步。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「server state 由查询缓存层管理。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-layers
+
+### CACHE.FRESHNESS 每类数据定新鲜度
+
+每类查询明确 staleTime：字典、配置这类少变的长，列表、详情短，实时数据不缓存；缓存保留时间（gcTime）默认 5 分钟，按需调整；默认失败重试 3 次（指数退避），写操作不自动重试。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：缓存保留（gcTime 缺省） `p.gc_time` = 5 分钟（TanStack Query）
+- 参数：查询失败重试（缺省） `p.query_retry` = 3 个（TanStack Query）
+- 参数：字典新鲜度 `p.dict_stale`：待项目决定——字典类数据的 staleTime 取多少？（候选 30 分钟 / Infinity（手动失效））
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「每个缓存声明 key、参数、身份/权限隔离、stale、保留和失效规则。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-freshness
+
+### CACHE.SWR 先显示旧数据、后台刷新
+
+有缓存时先显示旧数据并标出「更新中」，后台刷新后替换；不在刷新时清空列表造成闪烁；用户正在编辑的数据不被后台刷新覆盖。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `state.query-cache`：实验：查询缓存与失效——切换筛选看缓存命中；让缓存过期后先显示旧数据再后台刷新；新建一条后对应的 key 失效并重新拉取。
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「SHOULD 在后台刷新时保留可用旧数据并标识 stale。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-swr
+
+### CACHE.INVALIDATE 写后失效
+
+每个写操作声明它影响哪些查询（失效矩阵），成功后精确失效这些 key；不靠全量刷新页面；乐观更新的回滚和失效配套使用（见 STATE.CACHE_KEYS）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「写操作定义依赖失效矩阵。」
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 成功后遗漏缓存刷新。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-invalidate
+
+### CACHE.ISOLATION 按身份隔离
+
+查询 key 与持久化 key 都带用户、租户、数据范围；登出、切换租户、权限收缩时清理对应缓存；不同身份不复用同一份缓存。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 多个用户、租户或权限范围复用未隔离的 key、数据库或缓存条目。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-isolation
+
+### CACHE.PERSIST 持久化只存可过期的非敏感数据
+
+写进浏览器的缓存登记用途、隔离 key、版本、大小和过期时间；读回先校验版本；不持久化接口的敏感数据和凭据；配额不足或写入失败时降级为只在内存里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「MUST NOT 无限期持久化草稿、文件、接口响应或敏感偏好。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-persist
+
+### CACHE.ASSETS 静态资源带指纹、入口页不缓存
+
+构建产物文件名带内容哈希并长缓存（immutable）；index.html 不缓存或每次校验（no-cache）；Service Worker 的缓存带版本，新版本激活时清理旧缓存。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「Service Worker 与 Cache API 必须限定作用域、版本化缓存、验证响应来源，并在发布和退出策略中清理过期内容。」
+- 示例（这样做）：入口页与静态资源的缓存头
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-assets
+
+## 工程规范 / 异步处理（ASYNC）
+
+请求可取消；只认最新一次的结果；无依赖的并行、部分失败要处理；重试只对幂等与可重试错误、指数退避；输入防抖、滚动节流；轮询会暂停会停止；每个 Promise 都有去处。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--overview
+
+### ASYNC.CANCEL 请求可取消
+
+请求接受 AbortSignal；重新输入、切换筛选、离开页面、组件卸载时取消进行中的请求；TanStack Query 会把 signal 传给 queryFn，接口层要接住它。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「查询可取消和丢弃过期响应。」
+- 示例（这样做）：把 signal 传下去
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-cancel
+
+### ASYNC.LATEST 只认最新一次的结果
+
+同一个视图的多次请求，只有最新一次的结果写进界面；写回前核对请求序号和当时的身份、租户、参数，旧的结果丢弃；已取消的请求不提示为错误。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `state.race`：实验：迟到的响应不写回——快速输入会发出多个请求，响应乱序到达；只有最新一次的结果写进列表。打开「错误做法」看旧结果覆盖新结果。
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「请求结果提交前必须验证身份、租户、权限、参数和请求版本，防止旧上下文结果写回。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-latest
+
+### ASYNC.PARALLEL 无依赖的并行、部分失败要处理
+
+彼此无关的请求并行发出；需要全部结果时用 Promise.all，允许部分失败时用 Promise.allSettled 并逐项呈现失败；不在循环里逐个 await 彼此无关的请求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：部分失败逐项呈现
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-parallel
+
+### ASYNC.RETRY 重试只对幂等与可重试错误
+
+只重试读请求和声明了幂等的写请求，且只在错误可重试时（网络错误、超时、5xx、429）；指数退避加随机抖动，有次数上限，服务端给了 Retry-After 就按它等；重试过程可以取消，用户能看到「正在重试」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：重试上限 `p.max_attempts`：待项目决定——最多重试几次？（候选 2 个 / 3 个）
+- 参数：起始间隔 `p.base_delay`：待项目决定——退避的起始间隔取多少毫秒？（候选 500ms / 1000ms）
+- 实验 `async.retry`：实验：重试与退避——调用一个时好时坏的接口：正确做法按指数退避重试、在上限内成功或明确失败；对不幂等的提交不自动重试。打开「错误做法」看立即重试把接口打爆。
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「重试必须服从幂等性、服务端 `Retry-After` 或受控退避，并能取消；取消或已被替代的请求不得提示为用户错误。」
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 对非幂等 mutation 默认自动重试。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-retry
+
+### ASYNC.DEBOUNCE 输入防抖、滚动节流
+
+随输入触发的查询做防抖；滚动、窗口尺寸变化、拖动这类高频事件做节流或合到动画帧；防抖和节流的间隔全项目统一。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
+- 参数：节流间隔 `p.throttle`：待项目决定——滚动节流间隔取多少毫秒？（候选 100ms / 16ms）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-debounce
+
+### ASYNC.POLLING 轮询会暂停会停止
+
+后台任务提交后轮询状态：间隔逐步加大，页面隐藏时暂停、回到页面时立即查一次，任务结束或离开页面时停止；能用服务端推送（SSE、WebSocket）就不轮询；同一任务只有一个轮询。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「页面隐藏、冻结或进入前进后退缓存时必须暂停无必要轮询和高频工作；恢复时重新验证数据新鲜度、连接状态和权限上下文。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-polling
+
+### ASYNC.NO_FLOATING 每个 Promise 都有去处
+
+每个 Promise 要么被 await，要么接上 catch 并处理；异步的事件处理器内部 try/catch，失败走错误处理；不留悬空的 Promise（失败会变成未处理的 rejection）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（别这样做）：悬空的 Promise
+- 示例（这样做）：失败有去处
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-no-floating
+
+## 工程规范 / 高并发（CONC）
+
+相同的在途请求合并；批量操作有并发上限；多个小请求合成批量接口；收到限流就退避排队；写冲突用版本号；实时推送重连退避、去重保序；高频更新合帧渲染。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--overview
+
+### CONC.DEDUP 相同的在途请求合并
+
+同一个查询 key 在途时，新的调用复用同一个请求，不重复发；组件各自用同一个查询，由查询缓存层负责合并（TanStack Query 天然按 key 去重）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `concurrency.pool`：实验：在途合并与并发上限——三个组件同时要同一份数据：合并成一个请求。批量上传 10 个文件：并发池最多同时 3 个。打开「错误做法」看重复请求和同时发出 10 个请求。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-dedup
+
+### CONC.LIMIT 批量操作有并发上限
+
+批量上传、批量导入、批量调用接口用并发池，同时进行的数量有上限，并显示整体进度；单项失败可以单独重试；不一次性发出全部请求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：并发上限 `p.pool`：待项目决定——批量请求的并发上限取多少？（候选 3 个 / 4 个 / 6 个）
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「请求并发安全。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-limit
+
+### CONC.BATCH 多个小请求合成批量接口
+
+要对很多对象做同一件事时调用批量接口，或在同一帧内把多个小请求合成一次；不在循环里逐条请求。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（别这样做）：循环里逐条请求
+- 示例（这样做）：批量接口
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-batch
+
+### CONC.RATE_LIMIT 收到限流就退避排队
+
+收到 429 时读取 Retry-After，在客户端排队等待后再发，界面提示「请求过多，稍后自动重试」；不立即重发，不让多个组件同时各自重试。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「409 返回冲突实体或重新获取方式；429 返回明确退避信息；5xx 不代表所有请求均可重试。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-rate-limit
+
+### CONC.VERSION 写冲突用版本号
+
+可编辑的资源带版本号（version、updatedAt 或 ETag），更新时一并提交；后端返回冲突时，给用户重新加载或比较合并的选择，不静默覆盖别人的修改。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「可编辑资源返回 version、updatedAt 或 ETag，并在更新命令携带预期版本。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-version
+
+### CONC.REALTIME 实时推送重连退避、去重保序
+
+WebSocket / SSE 断线后指数退避重连，重连后补拉断线期间的数据；消息按 messageId 去重、按序号保序；收到的消息先合并再渲染，不逐条触发整页更新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「必须定义鉴权、心跳、断线重连、重复、乱序、丢失、回放、完成终止和降级行为。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-realtime
+
+### CONC.RENDER 高频更新合帧渲染
+
+行情、日志、进度这类高频数据先进缓冲区，按动画帧（requestAnimationFrame）或固定间隔批量刷新界面；长列表虚拟化；不为每条消息触发一次状态更新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-render
+
+## 工程规范 / 防重复点击（CLICK）
+
+提交中锁住并显示加载；创建类写请求带幂等键；回车与按钮共用一把锁；刷新、点赞这类按钮节流或合并；重复导航不重复入栈；锁定期间有反馈；按钮锁只是体验，后端仍要幂等。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--overview
+
+### CLICK.LOCK 提交中锁住并显示加载
+
+点击提交后按钮立即进入加载（Button 的 loading）并拒绝再次触发，请求结束（成功或失败）后解锁；锁放在提交函数里（或用 mutation 的 isPending），不只靠按钮的禁用样式。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `click.guard`：实验：防重复点击——连点「提交订单」五次：正确做法只发出一个请求，并且带同一个幂等键；错误做法发出五个请求、创建五张订单。
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「提交防重复并保留失败输入。」
+- 示例（这样做）：用 mutation 的 isPending
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-lock
+
+### CLICK.IDEMPOTENCY 创建类写请求带幂等键
+
+创建订单、提交审批、发起支付这类写请求在表单打开时生成一个幂等键，提交和重试都复用它，成功后换新键；按钮锁只是体验保护，重复请求由后端按幂等键识别。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：幂等键请求头 `p.header` = Idempotency-Key（IETF HTTPAPI · The Idempotency-Key HTTP Header Field（草案））
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「前端按钮禁用和 loading 只是体验保护，不构成业务幂等。」
+- 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 用按钮 loading 代替后端幂等。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-idempotency
+
+### CLICK.ONE_PATH 回车与按钮共用一把锁
+
+表单的回车提交、按钮点击、快捷键都走同一个提交函数、共用同一把锁；不在两个地方各写一份提交逻辑。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-one-path
+
+### CLICK.THROTTLE 刷新、点赞这类按钮节流或合并
+
+刷新、点赞、收藏、切换这类可以重复触发的操作：刷新按钮在请求进行中不再发新的；点赞收藏先乐观改状态，连续点击只发最后一次的结果（防抖合并）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-throttle
+
+### CLICK.NAVIGATION 重复导航不重复入栈
+
+连续点击同一个导航入口不重复压入历史记录、不重复打开同一个详情抽屉或新窗口；打开新窗口的操作在窗口打开前锁住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-navigation
+
+### CLICK.FEEDBACK 锁定期间有反馈
+
+锁定期间按钮显示加载、文字说明正在做什么（「提交中…」），不静默吞掉点击；超过 1 秒还没结束的给出更明确的进度（见 SFB.PROGRESS）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-click-guard--click-feedback
+
+## 工程规范 / 原型转换（PROTO）
+
+BA 交来的 spec 与 HTML 原型拆成四层：业务事实、信息结构、交互意图原样保留，表现全部丢掉；表现里藏着的事实翻译成语义；冲突进提问；按规范重绘后用同一个抽取器做事实对账。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--overview
+
+### PROTO.LAYERS 拆成四层，只丢表现
+
+原型按四层读：业务事实（字段、操作、状态、有业务含义的文案）原样保留；信息结构（页面、区域、分组、顺序、主次）保留关系；交互意图（点什么打开什么、提交前校验、删除要确认）保留意图；表现（样式、栅格、间距、字体、组件长相）全部丢掉，由规范重新给出。不同 BA 写的原型结构与风格各不相同，读的是这四层，不是某一种写法。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 对照表「哪些保留、哪些丢掉」（原型里的内容 → 用途）：
+  - `字段：标签、类型、必填、枚举值、校验、默认值、格式、能否编辑`：业务事实 · 原样保留
+  - `操作：按钮与链接的文字、要求的权限、前置条件、是否二次确认`：业务事实 · 原样保留
+  - `状态值与流转、有业务含义的文案（提示条、错误、空状态说明）`：业务事实 · 原样保留
+  - `页面清单与页面类型、区域、字段分组与先后顺序、主次`：信息结构 · 保留关系
+  - `页面之间与区域之间的跳转：点行开详情、新增开弹窗、返回`：交互意图 · 保留意图
+  - `class、内联样式、颜色、字体、字号、间距、圆角、阴影`：表现 · 全部丢掉，改用规范 token
+  - `栅格列数、像素宽度、组件库与组件长相、图标库`：表现 · 全部丢掉，改用规范组件
+  - `红字表示逾期、星号表示必填、删除线表示作废、右对齐表示金额`：表现里藏着的事实 · 翻译成语义再保留
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-layers
+
+### PROTO.EXTRACT 去表现化抽取
+
+用 pomaster prototype ingest 读原型：JS 渲染的页面先在浏览器里渲染再读（表格行、弹窗内容常常是脚本生成的）；隐藏的弹窗、抽屉也读，标为条件区域；丢掉 class、style、纯布局的包裹层，只留标题层级、地标、区域、字段、操作、表格（表头与示例行）、标签页、提示文字和状态值；每条事实带出处（文件、节点路径、文本指纹）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 实验 `prototype.convert`：实验：原型转换与事实对账——左边是一份样式很乱的原型片段；点「抽取」得到去掉表现后的大纲与事实清单；「对账」把按规范重绘的版本再抽一次，逐条比较。打开「错误做法」看重绘时漏掉一个字段、改掉一个选项后对账报出的差异。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-extract
+
+### PROTO.TRANSLATE 表现里藏着的事实翻译成语义
+
+表现里带业务含义的部分翻译成语义再保留，不照抄样子：标签旁的星号 → 必填；红色或绿色的状态文字 → 状态值与它的语气（危险、成功）；删除线 → 作废或删除状态；右对齐的数字列 → 数值列与格式；初始禁用的按钮 → 启用条件（要选中行才能用）；垃圾桶图标 → 删除意图；固定在左右的列 → 冻结列。颜色值、像素、字体名一律不带进实现。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-translate
+
+### PROTO.SPEC_FACTS spec 里读业务规则
+
+spec 按结构读而不是按格式读：字段表（中文名、英文名、类型、必填、编辑权限、枚举）、SHALL / MUST / 必须 一类规则句、枚举与默认值、状态流转、交互说明表、权限与角色表；每条带章节出处。读不出结构的段落原文保留为待确认的说明，不猜。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-spec-facts
+
+### PROTO.CONFLICTS 冲突进提问，不自己挑
+
+spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范冲突（例如原型每页 1000 条而规范上限 200 条）、原型里有 spec 没写的操作，都进 Question Gate 由人裁决；在裁决之前的默认口径：业务规则以 spec 为准，信息结构以 HTML 为准，呈现以本规范为准，并把这个默认写进提问里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-conflicts
+
+### PROTO.MAP 映射到规范，记下依据
+
+页面类型映射到规范的页面模板（列表、详情、表单、看板、向导），区域映射到规范的模式（筛选条、数据列表、描述列表、抽屉、分步表单……），元素映射到规范组件；每个映射在 UX 中间表示里记下依据的规则编号，后来的人和 agent 能复查。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-map
+
+### PROTO.REBUILD 按规范重绘
+
+重绘时布局、间距、字号、颜色、组件全部来自本规范的 token 与组件；不复制原型的 class、内联样式、字体、颜色值、栅格列数和像素宽度；原型里的分组、顺序、主次和文案保留。原型用了另一套组件库或 CDN 引入的样式框架，实现里都不出现。
+
+- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-rebuild
+
+### PROTO.VERIFY 用同一个抽取器做事实对账
+
+重绘完成后，用同一个抽取器读重绘后的页面，与事实清单逐条比较：缺失、改动、新增都为零（确需新增的事实走提问记录），同时规范门禁通过，才算转换完成；对账结果作为 verify 的证据。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-verify
+
+## 待补的领域（116 个）
 
 - 组件/通用 / 分裂按钮（`split_button`，前缀 CMP.SPLIT_BUTTON）：一个默认动作加一组相近的动作。；对应组件 antd Dropdown.Button，geist Split Button
 - 组件/通用 / 复制按钮（`copy_button`，前缀 CMP.COPY_BUTTON）：把一段文字复制到剪贴板并给出反馈。；对应组件 antd Typography.copyable，geist Copy Button、Text With Copy Button
@@ -939,7 +2556,6 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - 设计模式/原则 / 即时反应（`reaction`，前缀 REACT）：输入时即时反应。
 - 设计模式/模板文档 / 数据可视化页（`visualization_page`，前缀 VIZ）：先定页面类型；版面布局；选对图表、讲清口径。
 - 设计模式/模板文档 / 详情页（`detail_page`，前缀 DETAIL）：按复杂度选布局；信息平铺；分隔方式对应层级；流程操作放页脚。
-- 工程规范 / 性能（`performance`，前缀 PERF）：先定预算；按需加载；大列表分页与虚拟化；输入防抖；并行初始化；渲染里不做重计算；度量分清口径。
 
 ## 出处
 
@@ -967,3 +2583,10 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - `SRC.POMASTER.STACK_DECISION` 项目选型决策（Owner 2026-11-06：服务端数据用 TanStack Query，全局 store Vue 用 Pinia、React 用 Zustand）：repo:docs/design-standard.md（核实 2026-11-06）
 - `SRC.POMASTER.UI_SPEC` pomaster 主题硬规范 · UI 呈现与设计：repo:packages/cli/seeds/specs/hard/themes/ui-presentation-and-design.md（核实 2026-11-02）
 - `SRC.POMASTER.PRESET` pomaster 预设约定（Geist 体系）：repo:packages/cli/seeds/design-standards/geist.yaml（核实 2026-11-06）
+- `SRC.STAGESHOW` Stageshow（Benji Taylor 的 agent skill，MIT）：https://github.com/benjitaylor/skills/tree/main/stageshow（核实 2026-11-06）
+- `SRC.AFFECTUI` affectUI（Florian Höller 的 React 组件库，MIT）：https://github.com/flohoeller/affectui（核实 2026-11-06）
+- `SRC.NNG.RESPONSE_TIMES` Nielsen Norman Group · Response Times: The 3 Important Limits：https://www.nngroup.com/articles/response-times-3-important-limits/（核实 2026-11-06）
+- `SRC.MDN.COOKIES` MDN · Using HTTP cookies（Cookie 前缀与属性）：https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies（核实 2026-11-06）
+- `SRC.IETF.IDEMPOTENCY_KEY` IETF HTTPAPI · The Idempotency-Key HTTP Header Field（草案）：https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/（核实 2026-11-06）
+- `SRC.SHADCN.SIDEBAR` shadcn/ui · Sidebar：https://ui.shadcn.com/docs/components/sidebar（核实 2026-11-06）
+- `SRC.POMASTER.PERF_SPEC` pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）：repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md（核实 2026-11-06）

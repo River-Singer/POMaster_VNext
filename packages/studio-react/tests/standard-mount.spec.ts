@@ -90,9 +90,9 @@ function click(root: HTMLElement, text: string, scope?: string): void {
 }
 
 describe("Geist 规范 · 领域页挂载", () => {
-  it("生成的 story 文件齐全：总览 + 骨架里的 128 个领域", () => {
+  it("生成的 story 文件齐全：总览 + 骨架里的 151 个领域", () => {
     expect(Object.keys(modules).length).toBe(model.areas.length + 1);
-    expect(model.areas.length).toBe(128);
+    expect(model.areas.length).toBe(151);
   });
 
   model.areas.forEach((area: any, index: number) => {

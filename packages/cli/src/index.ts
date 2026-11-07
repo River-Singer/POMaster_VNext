@@ -326,6 +326,7 @@ import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
 import { runDesignShow, runDesignValidate } from "./design.js";
+import { runPrototypeDiff, runPrototypeIngest } from "./prototype.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -1002,6 +1003,8 @@ export {
 export type { CaptureSourceSnapshotInput, RunSourceStabilityJudgment } from "./source-snapshot.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runDesignValidate, runDesignShow, resolveDesignInputs, loadDesignStandard, formatDesignParam } from "./design.js";
+export { runPrototypeIngest, runPrototypeDiff, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
+export { parseHtml, outlineOf, factsOf, specFactsOf, questionsOf, diffFacts, extractPrototype, outlineMarkdown } from "./prototype-extract.js";
 export type {
   DesignInputs,
   DesignSourceMode,
@@ -2992,6 +2995,46 @@ export function createProgram(
         ...(opts.rule !== undefined ? { rule: opts.rule as string } : {}),
       });
       record({ command: "design show", outcome, asJson: command.opts().json === true });
+    });
+
+  // —— 原型转换：BA 的 spec + HTML → 业务事实与信息结构 → 按设计规范重绘 → 事实对账 ——
+  const prototype = program
+    .command("prototype")
+    .description(
+      "原型转换（设计规范「工程规范 / 原型转换」）：ingest = 读 BA 交来的 HTML 原型与 spec，去掉表现（样式、栅格、字体、组件长相），抽出业务事实、信息结构与交互意图，对出冲突；diff = 用同一个抽取器读按规范重绘后的页面，与事实清单逐条对账",
+    );
+  prototype
+    .command("ingest")
+    .description("抽取原型：写出大纲（outline.md/json）、事实清单（facts.json）、冲突（questions.json）、UX 中间表示草稿（ux-ir.json）。错误码：PROTOTYPE_INPUT_MISSING / PROTOTYPE_INPUT_NOT_FOUND；警告：PROTOTYPE_RENDER_UNAVAILABLE / PROTOTYPE_RENDER_SCRIPT_ERROR")
+    .argument("<html...>", "HTML 原型文件（可多个）")
+    .option("--spec <file>", "spec 文档（Markdown，可重复）", collectValues)
+    .option("--name <name>", "工作区名字（缺省取第一个 HTML 的文件名）")
+    .option("--out <dir>", "输出目录（缺省 .pomaster/prototype/<名字>/）")
+    .option("--render", "用 Playwright 渲染后再读（脚本生成的表格行、导航、弹窗内容）")
+    .option("--allow-network", "渲染时允许联网（缺省断网，常见 CDN 全局打桩）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (html: string[], opts, command) => {
+      const outcome = await runPrototypeIngest(resolveDir(command), {
+        html,
+        ...(opts.spec !== undefined ? { spec: opts.spec as string[] } : {}),
+        ...(opts.name !== undefined ? { name: opts.name as string } : {}),
+        ...(opts.out !== undefined ? { out: opts.out as string } : {}),
+        render: opts.render === true,
+        allowNetwork: opts.allowNetwork === true,
+      });
+      record({ command: "prototype ingest", outcome, asJson: command.opts().json === true });
+    });
+  prototype
+    .command("diff")
+    .description("事实对账：重绘后的页面与 facts.json 逐条比较（缺失 / 改动 / 新增 / 顺序），有阻断差异时失败。错误码：PROTOTYPE_FACTS_NOT_FOUND / PROTOTYPE_FACTS_UNREADABLE / PROTOTYPE_FACTS_SCHEMA / PROTOTYPE_INPUT_NOT_FOUND / PROTOTYPE_FACT_MISSING / PROTOTYPE_FACT_CHANGED / PROTOTYPE_FACT_ADDED / PROTOTYPE_FACT_REORDERED")
+    .argument("<facts>", "facts.json 或 ingest 的输出目录")
+    .argument("<html...>", "重绘后页面的 HTML（渲染后另存的 DOM，或加 --render 直接读）")
+    .option("--render", "用 Playwright 渲染后再读")
+    .option("--allow-network", "渲染时允许联网")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (facts: string, html: string[], opts, command) => {
+      const outcome = await runPrototypeDiff(resolveDir(command), { facts, html, render: opts.render === true, allowNetwork: opts.allowNetwork === true });
+      record({ command: "prototype diff", outcome, asJson: command.opts().json === true });
     });
 
   // —— Agent Behavioral Eval（PRD §44.10；§94.3 触发面配套） ——

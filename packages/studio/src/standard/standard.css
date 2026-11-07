@@ -1288,6 +1288,81 @@
     color: var(--std-red-900);
   }
 
+  .std-lab-list-item--selected {
+    background: var(--std-blue-100);
+  }
+
+  /* 加载条实验：页面顶部的细加载条。 */
+  .std-lab-progress {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--std-gray-100);
+  }
+
+  .std-lab-progress-bar {
+    display: block;
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--std-blue-900);
+    transition: width 0.2s ease-out;
+  }
+
+  .std-lab-progress[data-visible="false"] .std-lab-progress-bar {
+    transition: none;
+  }
+
+  /* 错误边界实验：一页里的几个独立区块；整页白屏。 */
+  .std-lab-blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .std-lab-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 88px;
+    padding: 12px;
+    border: 1px solid var(--std-line);
+    border-radius: 6px;
+    background: var(--std-bg);
+    font-size: 13px;
+  }
+
+  .std-lab-block--error {
+    border-color: var(--std-red-100);
+  }
+
+  /* 原型转换实验：原型片段按它自己的样子显示（它的内联样式就是要丢掉的表现）。 */
+  .std-lab-prototype {
+    overflow: auto;
+    max-height: 360px;
+    padding: 12px;
+    border: 1px solid var(--std-line);
+    border-radius: 6px;
+    background: var(--std-bg);
+  }
+
+  .std-lab-crash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 120px;
+    border: 1px dashed var(--std-line);
+    border-radius: 6px;
+    background: var(--std-bg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .std-lab-progress-bar {
+      transition: none;
+    }
+  }
+
   .std-lab-switch {
     display: inline-flex;
     align-items: center;

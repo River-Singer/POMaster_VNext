@@ -70,10 +70,30 @@ export const CHECK_TITLES = {
   "perf.lazy-load": "路由与重组件按需加载",
   "perf.no-full-library-import": "组件库按需引入",
   "format.no-local-pattern": "日期数字走格式化注册表",
+  "motion.transform-only": "过渡只动 transform 与透明度",
+  "motion.reduced-motion": "关键帧动画有减少动效分支",
+  "security.no-unsafe-html": "不进危险渲染",
+  "security.safe-link": "外链与跳转安全",
+  "security.no-eval": "不用动态执行",
+  "security.no-token-storage": "凭据不进浏览器存储",
+  "error.no-empty-catch": "不吞错误",
+  "guard.route-meta": "路由声明访问要求",
 };
 
 /** 实验编号（与 CLI DESIGN_LABS 对账；src/standard/labs.ts 逐个实现）。 */
-export const LAB_IDS = ["state.url-filters", "state.query-cache", "state.race"];
+export const LAB_IDS = [
+  "state.url-filters",
+  "state.query-cache",
+  "state.race",
+  "context.restore",
+  "loading.delay",
+  "error.boundary",
+  "guard.route",
+  "async.retry",
+  "concurrency.pool",
+  "click.guard",
+  "prototype.convert",
+];
 
 const DESIGN_SYSTEM_TITLES = { antd: "Ant Design", geist: "Vercel Geist" };
 /** 分区 → 中文标题（与 CLI DESIGN_AREA_GROUPS 对账）。Storybook 侧栏路径即「规范/<标题>/<领域>」。 */
@@ -89,6 +109,8 @@ export const GROUP_TITLES = {
   "patterns.global": "设计模式/全局规则",
   "patterns.principles": "设计模式/原则",
   "patterns.templates": "设计模式/模板文档",
+  "patterns.experience": "设计模式/体验管理",
+  "patterns.data": "设计模式/数据呈现",
   engineering: "工程规范",
 };
 const SURFACES = ["admin", "public"];

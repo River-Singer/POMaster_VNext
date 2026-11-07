@@ -313,9 +313,9 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
       // 总文件数 = 41 + 71 + 19 + 1 + 1 + 1（B6H 增 h5 overlay 页；六类页面分母：S5 增 Database Struct 占位分区；
-      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 129（总览 1 + 统一骨架的 128 个领域，
-      // 含待补；设计规范预设与骨架同源生成）= 263。
-      expect(a.size).toBe(263);
+      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 152（总览 1 + 统一骨架的 151 个领域，
+      // 含待补；设计规范预设与骨架同源生成）= 286。
+      expect(a.size).toBe(286);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;
