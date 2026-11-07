@@ -1790,7 +1790,7 @@ areas:
           - kind: do
             title_zh: 危险项分隔在最后
             jsx: |-
-              <ul role="menu" className="m-0 w-44 list-none rounded-xl border border-ds-gray-400 bg-ds-background-100 p-1 text-copy-14 shadow-md"><li role="menuitem" className="rounded-md px-3 py-1.5">编辑</li><li role="menuitem" className="rounded-md px-3 py-1.5">复制为新车辆</li><li role="separator" className="my-1 h-px bg-ds-gray-400" /><li role="menuitem" className="rounded-md px-3 py-1.5 text-ds-red-700">删除</li></ul>
+              <DropdownMenu><DropdownMenuTrigger asChild><Button size="small" variant="secondary">更多操作</Button></DropdownMenuTrigger><DropdownMenuContent className="w-44" align="start"><DropdownMenuItem>编辑</DropdownMenuItem><DropdownMenuItem>复制为新车辆</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem variant="destructive">删除</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
 
       - id: CMP.DROPDOWN.SIZE
         title_zh: 菜单不宜过长
@@ -1889,7 +1889,7 @@ areas:
           - kind: do
             title_zh: 平级视图
             jsx: |-
-              <div role="tablist" className="flex w-[420px] gap-4 border-b border-ds-gray-400 text-label-14"><span role="tab" aria-selected="false" className="pb-2 text-ds-gray-900">基本信息</span><span role="tab" aria-selected="true" className="border-b-2 border-ds-gray-1000 pb-2 text-ds-gray-1000">维修记录（3）</span><span role="tab" aria-selected="false" className="pb-2 text-ds-gray-900">费用</span></div>
+              <Tabs defaultValue="repair" className="w-[420px]"><TabsList><TabsTrigger value="base">基本信息</TabsTrigger><TabsTrigger value="repair">维修记录（3）</TabsTrigger><TabsTrigger value="cost">费用</TabsTrigger></TabsList></Tabs>
 
       - id: CMP.TABS.URL
         title_zh: 当前标签进 URL
@@ -1915,7 +1915,7 @@ areas:
           - kind: do
             title_zh: 竖排与全选
             jsx: |-
-              <fieldset className="flex flex-col gap-2"><legend className="mb-1 text-label-14 text-ds-gray-1000">通知</legend><label className="flex items-center gap-2 text-copy-14"><input type="checkbox" defaultChecked /> 保养到期</label><label className="flex items-center gap-2 text-copy-14"><input type="checkbox" /> 保险到期</label><label className="flex items-center gap-2 text-copy-14"><input type="checkbox" defaultChecked /> 年检到期</label></fieldset>
+              <fieldset className="flex flex-col gap-2"><legend className="mb-1 text-label-14 text-ds-gray-1000">通知</legend><div className="flex items-center gap-2"><Checkbox id="notify-all" checked="indeterminate" /><Label htmlFor="notify-all">全部通知</Label></div><div className="flex flex-col gap-2 pl-6"><div className="flex items-center gap-2"><Checkbox id="notify-maint" defaultChecked /><Label htmlFor="notify-maint">保养到期</Label></div><div className="flex items-center gap-2"><Checkbox id="notify-ins" /><Label htmlFor="notify-ins">保险到期</Label></div><div className="flex items-center gap-2"><Checkbox id="notify-check" defaultChecked /><Label htmlFor="notify-check">年检到期</Label></div></div></fieldset>
 
       - id: CMP.CHECKBOX.INDETERMINATE
         title_zh: 全选有半选态
@@ -2090,7 +2090,7 @@ areas:
           - kind: demo
             title_zh: 表单里的单选与切换视图的按钮样式
             jsx: |-
-              <div className="flex w-80 flex-col gap-4"><fieldset className="flex flex-col gap-2"><legend className="mb-1 text-label-14 text-ds-gray-1000">可见范围</legend><label className="flex items-center gap-2 text-copy-14"><input type="radio" name="scope" defaultChecked /> 仅本人可见</label><label className="flex items-center gap-2 text-copy-14"><input type="radio" name="scope" /> 本部门可见</label></fieldset><div className="inline-flex w-fit rounded-md border border-ds-gray-400 p-0.5 text-label-13"><span className="rounded px-3 py-1 text-ds-gray-900">日</span><span className="rounded bg-ds-gray-200 px-3 py-1 text-ds-gray-1000">周</span><span className="rounded px-3 py-1 text-ds-gray-900">月</span></div></div>
+              <div className="flex w-80 flex-col gap-4"><fieldset className="flex flex-col gap-2"><legend className="mb-1 text-label-14 text-ds-gray-1000">可见范围</legend><RadioGroup defaultValue="self"><div className="flex items-center gap-2"><RadioGroupItem value="self" id="scope-self" /><Label htmlFor="scope-self">仅本人可见</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="team" id="scope-team" /><Label htmlFor="scope-team">本部门可见</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="all" id="scope-all" /><Label htmlFor="scope-all">全公司可见</Label></div></RadioGroup></fieldset><div className="inline-flex w-fit rounded-md border border-ds-gray-400 p-0.5 text-label-13"><span className="rounded px-3 py-1 text-ds-gray-900">日</span><span className="rounded bg-ds-gray-200 px-3 py-1 text-ds-gray-1000">周</span><span className="rounded px-3 py-1 text-ds-gray-900">月</span></div></div>
 
       - id: CMP.RADIO.DEFAULT
         title_zh: 给安全的默认值
@@ -2116,7 +2116,7 @@ areas:
           - kind: demo
             title_zh: 可搜索的选择器与禁用原因
             jsx: |-
-              <div className="flex w-72 flex-col gap-1.5"><Label htmlFor="model">车型</Label><select id="model" className="h-9 rounded-md border border-ds-gray-400 bg-ds-background-100 px-3 text-copy-14 text-ds-gray-1000" defaultValue=""><option value="" disabled>选择车型</option><option value="M01">轻型厢式货车</option><option value="M02">中型栏板货车</option><option value="M09" disabled>重型牵引车（已停用）</option></select></div>
+              <div className="flex w-72 flex-col gap-1.5"><Label htmlFor="model">车型</Label><Select><SelectTrigger id="model" className="w-full"><SelectValue placeholder="选择车型" /></SelectTrigger><SelectContent><SelectItem value="M01">轻型厢式货车</SelectItem><SelectItem value="M02">中型栏板货车</SelectItem><SelectItem value="M09" disabled>重型牵引车（已停用）</SelectItem></SelectContent></Select></div>
 
       - id: CMP.SELECT.OPTIONS
         title_zh: 选项短、互斥、有序
@@ -2380,7 +2380,7 @@ areas:
           - kind: do
             title_zh: 禁用原因
             jsx: |-
-              <span title="已有在途工单，不能删除" className="inline-block"><Button variant="secondary" disabled>删除</Button></span>
+              <Tooltip><TooltipTrigger asChild><span tabIndex={0} className="inline-block"><Button variant="secondary" disabled>删除</Button></span></TooltipTrigger><TooltipContent>已有在途工单，不能删除</TooltipContent></Tooltip>
 
       - id: CMP.TOOLTIP.A11Y
         title_zh: 键盘与读屏可达
@@ -2532,7 +2532,7 @@ areas:
           - kind: do
             title_zh: 动作化的标题与按钮
             jsx: |-
-              <div className="w-96 rounded-xl border border-ds-gray-400 bg-ds-background-100 p-5 shadow-lg" role="dialog" aria-labelledby="dlg-title"><h3 id="dlg-title" className="text-heading-16 text-ds-gray-1000">删除 3 辆车？</h3><p className="mt-2 text-copy-14 text-ds-gray-900">删除后车辆的历史工单仍保留，但不能再派单。</p><div className="mt-5 flex justify-end gap-2"><Button variant="secondary">取消</Button><Button variant="error">删除</Button></div></div>
+              <Dialog><DialogTrigger asChild><Button variant="error">删除选中车辆</Button></DialogTrigger><DialogContent className="sm:max-w-96"><DialogHeader><DialogTitle>删除 3 辆车？</DialogTitle><DialogDescription>删除后车辆的历史工单仍保留，但不能再派单。</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button variant="secondary">取消</Button></DialogClose><Button variant="error">删除</Button></DialogFooter></DialogContent></Dialog>
 
       - id: CMP.MODAL.KEYBOARD
         title_zh: 键盘与焦点
@@ -2558,7 +2558,7 @@ areas:
           - kind: do
             title_zh: 一句话确认
             jsx: |-
-              <div className="flex items-center gap-3"><Button size="small" variant="secondary">移除</Button><div className="rounded-xl border border-ds-gray-400 bg-ds-background-100 p-3 shadow-md"><p className="text-copy-14">移除这名司机？</p><div className="mt-2 flex justify-end gap-2"><Button size="small" variant="secondary">取消</Button><Button size="small" variant="error">移除</Button></div></div></div>
+              <Popover><PopoverTrigger asChild><Button size="small" variant="secondary">移除</Button></PopoverTrigger><PopoverContent className="w-56 p-3"><p className="text-copy-14">移除这名司机？</p><div className="mt-2 flex justify-end gap-2"><PopoverClose asChild><Button size="small" variant="secondary">取消</Button></PopoverClose><Button size="small" variant="error">移除</Button></div></PopoverContent></Popover>
 
       - id: CMP.POPCONFIRM.WORDING
         title_zh: 问句 + 动作按钮
@@ -2584,7 +2584,7 @@ areas:
           - kind: do
             title_zh: 百分比与数量
             jsx: |-
-              <div className="flex w-80 flex-col gap-1.5"><div className="h-1.5 rounded-full bg-ds-gray-200"><div className="h-1.5 w-[26%] rounded-full bg-ds-gray-1000" /></div><span className="text-copy-13 text-ds-gray-900">已导入 320 / 1,248 条</span></div>
+              <div className="flex w-80 flex-col gap-1.5"><Progress value={26} aria-label="导入进度" /><span className="text-copy-13 text-ds-gray-900">已导入 320 / 1,248 条</span></div>
 
       - id: CMP.PROGRESS.INDETERMINATE
         title_zh: 不能估计就显示阶段
@@ -3294,9 +3294,7 @@ areas:
             jsx: |-
               <div className="flex w-[360px] flex-col gap-2">
                 <div className="flex justify-between text-label-14"><span>上传构建产物</span><span className="tabular-nums text-ds-gray-900">约 20 秒</span></div>
-                <div role="progressbar" aria-label="上传构建产物" aria-valuemin={0} aria-valuemax={100} aria-valuenow={64} className="h-2 overflow-hidden rounded-full bg-ds-gray-200">
-                  <div className="h-full rounded-full bg-ds-gray-1000" style={{ width: "64%" }} />
-                </div>
+                <Progress value={64} aria-label="上传构建产物" className="h-2" />
                 <div><Button size="small" variant="secondary">取消上传</Button></div>
               </div>
 

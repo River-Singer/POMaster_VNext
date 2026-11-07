@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:fa4d69f5996602ae3098a4608888b5f933df4684d463592e32448e76fab6e8ea`；状态 origin=preset。
+> 规范指纹 `sha256:852f548ab7814dfd85628cbafce9bdedf978423f61b685ff93d866c8112de0ca`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 

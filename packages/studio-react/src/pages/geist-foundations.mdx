@@ -31,13 +31,18 @@ React 栈的设计体系是 Vercel Geist，组件用 **shadcn/ui + Tailwind CSS 
 | 间距 | Tailwind 4 的 0.25rem 阶梯 | Geist 没有公开间距 foundation，用 Tailwind 阶梯 |
 | 组件 | shadcn/ui 源码（`src/components/ui/`） | 外观按上面的主题变量走，不是 Geist 官方组件 |
 
-## 与 antd 页同处一个 Storybook
+## 样式作用域
 
-本实例同时渲染 antd 组件页（与 Vue 画廊对照浏览）。Tailwind 不加全局 preflight，只在 `.geist-root`
-里生效；antd 的 reset.css 放进最低的 CSS 层，免得它的元素选择器压过 Tailwind 工具类。两边互不影响，
-层序见 `.storybook/preview.css`。
+Tailwind 不加全局 preflight，只在 `.geist-root` 里生效：规范页外框与 Vue 画廊共用同一份 `standard.css`，
+「Geist 组件」页和规范里的实时示例都包在 `.geist-root` 里。层序见 `.storybook/preview.css`。
+
+## 与硬规范的关系
+
+项目技术基线选了 Geist（`ui: geist`）时，基线草案引用硬规范的 Geist overlay
+`packages/cli/seeds/specs/hard/stacks/geist/geist-design-system-overlay.md`（官方站实抓的 foundations、
+组件清单与 Best Practices）。本抽屉的规范源 `geist.yaml` 是在它之上写成的可执行条文。
 
 ## 引用纪律
 
-- 本页和 Vue 画廊的「Foundations/Geist（官方站参照）」页一样，只说明来源，不是规范文本；规则以规范分区为准。
+- 本页只说明来源，不是规范文本；规则以规范分区为准。
 - 引用 Geist 官方站的数值要带核实日期（规范源 `sources` 里的 `retrieved`），过期重新核实。

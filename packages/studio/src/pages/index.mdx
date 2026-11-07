@@ -43,17 +43,17 @@ import { Meta } from '@storybook/addon-docs/blocks';
 定义后填充，业务实体走 New Entity Gate（G-D 边界不预置）；分区页呈现「该写什么」
 规范指引（data-and-transactions 主题 MUST/Checklist 透传）与 baseline data 面导航。
 
-## React sidecar（S2 · 同设计系统对照浏览）
+## React · Geist 抽屉
 
-`packages/studio-react` 是独立 Storybook 实例（`@storybook/react-vite` + antd 5.x）：
-与 antdv 4.2.6 同设计系统的 React 活跃端，组件族清单与 Vue 侧对齐、逐页标注
-「Vue 对应件」做对照浏览。它的侧栏最上方是 React 栈的「规范」分区：Vercel Geist 预设
-（`packages/cli/seeds/design-standards/geist.yaml`），示例用按 Geist 主题着色的
-shadcn/ui + Tailwind CSS 4 实时渲染——Vercel 的官方 Geist 组件包没有公开发布，见该实例「Foundations/Geist」。
+`packages/studio-react` 是另一个 Storybook 实例（`@storybook/react-vite`），放 React 栈的前端规范
+（Vercel Geist 预设，`packages/cli/seeds/design-standards/geist.yaml`）和项目里的 shadcn/ui 组件页。
+两个抽屉目录相同，条文、示例、组件和工程做法按各自技术栈写：本画廊是 Vue 3 + ant-design-vue，
+那边是 React + shadcn/ui + Tailwind CSS 4。
 
 ```bash
-corepack pnpm studio:dev        # Vue 主实例（本画廊，端口 6006）
-corepack pnpm studio:react:dev  # React sidecar（Geist 规范 + antd 对照，端口 6007）
+corepack pnpm studio:dev          # 两个抽屉一起（总 Storybook）
+corepack pnpm studio:vue:dev      # 只起本画廊（端口 6006）
+corepack pnpm studio:react:dev    # 只起 React · Geist（端口 6007）
 ```
 
 ## 生成器纪律
@@ -71,6 +71,5 @@ corepack pnpm studio:react:dev  # React sidecar（Geist 规范 + antd 对照，�
 
 - archetype 是语义构件非可渲染组件——画廊以 MDX 语义卡呈现（Storybook MDX 实现
   是 React-only，Vue 实体只出现在 story 侧）。
-- geist 是 React 设计系统、无 Vue 组件库本体——Vue 画廊只做 foundations/token 呈现与
-  官方站参照，见「Foundations/Geist」页；Geist 规范页在 React 画廊。
+- Geist 是 React 设计系统，没有 Vue 组件库本体：本画廊不放 Geist 内容，Geist 的规范与组件都在 React · Geist 抽屉。
 - 业务组件/业务实体零出现；发现疑似业务面内容请按宪法 §32 冲突报告通路上报，不静默。

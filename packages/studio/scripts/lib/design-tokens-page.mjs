@@ -10,7 +10,7 @@
 // 呈现纪律：
 // - token 值只经 displayValue（String(value)）装载呈现；页框 chrome 用色
 //   （#eeeeee/#bfbfbf/#8c8c8c/#fdfdfd/#fffbe6/#d48806/#555555）一律不取 seed token 值。
-// - NON-AUTHORITATIVE 标注 + 权威源指向（geist-foundations.mdx 先例同形）+
+// - NON-AUTHORITATIVE 标注 + 权威源指向（手写说明页同形）+
 //   origin=preset advisory 语义透传（R3）。
 // - 生成器 fail-closed：hint 词形闭包校验（渲染分支与 hint 词表同步，缺分支即
 //   生成失败，不带病产出）。

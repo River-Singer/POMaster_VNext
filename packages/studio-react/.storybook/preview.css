@@ -1,33 +1,10 @@
 /*
- * React 画廊全局样式。层序从低到高：
- *   antd-reset（antd 官方 reset.css）< std（规范页外框，与 Vue 画廊共用 packages/studio/src/standard/standard.css）
- *   < theme / base / components / utilities（Tailwind，Geist 示例）。
- * antd 的 reset 是元素选择器（button { color: inherit } 之类），不进层会压过 Tailwind 的工具类，
- * 让规范页里的 Geist 示例走样；放进最低层后，antd 组件页照常拿到 reset，Geist 示例由
- * .geist-root 里的局部 preflight 和工具类接管。整个文件经 @tailwindcss/vite 编译（.storybook/main.ts）。
+ * React · Geist 抽屉的全局样式。层序从低到高：
+ *   std（规范页外框，与 Vue 画廊共用 packages/studio/src/standard/standard.css）
+ *   < theme / base / components / utilities（Tailwind，Geist 组件与示例）。
+ * Tailwind 不加全局 preflight，只在 .geist-root 里生效（见 src/styles/geist.css）：规范页外框沿用与 Vue 画廊
+ * 同一份样式，组件页与实时示例都包在 .geist-root 里。整个文件经 @tailwindcss/vite 编译（.storybook/main.ts）。
  */
-@layer antd-reset, std, theme, base, components, utilities;
-@import "antd/dist/reset.css" layer(antd-reset);
+@layer std, theme, base, components, utilities;
 @import "../../studio/src/standard/standard.css";
 @import "../src/styles/geist.css";
-
-/* 演示容器（antd 组件页用，与 Vue 主实例 preview.css 同词形）。 */
-.studio-demo {
-  padding: 16px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.studio-demo-trigger {
-  padding: 4px 12px;
-  cursor: pointer;
-}
-
-.studio-demo-chip {
-  display: inline-block;
-  padding: 4px 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-}

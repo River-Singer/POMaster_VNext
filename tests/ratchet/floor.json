@@ -717,14 +717,6 @@
         "layer": "L1",
         "note": "0.5.0 审计修复批 3（N4）：71 组件族真实挂载测试——逐族挂载生成 story 真实渲染体（@vue/test-utils + happy-dom，per-file 环境切换），断言挂载不抛错 + keyDom 关键 DOM 存在（选择器/最小计数由 family-examples.mjs 配置表声明）。含审计症状钉（Menu role=menu/menuitem 不再 prefixCls 崩、Tabs 非空 tablist）与配置表↔components.js 解析面对账。无域（生成器契约面，非四域）。"
       },
-      "packages/studio-react/tests/react-mount.spec.ts": {
-        "layer": "L1",
-        "note": "R2-R3 批（r2_r3_generator_contracts）：68 族生成 story 的 react-dom 挂载冒烟（happy-dom，per-file 环境）+ 触发后可见文案断言（message JointContent 字符串形态 / notification ArgsProps 对象形态 message 必填）+ 生成期未绑定 JSX 根扫描闸钉测（fail-closed，R2c 根因产品化）——无域（生成器契约面，非四域）"
-      },
-      "packages/studio-react/tests/react-stories.spec.ts": {
-        "layer": "L1",
-        "note": "09-06-studio-depth-react-geist-mapping（S2 React sidecar）：antd 对齐族生成器钉测——对齐分母（71 族对齐表/68 对齐 stories/antd 5.29.3 实抓 73 导出/v5 已移除 Comment+PageHeader+LocaleProvider 差异面/antd 独有 BackTop+ColorPicker+Splitter）+ 「Vue 对应件」对照注记全量在座 + 幂等双跑 diff 空 + 发布面纪律（private/零运行时 deps/遥测双关闭声明/端口 6007 错开）。无域（生成器契约面，非四域）。"
-      },
       "packages/kernel/tests/authority-block.spec.ts": {
         "layer": "L1",
         "note": "T3-R1 权威维度写路径闸（AUTHORITY_BOUNDARY_DENY）对抗与零误伤回归（09-08 语义收口战役，owner-adjudications.md#裁决18）"
@@ -736,9 +728,6 @@
         "layer": "L1"
       },
       "packages/studio/tests/design-tokens-page.spec.ts": {
-        "layer": "L1"
-      },
-      "packages/studio-react/tests/design-tokens-page.spec.ts": {
         "layer": "L1"
       },
       "packages/cli/tests/init-mode-fork.spec.ts": {
@@ -935,6 +924,14 @@
       },
       "packages/gauntlet-lite/test/seam-comparator.spec.ts": {
         "layer": "L1"
+      },
+      "packages/studio-react/tests/gallery.spec.ts": {
+        "layer": "L1",
+        "note": "React · Geist 抽屉「Geist 组件」分区：src/components/ui 下每个组件都有组件页、页挂在「Geist 组件/」下、Storybook 只收规范/组件页/说明页、本包不依赖 antd。无域（画廊契约面）。"
+      },
+      "packages/studio-react/tests/gallery-mount.spec.ts": {
+        "layer": "L1",
+        "note": "React · Geist 抽屉「Geist 组件」分区真实挂载：逐页逐 story 渲染无 React 报错；对话框、气泡卡片点开后内容在 Portal 里，多选框全选半选态。无域（画廊契约面）。"
       }
     },
     "notes": {

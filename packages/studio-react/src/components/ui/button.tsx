@@ -70,25 +70,18 @@ function Content({ prefix, suffix, loading, children }: { readonly prefix?: Reac
   );
 }
 
-function Button({
-  className,
-  variant,
-  size,
-  shape,
-  svgOnly,
-  shadow,
-  prefix,
-  suffix,
-  loading = false,
-  asChild = false,
-  type = "button",
-  onClick,
-  children,
-  ...props
-}: Omit<React.ComponentProps<"button">, "prefix"> & ButtonStyleProps & { readonly asChild?: boolean }) {
+type ButtonProps = Omit<React.ComponentProps<"button">, "prefix" | "ref"> & ButtonStyleProps & { readonly asChild?: boolean };
+
+// forwardRef：Radix 的 asChild（DialogTrigger、PopoverTrigger、DropdownMenuTrigger…）要把 ref 交给按钮来定位浮层、
+// 归还焦点；React 18 的函数组件不收 ref，不包 forwardRef 会丢 ref 并告警。
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant, size, shape, svgOnly, shadow, prefix, suffix, loading = false, asChild = false, type = "button", onClick, children, ...props },
+  ref,
+) {
   const Comp = asChild ? Slot.Root : "button";
   return (
     <Comp
+      ref={ref}
       data-slot="button"
       type={asChild ? undefined : type}
       className={cn(buttonVariants({ variant, size, shape, svgOnly, shadow }), className)}
@@ -100,28 +93,22 @@ function Button({
       {asChild ? children : <Content prefix={prefix} suffix={suffix} loading={loading}>{children}</Content>}
     </Comp>
   );
-}
+});
 
 /** 链接按钮：与按钮同样的样子与属性，渲染成链接（改变地址的导航用它，不用按钮的点击事件跳转）。 */
-function ButtonLink({
-  className,
-  variant,
-  size,
-  shape,
-  svgOnly,
-  shadow,
-  prefix,
-  suffix,
-  children,
-  ...props
-}: Omit<React.ComponentProps<"a">, "prefix"> & Omit<ButtonStyleProps, "loading">) {
+type ButtonLinkProps = Omit<React.ComponentProps<"a">, "prefix" | "ref"> & Omit<ButtonStyleProps, "loading">;
+
+const ButtonLink = React.forwardRef<HTMLAnchorElement, ButtonLinkProps>(function ButtonLink(
+  { className, variant, size, shape, svgOnly, shadow, prefix, suffix, children, ...props },
+  ref,
+) {
   return (
-    <a data-slot="button" className={cn(buttonVariants({ variant, size, shape, svgOnly, shadow }), className)} {...props}>
+    <a ref={ref} data-slot="button" className={cn(buttonVariants({ variant, size, shape, svgOnly, shadow }), className)} {...props}>
       <Content prefix={prefix} suffix={suffix}>
         {children}
       </Content>
     </a>
   );
-}
+});
 
 export { Button, ButtonLink, buttonVariants };

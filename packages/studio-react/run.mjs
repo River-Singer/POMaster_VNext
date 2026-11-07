@@ -1,4 +1,4 @@
-// React sidecar 入口：generate / dev / build 三动作（与 Vue 主实例 run.mjs 同构；
+// React · Geist 抽屉入口：generate / dev / build 三动作（与 Vue 主实例 run.mjs 同构；
 // 跨平台，零 shell 依赖）。
 //
 // 遥测裁定（与主实例同款双保险）：runner 前置 STORYBOOK_DISABLE_TELEMETRY 环境变量
@@ -34,12 +34,8 @@ const counts = host ? null : generateAll();
 // 规范 AI 孪生（入库）：与规范页同一次生成、同一个指纹。
 const twin = host ? null : writeGeistTwin();
 if (counts !== null && twin !== null) console.log(
-  `[studio-react] 生成完成: antd 对齐族 stories=${counts.components} ` +
-    `（antd 导出 ${counts.antdExportCount}；v5 已移除族 ${counts.missing.length}：` +
-    `${counts.missing.map((entry) => entry.antdv).join("、")}）` +
-    ` + design tokens 对照 story=${counts.foundations} ` +
-    `（tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN）` +
-    ` + Geist 规范 story=${counts.standard}（骨架 ${counts.standardAreas} 个领域，已写 ${counts.standardCovered} 个、${counts.standardRules} 条规则，指纹 ${twin.fingerprint}）`,
+  `[studio-react] 生成完成: Geist 规范 story=${counts.standard}（骨架 ${counts.standardAreas} 个领域，已写 ${counts.standardCovered} 个、` +
+    `${counts.standardRules} 条规则，指纹 ${twin.fingerprint}）`,
 );
 if (action === "generate") process.exit(0);
 
