@@ -164,7 +164,7 @@ areas:
 
 - **基础**（13 篇）：色彩（Geist 色阶与每档用途）、字体（四组排版类）、标题层级、图标（含尺寸）、材质、圆角管理、投影、布局、栅格、间距、动效、点击反馈、焦点环；
 - **组件 · 通用**：按钮（与 Ant Design 一侧同样 13 条；变体 default / secondary / tertiary / error / warning，尺寸 tiny / small / medium / large；带实验场与状态矩阵）；
-- **组件批次一**（33 篇）：与 Ant Design 一侧同一份条文；Geist 没有现成组件的（选择器、多选、单选、日期、标签页、下拉、对话框……）演示用 Tailwind 按规范拼出结构，开关、标签（Badge）、警告提示带实验场；
+- **组件批次一**（33 篇）：与 Ant Design 一侧同一份条文；Geist 一侧的演示用 shadcn/ui 组件（基于 Radix）：选择器、多选、单选、标签页、下拉菜单、对话框、气泡确认（Popover）、文字提示、进度条都是真组件，焦点、键盘和读屏由 Radix 负责；日期用原生输入，抽屉、分页、步骤条、面包屑这类还没有对应组件的用 Tailwind 按规范拼出结构；开关、标签（Badge）、警告提示带实验场；
 - **设计模式**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
 - **工程规范**（14 篇）：状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
 

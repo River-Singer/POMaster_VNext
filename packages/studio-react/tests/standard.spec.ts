@@ -202,7 +202,7 @@ describe("Geist 规范 · 示例组件登记", () => {
     const used = componentsOfJsx('<Button variant="outline"><SearchIcon />搜索</Button><Badge>Preview</Badge>');
     expect([...used.ui].sort()).toEqual(["Badge", "Button"]);
     expect([...used.icons]).toEqual(["SearchIcon"]);
-    expect(() => componentsOfJsx("<Tooltip>提示</Tooltip>")).toThrow(/没登记的组件 <Tooltip>/);
+    expect(() => componentsOfJsx("<Carousel>轮播</Carousel>")).toThrow(/没登记的组件 <Carousel>/);
   });
 
   it("cn() 把 Geist 排版类当字号：和颜色类并存，同组后者覆盖前者；geist.css 里的每个排版类都被认得", () => {
