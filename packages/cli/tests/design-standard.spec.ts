@@ -87,8 +87,16 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
   return raw["areas"][area]["rules"][index];
 }
 
+
+/** 组件批次一（两套体系同时补齐的 33 个组件领域）。 */
+const COMPONENT_BATCH_1 = ["input", "textarea", "input_number", "select", "checkbox", "radio", "switch", "date_picker", "form", "upload", "table", "tag", "badge", "card", "descriptions", "empty", "tooltip", "alert", "modal", "drawer", "message", "notification", "popconfirm", "progress", "spin", "tabs", "breadcrumb", "dropdown", "pagination", "steps", "nav_menu", "divider", "space"];
+const SKELETON_ORDER: readonly string[] = ["color", "typography", "headings", "icons", "materials", "radius", "elevation", "layout", "grid", "spacing", "motion", "press_feedback", "focus_ring", "button", "split_button", "copy_button", "float_button", "typography_text", "code_block", "snippet", "kbd", "divider", "flex", "space", "grid_component", "page_layout", "scroller", "anchor", "breadcrumb", "dropdown", "context_menu", "command_menu", "nav_menu", "pagination", "load_more", "steps", "tabs", "auto_complete", "combobox", "cascader", "checkbox", "choicebox", "date_picker", "time_picker", "form", "input", "search_input", "textarea", "input_number", "mentions", "radio", "rate", "select", "multi_select", "slider", "switch", "segmented", "transfer", "tree_select", "upload", "address_input", "destructive_input", "filter_bar", "feedback_widget", "theme_switcher", "avatar", "badge", "tag", "status_dot", "calendar", "card", "carousel", "collapse", "descriptions", "empty", "image", "video", "list", "popover", "relative_time", "qrcode", "statistic", "gauge", "table", "timeline", "tooltip", "tour", "tree", "json_view", "middle_truncate", "device_frame", "book", "comment", "page_header", "alert", "banner", "drawer", "bottom_sheet", "message", "notification", "modal", "destructive_modal", "popconfirm", "progress", "result", "skeleton", "spin", "watermark", "affix", "config_provider", "feedback", "navigation", "data_entry", "data_display", "data_format", "copywriting", "buttons", "data_list", "proximity", "alignment", "contrast", "repetition", "direct", "stay", "lightweight", "invitation", "transition", "reaction", "visualization_page", "detail_page", "ui_stills", "component_motion", "bento_grid", "state_feedback", "context", "sidebar", "card_hover", "loading_bar", "data_grid", "charts", "reports", "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake"];
+function skeletonOrder(keys: readonly string[]): string[] {
+  return SKELETON_ORDER.filter((key) => keys.includes(key));
+}
+
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：59 个领域、346 条规则——基础 13 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
+  it("预设通过校验：92 个领域、450 条规则——基础 13 篇、组件 34 篇（按钮 + 组件批次一 33 篇）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -98,6 +106,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const groups = standard.areas.map((area) => area.group);
     expect(groups.filter((group) => group === "foundations")).toHaveLength(13);
     expect(standard.areas.filter((area) => area.group === "components.general").map((area) => area.key)).toEqual(["button"]);
+    expect(standard.areas.filter((area) => area.group.startsWith("components.")).map((area) => area.key)).toEqual(skeletonOrder(["button", ...COMPONENT_BATCH_1]));
     expect(groups.filter((group) => group === "patterns.global")).toHaveLength(8);
     expect(groups.filter((group) => group === "patterns.principles")).toHaveLength(10);
     expect(groups.filter((group) => group === "patterns.templates")).toHaveLength(2);
@@ -109,7 +118,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 59, rules: 346, gate_rules: 43, review_rules: 303, pending_params: 31 });
+    expect(loaded.summary).toEqual({ areas: 92, rules: 450, gate_rules: 43, review_rules: 407, pending_params: 31 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -489,9 +498,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(346);
+    expect(envelope.result.summary.rules).toBe(450);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_AREA_UNCOVERED", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(59);
+    expect(envelope.result.normalized.areas).toHaveLength(92);
     expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
@@ -540,7 +549,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 39, rules: 275, gate_rules: 35, review_rules: 240, pending_params: 34 });
+    expect(result.summary).toEqual({ areas: 72, rules: 379, gate_rules: 35, review_rules: 344, pending_params: 34 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
