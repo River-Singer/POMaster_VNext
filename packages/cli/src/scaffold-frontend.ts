@@ -367,7 +367,6 @@ function renderList(entity: NormalizedEntity): string {
   const fields = businessFields(entity);
   const searchable = fields.filter((field) => field.searchable && (field.type === "string" || field.type === "enum"));
   const columns = tableColumns(entity);
-  const permissions = entity.exposure.admin?.permission_codes ?? {};
   const canWrite = has(entity, "update") || has(entity, "delete");
   const filterItems = searchable.map((field) =>
     field.type === "enum"
