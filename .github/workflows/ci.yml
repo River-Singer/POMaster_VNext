@@ -75,6 +75,46 @@ jobs:
         run: corepack pnpm lint
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # 在线 Storybook 的静态构建预演：Pages 只在 main 上发布，合并前在这里把总 Storybook
+  # （两个抽屉的组合）按发布位真实构建一遍，并核对产物——根路径是总 Storybook、vue/ 与 react/
+  # 是两个抽屉、组合引用指向发布位的子路径、两个抽屉都有「规范」分区。只构建不部署。
+  studio-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      POMASTER_STUDIO_SITE_URL: "https://river-singer.github.io/POMaster_VNext/"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Generate gallery pages
+        run: |
+          node packages/studio/run.mjs generate
+          node packages/studio-react/run.mjs generate
+
+      - name: Build Storybook (host + two drawers, static export)
+        run: corepack pnpm studio:build
+
+      - name: Check composed output
+        run: |
+          set -e
+          for f in dist-studio/index.html dist-studio/vue/index.html dist-studio/react/index.html dist-studio/vue/index.json dist-studio/react/index.json; do
+            test -s "$f" || { echo "::error::缺少 $f"; exit 1; }
+          done
+          grep -rqs "POMaster_VNext/vue" dist-studio/index.html dist-studio/sb-manager dist-studio/*.js || { echo "::error::总 Storybook 没有指向 vue/ 子路径的组合引用"; exit 1; }
+          grep -rqs "POMaster_VNext/react" dist-studio/index.html dist-studio/sb-manager dist-studio/*.js || { echo "::error::总 Storybook 没有指向 react/ 子路径的组合引用"; exit 1; }
+          for d in vue react; do
+            node -e "const i=require('./dist-studio/'+process.argv[1]+'/index.json');const n=Object.values(i.entries).filter(e=>String(e.title).startsWith('规范/')).length;console.log(process.argv[1],'规范 entries',n);if(n<100)process.exit(1)" "$d"
+          done
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # L6-2 自主半边（P35）：clean HOME × fresh clone bootstrap 演练。
   #
   # 语义：模拟「一台什么都没有的新机器」——HOME 指向全新空临时目录（runner 默认
