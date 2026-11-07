@@ -238,6 +238,16 @@ sources:
     url: https://tanstack.com/query/latest/docs/framework/vue/guides/important-defaults
     retrieved: 2026-11-06
     note_zh: 非活跃查询 5 分钟后回收；失败的查询静默重试 3 次（指数退避）
+  SRC.POMASTER.DEFAULTS:
+    title_zh: pomaster 推荐默认（数值类决策位的缺省取值）
+    url: repo:docs/design-standard.md
+    retrieved: 2026-11-07
+    note_zh: 没有外部权威数值时由 pomaster 给出的缺省；每条的取值理由写在参数的 note_zh，项目用 pomaster design set 覆盖
+  SRC.ANTD.THEME.Z_INDEX:
+    title_zh: Ant Design · 定制主题（Seed Token：zIndexBase 0、zIndexPopupBase 1000）
+    url: https://ant.design/docs/react/customize-theme-cn
+    retrieved: 2026-11-07
+    note_zh: 弹层组件在 zIndexPopupBase 之上由组件库自行加偏移
 specs:
   ui: themes/ui-presentation-and-design.md
   page: themes/page-composition-and-browser-environment.md
@@ -760,7 +770,7 @@ areas:
         title_zh: 长文行宽
         statement_zh: 说明、帮助文档这类长段落限制每行宽度，不随窗口无限拉宽；表格、表单这类结构化内容不受此限。
         params:
-          max_chars: { decision: 中文长段落每行最多多少个字？, candidates: [35, 40, 45], unit: chars, label_zh: 每行字数上限 }
+          max_chars: { value: 40, unit: chars, source: SRC.POMASTER.DEFAULTS, label_zh: 每行字数上限, note_zh: 中文长段落每行 35–45 字取中 }
         enforcement: { kind: review }
         examples:
           - kind: dont
@@ -1410,7 +1420,7 @@ areas:
         title_zh: 层级
         statement_zh: z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一档），不写死数字。
         params:
-          layers: { decision: 层级 token 怎么分档？下拉、气泡、消息、抽屉、模态各取多少 z-index（现有 token 合同还没有层级分组）？ }
+          layers: { value: { base: 0, sticky: 10, header: 100, popup_base: 1000 }, unit: none, source: SRC.ANTD.THEME.Z_INDEX, note_zh: 业务层只用 base / sticky / header 三档；下拉、气泡、消息、抽屉、模态都在 zIndexPopupBase（1000）之上由 antd 自己排，页面不再写弹层的 z-index }
         anchors:
           - { spec: ui, quote: z-index 只能来自层级 token。 }
         enforcement: { kind: gate, check: style.no-raw-z-index }
@@ -4217,8 +4227,8 @@ areas:
         title_zh: 成组错峰只在首次出现
         statement_zh: 只有一组元素首次一起出现时才错峰：按阅读顺序、间隔小、总时长有上限；刷新数据、翻页、筛选时整组一次出现，不逐行飞入；栅格卡片首次进入视口时可以错峰一次。
         params:
-          interval: { decision: 同组错峰间隔取多少毫秒？, candidates: [40, 60, 80], unit: ms, label_zh: 错峰间隔, note_zh: 参考 stageshow：同一组 40–80ms，栅格的格与格之间 80–120ms }
-          total: { decision: 一组错峰的总时长上限取多少毫秒？, candidates: [300, 400], unit: ms, label_zh: 总时长上限 }
+          interval: { value: 60, unit: ms, source: SRC.STAGESHOW, label_zh: 错峰间隔, note_zh: 同一组 40–80ms 取中；栅格的格与格之间可放宽到 80–120ms }
+          total: { value: 400, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 总时长上限, note_zh: 一组错峰总长不超过 400ms，再长就像在等动画 }
         enforcement: { kind: review }
         examples:
           - kind: dont
@@ -4697,8 +4707,8 @@ areas:
         title_zh: 快的不显示，出现了停一会儿
         statement_zh: 请求在延迟阈值内完成就不显示加载条，避免一闪；一旦显示，至少停留最短时长再淡出；两个值全局统一，在 HTTP 客户端或路由层实现，页面不各自写。
         params:
-          delay: { decision: 加载条延迟多少毫秒出现？, candidates: [100, 200, 300], unit: ms, label_zh: 出现延迟, note_zh: 0.1 秒以内的响应用户感觉是即时的（Nielsen Norman Group） }
-          min_visible: { decision: 加载条出现后至少停留多少毫秒？, candidates: [300, 400, 500], unit: ms, label_zh: 最短停留 }
+          delay: { value: 200, unit: ms, source: SRC.NNG.RESPONSE_TIMES, label_zh: 出现延迟, note_zh: 0.1 秒以内感觉即时；200ms 内返回的请求不出加载条，避免闪一下 }
+          min_visible: { value: 400, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 最短停留, note_zh: 出现了就至少停 400ms，避免一闪而过（与加载延迟实验一致） }
         enforcement: { kind: review }
         showcase:
           - kind: lab
@@ -4800,7 +4810,7 @@ areas:
         title_zh: 大数据虚拟滚动
         statement_zh: 行数超过阈值时启用虚拟滚动，行高固定，表头与冻结列保持；不一次渲染全部行；滚动时不做重计算。
         params:
-          virtual_threshold: { decision: 多少行以上启用虚拟滚动？, candidates: [200, 500], unit: count, label_zh: 虚拟滚动阈值 }
+          virtual_threshold: { value: 500, unit: count, source: SRC.POMASTER.DEFAULTS, label_zh: 虚拟滚动阈值, note_zh: 500 行以内整表渲染的成本可以接受，超过再上虚拟滚动 }
         anchors:
           - { spec: perf, quote: MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。 }
         enforcement: { kind: review }
@@ -4905,7 +4915,7 @@ areas:
         title_zh: 大数据降采样
         statement_zh: 点数超过阈值时先在服务端聚合或降采样；大量点用 canvas 渲染；聚合计算不放在主线程的渲染路径里；实时图表合并更新、按帧刷新。
         params:
-          max_points: { decision: 单条折线最多渲染多少个点？, candidates: [1000, 2000], unit: count, label_zh: 单系列点数上限 }
+          max_points: { value: 2000, unit: count, source: SRC.POMASTER.DEFAULTS, label_zh: 单系列点数上限, note_zh: 单系列超过 2000 点先降采样或聚合再画 }
         enforcement: { kind: review }
 
       - id: CHART.LIFECYCLE
@@ -5152,8 +5162,8 @@ areas:
           lcp: { value: 2500, unit: ms, source: SRC.POMASTER.PERF_SPEC, label_zh: LCP（p75） }
           inp: { value: 200, unit: ms, source: SRC.POMASTER.PERF_SPEC, label_zh: INP（p75） }
           cls: { value: 0.1, source: SRC.POMASTER.PERF_SPEC, label_zh: CLS（p75） }
-          initial_js: { decision: 首屏脚本（压缩后）体积上限是多少 KB？, label_zh: 首屏脚本体积 }
-          route_chunk: { decision: 单个路由分包（压缩后）体积上限是多少 KB？, label_zh: 路由分包体积 }
+          initial_js: { value: 170, unit: none, source: SRC.POMASTER.DEFAULTS, label_zh: 首屏脚本体积（KB，压缩后）, note_zh: 取业界常用的首屏脚本预算 170 KB（gzip 后） }
+          route_chunk: { value: 100, unit: none, source: SRC.POMASTER.DEFAULTS, label_zh: 路由分包体积（KB，压缩后）, note_zh: 单个路由分包不超过 100 KB（gzip 后），超过就再拆 }
         anchors:
           - { spec: perf, quote: 定义首屏、包体、交互和核心页面预算。 }
           - { spec: perf, quote: 默认参考目标为 p75 的 LCP ≤ 2.5s、INP ≤ 200ms、CLS ≤ 0.1 }
@@ -5199,7 +5209,7 @@ areas:
         params:
           admin_max_page_size: { value: 200, unit: count, source: SRC.POMASTER.SURFACES, label_zh: 管理侧每页上限 }
           public_max_page_size: { value: 50, unit: count, source: SRC.POMASTER.SURFACES, label_zh: 用户侧每次上限 }
-          virtual_threshold: { decision: 表格多少行以上启用虚拟滚动？, label_zh: 虚拟滚动阈值 }
+          virtual_threshold: { value: 500, unit: count, source: SRC.POMASTER.DEFAULTS, label_zh: 虚拟滚动阈值, note_zh: 与数据网格的虚拟滚动阈值一致 }
         anchors:
           - { spec: perf, quote: 大列表服务端分页，宽表虚拟化。 }
           - spec: perf
@@ -5210,7 +5220,7 @@ areas:
         title_zh: 输入与过期响应
         statement_zh: 搜索、联想等随输入触发的请求做防抖；新请求发出时取消旧请求；过期的响应不覆盖新状态。
         params:
-          debounce: { decision: 输入防抖间隔取多少毫秒？, candidates: [300], unit: ms, label_zh: 防抖间隔 }
+          debounce: { value: 300, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 防抖间隔, note_zh: 输入停顿 300ms 再发请求：打字时不连发，停下来又不显得迟钝 }
         anchors:
           - { spec: perf, quote: 搜索防抖、旧请求取消、过期响应丢弃。 }
         enforcement: { kind: review }
@@ -5489,7 +5499,7 @@ areas:
         title_zh: 关键写请求防重放
         statement_zh: 支付、审批、转账这类关键写请求带一次性随机数和时间戳，由后端校验时效并拒绝重复；需要时对请求体签名（密钥不在前端代码里，由后端按会话下发短期签名凭据）；重放保护与幂等键一起使用。
         params:
-          window: { decision: 时间戳允许的偏差是多少？, candidates: [60 秒, 300 秒], label_zh: 时间窗口 }
+          window: { value: 300, unit: none, source: SRC.POMASTER.DEFAULTS, label_zh: 时间窗口（秒）, note_zh: 允许 5 分钟时钟偏差，与常见请求签名方案一致 }
         enforcement: { kind: review }
 
       - id: TAMPER.TRANSPORT
@@ -5566,7 +5576,7 @@ areas:
         title_zh: 每个请求有超时
         statement_zh: HTTP 客户端给每个请求设超时（上传、导出等长请求单独设）；超时、取消、离线、服务端错误分别处理与提示；超时的请求不自动重发非幂等写操作。
         params:
-          timeout: { decision: 普通请求的超时取多少秒？, candidates: [10, 15, 30], label_zh: 请求超时（秒） }
+          timeout: { value: 15, unit: none, source: SRC.POMASTER.DEFAULTS, label_zh: 请求超时（秒）, note_zh: 普通请求 15 秒超时；导出、上传这类长任务走后台任务，不靠拉长超时 }
         anchors:
           - { spec: api, quote: HTTP Client 统一处理 base URL、认证、超时、取消、trace 和 envelope。 }
         enforcement: { kind: review }
@@ -5856,7 +5866,7 @@ areas:
         params:
           gc_time: { value: 5 分钟, source: SRC.TANSTACK.VUE_QUERY, label_zh: 缓存保留（gcTime 缺省） }
           query_retry: { value: 3, unit: count, source: SRC.TANSTACK.VUE_QUERY, label_zh: 查询失败重试（缺省） }
-          dict_stale: { decision: 字典类数据的 staleTime 取多少？, candidates: [30 分钟, Infinity（手动失效）], label_zh: 字典新鲜度 }
+          dict_stale: { value: 1800000, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 字典新鲜度, note_zh: 字典类数据 30 分钟内视为新鲜；字典改动后由写操作主动失效 }
         anchors:
           - { spec: state, quote: 每个缓存声明 key、参数、身份/权限隔离、stale、保留和失效规则。 }
         enforcement: { kind: review }
@@ -5957,8 +5967,8 @@ areas:
         title_zh: 重试只对幂等与可重试错误
         statement_zh: 只重试读请求和声明了幂等的写请求，且只在错误可重试时（网络错误、超时、5xx、429）；指数退避加随机抖动，有次数上限，服务端给了 Retry-After 就按它等；重试过程可以取消，用户能看到「正在重试」。
         params:
-          max_attempts: { decision: 最多重试几次？, candidates: [2, 3], unit: count, label_zh: 重试上限 }
-          base_delay: { decision: 退避的起始间隔取多少毫秒？, candidates: [500, 1000], unit: ms, label_zh: 起始间隔 }
+          max_attempts: { value: 3, unit: count, source: SRC.TANSTACK.VUE_QUERY, label_zh: 重试上限, note_zh: 与 TanStack Query 的缺省一致：失败的查询静默重试 3 次 }
+          base_delay: { value: 1000, unit: ms, source: SRC.TANSTACK.VUE_QUERY, label_zh: 起始间隔, note_zh: 与 TanStack Query 的缺省退避一致：1 秒起，每次翻倍，上限 30 秒 }
         anchors:
           - { spec: api, quote: 重试必须服从幂等性、服务端 `Retry-After` 或受控退避，并能取消；取消或已被替代的请求不得提示为用户错误。 }
           - { spec: api, quote: MUST NOT 对非幂等 mutation 默认自动重试。 }
@@ -5973,8 +5983,8 @@ areas:
         title_zh: 输入防抖、滚动节流
         statement_zh: 随输入触发的查询做防抖；滚动、窗口尺寸变化、拖动这类高频事件做节流或合到动画帧；防抖和节流的间隔全项目统一。
         params:
-          debounce: { decision: 输入防抖间隔取多少毫秒？, candidates: [300], unit: ms, label_zh: 防抖间隔 }
-          throttle: { decision: 滚动节流间隔取多少毫秒？, candidates: [100, 16], unit: ms, label_zh: 节流间隔 }
+          debounce: { value: 300, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 防抖间隔, note_zh: 与输入防抖同一取值 }
+          throttle: { value: 100, unit: ms, source: SRC.POMASTER.DEFAULTS, label_zh: 节流间隔, note_zh: 滚动、拖拽每 100ms 最多处理一次；跟帧走的动画用 requestAnimationFrame }
         anchors:
           - { spec: perf, quote: 搜索防抖、旧请求取消、过期响应丢弃。 }
         enforcement: { kind: review }
@@ -6023,7 +6033,7 @@ areas:
         title_zh: 批量操作有并发上限
         statement_zh: 批量上传、批量导入、批量调用接口用并发池，同时进行的数量有上限，并显示整体进度；单项失败可以单独重试；不一次性发出全部请求。
         params:
-          pool: { decision: 批量请求的并发上限取多少？, candidates: [3, 4, 6], unit: count, label_zh: 并发上限 }
+          pool: { value: 4, unit: count, source: SRC.POMASTER.DEFAULTS, label_zh: 并发上限, note_zh: 浏览器对同一域名的并发连接有限（HTTP/1.1 通常 6 条），批量任务占 4 条，给页面其他请求留余量 }
         anchors:
           - { spec: perf, quote: 请求并发安全。 }
         enforcement: { kind: review }

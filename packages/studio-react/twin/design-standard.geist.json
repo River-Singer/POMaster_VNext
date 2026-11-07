@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio-react/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:6233767926264fca4fb40d342323e119e9da08fc071232641c03bf6ae08ac783",
+  "fingerprint": "sha256:fa4d69f5996602ae3098a4608888b5f933df4684d463592e32448e76fab6e8ea",
   "generator": {
     "path": "packages/studio-react/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/geist.yaml",
-      "sha256": "5f7999e7e25e7cac28edc0b045e3ff515465d59c65fa1d9bf99584aa79d2aefa"
+      "sha256": "f69292a4b9d16294cb9d18f53d785da0f2cef27a1fd02ad9f38915b5efab9205"
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
@@ -4061,17 +4061,14 @@
               "key": "max_width",
               "label_zh": "内容区最大宽度",
               "unit": "px",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "以宽表格为主的管理端取宽档；纯阅读的页面可以更窄",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "内容区最大宽度取多少？",
-              "candidates": [
-                1200,
-                1400
-              ],
-              "pending": true
+              "value": 1400,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -4290,14 +4287,21 @@
               "key": "layers",
               "label_zh": "层级档位",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.TAILWIND.Z_INDEX",
+              "note_zh": "档位取 Tailwind 的 z-0 到 z-50，按层叠顺序给每档定名；页面只用这六个类",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "各层级的 z-index 取多少？",
+              "value": {
+                "base": 0,
+                "sticky": 10,
+                "header": 20,
+                "dropdown": 30,
+                "overlay": 40,
+                "modal": 50
+              },
+              "decision_zh": null,
               "candidates": null,
-              "pending": true
+              "pending": false
             }
           ],
           "anchors": [],
@@ -4462,17 +4466,17 @@
               "key": "gutter",
               "label_zh": "列间距",
               "unit": "px",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "与 Ant Design 一侧一致：紧凑区 16、常规区 24（gap-4 / gap-6）",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "列间距取 16 还是 24？",
-              "candidates": [
+              "value": [
                 16,
                 24
               ],
-              "pending": true
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -13246,34 +13250,27 @@
               "key": "interval",
               "label_zh": "错峰间隔",
               "unit": "ms",
-              "source": null,
-              "note_zh": "参考 stageshow：同一组 40–80ms，栅格的格与格之间 80–120ms",
-              "kind": "decision",
+              "source": "SRC.STAGESHOW",
+              "note_zh": "同一组 40–80ms 取中；栅格的格与格之间可放宽到 80–120ms",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "同组错峰间隔取多少毫秒？",
-              "candidates": [
-                40,
-                60,
-                80
-              ],
-              "pending": true
+              "value": 60,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             },
             {
               "key": "total",
               "label_zh": "总时长上限",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "一组错峰总长不超过 400ms，再长就像在等动画",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "一组错峰的总时长上限取多少毫秒？",
-              "candidates": [
-                300,
-                400
-              ],
-              "pending": true
+              "value": 400,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -14334,16 +14331,14 @@
               "key": "collapsed_width",
               "label_zh": "收起宽度",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.SHADCN.SIDEBAR",
+              "note_zh": "shadcn/ui 的 SIDEBAR_WIDTH_ICON",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "收起成图标栏时宽度取多少？",
-              "candidates": [
-                "3rem"
-              ],
-              "pending": true
+              "value": "3rem",
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -14883,35 +14878,27 @@
               "key": "delay",
               "label_zh": "出现延迟",
               "unit": "ms",
-              "source": null,
-              "note_zh": "0.1 秒以内的响应用户感觉是即时的（Nielsen Norman Group）",
-              "kind": "decision",
+              "source": "SRC.NNG.RESPONSE_TIMES",
+              "note_zh": "0.1 秒以内感觉即时；200ms 内返回的请求不出加载条，避免闪一下",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "加载条延迟多少毫秒出现？",
-              "candidates": [
-                100,
-                200,
-                300
-              ],
-              "pending": true
+              "value": 200,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             },
             {
               "key": "min_visible",
               "label_zh": "最短停留",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "出现了就至少停 400ms，避免一闪而过（与加载延迟实验一致）",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "加载条出现后至少停留多少毫秒？",
-              "candidates": [
-                300,
-                400,
-                500
-              ],
-              "pending": true
+              "value": 400,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -15232,17 +15219,14 @@
               "key": "virtual_threshold",
               "label_zh": "虚拟滚动阈值",
               "unit": "count",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "500 行以内整表渲染的成本可以接受，超过再上虚拟滚动",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "多少行以上启用虚拟滚动？",
-              "candidates": [
-                200,
-                500
-              ],
-              "pending": true
+              "value": 500,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -15639,17 +15623,14 @@
               "key": "max_points",
               "label_zh": "单系列点数上限",
               "unit": "count",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "单系列超过 2000 点先降采样或聚合再画",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "单条折线最多渲染多少个点？",
-              "candidates": [
-                1000,
-                2000
-              ],
-              "pending": true
+              "value": 2000,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -16572,29 +16553,29 @@
             },
             {
               "key": "initial_js",
-              "label_zh": "首屏脚本体积",
+              "label_zh": "首屏脚本体积（KB，压缩后）",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "取业界常用的首屏脚本预算 170 KB（gzip 后）",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "首屏脚本（压缩后）体积上限是多少 KB？",
+              "value": 170,
+              "decision_zh": null,
               "candidates": null,
-              "pending": true
+              "pending": false
             },
             {
               "key": "route_chunk",
-              "label_zh": "路由分包体积",
+              "label_zh": "路由分包体积（KB，压缩后）",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "单个路由分包不超过 100 KB（gzip 后），超过就再拆",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "单个路由分包（压缩后）体积上限是多少 KB？",
+              "value": 100,
+              "decision_zh": null,
               "candidates": null,
-              "pending": true
+              "pending": false
             }
           ],
           "anchors": [
@@ -16720,17 +16701,14 @@
               "key": "virtual_threshold",
               "label_zh": "虚拟滚动阈值",
               "unit": "count",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "与数据网格的虚拟滚动阈值一致",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "表格多少行以上启用虚拟滚动？",
-              "candidates": [
-                200,
-                500
-              ],
-              "pending": true
+              "value": 500,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -16764,16 +16742,14 @@
               "key": "debounce",
               "label_zh": "防抖间隔",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "输入停顿 300ms 再发请求：打字时不连发，停下来又不显得迟钝",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "输入防抖间隔取多少毫秒？",
-              "candidates": [
-                300
-              ],
-              "pending": true
+              "value": 300,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -17761,19 +17737,16 @@
           "params": [
             {
               "key": "window",
-              "label_zh": "时间窗口",
+              "label_zh": "时间窗口（秒）",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "允许 5 分钟时钟偏差，与常见请求签名方案一致",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "时间戳允许的偏差是多少？",
-              "candidates": [
-                "60 秒",
-                "300 秒"
-              ],
-              "pending": true
+              "value": 300,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [],
@@ -18073,18 +18046,14 @@
               "key": "timeout",
               "label_zh": "请求超时（秒）",
               "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "普通请求 15 秒超时；导出、上传这类长任务走后台任务，不靠拉长超时",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "普通请求的超时取多少秒？",
-              "candidates": [
-                10,
-                15,
-                30
-              ],
-              "pending": true
+              "value": 15,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -19181,18 +19150,15 @@
             {
               "key": "dict_stale",
               "label_zh": "字典新鲜度",
-              "unit": "none",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "unit": "ms",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "字典类数据 30 分钟内视为新鲜；字典改动后由写操作主动失效",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "字典类数据的 staleTime 取多少？",
-              "candidates": [
-                "30 分钟",
-                "Infinity（手动失效）"
-              ],
-              "pending": true
+              "value": 1800000,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -19542,33 +19508,27 @@
               "key": "max_attempts",
               "label_zh": "重试上限",
               "unit": "count",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.TANSTACK.QUERY",
+              "note_zh": "与 TanStack Query 的缺省一致：失败的查询静默重试 3 次",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "最多重试几次？",
-              "candidates": [
-                2,
-                3
-              ],
-              "pending": true
+              "value": 3,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             },
             {
               "key": "base_delay",
               "label_zh": "起始间隔",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.TANSTACK.QUERY",
+              "note_zh": "与 TanStack Query 的缺省退避一致：1 秒起，每次翻倍，上限 30 秒",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "退避的起始间隔取多少毫秒？",
-              "candidates": [
-                500,
-                1000
-              ],
-              "pending": true
+              "value": 1000,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -19614,32 +19574,27 @@
               "key": "debounce",
               "label_zh": "防抖间隔",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "与输入防抖同一取值",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "输入防抖间隔取多少毫秒？",
-              "candidates": [
-                300
-              ],
-              "pending": true
+              "value": 300,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             },
             {
               "key": "throttle",
               "label_zh": "节流间隔",
               "unit": "ms",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "滚动、拖拽每 100ms 最多处理一次；跟帧走的动画用 requestAnimationFrame",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "滚动节流间隔取多少毫秒？",
-              "candidates": [
-                100,
-                16
-              ],
-              "pending": true
+              "value": 100,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -19825,18 +19780,14 @@
               "key": "pool",
               "label_zh": "并发上限",
               "unit": "count",
-              "source": null,
-              "note_zh": null,
-              "kind": "decision",
+              "source": "SRC.POMASTER.DEFAULTS",
+              "note_zh": "浏览器对同一域名的并发连接有限（HTTP/1.1 通常 6 条），批量任务占 4 条，给页面其他请求留余量",
+              "kind": "value",
               "token": null,
-              "value": null,
-              "decision_zh": "批量请求的并发上限取多少？",
-              "candidates": [
-                3,
-                4,
-                6
-              ],
-              "pending": true
+              "value": 4,
+              "decision_zh": null,
+              "candidates": null,
+              "pending": false
             }
           ],
           "anchors": [
@@ -20714,6 +20665,18 @@
       "title_zh": "pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）",
       "url": "repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md",
       "retrieved": "2026-11-06",
+      "note_zh": null
+    },
+    "SRC.POMASTER.DEFAULTS": {
+      "title_zh": "pomaster 推荐默认（数值类决策位的缺省取值）",
+      "url": "repo:docs/design-standard.md",
+      "retrieved": "2026-11-07",
+      "note_zh": "没有外部权威数值时由 pomaster 给出的缺省；每条的取值理由写在参数的 note_zh，项目用 pomaster design set 覆盖"
+    },
+    "SRC.TAILWIND.Z_INDEX": {
+      "title_zh": "Tailwind CSS · z-index（z-0、z-10 … z-50）",
+      "url": "https://tailwindcss.com/docs/z-index",
+      "retrieved": "2026-11-07",
       "note_zh": null
     }
   },

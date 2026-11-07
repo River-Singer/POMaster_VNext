@@ -118,7 +118,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 92, rules: 450, gate_rules: 43, review_rules: 407, pending_params: 31 });
+    expect(loaded.summary).toEqual({ areas: 92, rules: 450, gate_rules: 43, review_rules: 407, pending_params: 11 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -145,37 +145,17 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
       area.rules.flatMap((r) => r.params.filter((param) => param.pending).map((param) => `${r.id}.${param.key}`)),
     );
     expect(pending).toEqual([
-      "TYPE.READING.max_chars",
       "ICON.LIBRARY.public_library",
       "LAYOUT.CONTENT_REGION.page_padding",
       "LAYOUT.CONTENT_REGION.section_gap",
       "LAYOUT.CONTENT_REGION.content_max_width",
-      "LAYOUT.Z_INDEX.layers",
-      "CMOTION.STAGGER.interval",
-      "CMOTION.STAGGER.total",
-      "LBAR.DELAY.delay",
-      "LBAR.DELAY.min_visible",
       "DGRID.WHEN.grid_library",
-      "DGRID.VIRTUAL.virtual_threshold",
       "CHART.LIBRARY.library",
-      "CHART.PERF.max_points",
-      "PERF.BUDGET.initial_js",
-      "PERF.BUDGET.route_chunk",
-      "PERF.LARGE_LISTS.virtual_threshold",
-      "PERF.INPUT.debounce",
       "SESSION.COOKIE.same_site",
       "SESSION.TIMEOUT.idle",
       "SESSION.TIMEOUT.absolute",
       "SESSION.TIMEOUT.warn_before",
-      "TAMPER.REPLAY.window",
-      "ROBUST.TIMEOUT.timeout",
       "GUARD.BUTTON.mode",
-      "CACHE.FRESHNESS.dict_stale",
-      "ASYNC.RETRY.max_attempts",
-      "ASYNC.RETRY.base_delay",
-      "ASYNC.DEBOUNCE.debounce",
-      "ASYNC.DEBOUNCE.throttle",
-      "CONC.LIMIT.pool",
     ]);
     expect(loaded.issues.filter((issue) => issue.code === "DESIGN_DECISION_PENDING")).toHaveLength(1);
   });
@@ -549,7 +529,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 72, rules: 379, gate_rules: 35, review_rules: 344, pending_params: 34 });
+    expect(result.summary).toEqual({ areas: 72, rules: 379, gate_rules: 35, review_rules: 344, pending_params: 12 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);

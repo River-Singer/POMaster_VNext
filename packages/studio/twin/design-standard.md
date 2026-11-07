@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:b938c7d1dce196cbe066cd3ddd066a06cb06e3d0fb378985944f4182883fa5f8`；状态 origin=preset。
+> 规范指纹 `sha256:07810d090be4f144b779dfc81d43bd31ef21a1c17a9dbd837d0de078d536d815`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -194,7 +194,7 @@
 说明、帮助文档这类长段落限制每行宽度，不随窗口无限拉宽；表格、表单这类结构化内容不受此限。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：每行字数上限 `p.max_chars`：待项目决定——中文长段落每行最多多少个字？（候选 35 字 / 40 字 / 45 字）
+- 参数：每行字数上限 `p.max_chars` = 40 字（pomaster 推荐默认（数值类决策位的缺省取值））
 - 示例（别这样做）：长段落铺满宽屏
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-typography--type-reading
 
@@ -619,7 +619,7 @@
 z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一档），不写死数字。
 
 - 执行：机器门禁 `style.no-raw-z-index`；适用：管理侧与用户侧
-- 参数：layers `p.layers`：待项目决定——层级 token 怎么分档？下拉、气泡、消息、抽屉、模态各取多少 z-index（现有 token 合同还没有层级分组）？
+- 参数：layers `p.layers` = base → 0，sticky → 10，header → 100，popup_base → 1000（Ant Design · 定制主题（Seed Token：zIndexBase 0、zIndexPopupBase 1000））
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「z-index 只能来自层级 token。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-layout--layout-z-index
 
@@ -2879,8 +2879,8 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 只有一组元素首次一起出现时才错峰：按阅读顺序、间隔小、总时长有上限；刷新数据、翻页、筛选时整组一次出现，不逐行飞入；栅格卡片首次进入视口时可以错峰一次。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：错峰间隔 `p.interval`：待项目决定——同组错峰间隔取多少毫秒？（候选 40ms / 60ms / 80ms）
-- 参数：总时长上限 `p.total`：待项目决定——一组错峰的总时长上限取多少毫秒？（候选 300ms / 400ms）
+- 参数：错峰间隔 `p.interval` = 60ms（Stageshow（Benji Taylor 的 agent skill，MIT））
+- 参数：总时长上限 `p.total` = 400ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 示例（别这样做）：每次刷新逐行飞入
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-experience-component-motion--cmotion-stagger
 
@@ -3240,8 +3240,8 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 请求在延迟阈值内完成就不显示加载条，避免一闪；一旦显示，至少停留最短时长再淡出；两个值全局统一，在 HTTP 客户端或路由层实现，页面不各自写。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：出现延迟 `p.delay`：待项目决定——加载条延迟多少毫秒出现？（候选 100ms / 200ms / 300ms）
-- 参数：最短停留 `p.min_visible`：待项目决定——加载条出现后至少停留多少毫秒？（候选 300ms / 400ms / 500ms）
+- 参数：出现延迟 `p.delay` = 200ms（Nielsen Norman Group · Response Times: The 3 Important Limits）
+- 参数：最短停留 `p.min_visible` = 400ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 实验 `loading.delay`：实验：加载条的延迟出现与最短停留——分别发一个快请求和一个慢请求：快的不出现加载条；慢的出现后至少停留一会儿再收起。打开「错误做法」看快请求让加载条一闪而过。
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-experience-loading-bar--lbar-delay
 
@@ -3319,7 +3319,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 行数超过阈值时启用虚拟滚动，行高固定，表头与冻结列保持；不一次渲染全部行；滚动时不做重计算。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——多少行以上启用虚拟滚动？（候选 200 个 / 500 个）
+- 参数：虚拟滚动阈值 `p.virtual_threshold` = 500 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-data-data-grid--dgrid-virtual
 
@@ -3414,7 +3414,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 点数超过阈值时先在服务端聚合或降采样；大量点用 canvas 渲染；聚合计算不放在主线程的渲染路径里；实时图表合并更新、按帧刷新。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：单系列点数上限 `p.max_points`：待项目决定——单条折线最多渲染多少个点？（候选 1000 个 / 2000 个）
+- 参数：单系列点数上限 `p.max_points` = 2000 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-data-charts--chart-perf
 
 ### CHART.LIFECYCLE 随容器重绘、卸载时销毁
@@ -3603,8 +3603,8 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 - 参数：LCP（p75） `p.lcp` = 2500ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
 - 参数：INP（p75） `p.inp` = 200ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
 - 参数：CLS（p75） `p.cls` = 0.1（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
-- 参数：首屏脚本体积 `p.initial_js`：待项目决定——首屏脚本（压缩后）体积上限是多少 KB？
-- 参数：路由分包体积 `p.route_chunk`：待项目决定——单个路由分包（压缩后）体积上限是多少 KB？
+- 参数：首屏脚本体积（KB，压缩后） `p.initial_js` = 170（pomaster 推荐默认（数值类决策位的缺省取值））
+- 参数：路由分包体积（KB，压缩后） `p.route_chunk` = 100（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「定义首屏、包体、交互和核心页面预算。」
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「默认参考目标为 p75 的 LCP ≤ 2.5s、INP ≤ 200ms、CLS ≤ 0.1」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-performance--perf-budget
@@ -3636,7 +3636,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 - 执行：人工评审；适用：管理侧与用户侧
 - 参数：管理侧每页上限 `p.admin_max_page_size` = 200 个（pomaster 脚手架部署面默认档（分页默认值与页长上限））
 - 参数：用户侧每次上限 `p.public_max_page_size` = 50 个（pomaster 脚手架部署面默认档（分页默认值与页长上限））
-- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——表格多少行以上启用虚拟滚动？
+- 参数：虚拟滚动阈值 `p.virtual_threshold` = 500 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「大列表服务端分页，宽表虚拟化。」
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-performance--perf-large-lists
@@ -3646,7 +3646,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 搜索、联想等随输入触发的请求做防抖；新请求发出时取消旧请求；过期的响应不覆盖新状态。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
+- 参数：防抖间隔 `p.debounce` = 300ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-performance--perf-input
 
@@ -3854,7 +3854,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 支付、审批、转账这类关键写请求带一次性随机数和时间戳，由后端校验时效并拒绝重复；需要时对请求体签名（密钥不在前端代码里，由后端按会话下发短期签名凭据）；重放保护与幂等键一起使用。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：时间窗口 `p.window`：待项目决定——时间戳允许的偏差是多少？（候选 60 秒 / 300 秒）
+- 参数：时间窗口（秒） `p.window` = 300（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-tamper--tamper-replay
 
 ### TAMPER.TRANSPORT 传输全程 HTTPS
@@ -3925,7 +3925,7 @@ target=_blank 的链接一律带 rel="noopener noreferrer"；用 window.open 打
 HTTP 客户端给每个请求设超时（上传、导出等长请求单独设）；超时、取消、离线、服务端错误分别处理与提示；超时的请求不自动重发非幂等写操作。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：请求超时（秒） `p.timeout`：待项目决定——普通请求的超时取多少秒？（候选 10 / 15 / 30）
+- 参数：请求超时（秒） `p.timeout` = 15（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「HTTP Client 统一处理 base URL、认证、超时、取消、trace 和 envelope。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-robustness--robust-timeout
 
@@ -4182,7 +4182,7 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 - 执行：人工评审；适用：管理侧与用户侧
 - 参数：缓存保留（gcTime 缺省） `p.gc_time` = 5 分钟（TanStack Query（Vue）· Important Defaults）
 - 参数：查询失败重试（缺省） `p.query_retry` = 3 个（TanStack Query（Vue）· Important Defaults）
-- 参数：字典新鲜度 `p.dict_stale`：待项目决定——字典类数据的 staleTime 取多少？（候选 30 分钟 / Infinity（手动失效））
+- 参数：字典新鲜度 `p.dict_stale` = 1800000ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「每个缓存声明 key、参数、身份/权限隔离、stale、保留和失效规则。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-caching--cache-freshness
 
@@ -4266,8 +4266,8 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 只重试读请求和声明了幂等的写请求，且只在错误可重试时（网络错误、超时、5xx、429）；指数退避加随机抖动，有次数上限，服务端给了 Retry-After 就按它等；重试过程可以取消，用户能看到「正在重试」。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：重试上限 `p.max_attempts`：待项目决定——最多重试几次？（候选 2 个 / 3 个）
-- 参数：起始间隔 `p.base_delay`：待项目决定——退避的起始间隔取多少毫秒？（候选 500ms / 1000ms）
+- 参数：重试上限 `p.max_attempts` = 3 个（TanStack Query（Vue）· Important Defaults）
+- 参数：起始间隔 `p.base_delay` = 1000ms（TanStack Query（Vue）· Important Defaults）
 - 实验 `async.retry`：实验：重试与退避——调用一个时好时坏的接口：正确做法按指数退避重试、在上限内成功或明确失败；对不幂等的提交不自动重试。打开「错误做法」看立即重试把接口打爆。
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「重试必须服从幂等性、服务端 `Retry-After` 或受控退避，并能取消；取消或已被替代的请求不得提示为用户错误。」
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 对非幂等 mutation 默认自动重试。」
@@ -4278,8 +4278,8 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 随输入触发的查询做防抖；滚动、窗口尺寸变化、拖动这类高频事件做节流或合到动画帧；防抖和节流的间隔全项目统一。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
-- 参数：节流间隔 `p.throttle`：待项目决定——滚动节流间隔取多少毫秒？（候选 100ms / 16ms）
+- 参数：防抖间隔 `p.debounce` = 300ms（pomaster 推荐默认（数值类决策位的缺省取值））
+- 参数：节流间隔 `p.throttle` = 100ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-async--async-debounce
 
@@ -4319,7 +4319,7 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 批量上传、批量导入、批量调用接口用并发池，同时进行的数量有上限，并显示整体进度；单项失败可以单独重试；不一次性发出全部请求。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：并发上限 `p.pool`：待项目决定——批量请求的并发上限取多少？（候选 3 个 / 4 个 / 6 个）
+- 参数：并发上限 `p.pool` = 4 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「请求并发安全。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-concurrency--conc-limit
 
@@ -4606,3 +4606,5 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - `SRC.MDN.COOKIES` MDN · Using HTTP cookies（Cookie 前缀与属性）：https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies（核实 2026-11-06）
 - `SRC.IETF.IDEMPOTENCY_KEY` IETF HTTPAPI · The Idempotency-Key HTTP Header Field（草案）：https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/（核实 2026-11-06）
 - `SRC.TANSTACK.VUE_QUERY` TanStack Query（Vue）· Important Defaults：https://tanstack.com/query/latest/docs/framework/vue/guides/important-defaults（核实 2026-11-06）
+- `SRC.POMASTER.DEFAULTS` pomaster 推荐默认（数值类决策位的缺省取值）：repo:docs/design-standard.md（核实 2026-11-07）
+- `SRC.ANTD.THEME.Z_INDEX` Ant Design · 定制主题（Seed Token：zIndexBase 0、zIndexPopupBase 1000）：https://ant.design/docs/react/customize-theme-cn（核实 2026-11-07）
