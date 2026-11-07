@@ -160,12 +160,13 @@ areas:
 
 ## 当前预设（Vercel Geist · React）
 
-73 个领域、389 条规则：
+93 个领域、460 条规则：
 
 - **基础**（13 篇）：色彩（Geist 色阶与每档用途）、字体（四组排版类）、标题层级、图标（含尺寸）、材质、圆角管理、投影、布局、栅格、间距、动效、点击反馈、焦点环；
 - **组件 · 通用**：按钮（与 Ant Design 一侧同样 13 条；变体 default / secondary / tertiary / error / warning，尺寸 tiny / small / medium / large；带实验场与状态矩阵）；
 - **组件批次一**（33 篇）：与 Ant Design 一侧同一份条文；Geist 一侧的演示用 shadcn/ui 组件（基于 Radix）：选择器、多选、单选、标签页、下拉菜单、对话框、气泡确认（Popover）、文字提示、进度条都是真组件，焦点、键盘和读屏由 Radix 负责；日期用原生输入，抽屉、分页、步骤条、面包屑这类还没有对应组件的用 Tailwind 按规范拼出结构；开关、标签（Badge）、警告提示带实验场；
-- **设计模式**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
+- **设计模式 · 全局规则 / 原则 / 模板文档**（20 篇）：与 Ant Design 一侧同一份骨架条目，条文按 React 栈与 Geist 组件改写——提示方式换成 Toast、Note、Modal 与通知，表单标签在上、不带冒号，按钮变体用 Geist 的 default / secondary / tertiary / error；数值优先取 Vercel 的 Web Interface Guidelines（点击区至少 24px、移动端 44px，转圈与骨架延迟 150–300ms 出现并至少停留 300–500ms，提交前不禁用提交按钮，状态写进地址，只动 transform 与 opacity），Vercel 没给的是 pomaster 预设；
+- **设计模式 · 体验管理 / 数据呈现**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
 - **工程规范**（15 篇）：前端架构（按 React 栈写：函数组件 + hooks、shadcn 组件源码进项目、TanStack Query、react-hook-form + zod、路由描述带 handle；路由库是项目决策位）、状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
 
 - 组件：项目内的组件源码（`packages/studio-react/src/components/ui/`，shadcn/ui 起步，按 Geist 重新配色与定尺寸）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 在公开 npm 上装不到，能装后再评估替换。
@@ -173,7 +174,7 @@ areas:
 - 排版：`text-heading-*`、`text-button-*`、`text-label-*`、`text-copy-*`（类名里的数字就是字号，见 `src/styles/geist.css`）；字体 Geist / Geist Mono 经 Google Fonts 加载（两个抽屉的外框也用它）。
 - 图标：lucide-react。
 
-官方没公开的（排版类的行高与字重、阴影值、内容区宽度、层级、列间距、表单库）是项目决策位；按钮的像素高度是 pomaster 的预设取值。其余 83 个骨架领域待补。
+官方没公开的（排版类的行高与字重、阴影值、内容区宽度、层级、列间距、表单库）是项目决策位；按钮的像素高度是 pomaster 的预设取值。其余 63 个骨架领域（组件）待补。
 
 Geist 示例和 antd 组件页在同一个 React Storybook 里：Tailwind 不加全局 preflight，preflight 只作用在 `.geist-root` 里；两个画廊都把 antd 的 reset.css 放进最低的 CSS 层（`antd-reset`），规范页外框在它上面的 `std` 层，外框只用类选择器，不漏进实时示例。
 

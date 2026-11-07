@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:43681aaede245630d99389fe8f63177e4c7656a4246477d88af95783e2239fc4`；状态 origin=preset。
+> 规范指纹 `sha256:74ce39084c4a02dffba3d817aa28c8d93972097355c088a41218d295214d5d9d`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -1979,6 +1979,729 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-feedback-spin--cmp-spin-text
 
+## 设计模式/全局规则 / 反馈（FEEDBACK）
+
+按反馈的重要程度和用户是否需要处理来选提示方式；失败要给恢复动作；加载、空状态、部分成功各有固定做法。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--overview
+
+### FEEDBACK.CHOOSE 按重要程度选提示方式
+
+操作结果轻、用户不必等待时用 Toast（一句话，约 4 秒自动消失，悬停时暂停）；必须处理的才用 Modal；后台任务完成这类系统推送用带标题与动作的通知（右下角）；需要在页面上常驻的说明用 Note / Alert（不自动消失）；操作前的二次确认贴着按钮用气泡确认，不可逆的大操作用危险确认对话框。能立刻看到结果的简单操作可以不提示，不要过度反馈。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：场景 → 提示方式 `p.channels` = {'轻量结果': 'Toast', '必须处理': 'Modal', '系统推送': '通知（Toast 带标题与动作）', '页面常驻说明': 'Note / Alert', '操作前确认': '气泡确认 / 危险确认对话框'}（pomaster 预设约定（Geist 体系））
+- 参数：Toast 停留时长 `p.toast_duration` = 4000ms（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：页面常驻说明用 Alert
+- 示例（这样做）：轻量结果用 Toast
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-choose
+
+### FEEDBACK.FAILURE 失败的处理
+
+重要的失败不用会自动消失的 Toast，用 Alert 或 Modal 写清发生了什么，并给出恢复动作（重试、下载错误明细、联系管理员）；带动作的错误 Toast 不自动消失。权限不足、离线也一样要给恢复动作。每一屏都要有下一步或恢复路径。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：Alert + 恢复动作
+- 示例（别这样做）：几秒后消失、没有下一步
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-failure
+
+### FEEDBACK.LOADING 加载反馈
+
+预计超过约 1 秒的操作给出加载反馈：按钮保留原文字并加转圈（按钮报告忙碌、不能重复提交）；局部区域用转圈；长任务用进度条并允许取消；首屏加载用骨架屏，骨架和最终内容的几何一致，加载完成后页面不跳动。转圈和骨架延迟约 150–300ms 再出现、出现后至少停留约 300–500ms，避免一闪而过。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：延迟出现 `p.show_delay` = 150–300（Vercel · Web Interface Guidelines）
+- 参数：最短停留 `p.min_visible` = 300–500（Vercel · Web Interface Guidelines）
+- 示例（这样做）：按钮加载态、进度条、骨架屏
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-loading
+
+### FEEDBACK.FIELD_ERROR 字段错误
+
+校验错误显示在对应字段下方（aria-describedby 关联、aria-invalid 标出），用文字说明怎么改，用户修改前不消失；提交时聚焦到第一个出错的字段，必要时在表单顶部给错误摘要；不能只靠颜色、图标或 Toast 表达字段错误；提交失败不清空已填内容。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：错误文字贴着字段
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-field-error
+
+### FEEDBACK.EMPTY 空状态
+
+还没有任何数据时，空状态说明为什么是空的并引导第一步（「添加车辆」）；筛选或搜索没有结果时，说明没找到并提供「清除筛选」。两种情况文案和动作不同；空、稀疏、密集、出错四种状态都要设计。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：还没有数据：引导第一步
+- 示例（这样做）：筛选无结果：提供清除筛选
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-empty
+
+### FEEDBACK.PARTIAL 部分成功
+
+批量操作部分成功时，结果里写明成功、失败、跳过各多少条，并提供失败明细与「只重试失败的」；不能只说「操作成功」或「操作失败」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：写清三个数
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-partial
+
+### FEEDBACK.BADGE 徽标
+
+与用户强相关的重要信息（待审批数）用数字计数，次要提醒用小圆点；有图标时叠在图标右上角，没有图标时放在标题后；数量要写进被包住元素的可读名称（「通知，5 条未读」），计数本身 aria-hidden。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：用数字还是圆点 `p.rule` = {'重要且与用户相关': '数字', '次要提醒': '圆点'}（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：数字与圆点
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-feedback--feedback-badge
+
+## 设计模式/全局规则 / 导航（NAV）
+
+管理侧用左侧边栏；顶部导航只在一级入口少时用；面包屑、标签页、步骤条、分页各有数量与字数上限；导航用真链接。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--overview
+
+### NAV.ADMIN_SIDE 管理侧主导航
+
+管理侧主导航用左侧边栏（shadcn Sidebar 的形态，可收起为图标栏，Cmd/Ctrl+B 切换），适合多级、操作密集的工作台；菜单项按业务域分组，多了可以滚动；当前页面用 aria-current="page" 高亮，高亮按路由的稳定标识匹配，不按标题文字或截取 URL 判断。导航项是真链接（<a> / 路由 Link），按住修饰键能在新标签页打开。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：侧栏宽度 `p.sider_width` = 16rem（shadcn/ui · Sidebar）
+- 示例（这样做）：按业务域分组的侧栏
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-admin-side
+
+### NAV.TOP 顶部导航
+
+顶部导航只在一级入口为 2 到 7 个时使用，常见于用户侧门户；每个导航项名称不超过 14 个字；当前项 aria-current="page"。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最少入口 `p.min_items` = 2（pomaster 预设约定（Geist 体系））
+- 参数：最多入口 `p.max_items` = 7（pomaster 预设约定（Geist 体系））
+- 参数：名称字数上限 `p.label_max` = 14（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：五个一级入口
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-top
+
+### NAV.BREADCRUMB 面包屑
+
+面包屑显示当前页在层级里的位置（nav + 有序列表，最后一项是当前页、不是链接），建议不超过 3 级、最多 5 级，更深的中间折叠；页面自身的导航已经能说明位置时不加面包屑。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：建议层级 `p.recommended_max` = 3（pomaster 预设约定（Geist 体系））
+- 参数：最多层级 `p.max` = 5（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：三级面包屑
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-breadcrumb
+
+### NAV.TABS 标签页
+
+标签页名称不超过 14 个字。切换页面里平级的内容区用 Tabs；卡片里切换同一份内容的展示方式用分段控件；选项很多时改用竖向标签页。标签页状态写进地址，刷新和分享后停在同一个页签。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：名称字数上限 `p.label_max` = 14（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：页面级标签页 + 卡片内分段控件
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-tabs
+
+### NAV.STEPS 步骤条
+
+有固定流程的任务用步骤条（有序列表，当前步 aria-current="step"）。横向步骤条放 3 到 4 步，每步标题不超过 11 个字；步骤更多或数量会变时，用固定在页面左侧的竖向步骤条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：横向最少步数 `p.horizontal_min` = 3（pomaster 预设约定（Geist 体系））
+- 参数：横向最多步数 `p.horizontal_max` = 4（pomaster 预设约定（Geist 体系））
+- 参数：步骤标题字数上限 `p.title_max` = 11（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：三步流程
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-steps
+
+### NAV.PAGINATION 分页
+
+管理侧列表用页码分页：默认每页 20 条，每页最多 200 条；页数多时显示首尾页与当前页附近的页码，其余折叠，数据多时允许改每页条数；当前页 aria-current="page"，页码写进地址。用户侧列表用「加载更多」的游标分页，与接口的 KEYSET 分页一致，每次最多 50 条，不显示总页数。不得前端拉全量再假分页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：管理侧每页条数 `p.admin_page_size` = 20（pomaster 预设约定（Geist 体系））
+- 参数：每页最多 `p.admin_max_page_size` = 200（pomaster 预设约定（Geist 体系））
+- 参数：用户侧每次最多 `p.public_max_page_size` = 50（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：管理侧页码分页
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-navigation--nav-pagination
+
+## 设计模式/全局规则 / 数据录入（ENTRY）
+
+标签常驻可见、位置全系统一致；选择控件按选项数选；提示放对位置；校验不拦键入、提交防重复且失败不丢输入。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--overview
+
+### ENTRY.LABEL 输入标签
+
+每个输入都有常驻可见的标签（<Label htmlFor> 关联，点标签聚焦控件），必填项有星号加读屏文字。Geist 的表单标签在输入上方、左对齐、不带冒号；同一个系统只用一种。占位文字只给格式示例，不能代替标签。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：标签位置 `p.label_position` = 上方，左对齐，不带冒号（Vercel Geist 设计体系）
+- 示例（这样做）：标签在上
+- 示例（别这样做）：只有占位文字，填了之后就不知道是什么
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-label
+
+### ENTRY.CHOICE_CONTROL 选择控件
+
+二选一、改了立即生效的用开关；选项 3 到 4 个时用单选全部摆出来（需要解释差别时用选择卡片）；5 个以上用下拉选择，超过 10 个用可搜索选择；多选少量用复选框组，多了用多选选择器；需要精确数值时不用滑块，用数字输入。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：单选平铺的选项数 `p.radio_range` = 3 / 4（pomaster 预设约定（Geist 体系））
+- 参数：改用下拉的选项数 `p.select_above` = 5（pomaster 预设约定（Geist 体系））
+- 参数：改用可搜索选择的选项数 `p.search_above` = 10（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：3 个选项用单选，即时生效用开关
+- 示例（别这样做）：两个选项用下拉，多点一次还看不到全部
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-choice-control
+
+### ENTRY.SWITCH_IMMEDIATE 开关即时生效
+
+开关拨动即生效，旁边不放「保存」按钮，开关旁的文字写清它控制什么；保存失败时把开关拨回并说明原因；需要和其他字段一起提交才生效的，用复选框。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：状态文字 `p.labels` = 开启 / 关闭（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-switch-immediate
+
+### ENTRY.HINTS 提示
+
+短提示放在字段下方，不超过一句话；优先就地说明，文字提示（Tooltip）是最后手段；收集身份证号、手机号等敏感信息时写明为什么需要；能给合理默认值就给；用正确的 type、inputMode 与 autocomplete，让键盘与自动填充对得上。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：字段下方一句话提示
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-hints
+
+### ENTRY.VALIDATION 校验
+
+不拦截键入，用校验反馈代替；提交按钮在提交开始前一直可用（不因表单未填完而禁用），点了再把问题列出来并聚焦第一个错误；前端先校验格式（zod 模式），后端返回的字段错误定位到对应字段；提交中按钮进入加载态并带幂等键防止重复提交；提交失败保留已填内容；有未保存的修改时离开页面先提醒。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-validation
+
+### ENTRY.UPLOAD 上传
+
+拖放区同时提供「选择文件」按钮（键盘可用），写明允许的格式和大小，并在选择时就校验、说明不符合的原因；上传中逐个显示进度，失败的写原因并能重试；图片用缩略图，达到数量上限后隐藏上传入口。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：写明格式与大小
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-entry--entry-upload
+
+## 设计模式/全局规则 / 数据展示（DISPLAY）
+
+表格列有稳定的类型、宽度与对齐；卡片一行最多 4 张；折叠、时间轴、轮播各有用法；每种展示都要设计超长与空数据。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--overview
+
+### DISPLAY.TABLE_COLUMNS 表格列
+
+每列有稳定的 key、标题、值类型和宽度策略；时间、状态、操作列不换行；金额、数量右对齐并用等宽数字（tabular-nums），同列小数位一致，单位写在表头；空单元格显示「—」；长文本单行省略、悬停看全文；状态列用状态点加文字，不只靠颜色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：空值写法 `p.empty` = —（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：金额右对齐、单位在表头、空值用「—」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-table-columns
+
+### DISPLAY.CARD_GRID 卡片排布
+
+卡片用来把相关信息收拢成一块，按栅格排列，一行最多 4 张；卡片里的长文本截断，卡片之间间距一致；整张卡片可点时只有标题是链接、点击区扩展到整卡，卡内其他按钮仍可单独聚焦。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：一行最多张数 `p.per_row_max` = 4（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：一行 4 张
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-card-grid
+
+### DISPLAY.COLLAPSE 折叠
+
+长而不规则的内容用折叠面板逐步展开（标题是按钮，aria-expanded 报告状态）；各面板之间关系松散时一次只展开一个；展开状态写进地址，便于分享。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：一次只展开一个
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-collapse
+
+### DISPLAY.TIMELINE 时间轴
+
+按时间记录的事件、任务用竖向时间轴（有序列表，时间用 <time>），最新的在最上面；状态圆点只是辅助，标题里有文字。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：新的在上
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-timeline
+
+### DISPLAY.CAROUSEL 轮播
+
+轮播只放同级内容（图片、卡片），3 到 5 张，让用户看得出一共几张、往哪个方向切（页码圆点是带名称的按钮）；不自动轮播；管理侧工作页不用轮播。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：张数 `p.slides` = 3 / 5（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-carousel
+
+### DISPLAY.EDGE_CASES 超长与空数据
+
+每个展示组件都要设计两种边界情况：内容超长（截断、换行或展开；路径和编号用中间省略）和没有数据（空状态）；按短、一般、很长三种用户内容测一遍布局。按重要程度、使用频率和关联程度排列信息。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-display--display-edge-cases
+
+## 设计模式/全局规则 / 数据格式（FORMAT）
+
+数字、金额、日期时间、相对时间、脱敏各有固定格式，全部经格式化注册表（Intl 封装）输出，页面里不手拼。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--overview
+
+### FORMAT.NUMBER 数字
+
+数字默认带千分位；数字与单位之间留一个空格（123,220 kg、10 MB），用不换行空格连住；比例用百分比（12.32%），进度用分数（12/30）；很大的数可以用「万」「亿」；表格里的单位写在表头；需要上下比较的数字用等宽数字。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：示例 `p.examples` = 123,220 kg / 12.32% / 12/30（Vercel · Web Interface Guidelines）
+- 参数：大数单位 `p.large_units` = 万 / 亿（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--format-number
+
+### FORMAT.AMOUNT 金额
+
+金额写成货币代码加数字（CNY 1,280.00）；同一处上下文里小数位要么都是 0 位、要么都是 2 位，不混用；列表里右对齐并用等宽数字；货币代码用 ISO 4217，不在代码里写死 ¥、$ 符号；经格式化注册表输出（Intl.NumberFormat 只在注册表里出现）。
+
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
+- 参数：默认货币 `p.code` = CNY（pomaster 预设约定（Geist 体系））
+- 参数：小数位 `p.decimals` = 2（Vercel · Web Interface Guidelines）
+- 示例（这样做）：经格式化注册表输出
+- 示例（别这样做）：页面里拼符号和小数
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--format-amount
+
+### FORMAT.DATETIME 日期时间
+
+日期 YYYY-MM-DD，时间 24 小时制 HH:mm:ss，日期与时间之间一个空格；日期区间用「～」，两侧各一个空格；存储用 ISO 8601（UTC），显示按用户的时区与地区转换（语言从 navigator.languages 判断，不按 IP）；全部经格式化注册表输出，页面里不手拼格式串、不直接调 toLocaleString。
+
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
+- 参数：日期 `p.date` = YYYY-MM-DD（pomaster 预设约定（Geist 体系））
+- 参数：时间 `p.time` = HH:mm:ss（pomaster 预设约定（Geist 体系））
+- 参数：日期时间 `p.datetime` = YYYY-MM-DD HH:mm:ss（pomaster 预设约定（Geist 体系））
+- 参数：区间连接 `p.range_separator` =  ～ （pomaster 预设约定（Geist 体系））
+- 示例（这样做）：注册表输出
+- 示例（别这样做）：页面里手拼格式串
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--format-datetime
+
+### FORMAT.RELATIVE_TIME 相对时间
+
+消息、通知、动态里的时间用相对时间：1 分钟内写「刚刚」，1 小时内写「N 分钟前」，24 小时内写「N 小时前」，7 天内写「N 天前」，更早写日期；<time dateTime> 带机器可读时间，悬停或聚焦显示带时区的绝对时间（Geist Relative Time Card 的做法）；同样经格式化注册表输出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：分档 `p.tiers` = {'1 分钟内': '刚刚', '1 小时内': 'N 分钟前', '24 小时内': 'N 小时前', '7 天内': 'N 天前', '更早': 'YYYY-MM-DD'}（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--format-relative-time
+
+### FORMAT.MASKING 脱敏
+
+管理侧展示个人信息（领域规格里分级为 pii / sensitive_pii 的字段）时脱敏：用 * 替换并保持位数；金额、时间等高度敏感的值整体隐藏为 ***；脱敏在服务端完成，前端不拿到明文再遮。各类信息保留的位数按下表，业务更严格时可以收紧。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：保留位数 `p.rules` = {'姓名': '两个字留首字，三个字及以上留首尾', '手机号': '留前 3 后 4', '证件号': '留前 6 后 4', '银行卡': '留后 4', '邮箱': '留域名和账号前 3 位', '地址': '留到省市区'}（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：保持位数的部分脱敏
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-format--format-masking
+
+## 设计模式/全局规则 / 文案（COPY）
+
+界面文字走文案字典；从用户视角、简洁一致地写；语气平和；报错说清怎么办；标点与用词统一。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--overview
+
+### COPY.NO_LITERAL 文案字典
+
+组件、hooks、工具函数里不写死界面文字，统一经文案字典的 key 取用（t('vehicle.form.plate')，用户数据除外）；key 用稳定的点分标识，不用文案本身作 key；插值用命名占位符 {name}；品牌名、代码和标识符标 translate="no"。
+
+- 执行：机器门禁 `text.no-literal-copy`；适用：管理侧与用户侧
+- 示例（这样做）：经 key 取文案
+- 示例（别这样做）：组件里写死中文
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-no-literal
+
+### COPY.USER_VIEW 用户视角
+
+写用户能做什么、会得到什么，不写系统怎么实现；用主动语态（「安装命令行工具」，不是「命令行工具将被安装」）；去掉用户已经知道的话；同一事物全系统一个叫法，操作名称和它打开的页面标题一致，按钮叫「发布」，结果就叫「已发布」；最重要的信息放在最前面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：说结果
+- 示例（别这样做）：说实现
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-user-view
+
+### COPY.TONE 语气
+
+称呼用「你」；多给建议，少用「不能」「不要」「请勿」这类命令；出了问题聚焦怎么解决，不指责用户；「抱歉」只用在系统造成的问题上；不用「绝不」这类绝对化说法；语气积极、给出办法，即使是报错。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-tone
+
+### COPY.ERROR_MESSAGE 报错文案
+
+报错写清两件事：发生了什么（客观描述，不只给错误码），用户下一步怎么做（配一个明确的动作）。错误码与请求编号可以附在后面供排查。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：原因 + 下一步
+- 示例（别这样做）：只有错误码
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-error-message
+
+### COPY.PUNCTUATION 标点与空格
+
+中文与数字、英文之间加一个空格（2 个、5 MB）；按钮、标题、输入提示、表格里的短句不加句号；感叹号只用于问候和祝贺；省略号用单个字符「…」，打开后续步骤的菜单项（「重命名…」）与加载中的文字（「保存中…」）以它结尾；快捷键与单位用不换行空格连住（⌘ K、10 MB）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-punctuation
+
+### COPY.TERMS 用词
+
+规范用词：写「其他」不写「其它」，写「登录」不写「登陆」，指代时「此」比「该」更明确；统计数字用阿拉伯数字。禁用词表随项目补充。
+
+- 执行：机器门禁 `text.banned-terms`；适用：管理侧与用户侧
+- 参数：禁用词 `p.banned` = {'其它': '其他', '登陆': '登录'}（pomaster 预设约定（Geist 体系））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-copywriting--copy-terms
+
+## 设计模式/全局规则 / 按钮（BUTTON）
+
+按用途选按钮变体；一个按钮区一个主按钮；推荐操作在前、风险操作在后、「更多」在最右；文案用动词。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--overview
+
+### BUTTON.TYPES 按钮类型
+
+default（最深的灰）用于完成、推荐类操作；拿不准时用 secondary；表格操作列等大量重复的地方用 tertiary；删除等有风险的操作用 error，需要提醒但可撤销的用 warning；空间小、按钮多时用纯图标按钮，必须带 aria-label（需要时配文字提示）；一个按钮里不放两个图标。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：用途 → 变体 `p.map` = {'完成与推荐': 'default', '其余操作': 'secondary', '表格操作列': 'tertiary', '有风险': 'error', '需提醒': 'warning', '空间小': '纯图标（带 aria-label）'}（Geist · Button）
+- 示例（这样做）：各变体的用途
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-types
+
+### BUTTON.SINGLE_PRIMARY 主按钮
+
+同一个按钮区（工具栏、对话框底部、表单底部）最多一个 default 变体的主按钮，其余用 secondary 或 tertiary。
+
+- 执行：机器门禁 `markup.single-primary-button`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 参数：主按钮上限 `p.max_primary` = 1（Geist · Button）
+- 示例（这样做）：一个主按钮
+- 示例（别这样做）：三个主按钮，看不出该点哪个
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-single-primary
+
+### BUTTON.ORDER 按钮顺序
+
+推荐的操作放在阅读起点，有风险的操作放最后，折叠起来的「更多」永远在最右；有返回含义的按钮放最左；对话框底部「取消」在前、主操作在后（右对齐）。工具栏按「推进业务（新建、保存、发布）→ 视图控制 → 其他（刷新、设置）→ 更多」排列。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：工具栏顺序
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-order
+
+### BUTTON.PLACEMENT 按钮位置
+
+按钮放在它作用的内容旁边；工具栏的按钮靠右；页面底部的按钮区只用于两种情况：详情页推进流程（审批通过、驳回）和拆成多张卡片的复杂表单（Geist 的表单卡片把保存放在卡片页脚）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-placement
+
+### BUTTON.COPY 按钮文案
+
+按钮文案用动词（下拉按钮除外），具体到对象，说清点了会发生什么，如「发布」「保存 API 密钥」，少用「确定」「继续」「提交」这类泛词；主要操作本身是否定动作时点明后果，如「删除车型」；加载中保留原文字并加转圈。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：说清结果
+- 示例（别这样做）：泛词，看不出后果
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-copy
+
+### BUTTON.GROUPING 按钮分组
+
+按钮之间用间距分组，确有需要才加分割线；不要把普通按钮拼接成一组，容易被当成切换按钮——互斥切换用分段控件。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-buttons--button-grouping
+
+## 设计模式/全局规则 / 数据列表（LIST）
+
+按数据选列表形态与查询方式；分页并记住位置；详情打开方式有选择规则；批量、新建、删除各有固定做法。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--overview
+
+### LIST.FORM 列表形态
+
+多字段、需要比较的数据用表格；空间小（侧栏、下拉、小弹层）时用实体列表（每行图标 + 标题 + 描述 + 操作）；展示型内容用卡片网格；数据很多时虚拟滚动，不一次渲染上千行。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-form
+
+### LIST.QUERY 查询方式
+
+改条件立刻刷新结果用筛选（已生效的筛选显示为可移除的标签）；一个关键词跨多个字段找用搜索框（防抖、取消旧请求）；多个条件组合后一起提交用查询表单。常用的查询放在列表工具栏里，复杂查询单独放一个区域；筛选、排序、页码全部写进地址。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：工具栏里的搜索与筛选
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-query
+
+### LIST.PAGING 分页与位置
+
+列表默认分页加载，只有一页时隐藏分页；从详情返回列表时恢复原来的页码、筛选和滚动位置（状态在地址里，浏览器后退即可恢复），并标记看过的条目；信息流、消息类列表用同页加载更多。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-paging
+
+### LIST.DETAIL_ENTRY 详情入口
+
+点标题进入详情（标题是链接）。内容一屏放得下就在行内展开；信息较多用侧边抽屉（不离开列表）；需要分享链接或沉浸处理用独立页面；需要在多条之间快速切换用左右两栏。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-detail-entry
+
+### LIST.BATCH 批量操作
+
+勾选行之后，工具栏位置出现批量操作栏，写明已选几项，并提供批量操作和取消选择；表头复选框在部分选中时是半选态；批量操作的位置全系统一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：已选数量 + 批量操作
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-batch
+
+### LIST.CREATE 新建入口
+
+工具栏右侧「新建」按钮打开对话框、侧边抽屉或新页面，新建成功后新条目排在列表第一并短暂高亮；在列表里就地添加时，「添加」按钮放在列表首或尾，新条目出现在按钮的位置。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-create
+
+### LIST.DELETE 删除
+
+能撤销的删除直接执行，并在 Toast 里提供约 1 分钟内的撤销；不能撤销的删除贴着按钮用气泡确认，不弹整屏对话框；破坏性很大的操作（批量删除、清空、删除项目）用危险确认对话框，并要求输入名称确认。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：撤销窗口 `p.undo_window` = 60000ms（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：气泡确认贴着按钮
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-global-data-list--list-delete
+
+## 设计模式/原则 / 亲密性（PROXIMITY）
+
+有关系的靠近，没关系的拉开；用间距的远近表达结构与层级。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-proximity--overview
+
+### PROXIMITY.GROUPING 分组
+
+关系紧密的元素靠在一起，读作一个整体；没关系的拉开距离。间距只取 4px 倍数的档位（见「间距」领域），常用 8 / 16 / 24 / 32 四档：标签与值 8，同组字段 16，组与组 24 到 32；需要再拉开层次时升一档，或加分割线。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：间距取值 `p.formula` = 4 的倍数（Tailwind CSS · 间距（--spacing 基数））
+- 参数：常用档位 `p.tiers` = 8px / 16px / 24px / 32px（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：标签和值靠近，组与组拉开
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-proximity--proximity-grouping
+
+## 设计模式/原则 / 对齐（ALIGN）
+
+每个元素都有意对齐到栅格、基线、边缘或视觉中心；文字左对齐共用起始边；数字右对齐、小数位一致。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-alignment--overview
+
+### ALIGN.TEXT 文字对齐
+
+标题和正文左对齐，共用同一条起始边；每个元素都有意对齐到栅格、基线、边缘或视觉中心，几何对齐看着不对时允许 1px 的视觉微调；图标与文字并排时平衡两者的粗细、大小与间距。只有在刻意强调标题与正文的区别时才打破这条线。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-alignment--align-text
+
+### ALIGN.FORM_LABEL 表单标签对齐
+
+Geist 的表单标签在输入上方、与输入左边对齐；同一表单里的标签与输入共用一条起始边；横排的筛选条、设置项（标签在左）时标签列等宽、左对齐，输入列对齐成一条竖线。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：标签与输入共用起始边
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-alignment--align-form-label
+
+### ALIGN.NUMBERS 数字对齐
+
+同一列的数字右对齐，小数位保持一致，用等宽数字（tabular-nums），方便上下比较。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-alignment--align-numbers
+
+## 设计模式/原则 / 对比（CONTRAST）
+
+主次分明；需要慎重的选择保持中立；状态靠颜色加形状或文字区分；交互态比静止态对比更强。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-contrast--overview
+
+### CONTRAST.PRIMARY_ACTION 主次对比
+
+更重要、更常用的操作要突出，也可以靠弱化其他操作来突出它。需要用户慎重判断的选择（同意或拒绝一份申请）两个按钮用同样的变体，不引导用户选某一个。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：审批时两个选择同等对待
+- 示例（别这样做）：把「通过」做成主按钮，暗示用户选它
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-contrast--contrast-primary-action
+
+### CONTRAST.STATUS 状态区分
+
+不同状态用不同颜色，同时配图标或文字，不能只靠颜色区分；悬停、按下、聚焦态的对比要比静止态更强；整页的标题与正文用字号、字重拉开层级；图表用色盲友好的配色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：颜色 + 文字
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-contrast--contrast-status
+
+## 设计模式/原则 / 重复（REPEAT）
+
+同类东西全系统长得一样、放在一样的位置，降低学习成本。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-repetition--overview
+
+### REPEAT.CONSISTENCY 一致性
+
+同一类元素（分割线、颜色、形状、信息格式、间距、圆角）在全系统用同一种做法；同类页面用同样的结构，共性问题在共享组件（src/components/ui）里改，不在单个页面里改。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-repetition--repeat-consistency
+
+## 设计模式/原则 / 直截了当（DIRECT）
+
+在哪里看到就在哪里改；拖拽只沿一个方向，并提供不用拖拽的替代方式。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-direct--overview
+
+### DIRECT.INLINE_EDIT 就地编辑
+
+能就地编辑的不跳到另一页。偶尔改、以阅读为主的单个字段用点击编辑（悬停高亮，点开带保存和取消，Esc 取消）；经常要改的用旁边的编辑按钮；多个字段一起改时进入行内编辑，切换前后表格列宽不跳动。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：单字段点击编辑
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-direct--direct-inline-edit
+
+### DIRECT.DRAG 拖拽
+
+可拖拽的条目悬停时出现拖拽手柄、指针变成手形，可放置的位置有明显外框；只沿一个方向拖（纵向或横向）；拖动期间禁止选中文字；每个拖拽都提供点击和键盘的替代方式（上移、下移按钮或序号输入）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-direct--direct-drag
+
+## 设计模式/原则 / 足不出户（STAY）
+
+能在当前页完成的不跳页：确认用气泡确认或撤销，补充信息用浮层或抽屉，流程尽量在一页内展开。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-stay--overview
+
+### STAY.ON_PAGE 不跳页
+
+能撤销的操作直接做并提供撤销，不能撤销的贴着按钮用气泡确认；补充信息用浮层或侧边抽屉；同一组文字提示只有第一个有延迟，后面的立即出现；小的文字修改用就地编辑；多步任务尽量在一页内逐步展开，不把每一步拆成独立页面；对话框与抽屉里的滚动不带动底下的页面（overscroll-behavior: contain）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：撤销窗口 `p.undo_window` = 60000ms（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：悬停看详情，不跳页
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-stay--stay-on-page
+
+## 设计模式/原则 / 简化交互（LIGHT）
+
+关键操作常驻可见；上下文操作悬停出现；可点区域做大、工具靠近内容；看着能点的都能点。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-lightweight--overview
+
+### LIGHT.TOOLS 工具常驻
+
+关键操作始终可见，有清晰的可点区域和悬停、按下状态；只和某一行或某个对象相关的操作，悬停或聚焦时才出现（键盘聚焦时也要出现）；看起来可交互的部分都要真能交互。关键操作不能藏在悬停或模式切换后面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-lightweight--light-tools
+
+### LIGHT.HOTSPOT 可点区域
+
+可点区域与看到的目标一致；小于 24px 的目标把点击区扩到至少 24×24 CSS px，移动端至少 44px；优先放大可点区域，而不是放大按钮本身（比如整行都能点）；工具放在它作用的内容旁边。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最小点击区 `p.min_target` = 24px（Vercel · Web Interface Guidelines）
+- 参数：移动端最小点击区 `p.min_target_mobile` = 44px（Vercel · Web Interface Guidelines）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-lightweight--light-hotspot
+
+## 设计模式/原则 / 提供邀请（INVITE）
+
+拖拽、就地编辑这类不容易发现的交互，要主动给出提示。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-invitation--overview
+
+### INVITE.DISCOVERABILITY 交互邀请
+
+拖拽、就地编辑、上下文工具这类不容易发现的交互要给出提示：空状态引导第一步、悬停时提示可点或可编辑、未完成的任务提示继续。新功能引导只放几步，可跳过、可重看；不能拿引导来弥补交互本身的问题。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：未完成任务提示继续
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-invitation--invite-discoverability
+
+## 设计模式/原则 / 巧用过渡（TRANSITION）
+
+用过渡说明刚刚发生了什么；只动 transform 与 opacity；不动没变化的东西；尊重减少动效设置。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-transition--overview
+
+### TRANSITION.EXPLAIN 用过渡说明变化
+
+动画只用来说明因果或刻意的愉悦：切换视图时用滑动、展开保留上下文；新增的条目短暂高亮，修改过的单元格短暂着色后恢复，删除的元素平滑移除，高亮在几秒内淡出；只动 transform 与 opacity，不写 transition: all，列出要过渡的属性；用户操作能打断动画；不给没变化的元素加动画；用户开启「减少动效」时关闭或降级过渡。时长取动效 token。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：短 `p.fast` = 150ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 参数：中 `p.normal` = 200ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 参数：长 `p.slow` = 300ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-transition--transition-explain
+
+## 设计模式/原则 / 即时反应（REACT）
+
+输入时即时给出联想、校验与结果；加载样式随操作的频率与重要程度选；新内容到达时提示或短暂高亮。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-reaction--overview
+
+### REACT.IMMEDIATE 即时反应
+
+输入时给出联想、实时校验（如密码强度）、实时搜索结果，并做防抖、取消旧请求、丢弃过期响应；加载样式按操作的频率和重要程度选（按钮、表格、整页），不要所有操作都用同一种；异步更新用礼貌的 aria-live 区域播报；有新内容时提示刷新，或在几秒内高亮新到的条目；提示逐步给，不要一次全摆出来。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：输入联想
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-principles-reaction--react-immediate
+
+## 设计模式/模板文档 / 数据可视化页（VIZ）
+
+概览、分析、明细三类；最重要的指标放左上；一屏 5 到 9 个模块；高度概括的数据用指标卡；一张卡片一个主题。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-visualization-page--overview
+
+### VIZ.TYPES 页面类型
+
+数据可视化页分三类：概览（指标大盘、监控）、分析（多维分析）、明细（数据明细）。先定类型，再选模块。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-visualization-page--viz-types
+
+### VIZ.LAYOUT 版面布局
+
+最重要的指标和视图放在页面顶部或左上；一屏控制在 5 到 9 个模块；高度概括的数据优先用指标卡（数值 + 趋势），而不是图表；一张卡片一个主题，相关度高的数据合并到一张卡片；用 Bento 栅格时大格给主角，小格给辅助指标。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：一屏模块数 `p.modules` = 5 / 9（pomaster 预设约定（Geist 体系））
+- 示例（这样做）：顶部一排指标卡
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-visualization-page--viz-layout
+
+### VIZ.CHART 图表与口径
+
+按要表达的关系选图表类型（趋势用折线，构成用堆叠，比较用柱状），用色盲友好的配色，必要时说明指标口径；用筛选让用户既能看全局，也能下钻到细节，筛选写进地址；页面之间用交互串联。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-visualization-page--viz-chart
+
+## 设计模式/模板文档 / 详情页（DETAIL）
+
+按信息复杂度选布局；信息平铺直给；用分割线、卡片、标签页分出层级；单据类流程操作放页脚。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-detail-page--overview
+
+### DETAIL.LAYOUT 布局
+
+内容简单时放在一张卡片里，用分割线分组；有多个复杂模块时每个模块一张卡片（审批单据类）；内容多到一页放不下时用标签页做导航；按阶段推进的内容用步骤组织。默认用最简单的那种。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：一张卡片，分割线分组
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-detail-page--detail-layout
+
+### DETAIL.FLAT 信息平铺
+
+信息平铺直给，没有必要不折叠、不隐藏；强相关的内容靠近，弱相关的拉开；同类详情页用同样的结构和模块；页面 <title> 与 h1 写当前对象（「沪A·D2391 · 车辆」）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-detail-page--detail-flat
+
+### DETAIL.SEPARATORS 分隔方式
+
+组内用分割线，大段之间拉开间距或换一张卡片，一个主题一张卡片，最高一级用标签页（按版本、意图或阶段）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-detail-page--detail-separators
+
+### DETAIL.ACTIONS 流程操作
+
+审批单据类详情页的流程操作（通过、驳回、转交、加签、挂起、撤回）放在页面底部按钮区；通过与驳回同等样式（见 CONTRAST.PRIMARY_ACTION）；不可逆的操作走危险确认。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-templates-detail-page--detail-actions
+
 ## 设计模式/体验管理 / 界面静帧（STILL）
 
 文档、功能卡片、空状态与引导里的产品静帧：像真产品、只给故事主角真实文字、裁切有意图、一个焦点、按展示尺寸设计、动画先定封面帧、用规范组件与图标。
@@ -3793,7 +4516,7 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-verify
 
-## 待补的领域（83 个）
+## 待补的领域（63 个）
 
 - 组件/通用 / 分裂按钮（`split_button`，前缀 CMP.SPLIT_BUTTON）：一个默认动作加一组相近的动作。；对应组件 antd Dropdown.Button，geist Split Button
 - 组件/通用 / 复制按钮（`copy_button`，前缀 CMP.COPY_BUTTON）：把一段文字复制到剪贴板并给出反馈。；对应组件 antd Typography.copyable，geist Copy Button、Text With Copy Button
@@ -3858,26 +4581,6 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - 组件/反馈 / 水印（`watermark`，前缀 CMP.WATERMARK）：给页面加文字或图片水印。；对应组件 antd Watermark，geist （无）
 - 组件/其他 / 固钉（`affix`，前缀 CMP.AFFIX）：滚动时把元素固定在视口内。；对应组件 antd Affix，geist （无）
 - 组件/其他 / 全局配置（`config_provider`，前缀 CMP.CONFIG_PROVIDER）：主题、语言与组件默认值的统一配置。；对应组件 antd ConfigProvider、App、LocaleProvider，geist GeistProvider
-- 设计模式/全局规则 / 反馈（`feedback`，前缀 FEEDBACK）：按重要程度选提示方式；失败留得住、给出路；加载、字段错误、空状态、部分成功与徽标。
-- 设计模式/全局规则 / 导航（`navigation`，前缀 NAV）：主导航、顶部导航、面包屑、标签页、步骤条与分页的选型和上限。
-- 设计模式/全局规则 / 数据录入（`data_entry`，前缀 ENTRY）：标签常驻、按选项数选控件、开关即时生效、提示放对位置、校验分工、上传方式。
-- 设计模式/全局规则 / 数据展示（`data_display`，前缀 DISPLAY）：表格列、卡片排布、折叠、时间轴、轮播，以及超长和空数据。
-- 设计模式/全局规则 / 数据格式（`data_format`，前缀 FORMAT）：数字、金额、日期时间、相对时间与脱敏的固定格式。
-- 设计模式/全局规则 / 文案（`copywriting`，前缀 COPY）：文案走字典；站在用户这边写；语气平和；报错说清怎么办；标点与用词统一。
-- 设计模式/全局规则 / 按钮（`buttons`，前缀 BUTTON）：按用途选按钮类型；一个按钮区一个主按钮；顺序、位置、文案与分组。
-- 设计模式/全局规则 / 数据列表（`data_list`，前缀 LIST）：列表形态、查询方式、分页与位置、详情入口、批量操作、新建与删除。
-- 设计模式/原则 / 亲密性（`proximity`，前缀 PROXIMITY）：用间距远近表达分组。
-- 设计模式/原则 / 对齐（`alignment`，前缀 ALIGN）：文字、表单标签与数字的对齐方式。
-- 设计模式/原则 / 对比（`contrast`，前缀 CONTRAST）：主次分明；状态不只靠颜色。
-- 设计模式/原则 / 重复（`repetition`，前缀 REPEAT）：同类元素全系统一致。
-- 设计模式/原则 / 直截了当（`direct`，前缀 DIRECT）：在哪看就在哪改；拖拽有替代方式。
-- 设计模式/原则 / 足不出户（`stay`，前缀 STAY）：能在当前页完成的不跳页。
-- 设计模式/原则 / 简化交互（`lightweight`，前缀 LIGHT）：工具按重要程度常驻；可点区域做大。
-- 设计模式/原则 / 提供邀请（`invitation`，前缀 INVITE）：不易发现的交互要有邀请。
-- 设计模式/原则 / 巧用过渡（`transition`，前缀 TRANSITION）：用过渡说明发生了什么。
-- 设计模式/原则 / 即时反应（`reaction`，前缀 REACT）：输入时即时反应。
-- 设计模式/模板文档 / 数据可视化页（`visualization_page`，前缀 VIZ）：先定页面类型；版面布局；选对图表、讲清口径。
-- 设计模式/模板文档 / 详情页（`detail_page`，前缀 DETAIL）：按复杂度选布局；信息平铺；分隔方式对应层级；流程操作放页脚。
 
 ## 出处
 
@@ -3914,3 +4617,4 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - `SRC.POMASTER.PERF_SPEC` pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）：repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md（核实 2026-11-06）
 - `SRC.POMASTER.DEFAULTS` pomaster 推荐默认（数值类决策位的缺省取值）：repo:docs/design-standard.md（核实 2026-11-07）
 - `SRC.TAILWIND.Z_INDEX` Tailwind CSS · z-index（z-0、z-10 … z-50）：https://tailwindcss.com/docs/z-index（核实 2026-11-07）
+- `SRC.VERCEL.GUIDELINES` Vercel · Web Interface Guidelines：https://vercel.com/design/guidelines（核实 2026-11-07）

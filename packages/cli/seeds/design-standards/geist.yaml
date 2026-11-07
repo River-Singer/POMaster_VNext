@@ -164,6 +164,11 @@ sources:
     title_zh: Tailwind CSS · z-index（z-0、z-10 … z-50）
     url: https://tailwindcss.com/docs/z-index
     retrieved: 2026-11-07
+  SRC.VERCEL.GUIDELINES:
+    title_zh: Vercel · Web Interface Guidelines
+    url: https://vercel.com/design/guidelines
+    retrieved: 2026-11-07
+    note_zh: 交互、动效、布局、内容、表单、性能、设计、文案的界面准则：点击区至少 24px（移动端 44px）、转圈与骨架延迟 150–300ms 出现并至少停留 300–500ms、提交前不禁用提交按钮、状态写进地址、只动 transform 与 opacity 等
 
 specs:
   ui: themes/ui-presentation-and-design.md
@@ -2624,6 +2629,843 @@ areas:
       - id: CMP.SPIN.TEXT
         title_zh: 久了要说话
         statement_zh: 超过 2 秒的加载在指示旁写在做什么（「正在汇总 3 个月的数据」）；超过 10 秒提供取消或转后台。
+        enforcement: { kind: review }
+
+  - key: feedback
+    title_zh: 反馈
+    group: patterns.global
+    prefix: FEEDBACK
+    summary_zh: 按反馈的重要程度和用户是否需要处理来选提示方式；失败要给恢复动作；加载、空状态、部分成功各有固定做法。
+    rules:
+      - id: FEEDBACK.CHOOSE
+        title_zh: 按重要程度选提示方式
+        statement_zh: 操作结果轻、用户不必等待时用 Toast（一句话，约 4 秒自动消失，悬停时暂停）；必须处理的才用 Modal；后台任务完成这类系统推送用带标题与动作的通知（右下角）；需要在页面上常驻的说明用 Note / Alert（不自动消失）；操作前的二次确认贴着按钮用气泡确认，不可逆的大操作用危险确认对话框。能立刻看到结果的简单操作可以不提示，不要过度反馈。
+        params:
+          channels: { value: "{'轻量结果': 'Toast', '必须处理': 'Modal', '系统推送': '通知（Toast 带标题与动作）', '页面常驻说明': 'Note / Alert', '操作前确认': '气泡确认 / 危险确认对话框'}", source: SRC.POMASTER.PRESET, label_zh: 场景 → 提示方式 }
+          toast_duration: { value: 4000, unit: ms, source: SRC.POMASTER.PRESET, label_zh: Toast 停留时长 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 页面常驻说明用 Alert
+            jsx: |-
+              <Alert className="w-full max-w-[480px]"><InfoIcon /><AlertTitle>停用的车型不会出现在下单页</AlertTitle><AlertDescription>已有运单不受影响。</AlertDescription></Alert>
+          - kind: do
+            title_zh: 轻量结果用 Toast
+            code: |-
+              toast.success(t('vehicleModel.saved'))   // 「车型已保存」，约 4 秒后自动消失，悬停时暂停
+            lang: ts
+
+      - id: FEEDBACK.FAILURE
+        title_zh: 失败的处理
+        statement_zh: 重要的失败不用会自动消失的 Toast，用 Alert 或 Modal 写清发生了什么，并给出恢复动作（重试、下载错误明细、联系管理员）；带动作的错误 Toast 不自动消失。权限不足、离线也一样要给恢复动作。每一屏都要有下一步或恢复路径。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: Alert + 恢复动作
+            jsx: |-
+              <Alert variant="destructive" className="w-full max-w-[480px]"><OctagonAlertIcon /><AlertTitle>车辆台账导出失败</AlertTitle><AlertDescription><span>网络中断，已导出的 600 条保留在草稿里。</span><div className="mt-2 flex gap-2"><Button size="small" variant="secondary">重试</Button><Button size="small" variant="tertiary">下载错误明细</Button></div></AlertDescription></Alert>
+          - kind: dont
+            title_zh: 几秒后消失、没有下一步
+            code: |-
+              toast.error('导出失败')
+            lang: ts
+
+      - id: FEEDBACK.LOADING
+        title_zh: 加载反馈
+        statement_zh: 预计超过约 1 秒的操作给出加载反馈：按钮保留原文字并加转圈（按钮报告忙碌、不能重复提交）；局部区域用转圈；长任务用进度条并允许取消；首屏加载用骨架屏，骨架和最终内容的几何一致，加载完成后页面不跳动。转圈和骨架延迟约 150–300ms 再出现、出现后至少停留约 300–500ms，避免一闪而过。
+        params:
+          show_delay: { value: 150–300, unit: ms, source: SRC.VERCEL.GUIDELINES, label_zh: 延迟出现 }
+          min_visible: { value: 300–500, unit: ms, source: SRC.VERCEL.GUIDELINES, label_zh: 最短停留 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按钮加载态、进度条、骨架屏
+            jsx: |-
+              <div className="flex w-full max-w-[420px] flex-col gap-4"><Button loading>导出中</Button><div className="flex flex-col gap-2"><span className="text-label-13 text-ds-gray-900">已导出 640 / 1,248 条</span><Progress value={51} aria-label="导出进度" /></div><div className="flex flex-col gap-2"><Skeleton className="h-5 w-1/2" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div></div>
+
+      - id: FEEDBACK.FIELD_ERROR
+        title_zh: 字段错误
+        statement_zh: 校验错误显示在对应字段下方（aria-describedby 关联、aria-invalid 标出），用文字说明怎么改，用户修改前不消失；提交时聚焦到第一个出错的字段，必要时在表单顶部给错误摘要；不能只靠颜色、图标或 Toast 表达字段错误；提交失败不清空已填内容。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 错误文字贴着字段
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="fb-plate">车牌号</Label><Input id="fb-plate" defaultValue="沪A1" aria-invalid="true" aria-describedby="fb-plate-err" /><span id="fb-plate-err" className="text-copy-13 text-ds-red-900">车牌号为 7–8 位，如沪A12345</span></div>
+
+      - id: FEEDBACK.EMPTY
+        title_zh: 空状态
+        statement_zh: 还没有任何数据时，空状态说明为什么是空的并引导第一步（「添加车辆」）；筛选或搜索没有结果时，说明没找到并提供「清除筛选」。两种情况文案和动作不同；空、稀疏、密集、出错四种状态都要设计。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 还没有数据：引导第一步
+            jsx: |-
+              <div className="flex w-80 flex-col items-center gap-3 rounded-xl border border-dashed border-ds-gray-400 p-8 text-center"><InboxIcon className="size-6 text-ds-gray-900" /><span className="text-label-14">还没有车辆</span><span className="text-copy-13 text-ds-gray-900">添加第一辆车后就能派单了。</span><Button size="small"><PlusIcon />添加车辆</Button></div>
+          - kind: do
+            title_zh: 筛选无结果：提供清除筛选
+            jsx: |-
+              <div className="flex w-80 flex-col items-center gap-3 rounded-xl border border-ds-gray-400 p-6 text-center"><SearchXIcon className="size-6 text-ds-gray-900" /><span className="text-label-14">没有符合条件的车辆</span><Button size="small" variant="secondary">清除筛选</Button></div>
+
+      - id: FEEDBACK.PARTIAL
+        title_zh: 部分成功
+        statement_zh: 批量操作部分成功时，结果里写明成功、失败、跳过各多少条，并提供失败明细与「只重试失败的」；不能只说「操作成功」或「操作失败」。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 写清三个数
+            jsx: |-
+              <Alert className="w-full max-w-[480px]"><TriangleAlertIcon /><AlertTitle>120 辆车，导入了 117 辆</AlertTitle><AlertDescription><span>2 辆车牌号重复，1 辆缺少车型，已跳过。</span><div className="mt-2 flex gap-2"><Button size="small" variant="secondary">只重试失败的 3 辆</Button><Button size="small" variant="tertiary">下载明细</Button></div></AlertDescription></Alert>
+
+      - id: FEEDBACK.BADGE
+        title_zh: 徽标
+        statement_zh: 与用户强相关的重要信息（待审批数）用数字计数，次要提醒用小圆点；有图标时叠在图标右上角，没有图标时放在标题后；数量要写进被包住元素的可读名称（「通知，5 条未读」），计数本身 aria-hidden。
+        params:
+          rule: { value: "{'重要且与用户相关': '数字', '次要提醒': '圆点'}", source: SRC.POMASTER.PRESET, label_zh: 用数字还是圆点 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 数字与圆点
+            jsx: |-
+              <div className="flex items-center gap-6"><span className="relative inline-flex"><Button variant="secondary" svgOnly aria-label="待审批，5 条"><BellIcon /></Button><span aria-hidden="true" className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-ds-red-700 px-1 text-label-12 text-ds-background-100">5</span></span><span className="flex items-center gap-2 text-label-14">系统公告<span aria-hidden="true" className="size-2 rounded-full bg-ds-red-700" /><span className="sr-only">（有更新）</span></span></div>
+
+  - key: navigation
+    title_zh: 导航
+    group: patterns.global
+    prefix: NAV
+    summary_zh: 管理侧用左侧边栏；顶部导航只在一级入口少时用；面包屑、标签页、步骤条、分页各有数量与字数上限；导航用真链接。
+    rules:
+      - id: NAV.ADMIN_SIDE
+        title_zh: 管理侧主导航
+        statement_zh: 管理侧主导航用左侧边栏（shadcn Sidebar 的形态，可收起为图标栏，Cmd/Ctrl+B 切换），适合多级、操作密集的工作台；菜单项按业务域分组，多了可以滚动；当前页面用 aria-current="page" 高亮，高亮按路由的稳定标识匹配，不按标题文字或截取 URL 判断。导航项是真链接（<a> / 路由 Link），按住修饰键能在新标签页打开。
+        params:
+          sider_width: { value: 16rem, source: SRC.SHADCN.SIDEBAR, label_zh: 侧栏宽度 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按业务域分组的侧栏
+            jsx: |-
+              <nav aria-label="主导航" className="flex w-60 flex-col gap-1 rounded-xl border border-ds-gray-400 p-2"><span className="px-2 py-1 text-label-12 text-ds-gray-900">车队</span><a href="#vehicles" aria-current="page" className="flex items-center gap-2 rounded-md bg-ds-gray-alpha-200 px-2 py-2 text-label-14"><CarIcon className="size-4" />车辆</a><a href="#drivers" className="flex items-center gap-2 rounded-md px-2 py-2 text-label-14 text-ds-gray-900 hover:bg-ds-gray-alpha-100"><UsersIcon className="size-4" />司机</a><span className="px-2 py-1 text-label-12 text-ds-gray-900">运营</span><a href="#orders" className="flex items-center gap-2 rounded-md px-2 py-2 text-label-14 text-ds-gray-900 hover:bg-ds-gray-alpha-100"><PackageIcon className="size-4" />运单</a></nav>
+
+      - id: NAV.TOP
+        title_zh: 顶部导航
+        statement_zh: 顶部导航只在一级入口为 2 到 7 个时使用，常见于用户侧门户；每个导航项名称不超过 14 个字；当前项 aria-current="page"。
+        params:
+          min_items: { value: 2, source: SRC.POMASTER.PRESET, label_zh: 最少入口 }
+          max_items: { value: 7, source: SRC.POMASTER.PRESET, label_zh: 最多入口 }
+          label_max: { value: 14, source: SRC.POMASTER.PRESET, label_zh: 名称字数上限 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 五个一级入口
+            jsx: |-
+              <nav aria-label="主导航" className="flex items-center gap-1 border-b border-ds-gray-400 px-2">{["首页", "下单", "运单", "账单", "帮助"].map((name, i) => <a key={name} href={"#" + i} aria-current={i === 1 ? "page" : undefined} className={"px-3 py-3 text-label-14 " + (i === 1 ? "border-b-2 border-ds-gray-1000 text-ds-gray-1000" : "text-ds-gray-900")}>{name}</a>)}</nav>
+
+      - id: NAV.BREADCRUMB
+        title_zh: 面包屑
+        statement_zh: 面包屑显示当前页在层级里的位置（nav + 有序列表，最后一项是当前页、不是链接），建议不超过 3 级、最多 5 级，更深的中间折叠；页面自身的导航已经能说明位置时不加面包屑。
+        params:
+          recommended_max: { value: 3, source: SRC.POMASTER.PRESET, label_zh: 建议层级 }
+          max: { value: 5, source: SRC.POMASTER.PRESET, label_zh: 最多层级 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 三级面包屑
+            jsx: |-
+              <nav aria-label="面包屑"><ol className="flex items-center gap-2 text-copy-14"><li><a href="#fleet" className="text-ds-gray-900 hover:text-ds-gray-1000">车队</a></li><li aria-hidden="true" className="text-ds-gray-700">/</li><li><a href="#vehicles" className="text-ds-gray-900 hover:text-ds-gray-1000">车辆</a></li><li aria-hidden="true" className="text-ds-gray-700">/</li><li aria-current="page" className="text-ds-gray-1000">沪A·D2391</li></ol></nav>
+
+      - id: NAV.TABS
+        title_zh: 标签页
+        statement_zh: 标签页名称不超过 14 个字。切换页面里平级的内容区用 Tabs；卡片里切换同一份内容的展示方式用分段控件；选项很多时改用竖向标签页。标签页状态写进地址，刷新和分享后停在同一个页签。
+        params:
+          label_max: { value: 14, source: SRC.POMASTER.PRESET, label_zh: 名称字数上限 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 页面级标签页 + 卡片内分段控件
+            jsx: |-
+              <div className="flex w-full max-w-[480px] flex-col gap-4"><Tabs defaultValue="basic"><TabsList><TabsTrigger value="basic">基本信息</TabsTrigger><TabsTrigger value="repair">维修记录（3）</TabsTrigger><TabsTrigger value="cost">费用</TabsTrigger></TabsList></Tabs><Card><CardHeader className="flex flex-row items-center justify-between"><CardTitle>里程</CardTitle><div role="group" aria-label="统计范围" className="flex gap-1 rounded-md bg-ds-gray-100 p-1"><Button size="tiny" variant="secondary" aria-pressed="true">本周</Button><Button size="tiny" variant="tertiary" aria-pressed="false">本月</Button></div></CardHeader></Card></div>
+
+      - id: NAV.STEPS
+        title_zh: 步骤条
+        statement_zh: 有固定流程的任务用步骤条（有序列表，当前步 aria-current="step"）。横向步骤条放 3 到 4 步，每步标题不超过 11 个字；步骤更多或数量会变时，用固定在页面左侧的竖向步骤条。
+        params:
+          horizontal_min: { value: 3, source: SRC.POMASTER.PRESET, label_zh: 横向最少步数 }
+          horizontal_max: { value: 4, source: SRC.POMASTER.PRESET, label_zh: 横向最多步数 }
+          title_max: { value: 11, source: SRC.POMASTER.PRESET, label_zh: 步骤标题字数上限 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 三步流程
+            jsx: |-
+              <ol className="flex w-full max-w-[480px] items-center gap-3">{["填写车辆信息", "上传证件", "提交审核"].map((title, i) => <li key={title} aria-current={i === 1 ? "step" : undefined} className="flex flex-1 items-center gap-2"><span className={"flex size-6 shrink-0 items-center justify-center rounded-full text-label-12 " + (i < 1 ? "bg-ds-gray-1000 text-ds-background-100" : i === 1 ? "bg-ds-blue-700 text-ds-background-100" : "border border-ds-gray-400 text-ds-gray-900")}>{i < 1 ? <CheckIcon className="size-3" /> : i + 1}</span><span className={"text-label-14 " + (i > 1 ? "text-ds-gray-900" : "")}>{title}</span>{i < 2 ? <span aria-hidden="true" className="h-px flex-1 bg-ds-gray-400" /> : null}</li>)}</ol>
+
+      - id: NAV.PAGINATION
+        title_zh: 分页
+        statement_zh: 管理侧列表用页码分页：默认每页 20 条，每页最多 200 条；页数多时显示首尾页与当前页附近的页码，其余折叠，数据多时允许改每页条数；当前页 aria-current="page"，页码写进地址。用户侧列表用「加载更多」的游标分页，与接口的 KEYSET 分页一致，每次最多 50 条，不显示总页数。不得前端拉全量再假分页。
+        params:
+          admin_page_size: { value: 20, source: SRC.POMASTER.PRESET, label_zh: 管理侧每页条数 }
+          admin_max_page_size: { value: 200, source: SRC.POMASTER.PRESET, label_zh: 每页最多 }
+          public_max_page_size: { value: 50, source: SRC.POMASTER.PRESET, label_zh: 用户侧每次最多 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 管理侧页码分页
+            jsx: |-
+              <nav aria-label="分页" className="flex items-center gap-1 text-copy-14"><span className="mr-2 text-ds-gray-900">共 1,286 条</span><Button size="small" variant="tertiary" svgOnly aria-label="上一页"><ChevronLeftIcon /></Button><Button size="small" variant="tertiary">1</Button><span aria-hidden="true" className="px-1 text-ds-gray-700">…</span><Button size="small" variant="tertiary">5</Button><Button size="small" variant="secondary" aria-current="page">6</Button><Button size="small" variant="tertiary">7</Button><span aria-hidden="true" className="px-1 text-ds-gray-700">…</span><Button size="small" variant="tertiary">65</Button><Button size="small" variant="tertiary" svgOnly aria-label="下一页"><ChevronRightIcon /></Button></nav>
+
+  - key: data_entry
+    title_zh: 数据录入
+    group: patterns.global
+    prefix: ENTRY
+    summary_zh: 标签常驻可见、位置全系统一致；选择控件按选项数选；提示放对位置；校验不拦键入、提交防重复且失败不丢输入。
+    rules:
+      - id: ENTRY.LABEL
+        title_zh: 输入标签
+        statement_zh: 每个输入都有常驻可见的标签（<Label htmlFor> 关联，点标签聚焦控件），必填项有星号加读屏文字。Geist 的表单标签在输入上方、左对齐、不带冒号；同一个系统只用一种。占位文字只给格式示例，不能代替标签。
+        params:
+          label_position: { value: 上方，左对齐，不带冒号, source: SRC.GEIST.HOME, label_zh: 标签位置 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标签在上
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="en-plate">车牌号</Label><Input id="en-plate" placeholder="例：沪A12345" /></div>
+          - kind: dont
+            title_zh: 只有占位文字，填了之后就不知道是什么
+            jsx: |-
+              <Input className="w-72" placeholder="请输入车牌号" />
+
+      - id: ENTRY.CHOICE_CONTROL
+        title_zh: 选择控件
+        statement_zh: 二选一、改了立即生效的用开关；选项 3 到 4 个时用单选全部摆出来（需要解释差别时用选择卡片）；5 个以上用下拉选择，超过 10 个用可搜索选择；多选少量用复选框组，多了用多选选择器；需要精确数值时不用滑块，用数字输入。
+        params:
+          radio_range: { value: [3, 4], source: SRC.POMASTER.PRESET, label_zh: 单选平铺的选项数 }
+          select_above: { value: 5, source: SRC.POMASTER.PRESET, label_zh: 改用下拉的选项数 }
+          search_above: { value: 10, source: SRC.POMASTER.PRESET, label_zh: 改用可搜索选择的选项数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 3 个选项用单选，即时生效用开关
+            jsx: |-
+              <div className="flex w-80 flex-col gap-4"><div className="flex flex-col gap-2"><span className="text-label-14">可见范围</span><RadioGroup defaultValue="dept" aria-label="可见范围">{[["self", "仅本人"], ["dept", "本部门"], ["all", "全公司"]].map(([v, l]) => <div key={v} className="flex items-center gap-2"><RadioGroupItem value={v} id={"en-" + v} /><Label htmlFor={"en-" + v}>{l}</Label></div>)}</RadioGroup></div><div className="flex items-center gap-2"><Switch id="en-auto" defaultChecked /><Label htmlFor="en-auto">到期自动提醒</Label></div></div>
+          - kind: dont
+            title_zh: 两个选项用下拉，多点一次还看不到全部
+            jsx: |-
+              <Select defaultValue="yes"><SelectTrigger className="w-40" aria-label="是否冷链"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="yes">是</SelectItem><SelectItem value="no">否</SelectItem></SelectContent></Select>
+
+      - id: ENTRY.SWITCH_IMMEDIATE
+        title_zh: 开关即时生效
+        statement_zh: 开关拨动即生效，旁边不放「保存」按钮，开关旁的文字写清它控制什么；保存失败时把开关拨回并说明原因；需要和其他字段一起提交才生效的，用复选框。
+        params:
+          labels: { value: [开启, 关闭], source: SRC.POMASTER.PRESET, label_zh: 状态文字 }
+        enforcement: { kind: review }
+
+      - id: ENTRY.HINTS
+        title_zh: 提示
+        statement_zh: 短提示放在字段下方，不超过一句话；优先就地说明，文字提示（Tooltip）是最后手段；收集身份证号、手机号等敏感信息时写明为什么需要；能给合理默认值就给；用正确的 type、inputMode 与 autocomplete，让键盘与自动填充对得上。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 字段下方一句话提示
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="en-phone">司机手机号</Label><Input id="en-phone" type="tel" inputMode="tel" autoComplete="tel" aria-describedby="en-phone-hint" /><span id="en-phone-hint" className="text-copy-13 text-ds-gray-900">用于派单短信，不会展示给收货人。</span></div>
+
+      - id: ENTRY.VALIDATION
+        title_zh: 校验
+        statement_zh: 不拦截键入，用校验反馈代替；提交按钮在提交开始前一直可用（不因表单未填完而禁用），点了再把问题列出来并聚焦第一个错误；前端先校验格式（zod 模式），后端返回的字段错误定位到对应字段；提交中按钮进入加载态并带幂等键防止重复提交；提交失败保留已填内容；有未保存的修改时离开页面先提醒。
+        enforcement: { kind: review }
+
+      - id: ENTRY.UPLOAD
+        title_zh: 上传
+        statement_zh: 拖放区同时提供「选择文件」按钮（键盘可用），写明允许的格式和大小，并在选择时就校验、说明不符合的原因；上传中逐个显示进度，失败的写原因并能重试；图片用缩略图，达到数量上限后隐藏上传入口。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 写明格式与大小
+            jsx: |-
+              <div className="flex w-full max-w-[420px] flex-col items-center gap-2 rounded-xl border border-dashed border-ds-gray-500 p-6 text-center"><UploadIcon className="size-5 text-ds-gray-900" /><span className="text-label-14">拖到这里，或 <Button size="tiny" variant="secondary">选择文件</Button></span><span className="text-copy-13 text-ds-gray-900">JPG、PNG 或 PDF，单个不超过 10 MB</span></div>
+
+  - key: data_display
+    title_zh: 数据展示
+    group: patterns.global
+    prefix: DISPLAY
+    summary_zh: 表格列有稳定的类型、宽度与对齐；卡片一行最多 4 张；折叠、时间轴、轮播各有用法；每种展示都要设计超长与空数据。
+    rules:
+      - id: DISPLAY.TABLE_COLUMNS
+        title_zh: 表格列
+        statement_zh: 每列有稳定的 key、标题、值类型和宽度策略；时间、状态、操作列不换行；金额、数量右对齐并用等宽数字（tabular-nums），同列小数位一致，单位写在表头；空单元格显示「—」；长文本单行省略、悬停看全文；状态列用状态点加文字，不只靠颜色。
+        params:
+          empty: { value: —, source: SRC.POMASTER.PRESET, label_zh: 空值写法 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 金额右对齐、单位在表头、空值用「—」
+            jsx: |-
+              <Table className="w-full max-w-[520px]"><TableHeader><TableRow><TableHead>车牌号</TableHead><TableHead>状态</TableHead><TableHead className="text-right">运费（CNY）</TableHead><TableHead>备注</TableHead></TableRow></TableHeader><TableBody><TableRow><TableCell>沪A·D2391</TableCell><TableCell><span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-2 rounded-full bg-ds-green-700" />已签收</span></TableCell><TableCell className="text-right tabular-nums">1,280.00</TableCell><TableCell>—</TableCell></TableRow><TableRow><TableCell>沪A·D2392</TableCell><TableCell><span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-2 rounded-full bg-ds-amber-700" />在途</span></TableCell><TableCell className="text-right tabular-nums">86.50</TableCell><TableCell className="max-w-32 truncate" title="收货人要求下午三点后送达">收货人要求下午三点后送达</TableCell></TableRow></TableBody></Table>
+
+      - id: DISPLAY.CARD_GRID
+        title_zh: 卡片排布
+        statement_zh: 卡片用来把相关信息收拢成一块，按栅格排列，一行最多 4 张；卡片里的长文本截断，卡片之间间距一致；整张卡片可点时只有标题是链接、点击区扩展到整卡，卡内其他按钮仍可单独聚焦。
+        params:
+          per_row_max: { value: 4, source: SRC.POMASTER.PRESET, label_zh: 一行最多张数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 一行 4 张
+            jsx: |-
+              <div className="grid w-full max-w-[640px] grid-cols-4 gap-4">{[["在途", "128"], ["空闲", "42"], ["维修", "6"], ["停用", "3"]].map(([label, value]) => <Card key={label} className="gap-1 py-4"><CardContent className="flex flex-col gap-1 px-4"><span className="text-label-13 text-ds-gray-900">{label}</span><span className="text-heading-24 tabular-nums">{value}</span></CardContent></Card>)}</div>
+
+      - id: DISPLAY.COLLAPSE
+        title_zh: 折叠
+        statement_zh: 长而不规则的内容用折叠面板逐步展开（标题是按钮，aria-expanded 报告状态）；各面板之间关系松散时一次只展开一个；展开状态写进地址，便于分享。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 一次只展开一个
+            jsx: |-
+              <div className="w-full max-w-[420px] divide-y divide-ds-gray-400 border-y border-ds-gray-400">{[["行驶证", "有效期至 2028 年 3 月 14 日。", false], ["保险", "交强险与商业险均在保。", true], ["年检", "下次年检 2026 年 11 月 12 日。", false]].map(([title, body, open]) => <div key={title}><button type="button" aria-expanded={open} className="flex w-full items-center justify-between py-3 text-left text-label-14">{title}<ChevronDownIcon className={"size-4 text-ds-gray-900 " + (open ? "rotate-180" : "")} /></button>{open ? <p className="pb-3 text-copy-14 text-ds-gray-900">{body}</p> : null}</div>)}</div>
+
+      - id: DISPLAY.TIMELINE
+        title_zh: 时间轴
+        statement_zh: 按时间记录的事件、任务用竖向时间轴（有序列表，时间用 <time>），最新的在最上面；状态圆点只是辅助，标题里有文字。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 新的在上
+            jsx: |-
+              <ol className="flex w-80 flex-col gap-4">{[["途中延误", "11:05", "bg-ds-amber-700"], ["已提货", "09:40", "bg-ds-green-700"], ["已派单给张伟", "08:15", "bg-ds-blue-700"]].map(([title, time, dot]) => <li key={title} className="flex gap-3"><span aria-hidden="true" className={"mt-2 size-2 shrink-0 rounded-full " + dot} /><div className="flex flex-col"><span className="text-label-14">{title}</span><time className="text-copy-13 tabular-nums text-ds-gray-900">{time}</time></div></li>)}</ol>
+
+      - id: DISPLAY.CAROUSEL
+        title_zh: 轮播
+        statement_zh: 轮播只放同级内容（图片、卡片），3 到 5 张，让用户看得出一共几张、往哪个方向切（页码圆点是带名称的按钮）；不自动轮播；管理侧工作页不用轮播。
+        params:
+          slides: { value: [3, 5], source: SRC.POMASTER.PRESET, label_zh: 张数 }
+        enforcement: { kind: review }
+
+      - id: DISPLAY.EDGE_CASES
+        title_zh: 超长与空数据
+        statement_zh: 每个展示组件都要设计两种边界情况：内容超长（截断、换行或展开；路径和编号用中间省略）和没有数据（空状态）；按短、一般、很长三种用户内容测一遍布局。按重要程度、使用频率和关联程度排列信息。
+        enforcement: { kind: review }
+
+  - key: data_format
+    title_zh: 数据格式
+    group: patterns.global
+    prefix: FORMAT
+    summary_zh: 数字、金额、日期时间、相对时间、脱敏各有固定格式，全部经格式化注册表（Intl 封装）输出，页面里不手拼。
+    rules:
+      - id: FORMAT.NUMBER
+        title_zh: 数字
+        statement_zh: 数字默认带千分位；数字与单位之间留一个空格（123,220 kg、10 MB），用不换行空格连住；比例用百分比（12.32%），进度用分数（12/30）；很大的数可以用「万」「亿」；表格里的单位写在表头；需要上下比较的数字用等宽数字。
+        params:
+          examples: { value: ["123,220 kg", 12.32%, 12/30], source: SRC.VERCEL.GUIDELINES, label_zh: 示例 }
+          large_units: { value: [万, 亿], source: SRC.POMASTER.PRESET, label_zh: 大数单位 }
+        enforcement: { kind: review }
+
+      - id: FORMAT.AMOUNT
+        title_zh: 金额
+        statement_zh: 金额写成货币代码加数字（CNY 1,280.00）；同一处上下文里小数位要么都是 0 位、要么都是 2 位，不混用；列表里右对齐并用等宽数字；货币代码用 ISO 4217，不在代码里写死 ¥、$ 符号；经格式化注册表输出（Intl.NumberFormat 只在注册表里出现）。
+        params:
+          code: { value: CNY, source: SRC.POMASTER.PRESET, label_zh: 默认货币 }
+          decimals: { value: 2, source: SRC.VERCEL.GUIDELINES, label_zh: 小数位 }
+        enforcement: { kind: gate, check: format.no-local-pattern }
+        examples:
+          - kind: do
+            title_zh: 经格式化注册表输出
+            code: |-
+              import { formatAmount } from '@/lib/format'
+
+              <TableCell className="text-right tabular-nums">{formatAmount(order.freight, 'CNY')}</TableCell>
+            lang: tsx
+          - kind: dont
+            title_zh: 页面里拼符号和小数
+            code: |-
+              <TableCell>¥{order.freight.toFixed(2)}</TableCell>
+            lang: tsx
+
+      - id: FORMAT.DATETIME
+        title_zh: 日期时间
+        statement_zh: 日期 YYYY-MM-DD，时间 24 小时制 HH:mm:ss，日期与时间之间一个空格；日期区间用「～」，两侧各一个空格；存储用 ISO 8601（UTC），显示按用户的时区与地区转换（语言从 navigator.languages 判断，不按 IP）；全部经格式化注册表输出，页面里不手拼格式串、不直接调 toLocaleString。
+        params:
+          date: { value: YYYY-MM-DD, source: SRC.POMASTER.PRESET, label_zh: 日期 }
+          time: { value: HH:mm:ss, source: SRC.POMASTER.PRESET, label_zh: 时间 }
+          datetime: { value: YYYY-MM-DD HH:mm:ss, source: SRC.POMASTER.PRESET, label_zh: 日期时间 }
+          range_separator: { value: " ～ ", source: SRC.POMASTER.PRESET, label_zh: 区间连接 }
+        enforcement: { kind: gate, check: format.no-local-pattern }
+        examples:
+          - kind: do
+            title_zh: 注册表输出
+            code: |-
+              import { formatDateTime } from '@/lib/format'
+
+              <time dateTime={order.signedAt}>{formatDateTime(order.signedAt)}</time>
+            lang: tsx
+          - kind: dont
+            title_zh: 页面里手拼格式串
+            code: |-
+              <span>{dayjs(order.signedAt).format('YYYY/MM/DD HH:mm')}</span>
+            lang: tsx
+
+      - id: FORMAT.RELATIVE_TIME
+        title_zh: 相对时间
+        statement_zh: 消息、通知、动态里的时间用相对时间：1 分钟内写「刚刚」，1 小时内写「N 分钟前」，24 小时内写「N 小时前」，7 天内写「N 天前」，更早写日期；<time dateTime> 带机器可读时间，悬停或聚焦显示带时区的绝对时间（Geist Relative Time Card 的做法）；同样经格式化注册表输出。
+        params:
+          tiers: { value: "{'1 分钟内': '刚刚', '1 小时内': 'N 分钟前', '24 小时内': 'N 小时前', '7 天内': 'N 天前', '更早': 'YYYY-MM-DD'}", source: SRC.POMASTER.PRESET, label_zh: 分档 }
+        enforcement: { kind: review }
+
+      - id: FORMAT.MASKING
+        title_zh: 脱敏
+        statement_zh: 管理侧展示个人信息（领域规格里分级为 pii / sensitive_pii 的字段）时脱敏：用 * 替换并保持位数；金额、时间等高度敏感的值整体隐藏为 ***；脱敏在服务端完成，前端不拿到明文再遮。各类信息保留的位数按下表，业务更严格时可以收紧。
+        params:
+          rules: { value: "{'姓名': '两个字留首字，三个字及以上留首尾', '手机号': '留前 3 后 4', '证件号': '留前 6 后 4', '银行卡': '留后 4', '邮箱': '留域名和账号前 3 位', '地址': '留到省市区'}", source: SRC.POMASTER.PRESET, label_zh: 保留位数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 保持位数的部分脱敏
+            jsx: |-
+              <dl className="grid w-80 grid-cols-[6rem_1fr] gap-y-2 text-copy-14"><dt className="text-ds-gray-900">姓名</dt><dd>张*伟</dd><dt className="text-ds-gray-900">手机号</dt><dd className="tabular-nums">138****2391</dd><dt className="text-ds-gray-900">身份证号</dt><dd className="tabular-nums">310101********1234</dd></dl>
+
+  - key: copywriting
+    title_zh: 文案
+    group: patterns.global
+    prefix: COPY
+    summary_zh: 界面文字走文案字典；从用户视角、简洁一致地写；语气平和；报错说清怎么办；标点与用词统一。
+    rules:
+      - id: COPY.NO_LITERAL
+        title_zh: 文案字典
+        statement_zh: 组件、hooks、工具函数里不写死界面文字，统一经文案字典的 key 取用（t('vehicle.form.plate')，用户数据除外）；key 用稳定的点分标识，不用文案本身作 key；插值用命名占位符 {name}；品牌名、代码和标识符标 translate="no"。
+        enforcement: { kind: gate, check: text.no-literal-copy }
+        examples:
+          - kind: do
+            title_zh: 经 key 取文案
+            code: |-
+              <Button onClick={save}>{t('vehicle.form.save')}</Button>
+            lang: tsx
+          - kind: dont
+            title_zh: 组件里写死中文
+            code: |-
+              <Button onClick={save}>保存车辆</Button>
+            lang: tsx
+
+      - id: COPY.USER_VIEW
+        title_zh: 用户视角
+        statement_zh: 写用户能做什么、会得到什么，不写系统怎么实现；用主动语态（「安装命令行工具」，不是「命令行工具将被安装」）；去掉用户已经知道的话；同一事物全系统一个叫法，操作名称和它打开的页面标题一致，按钮叫「发布」，结果就叫「已发布」；最重要的信息放在最前面。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 说结果
+            jsx: |-
+              <Alert className="w-full max-w-[420px]"><CircleCheckIcon /><AlertTitle>车辆已停用</AlertTitle><AlertDescription>它不会再被派单，已有运单照常完成。</AlertDescription></Alert>
+          - kind: dont
+            title_zh: 说实现
+            jsx: |-
+              <Alert className="w-full max-w-[420px]"><AlertTitle>status 字段已更新为 DISABLED</AlertTitle><AlertDescription>调度服务将在下次同步时读取该变更。</AlertDescription></Alert>
+
+      - id: COPY.TONE
+        title_zh: 语气
+        statement_zh: 称呼用「你」；多给建议，少用「不能」「不要」「请勿」这类命令；出了问题聚焦怎么解决，不指责用户；「抱歉」只用在系统造成的问题上；不用「绝不」这类绝对化说法；语气积极、给出办法，即使是报错。
+        enforcement: { kind: review }
+
+      - id: COPY.ERROR_MESSAGE
+        title_zh: 报错文案
+        statement_zh: 报错写清两件事：发生了什么（客观描述，不只给错误码），用户下一步怎么做（配一个明确的动作）。错误码与请求编号可以附在后面供排查。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 原因 + 下一步
+            jsx: |-
+              <Alert variant="destructive" className="w-full max-w-[420px]"><OctagonAlertIcon /><AlertTitle>车牌号已存在</AlertTitle><AlertDescription><span>沪A·D2391 已登记在浦东车队。换一个车牌号，或去编辑那辆车。</span><span className="mt-1 text-copy-12 text-ds-gray-900">错误码 VEHICLE_PLATE_TAKEN</span></AlertDescription></Alert>
+          - kind: dont
+            title_zh: 只有错误码
+            jsx: |-
+              <Alert variant="destructive" className="w-full max-w-[420px]"><AlertTitle>错误 409</AlertTitle></Alert>
+
+      - id: COPY.PUNCTUATION
+        title_zh: 标点与空格
+        statement_zh: 中文与数字、英文之间加一个空格（2 个、5 MB）；按钮、标题、输入提示、表格里的短句不加句号；感叹号只用于问候和祝贺；省略号用单个字符「…」，打开后续步骤的菜单项（「重命名…」）与加载中的文字（「保存中…」）以它结尾；快捷键与单位用不换行空格连住（⌘ K、10 MB）。
+        enforcement: { kind: review }
+
+      - id: COPY.TERMS
+        title_zh: 用词
+        statement_zh: 规范用词：写「其他」不写「其它」，写「登录」不写「登陆」，指代时「此」比「该」更明确；统计数字用阿拉伯数字。禁用词表随项目补充。
+        params:
+          banned: { value: "{'其它': '其他', '登陆': '登录'}", source: SRC.POMASTER.PRESET, label_zh: 禁用词 }
+        enforcement: { kind: gate, check: text.banned-terms }
+
+  - key: buttons
+    title_zh: 按钮
+    group: patterns.global
+    prefix: BUTTON
+    summary_zh: 按用途选按钮变体；一个按钮区一个主按钮；推荐操作在前、风险操作在后、「更多」在最右；文案用动词。
+    rules:
+      - id: BUTTON.TYPES
+        title_zh: 按钮类型
+        statement_zh: default（最深的灰）用于完成、推荐类操作；拿不准时用 secondary；表格操作列等大量重复的地方用 tertiary；删除等有风险的操作用 error，需要提醒但可撤销的用 warning；空间小、按钮多时用纯图标按钮，必须带 aria-label（需要时配文字提示）；一个按钮里不放两个图标。
+        params:
+          map: { value: "{'完成与推荐': 'default', '其余操作': 'secondary', '表格操作列': 'tertiary', '有风险': 'error', '需提醒': 'warning', '空间小': '纯图标（带 aria-label）'}", source: SRC.GEIST.BUTTON, label_zh: 用途 → 变体 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 各变体的用途
+            jsx: |-
+              <div className="flex items-center gap-3"><Button>发布</Button><Button variant="secondary">预览</Button><Button variant="tertiary">编辑</Button><Button variant="error">删除车辆</Button><Button variant="secondary" svgOnly aria-label="刷新列表"><RefreshCwIcon /></Button></div>
+
+      - id: BUTTON.SINGLE_PRIMARY
+        title_zh: 主按钮
+        statement_zh: 同一个按钮区（工具栏、对话框底部、表单底部）最多一个 default 变体的主按钮，其余用 secondary 或 tertiary。
+        params:
+          max_primary: { value: 1, source: SRC.GEIST.BUTTON, label_zh: 主按钮上限 }
+        enforcement: { kind: gate, check: markup.single-primary-button }
+        examples:
+          - kind: do
+            title_zh: 一个主按钮
+            jsx: |-
+              <div className="flex gap-2"><Button variant="secondary">取消</Button><Button>保存车辆</Button></div>
+          - kind: dont
+            title_zh: 三个主按钮，看不出该点哪个
+            jsx: |-
+              <div className="flex gap-2"><Button>保存</Button><Button>保存并新建</Button><Button>提交审核</Button></div>
+
+      - id: BUTTON.ORDER
+        title_zh: 按钮顺序
+        statement_zh: 推荐的操作放在阅读起点，有风险的操作放最后，折叠起来的「更多」永远在最右；有返回含义的按钮放最左；对话框底部「取消」在前、主操作在后（右对齐）。工具栏按「推进业务（新建、保存、发布）→ 视图控制 → 其他（刷新、设置）→ 更多」排列。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 工具栏顺序
+            jsx: |-
+              <div className="flex items-center gap-2"><Button><PlusIcon />新建车辆</Button><Button variant="secondary">导出</Button><Button variant="tertiary" svgOnly aria-label="刷新"><RefreshCwIcon /></Button><DropdownMenu><DropdownMenuTrigger asChild><Button variant="tertiary" svgOnly aria-label="更多操作"><EllipsisIcon /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem>导入…</DropdownMenuItem><DropdownMenuItem>列设置…</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>
+
+      - id: BUTTON.PLACEMENT
+        title_zh: 按钮位置
+        statement_zh: 按钮放在它作用的内容旁边；工具栏的按钮靠右；页面底部的按钮区只用于两种情况：详情页推进流程（审批通过、驳回）和拆成多张卡片的复杂表单（Geist 的表单卡片把保存放在卡片页脚）。
+        enforcement: { kind: review }
+
+      - id: BUTTON.COPY
+        title_zh: 按钮文案
+        statement_zh: 按钮文案用动词（下拉按钮除外），具体到对象，说清点了会发生什么，如「发布」「保存 API 密钥」，少用「确定」「继续」「提交」这类泛词；主要操作本身是否定动作时点明后果，如「删除车型」；加载中保留原文字并加转圈。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 说清结果
+            jsx: |-
+              <div className="flex gap-2"><Button variant="secondary">取消</Button><Button variant="error">删除车型</Button></div>
+          - kind: dont
+            title_zh: 泛词，看不出后果
+            jsx: |-
+              <div className="flex gap-2"><Button variant="secondary">取消</Button><Button>确定</Button></div>
+
+      - id: BUTTON.GROUPING
+        title_zh: 按钮分组
+        statement_zh: 按钮之间用间距分组，确有需要才加分割线；不要把普通按钮拼接成一组，容易被当成切换按钮——互斥切换用分段控件。
+        enforcement: { kind: review }
+
+  - key: data_list
+    title_zh: 数据列表
+    group: patterns.global
+    prefix: LIST
+    summary_zh: 按数据选列表形态与查询方式；分页并记住位置；详情打开方式有选择规则；批量、新建、删除各有固定做法。
+    rules:
+      - id: LIST.FORM
+        title_zh: 列表形态
+        statement_zh: 多字段、需要比较的数据用表格；空间小（侧栏、下拉、小弹层）时用实体列表（每行图标 + 标题 + 描述 + 操作）；展示型内容用卡片网格；数据很多时虚拟滚动，不一次渲染上千行。
+        enforcement: { kind: review }
+
+      - id: LIST.QUERY
+        title_zh: 查询方式
+        statement_zh: 改条件立刻刷新结果用筛选（已生效的筛选显示为可移除的标签）；一个关键词跨多个字段找用搜索框（防抖、取消旧请求）；多个条件组合后一起提交用查询表单。常用的查询放在列表工具栏里，复杂查询单独放一个区域；筛选、排序、页码全部写进地址。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 工具栏里的搜索与筛选
+            jsx: |-
+              <div className="flex w-full max-w-[560px] items-center gap-2"><div role="search" className="relative flex-1"><SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ds-gray-900" /><Input type="search" aria-label="搜索车辆" placeholder="车牌号、司机" className="pl-8" /></div><Select defaultValue="all"><SelectTrigger className="w-32" aria-label="状态"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">全部状态</SelectItem><SelectItem value="moving">在途</SelectItem><SelectItem value="idle">空闲</SelectItem></SelectContent></Select><Button><PlusIcon />新建车辆</Button></div>
+
+      - id: LIST.PAGING
+        title_zh: 分页与位置
+        statement_zh: 列表默认分页加载，只有一页时隐藏分页；从详情返回列表时恢复原来的页码、筛选和滚动位置（状态在地址里，浏览器后退即可恢复），并标记看过的条目；信息流、消息类列表用同页加载更多。
+        enforcement: { kind: review }
+
+      - id: LIST.DETAIL_ENTRY
+        title_zh: 详情入口
+        statement_zh: 点标题进入详情（标题是链接）。内容一屏放得下就在行内展开；信息较多用侧边抽屉（不离开列表）；需要分享链接或沉浸处理用独立页面；需要在多条之间快速切换用左右两栏。
+        enforcement: { kind: review }
+
+      - id: LIST.BATCH
+        title_zh: 批量操作
+        statement_zh: 勾选行之后，工具栏位置出现批量操作栏，写明已选几项，并提供批量操作和取消选择；表头复选框在部分选中时是半选态；批量操作的位置全系统一致。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 已选数量 + 批量操作
+            jsx: |-
+              <div className="flex w-full max-w-[560px] items-center justify-between rounded-md border border-ds-gray-400 bg-ds-gray-100 px-3 py-2"><span className="text-label-14">已选 3 辆车</span><div className="flex gap-2"><Button size="small" variant="secondary">批量派单</Button><Button size="small" variant="secondary">导出</Button><Button size="small" variant="tertiary">取消选择</Button></div></div>
+
+      - id: LIST.CREATE
+        title_zh: 新建入口
+        statement_zh: 工具栏右侧「新建」按钮打开对话框、侧边抽屉或新页面，新建成功后新条目排在列表第一并短暂高亮；在列表里就地添加时，「添加」按钮放在列表首或尾，新条目出现在按钮的位置。
+        enforcement: { kind: review }
+
+      - id: LIST.DELETE
+        title_zh: 删除
+        statement_zh: 能撤销的删除直接执行，并在 Toast 里提供约 1 分钟内的撤销；不能撤销的删除贴着按钮用气泡确认，不弹整屏对话框；破坏性很大的操作（批量删除、清空、删除项目）用危险确认对话框，并要求输入名称确认。
+        params:
+          undo_window: { value: 60000, unit: ms, source: SRC.POMASTER.PRESET, label_zh: 撤销窗口 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 气泡确认贴着按钮
+            jsx: |-
+              <Popover><PopoverTrigger asChild><Button size="small" variant="error">删除</Button></PopoverTrigger><PopoverContent className="flex w-64 flex-col gap-3" role="alertdialog" aria-label="删除这辆车？"><span className="text-label-14">删除这辆车？</span><span className="text-copy-13 text-ds-gray-900">删除后不能恢复。</span><div className="flex justify-end gap-2"><PopoverClose asChild><Button size="tiny" variant="secondary">取消</Button></PopoverClose><Button size="tiny" variant="error">删除</Button></div></PopoverContent></Popover>
+
+  - key: proximity
+    title_zh: 亲密性
+    group: patterns.principles
+    prefix: PROXIMITY
+    summary_zh: 有关系的靠近，没关系的拉开；用间距的远近表达结构与层级。
+    rules:
+      - id: PROXIMITY.GROUPING
+        title_zh: 分组
+        statement_zh: 关系紧密的元素靠在一起，读作一个整体；没关系的拉开距离。间距只取 4px 倍数的档位（见「间距」领域），常用 8 / 16 / 24 / 32 四档：标签与值 8，同组字段 16，组与组 24 到 32；需要再拉开层次时升一档，或加分割线。
+        params:
+          formula: { value: 4 的倍数, source: SRC.TAILWIND.SPACING, label_zh: 间距取值 }
+          tiers: { value: [8, 16, 24, 32], unit: px, source: SRC.POMASTER.PRESET, label_zh: 常用档位 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标签和值靠近，组与组拉开
+            jsx: |-
+              <div className="flex w-80 flex-col gap-8"><div className="flex flex-col gap-4"><div className="flex flex-col gap-2"><span className="text-label-13 text-ds-gray-900">车牌号</span><span className="text-copy-14">沪A·D2391</span></div><div className="flex flex-col gap-2"><span className="text-label-13 text-ds-gray-900">司机</span><span className="text-copy-14">张伟</span></div></div><div className="flex flex-col gap-2"><span className="text-label-13 text-ds-gray-900">下次年检</span><span className="text-copy-14">2026-11-12</span></div></div>
+
+  - key: alignment
+    title_zh: 对齐
+    group: patterns.principles
+    prefix: ALIGN
+    summary_zh: 每个元素都有意对齐到栅格、基线、边缘或视觉中心；文字左对齐共用起始边；数字右对齐、小数位一致。
+    rules:
+      - id: ALIGN.TEXT
+        title_zh: 文字对齐
+        statement_zh: 标题和正文左对齐，共用同一条起始边；每个元素都有意对齐到栅格、基线、边缘或视觉中心，几何对齐看着不对时允许 1px 的视觉微调；图标与文字并排时平衡两者的粗细、大小与间距。只有在刻意强调标题与正文的区别时才打破这条线。
+        enforcement: { kind: review }
+
+      - id: ALIGN.FORM_LABEL
+        title_zh: 表单标签对齐
+        statement_zh: Geist 的表单标签在输入上方、与输入左边对齐；同一表单里的标签与输入共用一条起始边；横排的筛选条、设置项（标签在左）时标签列等宽、左对齐，输入列对齐成一条竖线。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标签与输入共用起始边
+            jsx: |-
+              <div className="flex w-72 flex-col gap-4">{[["车牌号", "沪A·D2391"], ["核定载重（吨）", "12.5"]].map(([label, value]) => <div key={label} className="flex flex-col gap-2"><Label htmlFor={"al-" + label}>{label}</Label><Input id={"al-" + label} defaultValue={value} /></div>)}</div>
+
+      - id: ALIGN.NUMBERS
+        title_zh: 数字对齐
+        statement_zh: 同一列的数字右对齐，小数位保持一致，用等宽数字（tabular-nums），方便上下比较。
+        enforcement: { kind: review }
+
+  - key: contrast
+    title_zh: 对比
+    group: patterns.principles
+    prefix: CONTRAST
+    summary_zh: 主次分明；需要慎重的选择保持中立；状态靠颜色加形状或文字区分；交互态比静止态对比更强。
+    rules:
+      - id: CONTRAST.PRIMARY_ACTION
+        title_zh: 主次对比
+        statement_zh: 更重要、更常用的操作要突出，也可以靠弱化其他操作来突出它。需要用户慎重判断的选择（同意或拒绝一份申请）两个按钮用同样的变体，不引导用户选某一个。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 审批时两个选择同等对待
+            jsx: |-
+              <div className="flex gap-2"><Button variant="secondary">驳回</Button><Button variant="secondary">通过</Button></div>
+          - kind: dont
+            title_zh: 把「通过」做成主按钮，暗示用户选它
+            jsx: |-
+              <div className="flex gap-2"><Button variant="tertiary">驳回</Button><Button>通过</Button></div>
+
+      - id: CONTRAST.STATUS
+        title_zh: 状态区分
+        statement_zh: 不同状态用不同颜色，同时配图标或文字，不能只靠颜色区分；悬停、按下、聚焦态的对比要比静止态更强；整页的标题与正文用字号、字重拉开层级；图表用色盲友好的配色。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 颜色 + 文字
+            jsx: |-
+              <div className="flex items-center gap-4 text-copy-14">{[["bg-ds-green-700", "已签收"], ["bg-ds-amber-700", "在途"], ["bg-ds-red-700", "异常"]].map(([dot, label]) => <span key={label} className="inline-flex items-center gap-2"><span aria-hidden="true" className={"size-2 rounded-full " + dot} />{label}</span>)}</div>
+
+  - key: repetition
+    title_zh: 重复
+    group: patterns.principles
+    prefix: REPEAT
+    summary_zh: 同类东西全系统长得一样、放在一样的位置，降低学习成本。
+    rules:
+      - id: REPEAT.CONSISTENCY
+        title_zh: 一致性
+        statement_zh: 同一类元素（分割线、颜色、形状、信息格式、间距、圆角）在全系统用同一种做法；同类页面用同样的结构，共性问题在共享组件（src/components/ui）里改，不在单个页面里改。
+        enforcement: { kind: review }
+
+  - key: direct
+    title_zh: 直截了当
+    group: patterns.principles
+    prefix: DIRECT
+    summary_zh: 在哪里看到就在哪里改；拖拽只沿一个方向，并提供不用拖拽的替代方式。
+    rules:
+      - id: DIRECT.INLINE_EDIT
+        title_zh: 就地编辑
+        statement_zh: 能就地编辑的不跳到另一页。偶尔改、以阅读为主的单个字段用点击编辑（悬停高亮，点开带保存和取消，Esc 取消）；经常要改的用旁边的编辑按钮；多个字段一起改时进入行内编辑，切换前后表格列宽不跳动。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 单字段点击编辑
+            jsx: |-
+              <div className="flex w-80 flex-col gap-2"><span className="text-label-13 text-ds-gray-900">备注</span>{s.editing ? <div className="flex items-center gap-2"><Input aria-label="备注" defaultValue="冷链车，箱温 2–8℃" /><Button size="small" onClick={() => set({ editing: false })}>保存</Button><Button size="small" variant="tertiary" onClick={() => set({ editing: false })}>取消</Button></div> : <button type="button" onClick={() => set({ editing: true })} className="rounded-md px-2 py-1 text-left text-copy-14 hover:bg-ds-gray-alpha-100">冷链车，箱温 2–8℃</button>}</div>
+
+      - id: DIRECT.DRAG
+        title_zh: 拖拽
+        statement_zh: 可拖拽的条目悬停时出现拖拽手柄、指针变成手形，可放置的位置有明显外框；只沿一个方向拖（纵向或横向）；拖动期间禁止选中文字；每个拖拽都提供点击和键盘的替代方式（上移、下移按钮或序号输入）。
+        enforcement: { kind: review }
+
+  - key: stay
+    title_zh: 足不出户
+    group: patterns.principles
+    prefix: STAY
+    summary_zh: 能在当前页完成的不跳页：确认用气泡确认或撤销，补充信息用浮层或抽屉，流程尽量在一页内展开。
+    rules:
+      - id: STAY.ON_PAGE
+        title_zh: 不跳页
+        statement_zh: "能撤销的操作直接做并提供撤销，不能撤销的贴着按钮用气泡确认；补充信息用浮层或侧边抽屉；同一组文字提示只有第一个有延迟，后面的立即出现；小的文字修改用就地编辑；多步任务尽量在一页内逐步展开，不把每一步拆成独立页面；对话框与抽屉里的滚动不带动底下的页面（overscroll-behavior: contain）。"
+        params:
+          undo_window: { value: 60000, unit: ms, source: SRC.POMASTER.PRESET, label_zh: 撤销窗口 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 悬停看详情，不跳页
+            jsx: |-
+              <TooltipProvider><Tooltip><TooltipTrigger asChild><Button variant="tertiary" size="small">沪A·D2391</Button></TooltipTrigger><TooltipContent>张伟 · 在途 · 预计 11:40 到达</TooltipContent></Tooltip></TooltipProvider>
+
+  - key: lightweight
+    title_zh: 简化交互
+    group: patterns.principles
+    prefix: LIGHT
+    summary_zh: 关键操作常驻可见；上下文操作悬停出现；可点区域做大、工具靠近内容；看着能点的都能点。
+    rules:
+      - id: LIGHT.TOOLS
+        title_zh: 工具常驻
+        statement_zh: 关键操作始终可见，有清晰的可点区域和悬停、按下状态；只和某一行或某个对象相关的操作，悬停或聚焦时才出现（键盘聚焦时也要出现）；看起来可交互的部分都要真能交互。关键操作不能藏在悬停或模式切换后面。
+        enforcement: { kind: review }
+
+      - id: LIGHT.HOTSPOT
+        title_zh: 可点区域
+        statement_zh: 可点区域与看到的目标一致；小于 24px 的目标把点击区扩到至少 24×24 CSS px，移动端至少 44px；优先放大可点区域，而不是放大按钮本身（比如整行都能点）；工具放在它作用的内容旁边。
+        params:
+          min_target: { value: 24, unit: px, source: SRC.VERCEL.GUIDELINES, label_zh: 最小点击区 }
+          min_target_mobile: { value: 44, unit: px, source: SRC.VERCEL.GUIDELINES, label_zh: 移动端最小点击区 }
+        enforcement: { kind: review }
+
+  - key: invitation
+    title_zh: 提供邀请
+    group: patterns.principles
+    prefix: INVITE
+    summary_zh: 拖拽、就地编辑这类不容易发现的交互，要主动给出提示。
+    rules:
+      - id: INVITE.DISCOVERABILITY
+        title_zh: 交互邀请
+        statement_zh: 拖拽、就地编辑、上下文工具这类不容易发现的交互要给出提示：空状态引导第一步、悬停时提示可点或可编辑、未完成的任务提示继续。新功能引导只放几步，可跳过、可重看；不能拿引导来弥补交互本身的问题。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 未完成任务提示继续
+            jsx: |-
+              <Card className="w-full max-w-[420px]"><CardHeader><CardTitle>完成车队设置</CardTitle><CardDescription>还差 2 步：添加司机、设置派单规则。</CardDescription></CardHeader><CardContent className="flex flex-col gap-2"><Progress value={60} aria-label="设置进度" /><Button size="small" className="self-start">继续设置</Button></CardContent></Card>
+
+  - key: transition
+    title_zh: 巧用过渡
+    group: patterns.principles
+    prefix: TRANSITION
+    summary_zh: 用过渡说明刚刚发生了什么；只动 transform 与 opacity；不动没变化的东西；尊重减少动效设置。
+    rules:
+      - id: TRANSITION.EXPLAIN
+        title_zh: 用过渡说明变化
+        statement_zh: "动画只用来说明因果或刻意的愉悦：切换视图时用滑动、展开保留上下文；新增的条目短暂高亮，修改过的单元格短暂着色后恢复，删除的元素平滑移除，高亮在几秒内淡出；只动 transform 与 opacity，不写 transition: all，列出要过渡的属性；用户操作能打断动画；不给没变化的元素加动画；用户开启「减少动效」时关闭或降级过渡。时长取动效 token。"
+        params:
+          fast: { value: 150, unit: ms, source: SRC.TAILWIND.TRANSITIONS, label_zh: 短 }
+          normal: { value: 200, unit: ms, source: SRC.TAILWIND.TRANSITIONS, label_zh: 中 }
+          slow: { value: 300, unit: ms, source: SRC.TAILWIND.TRANSITIONS, label_zh: 长 }
+        enforcement: { kind: review }
+
+  - key: reaction
+    title_zh: 即时反应
+    group: patterns.principles
+    prefix: REACT
+    summary_zh: 输入时即时给出联想、校验与结果；加载样式随操作的频率与重要程度选；新内容到达时提示或短暂高亮。
+    rules:
+      - id: REACT.IMMEDIATE
+        title_zh: 即时反应
+        statement_zh: 输入时给出联想、实时校验（如密码强度）、实时搜索结果，并做防抖、取消旧请求、丢弃过期响应；加载样式按操作的频率和重要程度选（按钮、表格、整页），不要所有操作都用同一种；异步更新用礼貌的 aria-live 区域播报；有新内容时提示刷新，或在几秒内高亮新到的条目；提示逐步给，不要一次全摆出来。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 输入联想
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="re-dest">目的地</Label><Input id="re-dest" defaultValue="浦东机" role="combobox" aria-expanded="true" aria-controls="re-list" /><ul id="re-list" role="listbox" className="rounded-md border border-ds-gray-400 p-1 shadow-md">{["浦东机场 T1", "浦东机场 T2"].map((name, i) => <li key={name} role="option" aria-selected={i === 0} className={"rounded-md px-2 py-2 text-copy-14 " + (i === 0 ? "bg-ds-gray-alpha-200" : "")}>{name}</li>)}</ul></div>
+
+  - key: visualization_page
+    title_zh: 数据可视化页
+    group: patterns.templates
+    prefix: VIZ
+    summary_zh: 概览、分析、明细三类；最重要的指标放左上；一屏 5 到 9 个模块；高度概括的数据用指标卡；一张卡片一个主题。
+    rules:
+      - id: VIZ.TYPES
+        title_zh: 页面类型
+        statement_zh: 数据可视化页分三类：概览（指标大盘、监控）、分析（多维分析）、明细（数据明细）。先定类型，再选模块。
+        enforcement: { kind: review }
+
+      - id: VIZ.LAYOUT
+        title_zh: 版面布局
+        statement_zh: 最重要的指标和视图放在页面顶部或左上；一屏控制在 5 到 9 个模块；高度概括的数据优先用指标卡（数值 + 趋势），而不是图表；一张卡片一个主题，相关度高的数据合并到一张卡片；用 Bento 栅格时大格给主角，小格给辅助指标。
+        params:
+          modules: { value: [5, 9], source: SRC.POMASTER.PRESET, label_zh: 一屏模块数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 顶部一排指标卡
+            jsx: |-
+              <div className="grid w-full max-w-[640px] grid-cols-3 gap-4">{[["本周订单", "12,846", "较上周 +12.4%"], ["准点率", "98.2%", "较上周 +1.4%"], ["平均等待", "7.5 分钟", "较上周 −8%"]].map(([label, value, trend]) => <Card key={label} className="py-4"><CardContent className="flex flex-col gap-1 px-4"><span className="text-label-13 text-ds-gray-900">{label}</span><span className="text-heading-24 tabular-nums">{value}</span><span className="text-label-12 text-ds-green-900">{trend}</span></CardContent></Card>)}</div>
+
+      - id: VIZ.CHART
+        title_zh: 图表与口径
+        statement_zh: 按要表达的关系选图表类型（趋势用折线，构成用堆叠，比较用柱状），用色盲友好的配色，必要时说明指标口径；用筛选让用户既能看全局，也能下钻到细节，筛选写进地址；页面之间用交互串联。
+        enforcement: { kind: review }
+
+  - key: detail_page
+    title_zh: 详情页
+    group: patterns.templates
+    prefix: DETAIL
+    summary_zh: 按信息复杂度选布局；信息平铺直给；用分割线、卡片、标签页分出层级；单据类流程操作放页脚。
+    rules:
+      - id: DETAIL.LAYOUT
+        title_zh: 布局
+        statement_zh: 内容简单时放在一张卡片里，用分割线分组；有多个复杂模块时每个模块一张卡片（审批单据类）；内容多到一页放不下时用标签页做导航；按阶段推进的内容用步骤组织。默认用最简单的那种。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 一张卡片，分割线分组
+            jsx: |-
+              <Card className="w-full max-w-[480px]"><CardHeader><CardTitle>沪A·D2391</CardTitle><CardDescription>厢式冷链车 · 浦东车队一组</CardDescription></CardHeader><CardContent className="flex flex-col gap-4"><dl className="grid grid-cols-2 gap-4 text-copy-14"><div><dt className="text-label-13 text-ds-gray-900">司机</dt><dd>张伟</dd></div><div><dt className="text-label-13 text-ds-gray-900">核定载重</dt><dd className="tabular-nums">12.5 吨</dd></div></dl><Separator /><dl className="grid grid-cols-2 gap-4 text-copy-14"><div><dt className="text-label-13 text-ds-gray-900">下次年检</dt><dd className="tabular-nums">2026-11-12</dd></div><div><dt className="text-label-13 text-ds-gray-900">GPS 设备号</dt><dd>—</dd></div></dl></CardContent></Card>
+
+      - id: DETAIL.FLAT
+        title_zh: 信息平铺
+        statement_zh: 信息平铺直给，没有必要不折叠、不隐藏；强相关的内容靠近，弱相关的拉开；同类详情页用同样的结构和模块；页面 <title> 与 h1 写当前对象（「沪A·D2391 · 车辆」）。
+        enforcement: { kind: review }
+
+      - id: DETAIL.SEPARATORS
+        title_zh: 分隔方式
+        statement_zh: 组内用分割线，大段之间拉开间距或换一张卡片，一个主题一张卡片，最高一级用标签页（按版本、意图或阶段）。
+        enforcement: { kind: review }
+
+      - id: DETAIL.ACTIONS
+        title_zh: 流程操作
+        statement_zh: 审批单据类详情页的流程操作（通过、驳回、转交、加签、挂起、撤回）放在页面底部按钮区；通过与驳回同等样式（见 CONTRAST.PRIMARY_ACTION）；不可逆的操作走危险确认。
         enforcement: { kind: review }
 
   # ───────────────────────────── 体验管理 · 界面静帧 ─────────────────────────────
