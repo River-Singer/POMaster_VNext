@@ -45,11 +45,11 @@ function areaOf(key: string): any {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("目录取统一骨架：155 个领域按骨架顺序，本体系写了 92 个、450 条规则，其余标为待补", () => {
-    expect(model.areas.length).toBe(155);
+  it("目录取统一骨架：156 个领域按骨架顺序，本体系写了 93 个、460 条规则，其余标为待补", () => {
+    expect(model.areas.length).toBe(156);
     expect(model.areas.map((area: { key: string }) => area.key)).toEqual(skeleton.areas.map((area) => area.key));
-    expect(covered.length).toBe(92);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(450);
+    expect(covered.length).toBe(93);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(460);
     for (const area of model.areas) {
       const skeletonArea = skeleton.areas.find((item) => item.key === area.key)!;
       expect([area.title_zh, area.group, area.prefix, area.counterparts]).toEqual([skeletonArea.title_zh, skeletonArea.group, skeletonArea.prefix, skeletonArea.counterparts]);
@@ -153,7 +153,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 156, areas: 155, covered: 92, rules: 450 });
+      expect(result).toMatchObject({ count: 157, areas: 156, covered: 93, rules: 460 });
       const overview = readFileSync(join(out, "000-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);
@@ -240,8 +240,8 @@ describe("规范分区 · AI 孪生", () => {
       "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
       "packages/cli/seeds/design-standards/skeleton.yaml",
     ]);
-    expect(twin.areas.length).toBe(155);
-    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(92);
+    expect(twin.areas.length).toBe(156);
+    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(93);
     const grid = twin.areas.find((area: { key: string }) => area.key === "grid");
     const gutter = grid.rules[1];
     expect(gutter.id).toBe("GRID.GUTTER");

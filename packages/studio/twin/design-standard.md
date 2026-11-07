@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:07810d090be4f144b779dfc81d43bd31ef21a1c17a9dbd837d0de078d536d815`；状态 origin=preset。
+> 规范指纹 `sha256:4b628e844a2fa076b3743b7550c5ff62243726f7ae1cc44b7bf9646a64189f80`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -1482,7 +1482,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 2–5 个互斥选项且需要一眼看全时用单选组或分段控制；6 个以上用选择器；超过 7 个打开搜索（showSearch）；超过 50 个或来自接口时改远程搜索，并防抖、显示加载态。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 演示：可搜索的选择器与禁用原因
+- 演示：可搜索的选择器与停用项
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-select--cmp-select-when
 
 ### CMP.SELECT.OPTIONS 选项短、互斥、有序
@@ -3492,6 +3492,101 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 - 执行：人工评审；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-data-reports--report-perf
+
+## 工程规范 / 前端架构（ARCH）
+
+技术栈以项目基线为准：Vue 3 + TypeScript + Vite、ant-design-vue、vue-router、Pinia、TanStack Query；目录按职责分层，模块只经公开入口互相引用；单文件组件 + 组合式函数；接口客户端由 OpenAPI 生成；表单、路由、类型与测试各有固定做法。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--overview
+
+### ARCH.STACK 技术栈以基线为准，同类库只用一套
+
+框架与配套以项目技术基线（.pomaster/baseline/frontend/stack.yaml）为准：Vue 3 + TypeScript + Vite，组件库 ant-design-vue 4，路由 vue-router，全局状态 Pinia，接口数据 @tanstack/vue-query，单元测试 Vitest。状态与路由用官方方案，不自造替代；基线没登记的库不引入，同一类能力（请求、日期、表单校验、图表）全项目只用一套。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/stacks/vue3/vue3-framework-overlay.md「状态与路由必须选官方方案：新应用状态管理选 Pinia（Vue 核心团队维护；Vuex 已是维护模式），SPA 路由选官方 Vue Router——两者是官方口径，不自造替代。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-stack
+
+### ARCH.LAYOUT 目录按职责分层
+
+src 下按职责分目录：api/（由 OpenAPI 生成的接口客户端与查询）、pages/<模块>/（路由页面）、components/（跨模块、与业务无关的组件）、composables/（组合式函数）、stores/（Pinia，一个 store 一个文件）、router/、locales/、styles/、utils/。每个顶层目录在 README 里写清职责；不新建没有说明的顶层目录。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「顶层目录和模块职责必须文档化。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 新建无职责说明的顶层目录。」
+- 示例（这样做）：目录
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-layout
+
+### ARCH.BOUNDARY 模块只经公开入口互相引用
+
+业务模块之间只经模块的公开入口（index.ts 导出）引用，不引用别的模块内部的文件，页面之间不互相 import；几个模块共同参与的流程放到单独的编排模块；带业务语义的组件不下沉到通用 components/；循环依赖由 lint 检查并阻止。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「模块外部只能通过 Public API 引用。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 因方便把业务能力放进 shared。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「循环依赖必须被工具检测并阻止。」
+- 示例（别这样做）：引用别的模块内部文件
+- 示例（这样做）：经公开入口
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-boundary
+
+### ARCH.COMPONENT 组件写法
+
+组件写成单文件组件，用 <script setup lang="ts">；props 与 emits 用 defineProps / defineEmits 的类型声明；可复用的有状态逻辑抽成组合式函数（useXxx，放 composables/），不用 mixin；页面组件负责取数据和路由，展示组件只收 props、发事件。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/stacks/vue3/vue3-framework-overlay.md「组合式函数必须遵守官方约定（命名、入参、返回值、副作用、使用限制），生命周期钩子按官方注册时机使用。」
+- 示例（这样做）：类型化的 props 与事件
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-component
+
+### ARCH.UI_LIBRARY 组件库怎么用、怎么改
+
+ant-design-vue 按组件引入（见 PERF.ON_DEMAND_LIBRARY）；主题只经 ConfigProvider 的 theme token 统一定制（见基础篇的色彩与圆角），不在页面里覆盖组件内部类名（.ant-*）或写 !important；需要组件库没有的组件时先在 components/ 里按规范组合，不另装第二套组件库。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 因方便把业务能力放进 shared。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-ui-library
+
+### ARCH.DATA_LAYER 接口请求层
+
+接口客户端由 OpenAPI 生成（类型同源）；每个资源一组查询与变更的组合式函数（useVehicleList、useUpdateVehicle，基于 @tanstack/vue-query），页面只调这些函数，不直接调 HTTP 客户端；鉴权、CSRF、超时、错误归一在 HTTP 客户端统一处理（见 SEC.CSRF、ROBUST.TIMEOUT、ERRH.NORMALIZE）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「server state 由查询缓存层管理。」
+- 示例（这样做）：资源的查询函数
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-data-layer
+
+### ARCH.FORMS 表单
+
+表单用 a-form 绑定独立的表单模型（reactive 对象，不直接绑接口返回的 DTO），校验规则从与接口同源的 schema 生成；提交返回 422 时把字段错误挂回对应字段；初始值、是否改过、提交中留在表单里，不进全局 store。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「表单区分 initial、current、dirty、errors、submitting 和 conflict。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-forms
+
+### ARCH.ROUTING 路由组织
+
+路由表集中在 router/，按模块分组；每个路由懒加载页面组件，在 meta 里声明访问要求与布局（见 GUARD.DECLARE）；路由有稳定的 name，跳转用 name 不拼字符串路径；列表的筛选与分页进 query（见 STATE.URL）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-routing
+
+### ARCH.TYPES 类型严格、接口类型生成
+
+TypeScript 开 strict，类型检查用 vue-tsc --noEmit 进 CI；接口类型从 OpenAPI 生成，不手写重复的 DTO 类型；不用 any 逃逸，确实不知道类型时用 unknown 再收窄。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/engineering-toolchain-and-dependencies.md「TypeScript 项目必须启用与代码库兼容的严格类型检查；暂不能启用的严格选项必须有范围、Owner、迁移计划和期限。」
+- 硬规范依据：specs/hard/themes/engineering-toolchain-and-dependencies.md「MUST NOT 用项目级忽略、`any`、类型断言或关闭规则掩盖局部问题；例外必须最小化并可追踪。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-types
+
+### ARCH.TESTING 测试分层
+
+组合式函数、store 和关键组件用 Vitest + @vue/test-utils 测；关键业务流程用 Playwright 端到端测；接口用 MSW 按 OpenAPI 模拟加载、空、出错、部分成功、正常五种状态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/testing-and-verification.md「Contract Mock：由正式 schema 生成或校验的 Mock。」
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-testing
 
 ## 工程规范 / 状态管理（STATE）
 

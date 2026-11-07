@@ -129,6 +129,8 @@ const T = {
 /** overlay 资产词形（slug → 盘面文件名；文件名 = 包内 seeds 实物逐字）。 */
 const O = {
   vue3: overlay("vue3", "vue3-framework-overlay"),
+  react: overlay("react", "react-framework-overlay"),
+  tailwind: overlay("tailwind", "tailwind-css-overlay"),
   antdesign: overlay("antdesign", "antdesign-ui-overlay"),
   geist: overlay("geist", "geist-design-system-overlay"),
   css: overlay("css", "css-system-overlay"),
@@ -239,6 +241,12 @@ export const PRESET_FACE_SPECS: readonly PresetFaceSpec[] = [
         sources: [src(O.vue3, "Rules")],
         when: { key: "framework", words: ["vue3"] },
       },
+      {
+        section: "Layers",
+        text: "react 选型：函数组件 + hooks，渲染保持纯；hooks 只在顶层调用且依赖写全（eslint-plugin-react-hooks 检查）；effect 只做外部同步并有清理；版本位（react/react-dom/路由库/@tanstack/react-query/typescript）经实抓核实并记录在项目技术基线。",
+        sources: [src(O.react, "Rules")],
+        when: { key: "framework", words: ["react"] },
+      },
     ],
   },
   {
@@ -294,6 +302,12 @@ export const PRESET_FACE_SPECS: readonly PresetFaceSpec[] = [
         sources: [src(O.css, "Rules")],
         when: { key: "css", words: ["scoped-sfc"] },
       },
+      {
+        section: "token strategy",
+        text: "tailwind 选型：v4 起配置写在 CSS 里（@import \"tailwindcss\" + @theme 主题变量），设计 token 只经主题变量进入，页面不用任意值绕开 token；类名在源码里写全（不拼接），扫描范围外的来源用 @source 登记；Preflight 是唯一全局重置，或声明层序。",
+        sources: [src(O.tailwind, "Rules")],
+        when: { key: "css", words: ["tailwind"] },
+      },
     ],
   },
   {
@@ -325,6 +339,12 @@ export const PRESET_FACE_SPECS: readonly PresetFaceSpec[] = [
         text: "pinia 选型：Vue 栈状态管理选官方 Pinia（Vuex 已是维护模式），不自造替代；状态库与 server cache 分工——server state 走查询缓存层。",
         sources: [src(O.vue3, "Rules"), src(STATE, "MUST")],
         when: { key: "state", words: ["pinia"] },
+      },
+      {
+        section: "server-state",
+        text: "react 选型：服务端数据走 @tanstack/react-query，组件里不手写 useEffect + fetch + setState 取数；列表 key 用稳定业务 id。",
+        sources: [src(O.react, "Rules"), src(STATE, "MUST")],
+        when: { key: "framework", words: ["react"] },
       },
     ],
   },

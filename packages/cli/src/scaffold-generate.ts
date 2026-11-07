@@ -37,7 +37,9 @@ import {
   type SchemaChangeStatement,
 } from "./scaffold-mysql.js";
 import { OPENAPI_TEMPLATE_SET, openApiPath, renderOpenApi } from "./scaffold-openapi.js";
-import { FRONTEND_TEMPLATE_SET, renderAdminFrontend, type FrontendTemplateId } from "./scaffold-frontend.js";
+import { FRONTEND_TEMPLATE_SET, renderAdminFrontend, type FrontendFile, type FrontendTemplateId } from "./scaffold-frontend.js";
+import { REACT_FRONTEND_TEMPLATE_SET, renderAdminFrontendReact, type ReactFrontendTemplateId } from "./scaffold-frontend-react.js";
+import { chooseFrontendTemplate, type FrontendTemplateChoice } from "./scaffold-frontend-stack.js";
 import type { NormalizedDomainSpec } from "./scaffold-spec.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE, SCAFFOLD_GENERATION_MANIFEST_RELATIVE, journalFilePath } from "./store-layout.js";
 
@@ -46,13 +48,14 @@ export const SCAFFOLD_GENERATED_EVENT = "SCAFFOLD_GENERATED";
 /** 脚手架受管文件在 KEYBINDING 上的治理 id 前缀（hook 据此给出「改规格再生成」的指路）。 */
 export const SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD.";
 
-export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public" | FrontendTemplateId;
+export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public" | FrontendTemplateId | ReactFrontendTemplateId;
 
 /** 当前生效的模板集（清单逐个记录版本；版本变了要单独评估升级）。 */
 export const SCAFFOLD_TEMPLATE_SETS: readonly { readonly id: string; readonly version: string }[] = [
   MYSQL_TEMPLATE_SET,
   OPENAPI_TEMPLATE_SET,
   FRONTEND_TEMPLATE_SET,
+  REACT_FRONTEND_TEMPLATE_SET,
 ];
 
 export interface ScaffoldManagedFile {
@@ -255,12 +258,28 @@ function emptyPlan(state: ScaffoldSpecState | null): ScaffoldPlanResult {
   };
 }
 
+/** 这次生成用到的模板集：数据库、接口文档，加上按基线技术栈选中的前端模板集（没选中就不记）。 */
+export function activeTemplateSets(frontend: FrontendTemplateChoice): { readonly id: string; readonly version: string }[] {
+  const sets: { readonly id: string; readonly version: string }[] = [MYSQL_TEMPLATE_SET, OPENAPI_TEMPLATE_SET];
+  if (frontend.kind === "vue-antd") sets.push(FRONTEND_TEMPLATE_SET);
+  if (frontend.kind === "react-geist") sets.push(REACT_FRONTEND_TEMPLATE_SET);
+  return sets.map((set) => ({ ...set }));
+}
+
+/** 管理侧前端的受管文件：按基线技术栈选的模板集生成；没有可用模板时为空。 */
+export function renderAdminFrontendFor(spec: NormalizedDomainSpec, choice: FrontendTemplateChoice): FrontendFile<FrontendTemplateId | ReactFrontendTemplateId>[] {
+  if (choice.kind === "vue-antd") return renderAdminFrontend(spec);
+  if (choice.kind === "react-geist") return renderAdminFrontendReact(spec);
+  return [];
+}
+
 async function buildPlan(
   rootDir: string,
   spec: NormalizedDomainSpec,
   specDigest: string,
   state: ScaffoldSpecState,
   manifest: ScaffoldGenerationManifest | null,
+  frontend: FrontendTemplateChoice,
 ): Promise<InternalPlan> {
   const layout = dbLayout(spec);
   const contents = new Map<string, string>();
@@ -349,8 +368,9 @@ async function buildPlan(
       canonicalId: scaffoldApiCanonicalId(spec.app.key, surface),
     });
   }
-  // 管理侧前端（S1-7，vue-antd-admin@1）：接口客户端、列表页、编辑抽屉、路由、文案字典与公共文件。
-  for (const file of renderAdminFrontend(spec)) {
+  // 管理侧前端（S1-7）：按基线技术栈选模板集（vue-antd-admin@1 / react-geist-admin@1）——接口客户端、列表页、
+  // 编辑抽屉或对话框、路由、文案字典与公共文件。
+  for (const file of renderAdminFrontendFor(spec, frontend)) {
     regenerable.push({
       path: file.path,
       content: file.content,
@@ -418,7 +438,7 @@ async function buildPlan(
   const result: ScaffoldPlanResult = {
     spec_state: state,
     spec_semantic_sha256: specDigest,
-    template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => ({ ...set })),
+    template_sets: activeTemplateSets(frontend),
     previous_spec_semantic_sha256: manifest?.spec_semantic_sha256 ?? null,
     files: [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
     statements: diff.statements,
@@ -483,7 +503,12 @@ async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undef
   if (assessment.normalized === null || assessment.semantic_sha256 === null) {
     return { plan: null, errors: [stateError ?? specStateError("invalid", null)!], warnings, state: assessment.state };
   }
-  const plan = await buildPlan(rootDir, assessment.normalized, assessment.semantic_sha256, assessment.state, manifest);
+  const frontend = await chooseFrontendTemplate(rootDir);
+  const wantsFrontend = assessment.normalized.entities.some((entity) => entity.exposure.admin?.operations.includes("list") === true) && assessment.normalized.surfaces.admin !== undefined;
+  if (frontend.kind === "none" && wantsFrontend) {
+    warnings.push({ code: "SCAFFOLD_FRONTEND_SKIPPED", message: `没有生成管理侧前端文件：${frontend.reason_zh}`, hint: frontend.hint });
+  }
+  const plan = await buildPlan(rootDir, assessment.normalized, assessment.semantic_sha256, assessment.state, manifest, frontend);
   return { plan, errors: [], warnings, state: assessment.state };
 }
 
@@ -660,6 +685,7 @@ export async function runScaffoldGenerate(
       "scaffold generate",
       { ...plan, at_seq: manifest?.at_seq ?? null, written: [], keybindings_written: [], retired: [], no_change: true },
       ["NO_CHANGE：现规格与上次生成一致，受管文件与 KEYBINDING 都在册，零写入。"],
+      prepared.warnings,
     );
   }
 
@@ -719,7 +745,7 @@ export async function runScaffoldGenerate(
     const updated = plan.files.filter((file) => file.action === "update").map((file) => file.path);
     const next: ScaffoldGenerationManifest = {
       schema: SCAFFOLD_MANIFEST_SCHEMA,
-      template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => ({ ...set })),
+      template_sets: plan.template_sets.map((set) => ({ ...set })),
       spec_semantic_sha256: plan.spec_semantic_sha256 ?? "",
       at_seq: seq,
       spec_snapshot: spec,
@@ -742,7 +768,7 @@ export async function runScaffoldGenerate(
         type: SCAFFOLD_GENERATED_EVENT,
         seq,
         spec_semantic_sha256: next.spec_semantic_sha256,
-        template_sets: SCAFFOLD_TEMPLATE_SETS.map((set) => `${set.id}@${set.version}`),
+        template_sets: plan.template_sets.map((set) => `${set.id}@${set.version}`),
         created,
         updated,
         retired,
@@ -768,5 +794,6 @@ export async function runScaffoldGenerate(
     "scaffold generate",
     { ...plan, at_seq: seq, written, keybindings_written: keybindingsWritten, retired, no_change: false },
     human,
+    prepared.warnings,
   );
 }

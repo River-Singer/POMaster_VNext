@@ -137,14 +137,14 @@ areas:
 示例、演示、对照表的行都可以是实时内容：
 
 - `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系），包在 `.antd-live` 里（antd 的字体、字色与行高）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`），`s` 是这个示例自己的一份可写状态（演示展开收起、切换状态：`@click="s.open = !s.open"`）；除 antd 组件与图标外还能用 `<std-number-roll>`（数字滚动，`packages/studio/src/standard/live-extras.ts`）；只能引用已定的值，不能有 `<script>` / `<style>`。
-- `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），包在 `.geist-root` 里。同样用 `p` / `t` 取值，可写状态是 `s` 与 `set({ … })`；只能用 `packages/studio-react/src/components/ui/` 里登记的组件（Button、ButtonLink、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton、Table 一组、NumberTicker——收录自 affectUI，MIT，见 `THIRD_PARTY_NOTICES.md`）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。Geist 色阶在 Tailwind 里是 `ds-` 前缀的颜色类（`bg-ds-gray-100`、`text-ds-gray-900`）。
-- `code` + `lang`：只展示的代码片段（`vue` / `ts` / `tsx` / `css` / `html`）。
+- `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），包在 `.geist-root` 里。同样用 `p` / `t` 取值，可写状态是 `s` 与 `set({ … })`；只能用 `packages/studio-react/src/components/ui/` 里登记的组件（Button、ButtonLink、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton、Table 一组、Checkbox、RadioGroup、Select 一组、Tabs 一组、Dialog 一组、DropdownMenu 一组、Popover 一组、Tooltip 一组、Progress，以及收录自 affectUI 的 NumberTicker——MIT，见 `THIRD_PARTY_NOTICES.md`）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。Geist 色阶在 Tailwind 里是 `ds-` 前缀的颜色类（`bg-ds-gray-100`、`text-ds-gray-900`）。
+- `code` + `lang`：只展示的代码片段（`vue` / `ts` / `tsx` / `css` / `html` / `text`，目录树这类纯文本用 `text`）。
 
 一个体系只收自己的实时内容形态：Ant Design 预设写 `template`，Geist 预设写 `jsx`。示例的 `kind` 只有 `do`（这样做）和 `dont`（别这样做）。
 
 ## 当前预设（Ant Design · Vue）
 
-92 个领域、450 条规则：
+93 个领域、460 条规则：
 
 - **基础**（13 篇）：色彩、字体、标题层级、图标、材质、圆角管理、投影、布局、栅格、间距、动效、点击反馈、焦点环；
 - **组件 · 通用**：按钮（何时用、变体、危险操作、尺寸、形状、搭配图标、纯图标按钮、加载、禁用、链接按钮、宽度、表单提交、文案；带实验场与状态矩阵）；
@@ -154,19 +154,19 @@ areas:
 - **设计模式 · 模板文档**（2 篇）：数据可视化页、详情页；
 - **设计模式 · 体验管理**（8 篇）：界面静帧、组件动效、Bento 栅格、状态反馈、上下文管理、侧边栏管理、卡片悬停、加载条（静帧、动效、Bento 借鉴了 Stageshow 的取法，数字滚动借鉴了 affectUI，条文自行改写）；
 - **设计模式 · 数据呈现**（3 篇）：数据网格、图表、报表；
-- **工程规范**（14 篇）：状态管理（三个实验）、性能、安全、会话与凭据（Cookie）、防篡改与防劫持、健壮性、报错管理、保护页、页面加载、缓存、异步处理、高并发、防重复点击、原型转换（各篇的机制配实验：返回恢复、加载条、错误边界、保护页、重试、并发、防重复点击、原型转换）。
+- **工程规范**（15 篇）：前端架构（技术栈、目录分层、模块边界、组件写法、组件库用法、接口请求层、表单、路由、类型、测试——按 Vue 3 + ant-design-vue 写）、状态管理（三个实验）、性能、安全、会话与凭据（Cookie）、防篡改与防劫持、健壮性、报错管理、保护页、页面加载、缓存、异步处理、高并发、防重复点击、原型转换（各篇的机制配实验：返回恢复、加载条、错误边界、保护页、重试、并发、防重复点击、原型转换）。
 
 数值取自 Ant Design 设计规范与 ant-design-vue 主题源码（色板由 @ant-design/colors 的算法从种子色派生）；官方没给数值的是项目决策位。其余 63 个骨架领域（组件）待补。
 
 ## 当前预设（Vercel Geist · React）
 
-72 个领域、379 条规则：
+73 个领域、389 条规则：
 
 - **基础**（13 篇）：色彩（Geist 色阶与每档用途）、字体（四组排版类）、标题层级、图标（含尺寸）、材质、圆角管理、投影、布局、栅格、间距、动效、点击反馈、焦点环；
 - **组件 · 通用**：按钮（与 Ant Design 一侧同样 13 条；变体 default / secondary / tertiary / error / warning，尺寸 tiny / small / medium / large；带实验场与状态矩阵）；
 - **组件批次一**（33 篇）：与 Ant Design 一侧同一份条文；Geist 一侧的演示用 shadcn/ui 组件（基于 Radix）：选择器、多选、单选、标签页、下拉菜单、对话框、气泡确认（Popover）、文字提示、进度条都是真组件，焦点、键盘和读屏由 Radix 负责；日期用原生输入，抽屉、分页、步骤条、面包屑这类还没有对应组件的用 Tailwind 按规范拼出结构；开关、标签（Badge）、警告提示带实验场；
 - **设计模式**：体验管理 8 篇、数据呈现 3 篇（条文与 Ant Design 一侧相同，示例换成 React 与 Geist 组件；侧边栏尺寸与快捷键取 shadcn/ui Sidebar 的缺省值）；
-- **工程规范**（14 篇）：状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
+- **工程规范**（15 篇）：前端架构（按 React 栈写：函数组件 + hooks、shadcn 组件源码进项目、TanStack Query、react-hook-form + zod、路由描述带 handle；路由库是项目决策位）、状态管理（服务端数据用 @tanstack/react-query、全局 store 用 Zustand）、性能（React 写法）与其余 12 篇，同 Ant Design 一侧。
 
 - 组件：项目内的组件源码（`packages/studio-react/src/components/ui/`，shadcn/ui 起步，按 Geist 重新配色与定尺寸）+ Tailwind CSS 4；Vercel 的官方 Geist 组件包 `@vercel/geistcn` 在公开 npm 上装不到，能装后再评估替换。
 - 颜色：Geist 色阶取自 `vercel.com/geist/vercel-brand.css`（浅色主题）；官方样式表只公开了彩色色阶的 100 / 400 / 700 / 900 / 1000 档，其余档位与青、紫、粉色阶在色板上标「未公开」。

@@ -932,6 +932,10 @@
       "packages/studio-react/tests/gallery-mount.spec.ts": {
         "layer": "L1",
         "note": "React · Geist 抽屉「Geist 组件」分区真实挂载：逐页逐 story 渲染无 React 报错；对话框、气泡卡片点开后内容在 Portal 里，多选框全选半选态。无域（画廊契约面）。"
+      },
+      "packages/cli/tests/scaffold-frontend-react.spec.ts": {
+        "layer": "L1",
+        "note": "管理侧前端 React 模板集（react-geist-admin@1）：文件与模板编号、Geist 预设 design check 零违规、React 栈写法（hooks 取数 / 懒加载路由 handle / react-hook-form + zod / URL 枚举校验）、只读与仅用户侧；按技术栈选模板集。无域（脚手架生成面）。"
       }
     },
     "notes": {

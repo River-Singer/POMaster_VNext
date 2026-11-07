@@ -17,7 +17,7 @@ export const ListRow: Story = {
       {[0, 1, 2].map((index) => (
         <div key={index} className="flex w-[480px] items-center gap-3">
           <Skeleton className="size-9 rounded-md" />
-          <div className="flex flex-1 flex-col gap-1.5">
+          <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-3 w-2/3" />
           </div>

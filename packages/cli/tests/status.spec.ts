@@ -235,18 +235,18 @@ describe("status 跨轴与词表纪律（显式呈现，不静默）", () => {
 // ============================================================
 
 describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => {
-  it("init 后 seeded_assets = 四分面清单分母（21/38/20/26；B6H h5 stacks 36→38）+ human 行呈现（baseline 25→26：R3/ADR-20 增 design-tokens.yaml）", async () => {
+  it("init 后 seeded_assets = 四分面清单分母（21/42/20/26；B6H h5 stacks 36→38，B8-VNEXT react / tailwind 38→42）+ human 行呈现（baseline 25→26：R3/ADR-20 增 design-tokens.yaml）", async () => {
     await runInit(dir);
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.seeded_assets).toEqual({
       specs_hard_themes: 21,
-      specs_hard_stacks: 38,
+      specs_hard_stacks: 42,
       specs_evidence: 20,
       baseline: 26,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: themes 21 / stacks 38 / evidence 20 / baseline 26",
+      "seeded assets: themes 21 / stacks 42 / evidence 20 / baseline 26",
     );
   });
 

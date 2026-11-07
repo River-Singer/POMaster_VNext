@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio-react/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:852f548ab7814dfd85628cbafce9bdedf978423f61b685ff93d866c8112de0ca",
+  "fingerprint": "sha256:43681aaede245630d99389fe8f63177e4c7656a4246477d88af95783e2239fc4",
   "generator": {
     "path": "packages/studio-react/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,11 +9,11 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/geist.yaml",
-      "sha256": "b483a25d72dcab0cdb9f296ab7f522e7f5c8d71c93ef30ce87923b74015971ae"
+      "sha256": "a2e265fc87318b819f33b5510d161f6887767bfe6e2b615fbdab299d7d5a0b46"
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
-      "sha256": "7fb6f670f5465b475f12685d643d931ec3fb615bc2514aa118f0bf8d9318d452"
+      "sha256": "d0139bbeca5045a377d09a60f837d41ef50d4ecf203edd0bdc2fabb229afc388"
     }
   ],
   "edit": {
@@ -2838,7 +2838,7 @@
                   "usage_zh": "配 text-label-13，徽标里的图标",
                   "sample_zh": null,
                   "template": null,
-                  "jsx": "<span className=\"flex items-center gap-1.5 text-label-13\"><GitBranchIcon className=\"size-3.5\" />main</span>"
+                  "jsx": "<span className=\"flex items-center gap-1 text-label-13\"><GitBranchIcon className=\"size-3.5\" />main</span>"
                 },
                 {
                   "name": "16px · size-4",
@@ -3625,7 +3625,7 @@
               "title_zh": "内层减去内边距",
               "note_zh": null,
               "template": null,
-              "jsx": "<div className=\"w-56 rounded-xl border border-ds-gray-400 p-1.5\"><div className=\"rounded-md bg-ds-gray-100 p-3 text-label-13\">外 12 − 内边距 6 = 内 6</div></div>",
+              "jsx": "<div className=\"w-56 rounded-xl border border-ds-gray-400 p-2\"><div className=\"rounded-md bg-ds-gray-100 p-3 text-label-13\">外 12 − 内边距 6 = 内 6</div></div>",
               "code": null,
               "lang": null
             },
@@ -3634,7 +3634,7 @@
               "title_zh": "内外同样的圆角",
               "note_zh": null,
               "template": null,
-              "jsx": "<div className=\"w-56 rounded-xl border border-ds-gray-400 p-1.5\"><div className=\"rounded-xl bg-ds-gray-100 p-3 text-label-13\">内外都是 12，角落不同心</div></div>",
+              "jsx": "<div className=\"w-56 rounded-xl border border-ds-gray-400 p-2\"><div className=\"rounded-xl bg-ds-gray-100 p-3 text-label-13\">内外都是 12，角落不同心</div></div>",
               "code": null,
               "lang": null
             }
@@ -7180,7 +7180,7 @@
               "title_zh": "当前项高亮",
               "note_zh": null,
               "template": null,
-              "jsx": "<nav className=\"flex w-56 flex-col gap-1 text-copy-14\"><span className=\"px-3 py-1 text-label-12 text-ds-gray-900\">车辆管理</span><a href=\"#\" aria-current=\"page\" className=\"rounded-md bg-ds-gray-200 px-3 py-1.5 text-ds-gray-1000 no-underline\">车辆台账</a><a href=\"#\" className=\"rounded-md px-3 py-1.5 text-ds-gray-900 no-underline\">保险管理</a></nav>",
+              "jsx": "<nav className=\"flex w-56 flex-col gap-1 text-copy-14\"><span className=\"px-3 py-1 text-label-12 text-ds-gray-900\">车辆管理</span><a href=\"#\" aria-current=\"page\" className=\"rounded-md bg-ds-gray-200 px-3 py-2 text-ds-gray-1000 no-underline\">车辆台账</a><a href=\"#\" className=\"rounded-md px-3 py-2 text-ds-gray-900 no-underline\">保险管理</a></nav>",
               "code": null,
               "lang": null
             }
@@ -8019,7 +8019,7 @@
               "title_zh": "分组、必填与操作区",
               "description_zh": null,
               "template": null,
-              "jsx": "<form className=\"flex w-96 flex-col gap-4\"><fieldset className=\"flex flex-col gap-3\"><legend className=\"mb-1 text-label-14 font-semibold text-ds-gray-1000\">基本信息</legend><div className=\"flex flex-col gap-1.5\"><Label htmlFor=\"f1\"><span className=\"text-ds-red-700\">*</span> 车牌号</Label><Input id=\"f1\" placeholder=\"例：沪A12345\" /></div><div className=\"flex flex-col gap-1.5\"><Label htmlFor=\"f2\">备注（选填）</Label><Input id=\"f2\" /></div></fieldset><div className=\"flex gap-2\"><Button>保存</Button><Button variant=\"secondary\">取消</Button></div></form>"
+              "jsx": "<form className=\"flex w-96 flex-col gap-4\"><fieldset className=\"flex flex-col gap-3\"><legend className=\"mb-1 text-label-14 font-semibold text-ds-gray-1000\">基本信息</legend><div className=\"flex flex-col gap-2\"><Label htmlFor=\"f1\"><span className=\"text-ds-red-700\">*</span> 车牌号</Label><Input id=\"f1\" placeholder=\"例：沪A12345\" /></div><div className=\"flex flex-col gap-2\"><Label htmlFor=\"f2\">备注（选填）</Label><Input id=\"f2\" /></div></fieldset><div className=\"flex gap-2\"><Button>保存</Button><Button variant=\"secondary\">取消</Button></div></form>"
             }
           ],
           "examples": [],
@@ -8161,7 +8161,7 @@
               "title_zh": "标签、示例占位符与错误态",
               "description_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex w-80 flex-col gap-4\"><div className=\"flex flex-col gap-1.5\"><Label htmlFor=\"p2\">车牌号</Label><Input id=\"p2\" defaultValue=\"沪A1\" aria-invalid=\"true\" className=\"border-ds-red-700\" /><span className=\"text-copy-13 text-ds-red-700\">车牌号为 7–8 位，如沪A12345</span></div><div className=\"flex flex-col gap-1.5\"><Label htmlFor=\"w2\">整备质量</Label><div className=\"flex items-center gap-2\"><Input id=\"w2\" placeholder=\"例：1580\" /><span className=\"text-label-13 text-ds-gray-900\">kg</span></div></div></div>"
+              "jsx": "<div className=\"flex w-80 flex-col gap-4\"><div className=\"flex flex-col gap-2\"><Label htmlFor=\"p2\">车牌号</Label><Input id=\"p2\" defaultValue=\"沪A1\" aria-invalid=\"true\" className=\"border-ds-red-700\" /><span className=\"text-copy-13 text-ds-red-700\">车牌号为 7–8 位，如沪A12345</span></div><div className=\"flex flex-col gap-2\"><Label htmlFor=\"w2\">整备质量</Label><div className=\"flex items-center gap-2\"><Input id=\"w2\" placeholder=\"例：1580\" /><span className=\"text-label-13 text-ds-gray-900\">kg</span></div></div></div>"
             }
           ],
           "examples": [
@@ -8170,7 +8170,7 @@
               "title_zh": "标签 + 示例占位符",
               "note_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex w-72 flex-col gap-1.5\"><Label htmlFor=\"plate\">车牌号</Label><Input id=\"plate\" placeholder=\"例：沪A12345\" /></div>",
+              "jsx": "<div className=\"flex w-72 flex-col gap-2\"><Label htmlFor=\"plate\">车牌号</Label><Input id=\"plate\" placeholder=\"例：沪A12345\" /></div>",
               "code": null,
               "lang": null
             },
@@ -8192,7 +8192,7 @@
         {
           "id": "CMP.INPUT.VALIDATION",
           "title_zh": "就地校验，失败说清怎么改",
-          "statement_zh": "格式与长度在失焦时校验，错误显示在输入框下方并把边框标为错误态（status=error / aria-invalid）；提示写清规则与改法（「车牌号为 7–8 位，如沪A12345」），不写「格式错误」；用户改动后立即撤掉错误。",
+          "statement_zh": "格式与长度在失焦时校验，错误显示在输入框下方（用 aria-describedby 关联），输入框标 aria-invalid 让边框变为错误态；提示写清规则与改法（「车牌号为 7–8 位，如沪A12345」），不写「格式错误」；用户改动后立即撤掉错误。",
           "rationale_zh": null,
           "surfaces": [
             "admin",
@@ -8213,7 +8213,7 @@
         {
           "id": "CMP.INPUT.AFFIX",
           "title_zh": "前后缀只放单位与固定内容",
-          "statement_zh": "单位、货币代码、固定前缀（https://）放在前后缀里，不让用户输入；图标前缀只用于搜索、账号这类约定俗成的场景；清除按钮（allowClear）给可选字段，必填字段不清空为空串。",
+          "statement_zh": "单位、货币代码、固定前缀（https://）放在输入框两侧的附加区里，不让用户输入；图标前缀只用于搜索、账号这类约定俗成的场景；清除按钮（带 aria-label 的纯图标按钮）给可选字段，必填字段不清空为空串。",
           "rationale_zh": null,
           "surfaces": [
             "admin",
@@ -8600,7 +8600,7 @@
               "title_zh": "表单里的单选与切换视图的按钮样式",
               "description_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex w-80 flex-col gap-4\"><fieldset className=\"flex flex-col gap-2\"><legend className=\"mb-1 text-label-14 text-ds-gray-1000\">可见范围</legend><RadioGroup defaultValue=\"self\"><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"self\" id=\"scope-self\" /><Label htmlFor=\"scope-self\">仅本人可见</Label></div><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"team\" id=\"scope-team\" /><Label htmlFor=\"scope-team\">本部门可见</Label></div><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"all\" id=\"scope-all\" /><Label htmlFor=\"scope-all\">全公司可见</Label></div></RadioGroup></fieldset><div className=\"inline-flex w-fit rounded-md border border-ds-gray-400 p-0.5 text-label-13\"><span className=\"rounded px-3 py-1 text-ds-gray-900\">日</span><span className=\"rounded bg-ds-gray-200 px-3 py-1 text-ds-gray-1000\">周</span><span className=\"rounded px-3 py-1 text-ds-gray-900\">月</span></div></div>"
+              "jsx": "<div className=\"flex w-80 flex-col gap-4\"><fieldset className=\"flex flex-col gap-2\"><legend className=\"mb-1 text-label-14 text-ds-gray-1000\">可见范围</legend><RadioGroup defaultValue=\"self\"><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"self\" id=\"scope-self\" /><Label htmlFor=\"scope-self\">仅本人可见</Label></div><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"team\" id=\"scope-team\" /><Label htmlFor=\"scope-team\">本部门可见</Label></div><div className=\"flex items-center gap-2\"><RadioGroupItem value=\"all\" id=\"scope-all\" /><Label htmlFor=\"scope-all\">全公司可见</Label></div></RadioGroup></fieldset><div className=\"inline-flex w-fit rounded-md border border-ds-gray-400 p-1 text-label-13\"><span className=\"rounded px-3 py-1 text-ds-gray-900\">日</span><span className=\"rounded bg-ds-gray-200 px-3 py-1 text-ds-gray-1000\">周</span><span className=\"rounded px-3 py-1 text-ds-gray-900\">月</span></div></div>"
             }
           ],
           "examples": [],
@@ -8728,7 +8728,7 @@
         {
           "id": "CMP.SELECT.WHEN",
           "title_zh": "选项数量决定控件",
-          "statement_zh": "2–5 个互斥选项且需要一眼看全时用单选组或分段控制；6 个以上用选择器；超过 7 个打开搜索（showSearch）；超过 50 个或来自接口时改远程搜索，并防抖、显示加载态。",
+          "statement_zh": "2–5 个互斥选项且需要一眼看全时用单选组或分段控制；6 个以上用选择器（Select）；超过 7 个改用可搜索的组合框（Combobox：Popover 里放带搜索框的列表）；超过 50 个或来自接口时改远程搜索，并防抖、显示加载态。",
           "rationale_zh": null,
           "surfaces": [
             "admin",
@@ -8742,10 +8742,10 @@
           "showcase": [
             {
               "kind": "demo",
-              "title_zh": "可搜索的选择器与禁用原因",
+              "title_zh": "选择器与停用项",
               "description_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex w-72 flex-col gap-1.5\"><Label htmlFor=\"model\">车型</Label><Select><SelectTrigger id=\"model\" className=\"w-full\"><SelectValue placeholder=\"选择车型\" /></SelectTrigger><SelectContent><SelectItem value=\"M01\">轻型厢式货车</SelectItem><SelectItem value=\"M02\">中型栏板货车</SelectItem><SelectItem value=\"M09\" disabled>重型牵引车（已停用）</SelectItem></SelectContent></Select></div>"
+              "jsx": "<div className=\"flex w-72 flex-col gap-2\"><Label htmlFor=\"model\">车型</Label><Select><SelectTrigger id=\"model\" className=\"w-full\"><SelectValue placeholder=\"选择车型\" /></SelectTrigger><SelectContent><SelectItem value=\"M01\">轻型厢式货车</SelectItem><SelectItem value=\"M02\">中型栏板货车</SelectItem><SelectItem value=\"M09\" disabled>重型牵引车（已停用）</SelectItem></SelectContent></Select></div>"
             }
           ],
           "examples": [],
@@ -9415,7 +9415,7 @@
               "title_zh": "封顶与状态点",
               "note_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex items-center gap-6\"><span className=\"relative grid size-8 place-items-center rounded-md bg-ds-gray-200 text-label-13\">消<span className=\"absolute -right-2 -top-2 rounded-full bg-ds-red-700 px-1.5 text-label-12 text-ds-background-100\">99+</span></span><span className=\"flex items-center gap-2 text-copy-14\"><span className=\"size-2 rounded-full bg-ds-blue-700\" />同步中</span></div>",
+              "jsx": "<div className=\"flex items-center gap-6\"><span className=\"relative grid size-8 place-items-center rounded-md bg-ds-gray-200 text-label-13\">消<span className=\"absolute -right-2 -top-2 rounded-full bg-ds-red-700 px-2 text-label-12 text-ds-background-100\">99+</span></span><span className=\"flex items-center gap-2 text-copy-14\"><span className=\"size-2 rounded-full bg-ds-blue-700\" />同步中</span></div>",
               "code": null,
               "lang": null
             }
@@ -11005,7 +11005,7 @@
               "title_zh": "操作在底部",
               "note_zh": null,
               "template": null,
-              "jsx": "<aside className=\"flex h-64 w-96 flex-col border-l border-ds-gray-400 bg-ds-background-100 shadow-lg\"><header className=\"border-b border-ds-gray-400 px-5 py-4 text-heading-16\">编辑 沪A12345</header><div className=\"flex-1 p-5\"><Label htmlFor=\"d1\">车牌号</Label><Input id=\"d1\" defaultValue=\"沪A12345\" className=\"mt-1.5\" /></div><footer className=\"flex gap-2 border-t border-ds-gray-400 px-5 py-3\"><Button>保存</Button><Button variant=\"secondary\">取消</Button></footer></aside>",
+              "jsx": "<aside className=\"flex h-64 w-96 flex-col border-l border-ds-gray-400 bg-ds-background-100 shadow-lg\"><header className=\"border-b border-ds-gray-400 px-5 py-4 text-heading-16\">编辑 沪A12345</header><div className=\"flex-1 p-5\"><Label htmlFor=\"d1\">车牌号</Label><Input id=\"d1\" defaultValue=\"沪A12345\" className=\"mt-2\" /></div><footer className=\"flex gap-2 border-t border-ds-gray-400 px-5 py-3\"><Button>保存</Button><Button variant=\"secondary\">取消</Button></footer></aside>",
               "code": null,
               "lang": null
             }
@@ -11656,7 +11656,7 @@
               "title_zh": "百分比与数量",
               "note_zh": null,
               "template": null,
-              "jsx": "<div className=\"flex w-80 flex-col gap-1.5\"><Progress value={26} aria-label=\"导入进度\" /><span className=\"text-copy-13 text-ds-gray-900\">已导入 320 / 1,248 条</span></div>",
+              "jsx": "<div className=\"flex w-80 flex-col gap-2\"><Progress value={26} aria-label=\"导入进度\" /><span className=\"text-copy-13 text-ds-gray-900\">已导入 320 / 1,248 条</span></div>",
               "code": null,
               "lang": null
             }
@@ -15233,7 +15233,7 @@
             {
               "spec": "perf",
               "doc": "themes/performance-and-capacity.md",
-              "quote": "MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。"
+              "quote": "面对大数据必须虚拟滚动或分页"
             }
           ],
           "showcase": [],
@@ -15945,6 +15945,453 @@
           "storybook": {
             "id": "standard-patterns-data-reports--report-perf",
             "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-perf"
+          }
+        }
+      ]
+    },
+    {
+      "key": "architecture",
+      "title_zh": "前端架构",
+      "group": "engineering",
+      "group_title_zh": "工程规范",
+      "prefix": "ARCH",
+      "summary_zh": "技术栈以项目基线为准：React + TypeScript + Vite、shadcn/ui + Tailwind CSS 4、TanStack Query、Zustand、react-hook-form + zod；目录按职责分层，模块只经公开入口互相引用；函数组件 + hooks；组件源码进项目由项目维护；接口客户端由 OpenAPI 生成；表单、路由、类型与测试各有固定做法。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "ARCH.STACK",
+          "title_zh": "技术栈以基线为准，同类库只用一套",
+          "covered": true
+        },
+        {
+          "id": "ARCH.LAYOUT",
+          "title_zh": "目录按职责分层",
+          "covered": true
+        },
+        {
+          "id": "ARCH.BOUNDARY",
+          "title_zh": "模块只经公开入口互相引用",
+          "covered": true
+        },
+        {
+          "id": "ARCH.COMPONENT",
+          "title_zh": "组件写法",
+          "covered": true
+        },
+        {
+          "id": "ARCH.UI_LIBRARY",
+          "title_zh": "组件库怎么用、怎么改",
+          "covered": true
+        },
+        {
+          "id": "ARCH.DATA_LAYER",
+          "title_zh": "接口请求层",
+          "covered": true
+        },
+        {
+          "id": "ARCH.FORMS",
+          "title_zh": "表单",
+          "covered": true
+        },
+        {
+          "id": "ARCH.ROUTING",
+          "title_zh": "路由组织",
+          "covered": true
+        },
+        {
+          "id": "ARCH.TYPES",
+          "title_zh": "类型严格、接口类型生成",
+          "covered": true
+        },
+        {
+          "id": "ARCH.TESTING",
+          "title_zh": "测试分层",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/工程规范/前端架构",
+        "id": "standard-engineering-architecture--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "ARCH.STACK",
+          "title_zh": "技术栈以基线为准，同类库只用一套",
+          "statement_zh": "框架与配套以项目技术基线（.pomaster/baseline/frontend/stack.yaml）为准：React + TypeScript + Vite（管理端是单页应用，除非基线另有决定，不上服务端渲染框架），组件 shadcn/ui（Radix）+ Tailwind CSS 4 + lucide-react，接口数据 @tanstack/react-query，全局状态 Zustand，表单 react-hook-form + zod，单元测试 Vitest。路由库由项目在基线里选定（见参数）；同一类能力（请求、日期、表单校验、图表）全项目只用一套。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [
+            {
+              "key": "router",
+              "label_zh": "路由库",
+              "unit": "none",
+              "source": null,
+              "note_zh": null,
+              "kind": "decision",
+              "token": null,
+              "value": null,
+              "decision_zh": "路由库用哪一个？",
+              "candidates": [
+                "react-router",
+                "tanstack-router"
+              ],
+              "pending": true
+            }
+          ],
+          "anchors": [
+            {
+              "spec": "react",
+              "doc": "stacks/react/react-framework-overlay.md",
+              "quote": "必须固定并记录 react、react-dom、路由库（React Router 或 TanStack Router，二选一）、服务端状态库（@tanstack/react-query）与 TypeScript 工具链的版本位与来源；版本位经实抓核实，不得沿用旧主版本记忆。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-stack",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-stack"
+          }
+        },
+        {
+          "id": "ARCH.LAYOUT",
+          "title_zh": "目录按职责分层",
+          "statement_zh": "src 下按职责分目录：api/（由 OpenAPI 生成的接口客户端与查询 hooks）、routes/<模块>/（路由页面与 loader）、features/<模块>/（模块内的组件、hooks、表单）、components/ui/（shadcn 组件源码）、components/（跨模块、与业务无关的组件）、hooks/、stores/（Zustand，一个 store 一个文件）、lib/（cn、格式化等工具）、locales/、styles/。每个顶层目录在 README 里写清职责；不新建没有说明的顶层目录。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "顶层目录和模块职责必须文档化。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 新建无职责说明的顶层目录。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "目录",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "src/\n  api/                 # 生成的接口客户端 + useXxxQuery\n  routes/vehicle/      # list.tsx、loader.ts\n  features/vehicle/    # VehicleEditDialog.tsx、useVehicleForm.ts\n  components/ui/       # shadcn 组件源码（项目维护）\n  components/  hooks/  stores/  lib/  locales/  styles/",
+              "lang": "text"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-layout",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-layout"
+          }
+        },
+        {
+          "id": "ARCH.BOUNDARY",
+          "title_zh": "模块只经公开入口互相引用",
+          "statement_zh": "业务模块之间只经模块的公开入口（features/<模块>/index.ts 导出）引用，不引用别的模块内部的文件，路由页面之间不互相 import；几个模块共同参与的流程放到单独的编排模块；带业务语义的组件不下沉到 components/ 或 components/ui/；循环依赖由 lint 检查并阻止。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "模块外部只能通过 Public API 引用。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 因方便把业务能力放进 shared。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "循环依赖必须被工具检测并阻止。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "引用别的模块内部文件",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "import { formatPlate } from '@/features/vehicle/lib/plate'",
+              "lang": "ts"
+            },
+            {
+              "kind": "do",
+              "title_zh": "经公开入口",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "import { formatPlate } from '@/features/vehicle'",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-boundary",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-boundary"
+          }
+        },
+        {
+          "id": "ARCH.COMPONENT",
+          "title_zh": "组件写法",
+          "statement_zh": "组件写成函数组件 + hooks，不写 class 组件；props 用 TypeScript 类型声明；可复用的有状态逻辑抽成自定义 hook（useXxx），hooks 只在组件顶层调用、依赖数组写全（eslint-plugin-react-hooks 检查）；路由组件负责取数据，展示组件只收 props、通过回调把事件交出去；不在 useEffect 里同步派生状态，能在渲染时算的直接算。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "react",
+              "doc": "stacks/react/react-framework-overlay.md",
+              "quote": "hooks 只在组件或自定义 hook 的顶层调用，不放进条件、循环和回调；依赖数组写全，由 eslint-plugin-react-hooks 的规则检查，不关闭规则来掩盖问题。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "用 effect 同步派生值",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "const [total, setTotal] = useState(0)\nuseEffect(() => { setTotal(rows.reduce((sum, row) => sum + row.cost, 0)) }, [rows])",
+              "lang": "tsx"
+            },
+            {
+              "kind": "do",
+              "title_zh": "渲染时直接算",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "const total = rows.reduce((sum, row) => sum + row.cost, 0)",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-component",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-component"
+          }
+        },
+        {
+          "id": "ARCH.UI_LIBRARY",
+          "title_zh": "组件库怎么用、怎么改",
+          "statement_zh": "shadcn/ui 组件用它的 CLI 拷进 components/ui/，源码归项目维护：改外观改组件文件里的类，调用处只追加布局类，不整套覆盖；颜色、字号只用 Geist 主题变量与排版类；组件依赖 Radix 的放在 Radix 上，不自己重写焦点和键盘逻辑；升级时对照上游变更手工合并。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 因方便把业务能力放进 shared。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-ui-library",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-ui-library"
+          }
+        },
+        {
+          "id": "ARCH.DATA_LAYER",
+          "title_zh": "接口请求层",
+          "statement_zh": "接口客户端由 OpenAPI 生成（类型同源）；每个资源一组 useQuery / useMutation hooks（useVehicleList、useUpdateVehicle，基于 @tanstack/react-query），组件只调这些 hooks，不直接调 fetch；进入路由前需要的数据在 loader 里用 queryClient.ensureQueryData 预取，组件里再用同一个 key 读；鉴权、CSRF、超时、错误归一在 HTTP 客户端统一处理（见 SEC.CSRF、ROBUST.TIMEOUT、ERRH.NORMALIZE）。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "server state 由查询缓存层管理。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "资源的查询 hook",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "export function useVehicleList(params: VehicleQuery) {\n  return useQuery({ queryKey: ['vehicles', params], queryFn: ({ signal }) => api.listVehicles(params, { signal }) })\n}",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-data-layer",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-data-layer"
+          }
+        },
+        {
+          "id": "ARCH.FORMS",
+          "title_zh": "表单",
+          "statement_zh": "表单用 react-hook-form + zod（zodResolver），schema 与接口类型同源，defaultValues 从接口数据转换而来、不直接用 DTO；字段与 Label 用 id 关联，错误用 aria-describedby 关联；提交返回 422 时用 setError 把字段错误挂回对应字段；isDirty、isSubmitting 留在表单里，不进全局 store。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "表单区分 initial、current、dirty、errors、submitting 和 conflict。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "schema 驱动的表单",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "const schema = z.object({ plate: z.string().regex(/^[\\u4e00-\\u9fa5][A-Z][A-Z0-9]{5,6}$/, '车牌号为 7–8 位，如沪A12345') })\nconst form = useForm({ resolver: zodResolver(schema), defaultValues: toFormValues(vehicle) })",
+              "lang": "tsx"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-forms",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-forms"
+          }
+        },
+        {
+          "id": "ARCH.ROUTING",
+          "title_zh": "路由组织",
+          "statement_zh": "路由集中定义（路由配置对象或文件路由，全项目选一种），按模块分组；每个路由懒加载，在 handle（或路由上下文）里声明访问要求与布局（见 GUARD.DECLARE）；数据在 loader 里预取，出错由路由的错误元素承接（见 ERRH.BOUNDARY）；列表的筛选与分页进搜索参数（见 STATE.URL）。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "每个页面路由有稳定 name、path、page key、title、权限和布局 meta。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-routing",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-routing"
+          }
+        },
+        {
+          "id": "ARCH.TYPES",
+          "title_zh": "类型严格、接口类型生成",
+          "statement_zh": "TypeScript 开 strict，类型检查用 tsc --noEmit 进 CI；接口类型从 OpenAPI 生成，不手写重复的 DTO 类型；组件 props 用 type 声明，不用 React.FC；不用 any 逃逸，确实不知道类型时用 unknown 再收窄。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "toolchain",
+              "doc": "themes/engineering-toolchain-and-dependencies.md",
+              "quote": "TypeScript 项目必须启用与代码库兼容的严格类型检查；暂不能启用的严格选项必须有范围、Owner、迁移计划和期限。"
+            },
+            {
+              "spec": "toolchain",
+              "doc": "themes/engineering-toolchain-and-dependencies.md",
+              "quote": "MUST NOT 用项目级忽略、`any`、类型断言或关闭规则掩盖局部问题；例外必须最小化并可追踪。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-types",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-types"
+          }
+        },
+        {
+          "id": "ARCH.TESTING",
+          "title_zh": "测试分层",
+          "statement_zh": "hooks、store 和关键组件用 Vitest + Testing Library 测，按用户看得到的角色和文字找元素（getByRole、getByLabelText），不测实现细节；关键业务流程用 Playwright 端到端测；接口用 MSW 按 OpenAPI 模拟加载、空、出错、部分成功、正常五种状态。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "testing",
+              "doc": "themes/testing-and-verification.md",
+              "quote": "Contract Mock：由正式 schema 生成或校验的 Mock。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-testing",
+            "url": "https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-testing"
           }
         }
       ]
@@ -18420,7 +18867,7 @@
               "note_zh": null,
               "template": null,
               "jsx": null,
-              "code": "message.error(error.response.data.exception)",
+              "code": "toast.error(error.response.data.exception)",
               "lang": "ts"
             },
             {
@@ -19660,7 +20107,7 @@
               "note_zh": null,
               "template": null,
               "jsx": null,
-              "code": "onMounted(() => { loadDashboard() })",
+              "code": "useEffect(() => { loadDashboard() }, [])",
               "lang": "ts"
             },
             {
@@ -19669,7 +20116,7 @@
               "note_zh": null,
               "template": null,
               "jsx": null,
-              "code": "onMounted(() => { loadDashboard().catch(reportAndShow) })",
+              "code": "const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: loadDashboard })\n// 失败进 dashboard.error，由区块的错误态呈现；不在 useEffect 里手动发请求",
               "lang": "ts"
             }
           ],
@@ -20688,6 +21135,10 @@
     "security": "themes/security.md",
     "api": "themes/api-contract-and-error-semantics.md",
     "permission": "themes/permission-and-authorization.md",
-    "obs": "themes/observability-and-analytics.md"
+    "obs": "themes/observability-and-analytics.md",
+    "arch": "themes/architecture-and-module-boundaries.md",
+    "toolchain": "themes/engineering-toolchain-and-dependencies.md",
+    "testing": "themes/testing-and-verification.md",
+    "react": "stacks/react/react-framework-overlay.md"
   }
 }

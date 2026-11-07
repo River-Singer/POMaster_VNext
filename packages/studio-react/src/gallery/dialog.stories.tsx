@@ -51,7 +51,7 @@ export const Form: Story = {
             <DialogTitle>修改 沪A12345 的车牌号</DialogTitle>
             <DialogDescription>换牌后历史记录仍挂在这辆车上。</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="new-plate">新车牌号</Label>
             <Input id="new-plate" placeholder="例：沪A54321" />
           </div>

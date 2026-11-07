@@ -854,6 +854,22 @@ areas:
       - { id: REPORT.EXPORT, title_zh: 导出与页面同口径并受权限控制 }
       - { id: REPORT.PRINT, title_zh: 打印有专门样式 }
       - { id: REPORT.PERF, title_zh: 大报表服务端聚合 }
+  - key: architecture
+    title_zh: 前端架构
+    group: engineering
+    prefix: ARCH
+    summary_zh: 技术栈以项目基线为准：Vue 3 + TypeScript + Vite、ant-design-vue、vue-router、Pinia、TanStack Query；目录按职责分层，模块只经公开入口互相引用；单文件组件 + 组合式函数；接口客户端由 OpenAPI 生成；表单、路由、类型与测试各有固定做法。
+    topics:
+      - { id: ARCH.STACK, title_zh: 技术栈以基线为准，同类库只用一套 }
+      - { id: ARCH.LAYOUT, title_zh: 目录按职责分层 }
+      - { id: ARCH.BOUNDARY, title_zh: 模块只经公开入口互相引用 }
+      - { id: ARCH.COMPONENT, title_zh: 组件写法 }
+      - { id: ARCH.UI_LIBRARY, title_zh: 组件库怎么用、怎么改 }
+      - { id: ARCH.DATA_LAYER, title_zh: 接口请求层 }
+      - { id: ARCH.FORMS, title_zh: 表单 }
+      - { id: ARCH.ROUTING, title_zh: 路由组织 }
+      - { id: ARCH.TYPES, title_zh: 类型严格、接口类型生成 }
+      - { id: ARCH.TESTING, title_zh: 测试分层 }
   # ═════════════════════════════ 工程规范 ═════════════════════════════
   - key: state
     title_zh: 状态管理

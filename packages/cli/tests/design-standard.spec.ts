@@ -96,7 +96,7 @@ function skeletonOrder(keys: readonly string[]): string[] {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：92 个领域、450 条规则——基础 13 篇、组件 34 篇（按钮 + 组件批次一 33 篇）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
+  it("预设通过校验：93 个领域、460 条规则——基础 13 篇、组件 34 篇（按钮 + 组件批次一 33 篇）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 15 篇（前端架构打头）；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -113,12 +113,12 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     expect(standard.areas.filter((area) => area.group === "patterns.experience").map((area) => area.key)).toEqual(["ui_stills", "component_motion", "bento_grid", "state_feedback", "context", "sidebar", "card_hover", "loading_bar"]);
     expect(standard.areas.filter((area) => area.group === "patterns.data").map((area) => area.key)).toEqual(["data_grid", "charts", "reports"]);
     expect(standard.areas.filter((area) => area.group === "engineering").map((area) => area.key)).toEqual([
-      "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake",
+      "architecture", "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake",
     ]);
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 92, rules: 450, gate_rules: 43, review_rules: 407, pending_params: 11 });
+    expect(loaded.summary).toEqual({ areas: 93, rules: 460, gate_rules: 43, review_rules: 417, pending_params: 11 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -478,9 +478,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(450);
+    expect(envelope.result.summary.rules).toBe(460);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_AREA_UNCOVERED", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(92);
+    expect(envelope.result.normalized.areas).toHaveLength(93);
     expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
@@ -529,7 +529,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 72, rules: 379, gate_rules: 35, review_rules: 344, pending_params: 12 });
+    expect(result.summary).toEqual({ areas: 73, rules: 389, gate_rules: 35, review_rules: 354, pending_params: 13 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
@@ -634,11 +634,11 @@ const SKELETON_GRID = {
 const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
 
 describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
-  it("骨架通过校验：155 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
+  it("骨架通过校验：156 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
     const read = readDesignSkeleton(SKELETON_PATH)!;
     expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);
     const skeleton = read.skeleton!;
-    expect(skeleton.areas).toHaveLength(155);
+    expect(skeleton.areas).toHaveLength(156);
     const button = skeleton.areas.find((area) => area.key === "button")!;
     expect(button.counterparts).toEqual({ antd: ["Button"], geist: ["Button", "ButtonLink"] });
     expect(button.topics.map((topic) => topic.id)).toContain("CMP.BUTTON.ICON_ONLY");

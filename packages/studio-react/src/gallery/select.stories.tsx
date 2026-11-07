@@ -15,7 +15,7 @@ export const Basic: Story = {
   name: "标签、占位与停用项",
   render: () => (
     <Frame>
-      <div className="flex w-72 flex-col gap-1.5">
+      <div className="flex w-72 flex-col gap-2">
         <Label htmlFor="model">车型</Label>
         <Select>
           <SelectTrigger id="model" className="w-full">

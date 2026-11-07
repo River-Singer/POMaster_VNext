@@ -2,7 +2,7 @@
  * Geist 主题（React 画廊 · shadcn/ui + Tailwind CSS 4）。
  *
  * - 不引入 Tailwind 的全局 preflight：同一个 Storybook 里还有 antd 组件页，全局重置会改它们的样子。
- *   preflight 只作用在 .geist-root 里（规范页的实时示例都包在里面）。
+ *   preflight 只作用在 .geist-root 里（规范页的实时示例都包在里面），以及经 Portal 挂到 body 下的弹层内容。
  * - 颜色：Geist 色阶（浅色主题）取自 vercel.com/geist/vercel-brand.css，写成 --ds-* 变量，Tailwind 里是
  *   ds- 前缀的颜色类（bg-ds-gray-100、text-ds-gray-900、border-ds-gray-alpha-400……）。官方样式表只公开了
  *   彩色色阶的 100 / 400 / 700 / 900 / 1000 档，其余档位与青、紫、粉色阶未定义，拿到完整色值后补上。
@@ -158,45 +158,40 @@
   --color-ds-red-1000: var(--ds-red-1000);
 }
 
-/* 只在 .geist-root 里生效的 preflight（Tailwind 4 preflight 的要点）。 */
+/* 只在 .geist-root 里生效的 preflight（Tailwind 4 preflight 的要点）。对话框、气泡卡片、下拉菜单、选择器、文字提示的
+ * 内容经 Radix Portal 挂到 body 下、不在 .geist-root 里，按它们的 data-slot 一并纳入（:is() 的权重与单个类相同）。 */
 @layer base {
-  .geist-root,
-  .geist-root *,
-  .geist-root ::before,
-  .geist-root ::after {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]),
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) *,
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) ::before,
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) ::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     border: 0 solid;
   }
-  .geist-root {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) {
     font-family: var(--font-sans);
     color: var(--foreground);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  .geist-root h1,
-  .geist-root h2,
-  .geist-root h3,
-  .geist-root h4 {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(h1, h2, h3, h4) {
     font-size: inherit;
     font-weight: inherit;
   }
-  .geist-root code,
-  .geist-root kbd,
-  .geist-root pre {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(code, kbd, pre) {
     font-family: var(--font-mono);
   }
-  .geist-root button,
-  .geist-root input {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(button, input, textarea, select) {
     font: inherit;
     color: inherit;
     background-color: transparent;
   }
-  .geist-root button {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) button {
     cursor: pointer;
   }
-  .geist-root svg {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) svg {
     display: block;
     vertical-align: middle;
   }

@@ -256,12 +256,25 @@ describe("generate：生成记账与写入约束", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  async function initStore(): Promise<void> {
+  /** 前端技术基线（scaffold 按它选前端模板集；null = 不写 stack.yaml）。 */
+  function writeFrontendStack(framework: string | null, ui = "UNKNOWN"): void {
+    const path = join(dir, ".pomaster", "baseline", "frontend", "stack.yaml");
+    if (framework === null) {
+      rmSync(path, { force: true });
+      return;
+    }
+    mkdirSync(join(dir, ".pomaster", "baseline", "frontend"), { recursive: true });
+    const values = { framework, language: "typescript", build: "vite", router: "UNKNOWN", state: "UNKNOWN", grid: "UNKNOWN", ui, css: "UNKNOWN", testing: "UNKNOWN" };
+    writeFileSync(path, Object.entries(values).map(([key, value]) => `${key}: ${value}`).join("\n") + "\n");
+  }
+
+  async function initStore(stack: { framework: string | null; ui?: string } = { framework: "vue3", ui: "antdesign" }): Promise<void> {
     await createStore(dir);
     const authPath = join(dir, ".pomaster", "state", "authority.json");
     const auth = JSON.parse(readFileSync(authPath, "utf8")) as { authorities: Record<string, unknown> };
     auth.authorities["BOOTSTRAP_OWNER"] = {};
     writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`);
+    writeFrontendStack(stack.framework, stack.ui);
   }
 
   async function seedChange(id: string): Promise<void> {
@@ -302,8 +315,8 @@ describe("generate：生成记账与写入约束", () => {
     );
   }
 
-  async function confirmed(): Promise<void> {
-    await initStore();
+  async function confirmed(stack?: { framework: string | null; ui?: string }): Promise<void> {
+    await initStore(stack);
     writeSpec();
     const outcome = await runScaffoldConfirm(dir, { by: OWNER });
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
@@ -616,6 +629,47 @@ describe("generate：生成记账与写入约束", () => {
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_TEMPLATE_SET_CHANGED"]);
     expect(outcome.errors[0]?.message).toContain("openapi-3.1");
+  });
+
+  it("前端技术栈是 React → 生成 react-geist-admin 模板集（列表页、编辑对话框、路由描述），不生成 Vue 文件", async () => {
+    await confirmed({ framework: "react", ui: "geist" });
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    const written = outcome.result.written;
+    expect(written.filter((path) => path.endsWith(".vue"))).toEqual([]);
+    expect(written).toContain("frontend/admin/src/routes/vehicle-model/list.tsx");
+    expect(written).toContain("frontend/admin/src/features/vehicle-model/VehicleModelEditDialog.tsx");
+    expect(written).toContain("frontend/admin/src/routes/scaffold.ts");
+    const manifestRead = await readGenerationManifest(dir);
+    if (manifestRead.kind !== "ok") throw new Error("manifest");
+    expect(manifestRead.manifest.template_sets.map((set) => set.id)).toEqual(["mysql-flyway", "openapi-3.1", "react-geist-admin"]);
+    expect(manifestRead.manifest.files.filter((file) => file.template.startsWith("react.admin.")).length).toBeGreaterThanOrEqual(13);
+  });
+
+  it("前端技术栈没定 → 只生成数据库与接口文档，警告 SCAFFOLD_FRONTEND_SKIPPED；定成 Vue 后再生成补上前端文件", async () => {
+    await confirmed({ framework: null });
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.result.written).toEqual([ADMIN_OAS, PUBLIC_OAS, GRANTS, `${MIGRATION_DIR}/V1__create_vehicle_model.sql`]);
+    expect(outcome.warnings.map((warning) => warning.code)).toContain("SCAFFOLD_FRONTEND_SKIPPED");
+    expect(outcome.warnings.find((warning) => warning.code === "SCAFFOLD_FRONTEND_SKIPPED")?.hint).toContain("pomaster baseline set frontend framework");
+    writeFrontendStack("vue3", "antdesign");
+    const again = await runScaffoldGenerate(dir);
+    expect(again.ok, again.errors[0]?.message).toBe(true);
+    expect(again.result.written).toEqual(ADMIN_UI_PATHS);
+  });
+
+  it("从 Vue 切到 React：Vue 前端文件退役，React 文件新建，迁移不动", async () => {
+    await confirmed();
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    const v1 = read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`);
+    writeFrontendStack("react", "geist");
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.result.retired.filter((path) => path.endsWith(".vue")).length).toBeGreaterThan(0);
+    expect(existsSync(join(dir, "frontend", "admin", "src", "views", "vehicle-model", "VehicleModelList.vue"))).toBe(false);
+    expect(existsSync(join(dir, "frontend", "admin", "src", "routes", "vehicle-model", "list.tsx"))).toBe(true);
+    expect(read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`)).toBe(v1);
   });
 
   it("CLI：scaffold plan / generate --json 信封与退出码", async () => {
