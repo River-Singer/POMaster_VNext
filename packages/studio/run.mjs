@@ -6,8 +6,10 @@
 // main.ts 的 core.disableTelemetry 另作声明层双保险。
 //
 // 用法（root scripts）：
-//   pnpm studio:dev   → node packages/studio/run.mjs dev
-//   pnpm studio:build → node packages/studio/run.mjs build
+//   pnpm studio:vue:dev   → node packages/studio/run.mjs dev
+//   pnpm studio:vue:build → node packages/studio/run.mjs build
+//   （pnpm studio:dev / studio:build 起的是总 Storybook——两个抽屉的组合，见 scripts/studio.mjs。）
+// 静态构建的输出目录可由 STORYBOOK_OUTPUT_DIR 覆盖（总 Storybook 的编排把抽屉放进子路径）。
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -34,7 +36,7 @@ console.log(
     `(stories=${counts.storyCount}) overlays=${counts.overlays} baseline=${counts.baseline} ` +
     `dataStruct=${counts.dataStruct} foundations=${counts.foundations} ` +
     `(tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN) ` +
-    `standard=${counts.standard} (${counts.standardAreas} 个领域 ${counts.standardRules} 条规则，指纹 ${twin.fingerprint})`,
+    `standard=${counts.standard} (骨架 ${counts.standardAreas} 个领域，已写 ${counts.standardCovered} 个、${counts.standardRules} 条规则，指纹 ${twin.fingerprint})`,
 );
 if (action === "generate") process.exit(0);
 
@@ -59,7 +61,7 @@ const storybookBin = join(studioRoot, "node_modules", "storybook", storybookBinR
 const args =
   action === "dev"
     ? ["dev", "--no-open", "--no-version-updates"]
-    : ["build", "--output-dir", "dist-storybook"];
+    : ["build", "--output-dir", process.env.STORYBOOK_OUTPUT_DIR || "dist-storybook"];
 const result = spawnSync(process.execPath, [storybookBin, ...args], {
   cwd: studioRoot,
   stdio: "inherit",

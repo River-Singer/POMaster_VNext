@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>客户管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+.btn{padding:4px 12px;border-radius:3px;background:#1E40AF;color:#fff}
+.req{color:#DC2626;margin-left:2px}
+.tag-ok{background:#DCFCE7;color:#16A34A}
+.tag-bad{background:#FEE2E2;color:#DC2626;text-decoration:line-through}
+.info-tip .tooltip{display:none}
+</style>
+</head>
+<body class="flex h-screen" style="font-family:'Fira Sans'">
+<aside class="w-[220px] bg-slate-900">
+  <nav><a href="#">工作台</a><a href="#" class="active">客户管理</a><a href="#">回款管理</a></nav>
+</aside>
+<main class="flex-1 p-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold" style="color:#0F172A">客户管理</h1>
+    <button class="btn" onclick="openModal()"><i data-lucide="plus"></i>新增客户</button>
+  </div>
+  <div class="bg-blue-50 border border-blue-200 text-xs px-3 py-2 rounded">信用额度超过 100 万的客户需要财务审批后才能生效。</div>
+  <div class="flex gap-2 mt-3">
+    <input class="border px-2 py-1 text-sm w-64" placeholder="搜索客户名称 / 编码">
+    <select class="border text-sm"><option value="">全部区域</option><option>华东</option><option>华南</option><option>华北</option></select>
+    <button class="btn" onclick="query()">查询</button>
+  </div>
+  <div class="flex gap-4 mt-3 text-sm">
+    <button class="tab active">合作中 (12)</button><button class="tab">已停用 (3)</button>
+  </div>
+  <table class="w-full text-[13px] mt-2" style="border-collapse:collapse">
+    <thead><tr>
+      <th class="sticky left-0 bg-white w-[40px]"><input type="checkbox"></th>
+      <th class="sticky left-0 bg-white" style="width:140px">客户名称</th>
+      <th>区域</th>
+      <th class="text-right">信用额度（元）</th>
+      <th>状态</th>
+      <th class="sticky right-0 bg-white">操作</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><input type="checkbox"></td><td>上海星河</td><td>华东</td><td class="text-right">1,200,000.00</td><td><span class="tag-ok px-2 rounded">合作中</span></td><td><a href="javascript:edit(1)">编辑</a></td></tr>
+      <tr><td><input type="checkbox"></td><td>广州南岭</td><td>华南</td><td class="text-right">300,000.00</td><td><span class="tag-bad px-2 rounded">已停用</span></td><td><a href="javascript:edit(2)">编辑</a></td></tr>
+    </tbody>
+  </table>
+  <div class="text-xs text-slate-500 mt-2">共 15 条 · 每页 500 条</div>
+</main>
+<div id="customerModal" class="modal-overlay fixed inset-0 bg-black/40" style="display:none">
+  <div class="modal bg-white w-[640px] rounded-lg shadow-xl">
+    <h2 class="text-base font-semibold px-5 py-3 border-b">新增客户</h2>
+    <div class="p-5 grid grid-cols-2 gap-4">
+      <div class="col-span-2 text-sm font-semibold text-slate-600">基本信息</div>
+      <div><label class="text-xs text-slate-500">客户名称<span class="req">*</span></label><input class="form-input w-full border" maxlength="50"></div>
+      <div><label class="text-xs text-slate-500">所属区域<span class="req">*</span></label><select class="form-input w-full border"><option value="">请选择</option><option>华东</option><option>华南</option><option>华北</option></select></div>
+      <div><label class="text-xs text-slate-500">信用额度（元）<span class="info-tip"><i data-lucide="info"></i><span class="tooltip">超过 100 万需财务审批</span></span></label><input type="number" class="form-input w-full border" min="0"></div>
+      <div class="col-span-2 text-sm font-semibold text-slate-600">联系人</div>
+      <div><label class="text-xs text-slate-500">联系人<span class="req">*</span></label><input class="form-input w-full border"></div>
+      <div><label class="text-xs text-slate-500">联系电话</label><input type="tel" class="form-input w-full border"></div>
+    </div>
+    <div class="px-5 py-3 border-t flex justify-end gap-2">
+      <button class="btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn" onclick="save()">保存</button>
+    </div>
+  </div>
+</div>
+<script>function openModal(){document.getElementById('customerModal').style.display='flex'}</script>
+</body>
+</html>

@@ -147,6 +147,7 @@ import {
   validateBaselineDependencyDeclaration,
 } from "./baseline.js";
 import { scaffoldConsistencyGateErrors } from "./scaffold-check.js";
+import { designStandardGateErrors } from "./design-check.js";
 import {
   normalizeGrnEvidenceRefs,
   readEvidenceQualificationRequirement,
@@ -911,6 +912,10 @@ export async function runCloseout(
   // （SCAFFOLD_GENERATED_FILE_MODIFIED / GENERATION_STALE / KEYBINDING_MISSING / MANIFEST_MALFORMED /
   // TEMPLATE_SET_CHANGED）；规格缺席 → 门不适用；已确认未生成只警告。判卷单源 scaffold-check.ts。
   const scaffoldErrors = await scaffoldConsistencyGateErrors(rootDir);
+  // 设计规范门（D2）：项目落地了设计规范（.pomaster/baseline/frontend/design-standard.yaml）才适用；
+  // 门禁条文扫描前端源码，超出违规基线（design-check-baseline.json，采用时记下的存量）的违规阻断
+  // （DESIGN_CHECK_VIOLATIONS）；规范没通过校验 → DESIGN_STANDARD_INVALID。判卷单源 design-check.ts。
+  const designErrors = designStandardGateErrors(rootDir);
 
   // ============================================================
   // ① DoD 判卷：acceptance 逐条映射 VERIFIED claim（§47 硬绑；D20 消费纪律）
@@ -1529,7 +1534,7 @@ export async function runCloseout(
   };
   const judged: CloseoutResult = { ...withKind, dod, gates };
 
-  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors, ...scaffoldErrors];
+  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors, ...scaffoldErrors, ...designErrors];
   const specSummary =
     dod.spec === null
       ? "spec: 无绑定 Evidence Spec（双轨过渡——acceptance 轨）"

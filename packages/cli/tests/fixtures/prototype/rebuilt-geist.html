@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><title>客户管理</title></head>
+<body>
+<div class="flex min-h-screen">
+  <aside class="w-64 border-r border-ds-gray-400 bg-ds-background-200">
+    <nav aria-label="主导航" class="flex flex-col gap-1 p-2">
+      <a href="/home" class="rounded-md px-2 text-label-14">工作台</a>
+      <a href="/customers" aria-current="page" class="rounded-md bg-ds-gray-200 px-2 text-label-14">客户管理</a>
+      <a href="/receipts" class="rounded-md px-2 text-label-14">回款管理</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-heading-24">客户管理</h1>
+      <button data-slot="button" class="inline-flex h-8 items-center gap-2 rounded-md bg-ds-gray-1000 px-3 text-button-14 text-ds-background-100"><svg class="lucide lucide-plus"></svg>新增客户</button>
+    </header>
+    <div data-slot="alert" role="alert" class="rounded-lg border px-4 py-3 text-copy-14">信用额度超过 100 万的客户需要财务审批后才能生效。</div>
+    <div class="flex gap-2">
+      <input data-slot="input" class="h-8 rounded-md border px-3" placeholder="搜索客户名称 / 编码">
+      <button role="combobox" aria-label="区域" data-placeholder="全部区域" data-pomaster-options='["华东","华南","华北"]' class="h-8 rounded-md border px-3"><span>全部区域</span></button>
+      <button data-slot="button" class="h-8 rounded-md border px-3">查询</button>
+    </div>
+    <div role="tablist" class="flex gap-4">
+      <button role="tab" aria-selected="true" class="text-label-14">合作中 (12)</button>
+      <button role="tab" aria-selected="false" class="text-label-14 text-ds-gray-900">已停用 (3)</button>
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-ds-gray-400">
+      <table data-slot="table" class="w-full text-label-14">
+        <thead><tr>
+          <th class="sticky left-0 w-10 bg-ds-background-100"><button role="checkbox" aria-checked="false" aria-label="全选"></button></th>
+          <th class="sticky left-0 bg-ds-background-100">客户名称</th>
+          <th>区域</th>
+          <th class="text-right">信用额度（元）</th>
+          <th>状态</th>
+          <th class="sticky right-0 bg-ds-background-100">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><button role="checkbox" aria-checked="false" aria-label="选择上海星河"></button></td><td>上海星河</td><td>华东</td><td class="text-right tabular-nums">1,200,000.00</td><td><span data-slot="badge">合作中</span></td><td><button>编辑</button></td></tr>
+          <tr><td><button role="checkbox" aria-checked="false" aria-label="选择广州南岭"></button></td><td>广州南岭</td><td>华南</td><td class="text-right tabular-nums">300,000.00</td><td><span data-slot="badge">已停用</span></td><td><button>编辑</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div role="dialog" aria-modal="true" aria-labelledby="dialog-title" class="fixed inset-0 grid place-items-center">
+  <div class="w-[560px] rounded-xl border bg-ds-background-100 p-6">
+    <h2 id="dialog-title" class="text-heading-20">新增客户</h2>
+    <form class="grid gap-4">
+      <h3 class="text-label-14 text-ds-gray-900">基本信息</h3>
+      <div class="grid gap-2"><label for="name" data-slot="label">客户名称<span aria-hidden="true">*</span></label><input id="name" data-slot="input" required maxlength="50"></div>
+      <div class="grid gap-2"><label for="region" data-slot="label">所属区域<span aria-hidden="true">*</span></label><button id="region" role="combobox" aria-required="true" data-pomaster-options='["华东","华南","华北"]'><span>请选择</span></button></div>
+      <div class="grid gap-2"><label for="credit" data-slot="label">信用额度（元）</label><input id="credit" type="number" min="0" data-slot="input" title="超过 100 万需财务审批"></div>
+      <h3 class="text-label-14 text-ds-gray-900">联系人</h3>
+      <div class="grid gap-2"><label for="contact" data-slot="label">联系人<span aria-hidden="true">*</span></label><input id="contact" data-slot="input" required></div>
+      <div class="grid gap-2"><label for="phone" data-slot="label">联系电话</label><input id="phone" type="tel" data-slot="input"></div>
+      <div class="flex justify-end gap-2"><button type="button" data-slot="button">取消</button><button type="submit" data-slot="button">保存</button></div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

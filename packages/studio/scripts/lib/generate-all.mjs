@@ -8,7 +8,8 @@ import { generateOverlayPages } from "./overlays.mjs";
 import { generateBaselinePage } from "./baseline.mjs";
 import { generateDataStructPage } from "./data-struct.mjs";
 import { generateDesignTokensPage } from "./design-tokens-page.mjs";
-import { generateStandardPages, loadStandardModel } from "./standard.mjs";
+import { ANTD_PROFILE, STANDARD_TOKENS_PATH, generateStandardPages, loadStandardModel } from "./standard.mjs";
+import { projectStandard } from "./drawers.mjs";
 
 /** 跑全部生成器（outRoot 缺省 = packages/studio/generated）。 */
 export function generateAll(outRoot = GENERATED_DIR) {
@@ -20,7 +21,16 @@ export function generateAll(outRoot = GENERATED_DIR) {
   const foundations = generateDesignTokensPage(join(outRoot, "foundations"));
   // 规范分区（design-standard.yaml 同源：页面在这里生成；AI 孪生由 run.mjs generate 写入
   // twin/，新鲜度由 tests/standard.spec.ts 钉住）。
-  const standardModel = loadStandardModel();
+  // POMASTER_STUDIO_PROJECT 指向已落地规范的项目时，规范页从项目规范生成（见 drawers.mjs projectStandard）。
+  const project = projectStandard("antd");
+  const standardModel =
+    project === null
+      ? loadStandardModel()
+      : loadStandardModel(project.standardPath, project.tokensPath ?? STANDARD_TOKENS_PATH, {
+          ...ANTD_PROFILE,
+          source_pointer: project.pointer,
+          ...(project.tokensPath === null ? {} : { tokens_pointer: project.tokensPointer }),
+        });
   const standard = generateStandardPages(join(outRoot, "standard"), standardModel);
   return {
     archetypes: archetype.count,
@@ -38,6 +48,7 @@ export function generateAll(outRoot = GENERATED_DIR) {
     tokenUnknowns: foundations.unknownCount,
     standard: standard.count,
     standardAreas: standard.areas,
+    standardCovered: standard.covered,
     standardRules: standard.rules,
     standardFingerprint: standardModel.fingerprint,
   };

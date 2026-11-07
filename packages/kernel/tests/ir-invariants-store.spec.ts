@@ -190,24 +190,44 @@ describe("supersedes / denominatorRefs 结构契约", () => {
 // ============================================================
 
 describe("vocab_lock 指纹对账（逐键失配的机器可判读元数据）", () => {
-  it("state_axes 指纹失配 → VOCAB_MISMATCH 且 details.key=state_axes", async () => {
+  /** 指纹漂移 + 一条词表外的 lifecycle：真冲突，装载 VOCAB_MISMATCH 且逐键定位。 */
+  async function driftWithForeignWord(key: "state_axes" | "prefixes", fill: string): Promise<unknown> {
+    await applyTransaction(store, txOf(upsertPage()));
     const path = join(root, ".pomaster", "state", "truth-index.json");
     const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-    (raw.vocab_lock as Record<string, unknown>).state_axes = `sha256:${"11".repeat(32)}`;
+    (raw.vocab_lock as Record<string, unknown>)[key] = `sha256:${fill.repeat(32)}`;
+    ((raw.objects as Record<string, unknown>[])[0]!.axes as Record<string, unknown>).lifecycle = "ACCEPTED";
     writeFileSync(path, JSON.stringify(raw, null, 2));
-    const bad = await loadTruthIndex(store).catch((e: unknown) => e);
+    return loadTruthIndex(store).catch((e: unknown) => e);
+  }
+
+  it("state_axes 指纹失配且含词表外值 → VOCAB_MISMATCH 且 details.key=state_axes", async () => {
+    const bad = await driftWithForeignWord("state_axes", "11");
     expect(errorCode(bad)).toBe("VOCAB_MISMATCH");
     expect((bad as { details: { key: string } }).details.key).toBe("state_axes");
   });
 
-  it("prefixes 指纹失配 → VOCAB_MISMATCH 且 details.key=prefixes（store.spec 已覆盖 kinds 键）", async () => {
-    const path = join(root, ".pomaster", "state", "truth-index.json");
-    const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-    (raw.vocab_lock as Record<string, unknown>).prefixes = `sha256:${"22".repeat(32)}`;
-    writeFileSync(path, JSON.stringify(raw, null, 2));
-    const bad = await loadTruthIndex(store).catch((e: unknown) => e);
+  it("prefixes 指纹失配且含词表外值 → VOCAB_MISMATCH 且 details.key=prefixes", async () => {
+    const bad = await driftWithForeignWord("prefixes", "22");
     expect(errorCode(bad)).toBe("VOCAB_MISMATCH");
     expect((bad as { details: { key: string } }).details.key).toBe("prefixes");
+  });
+
+  it("只有指纹失配（内容满足当前词表）→ 不拦截，装载照常", async () => {
+    const path = join(root, ".pomaster", "state", "truth-index.json");
+    const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    (raw.vocab_lock as Record<string, unknown>).state_axes = `sha256:${"11".repeat(32)}`;
+    writeFileSync(path, JSON.stringify(raw, null, 2));
+    await expect(loadTruthIndex(store)).resolves.toBeTruthy();
+  });
+
+  it("词表外值但指纹一致 → SCHEMA_INVALID（结构错，不归词表版本）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const path = join(root, ".pomaster", "state", "truth-index.json");
+    const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    ((raw.objects as Record<string, unknown>[])[0]!.axes as Record<string, unknown>).lifecycle = "ACCEPTED";
+    writeFileSync(path, JSON.stringify(raw, null, 2));
+    expect(errorCode(await loadTruthIndex(store).catch((e: unknown) => e))).toBe("SCHEMA_INVALID");
   });
 });
 

@@ -808,6 +808,10 @@
       "packages/cli/tests/scaffold-check.spec.ts": {
         "layer": "L1"
       },
+      "packages/cli/tests/scaffold-frontend.spec.ts": {
+        "layer": "L1",
+        "note": "脚手架 S1-7 管理侧前端（vue-antd-admin@1）：每个实体的接口客户端、列表、编辑抽屉、路由、文案与公共文件；确定性；生成物用 Ant Design 规范跑 design check 零违规；文案只在字典、路由按需加载并声明权限码、接口取管理侧 base_path；只读实体无抽屉与操作列、只对用户侧暴露的实体不生成。无域（脚手架生成契约面）。"
+      },
       "packages/cli/tests/scaffold-openapi.spec.ts": {
         "layer": "L1"
       },
@@ -822,6 +826,26 @@
       "packages/studio/tests/standard.spec.ts": {
         "layer": "L1",
         "note": "D1a：规范分区生成器——Storybook 规范页与 AI 孪生同源同指纹、孪生新鲜度、与 CLI 归一化逐条对账。无域（生成器契约面）。"
+      },
+      "packages/studio/tests/standard-page.spec.ts": {
+        "layer": "L1",
+        "note": "D3：两个抽屉共用的规范页构建器与实验——目录与骨架一致、实时位可解析、外框样式类全在 standard.css 且只用类选择器；三个实验用手动时钟逐步驱动断言规则本身。无域（生成器契约面）。"
+      },
+      "packages/cli/tests/prototype.spec.ts": {
+        "layer": "L1",
+        "note": "原型转换：BA 的 HTML 原型与 spec 去掉表现后抽出业务事实与信息结构、冲突进提问；按 antd 与 Geist 重绘的页面用同一个抽取器对账为零，漏字段、改选项、调顺序、丢提示逐条报出；ingest / check 命令面与错误码。无域（原型转换契约面）。"
+      },
+      "packages/cli/tests/design-check.spec.ts": {
+        "layer": "L1",
+        "note": "设计规范门禁：按规范的门禁条文扫 Vue / TSX / 样式 / Tailwind，阈值取条文参数（决策位未定的检查记待定）；注释不算；带理由的豁免生效；存量基线只拦新增；design check、closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷（没落地规范 not_configured，规范坏了 blocked）"
+      },
+      "packages/cli/tests/design-adopt.spec.ts": {
+        "layer": "L1",
+        "note": "设计规范落到项目与开发中改它：adopt 要先 init、体系按依赖推断、不覆盖已有规范、--baseline 记存量；set 只改一行参数、出处记项目决策、决策位定下后门禁生效、决定人必须是 human；update spec 界面呈现类写进设计规范领域新规则、工程规则按路由表写进主题文档对应语气章节、同句不重复、认不出失败、update 子命令经 runCli 可达。无域（规范维护契约面）。"
+      },
+      "packages/studio/tests/drawers.spec.ts": {
+        "layer": "L1",
+        "note": "D3：总 Storybook 的两个抽屉——未锁定两个都在、项目锁定或显式指定后只留一个、组合 refs 的 dev / 发布地址、编排脚本与工作流在座。无域（画廊编排契约面）。"
       },
       "packages/studio/tests/standard-mount.spec.ts": {
         "layer": "L1",

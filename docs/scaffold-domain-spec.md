@@ -7,7 +7,7 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）与 S1-5（接口层：每个面一份 OpenAPI 3.1）。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）、S1-5（接口层：每个面一份 OpenAPI 3.1）与 S1-7（管理侧前端）。
 
 ## 规格进治理
 
@@ -35,6 +35,7 @@ pomaster scaffold generate   # 只按已确认、无漂移的规格生成
 * **只认已确认规格**：未确认 / 漂移 / 不通过一律拒绝（`SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` / `SCAFFOLD_SPEC_INVALID`）。
 * **数据库层（模板集 `mysql-flyway@1`）**：迁移写到 `backend/<app>-core/src/main/resources/db/migration/`，账号授权脚本写到 `backend/db/grants.sql`（不进 Flyway，DBA 按环境执行；口令与来源主机是占位符）。标识符一律反引号引用；敏感个人信息存密文列。
 * **接口层（模板集 `openapi-3.1@1`）**：每个部署面一份文档，`api/openapi/admin.openapi.json` 与 `api/openapi/public.openapi.json`（JSON，确定性键序）。形态取自原型卡：管理侧 OFFSET（`page` / `size`，实体开 `count_total` 时带 `total`）、每个操作标权限码 `x-pomaster-permission`、响应 `Cache-Control: no-store`；用户侧 KEYSET（`after` / `limit`，不返回总数）、每个操作标访问档 `x-pomaster-access`、匿名读带 `Cache-Control` 与 `ETag`、只出现对用户侧暴露的字段。两侧错误都是 RFC 9457 `application/problem+json`（扩展成员 `code` / `trace_id` / `field_errors`），都有 429。修改带 `version` 做乐观锁（冲突 409）。DTO 属性 camelCase；decimal 用带精度 pattern 的字符串；可空字段用 3.1 的 type 数组。认证方式是项目决策位，文档不声明 `securitySchemes`。去掉某个面的全部暴露后，该面文档在下次生成时退役（未被手改时删除文件与 KEYBINDING 行）。
+* **管理侧前端（模板集 `vue-antd-admin@1`，Vue 3 + ant-design-vue）**：写到 `frontend/admin/src/`。每个管理侧实体一份接口客户端（`api/<实体>.ts`，类型与管理侧 OpenAPI 同源，decimal 是字符串）、列表页（`views/<实体>/<类名>List.vue`：可检索的字符串与枚举字段进查询区，表格数字右对齐、操作列在最右，筛选、页码与每页条数进 URL，切换时取消上一次请求，删除走气泡确认并带 version）、编辑抽屉（`<类名>Form.vue`：有新建或修改时生成，宽 378，校验规则取必填 / 长度 / 范围，带 version 提交，409 提示刷新）、路由（`router/<实体>.ts`：按需加载，meta 声明登录与权限码，权限码与接口文档的 `x-pomaster-permission` 同源）与 zh-CN 文案（`locales/zh-CN/<实体>.ts`）。公共文件：请求封装 `api/http.ts`（会话走 HttpOnly Cookie，不碰浏览器存储；失败归一成 RFC 9457 problem）、格式化注册表 `utils/format.ts`、权限判断 `auth/permission.ts`，以及文案与路由的汇总入口。生成物照设计规范写——界面文字只在文案字典、日期数字只经格式化注册表、组件不直接发请求——项目采用 Ant Design 规范后 `pomaster design check` 零违规。用户侧（Vant）前端在后续切片。
 * **迁移只追加**：生成过的迁移永不重写（Flyway 校验和）。规格变化时按「上次生成时的规格快照 → 现规格」求差，追加新迁移；版本号从盘上已有迁移（含手工迁移）的最大值往上加。只自动生成加法变化（新实体、新可空字段、加长、放宽必填、decimal 只加整数位、加唯一 / 检索索引、枚举加值、用户侧列表索引重建）。删实体、删字段、改类型、收窄、新增必填字段、去唯一、枚举去值、属主增删等需要数据迁移的变化拒绝（`SCAFFOLD_MIGRATION_NOT_ADDITIVE`），逐条列出。
 * **生成清单** `.pomaster/scaffold/generation-manifest.json`：每个受管文件的路径、sha256、模板、覆盖实体、是否不可变、对应 KEYBINDING 与治理 id；上次生成的规格快照；模板集版本；history 只追加。journal 追加 `SCAFFOLD_GENERATED`。已最新 → `NO_CHANGE` 零写入。
 * **不覆盖手改**：受管文件被手改或删除、或目标位置已有内容不同的不受管文件 → 拒绝生成且零写入（`SCAFFOLD_GENERATED_FILE_MODIFIED`）。内容相同的同名文件直接纳管（中断后恢复）。

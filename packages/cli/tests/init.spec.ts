@@ -521,7 +521,7 @@ describe("init 人读输出与信封", () => {
     // 前导空行分隔：横幅不与能力速览段粘连（D-1/D-5 裁决 18 后版式：…baseline→observation→preset→能力速览 → 横幅）。
     expect(text).toContain("\n\n  你现在可以做什么");
     expect(text).toContain(
-      "（执行 gate 并写入 GRN；CONTROL_DATA_FLOW 静态结论与运行时确认分层，非绿可自动进入失败诊断）\n\nPOMaster · Governed",
+      "（design adopt 落地规范、design set 定决策位、update spec 落新规范、design check 按门禁条文扫源码；BA 的 HTML 原型用 prototype ingest / check 抽事实并对账）\n\nPOMaster · Governed",
     );
   });
 

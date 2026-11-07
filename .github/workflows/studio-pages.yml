@@ -1,13 +1,14 @@
 name: Studio Pages
 
-# 组件画廊（packages/studio Storybook 实例）→ GitHub Pages 发布流。
+# 总 Storybook（两个抽屉：Vue · Ant Design 与 React · Geist 的组合）→ GitHub Pages 发布流。
 #
-# 触发面：push main 且画廊源、画廊读取的物料（catalog/、CLI 种子——含规范源
-# design-standard.yaml 与 design-tokens.yaml）或本工作流文件变更（paths 过滤），或手动
-# dispatch。规范源改了，在线 Storybook 必须随之重新发布，人看的页面才不会落后于 AI 孪生。
-# 流程：frozen-lockfile 安装 → 生成器重建 generated/（幂等可重放）→ storybook 静态
-# 构建（STORYBOOK_BASE 注入项目页子路径 base——vite 资源 URL 必须对齐
-# https://river-singer.github.io/POMaster_VNext/ 才不白屏）→ upload-pages-artifact
+# 触发面：push main 且画廊源（packages/studio、packages/studio-react）、画廊读取的物料（catalog/、CLI 种子——
+# 含规范源 antd.yaml / geist.yaml、统一骨架 skeleton.yaml 与 design-tokens.yaml）、编排脚本或本工作流文件
+# 变更（paths 过滤），或手动 dispatch。规范源改了，在线 Storybook 必须随之重新发布，人看的页面才不会落后于
+# AI 孪生。
+# 流程：frozen-lockfile 安装 → 两个画廊的生成器重建 generated/（幂等可重放）→ scripts/studio.mjs build
+# （总 Storybook 在根路径，抽屉在 vue/、react/ 子路径；POMASTER_STUDIO_SITE_URL 决定组合地址与各自的
+# vite base——必须对齐 https://river-singer.github.io/POMaster_VNext/ 才不白屏）→ upload-pages-artifact
 # → deploy-pages。
 #
 # Owner 一次性启用步骤（仓库 Settings，机器无法代办）：
@@ -21,7 +22,9 @@ on:
     branches: [main]
     paths:
       - "packages/studio/**"
+      - "packages/studio-react/**"
       - "packages/cli/seeds/**"
+      - "scripts/studio.mjs"
       - "catalog/**"
       - ".github/workflows/studio-pages.yml"
   workflow_dispatch:
@@ -43,7 +46,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
-      STORYBOOK_BASE: "/POMaster_VNext/"
+      POMASTER_STUDIO_SITE_URL: "https://river-singer.github.io/POMaster_VNext/"
     steps:
       - uses: actions/checkout@v4
 
@@ -54,18 +57,20 @@ jobs:
       - name: Install (frozen lockfile)
         run: corepack pnpm install --frozen-lockfile
 
-      # 生成器先行显式跑一遍（run.mjs build 内部会再生成——幂等可重放，双跑 diff 空
-      # 由 packages/studio/tests/generators.spec.ts 钉住；此处显式步让失败定位更准）。
+      # 生成器先行显式跑一遍（各 run.mjs build 内部会再生成——幂等可重放，双跑 diff 空
+      # 由两个画廊的 generators / react-stories 测试钉住；此处显式步让失败定位更准）。
       - name: Generate gallery pages
-        run: node packages/studio/run.mjs generate
+        run: |
+          node packages/studio/run.mjs generate
+          node packages/studio-react/run.mjs generate
 
-      - name: Build Storybook (static export)
+      - name: Build Storybook (host + two drawers, static export)
         run: corepack pnpm studio:build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/studio/dist-storybook
+          path: dist-studio
 
       - name: Deploy to GitHub Pages
         id: deployment

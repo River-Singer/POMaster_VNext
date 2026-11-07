@@ -4,15 +4,15 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # POMaster 组件可视化画廊（总览）
 
-本 Storybook（`packages/studio`）分两部分：
+本 Storybook（`packages/studio`，总 Storybook 里的「Vue · Ant Design」抽屉）分两部分：
 
-- **规范**（侧栏最上方「规范」分区）：开发必须遵守的前端设计规范——布局、栅格、间距、
-  字体与富文本、标题层级、图标、导航……每条规则带编号、数值与出处、执行方式（机器门禁 /
-  人工评审）和实时渲染的「这样做 / 别这样做」示例。页面由
-  `packages/cli/seeds/design-standards/antd.yaml`（Ant Design 预设）生成，AI 读同源的孪生
-  `packages/studio/twin/design-standard.json`（或 `pomaster design show --json`），两边盖同一个
-  规范指纹。改规范只改那份源：`pomaster design validate` 校验，`node packages/studio/run.mjs generate`
-  重新生成。
+- **规范**（侧栏最上方「规范」分区）：开发必须遵守的前端设计规范（Ant Design 预设）——基础（色彩、字体、
+  标题层级、图标、材质、布局、栅格、间距、动效）、组件、设计模式、工程规范。每条规则带编号、演示与对照表、
+  数值与出处、执行方式（机器门禁 / 人工评审）和实时渲染的「这样做 / 别这样做」；状态管理带可操作的实验。
+  目录与 React · Geist 抽屉相同（统一骨架 `packages/cli/seeds/design-standards/skeleton.yaml`），还没写的页
+  标「待补」。页面由 `packages/cli/seeds/design-standards/antd.yaml` 生成，AI 读同源的孪生
+  `packages/studio/twin/design-standard.json`（或 `pomaster design show --json`），两边盖同一个规范指纹。
+  改规范只改那份源：`pomaster design validate` 校验，`node packages/studio/run.mjs generate` 重新生成。
 - **画廊**（其余分区）：组件、原型、Overlay 等的参照呈现。
 
 > 画廊部分是参照呈现，权威语义以 catalog / seeds 锚定源为准；全部生成页由生成器从既有物料

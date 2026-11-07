@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><title>客户管理</title></head>
+<body>
+<section class="ant-layout ant-layout-has-sider">
+  <aside class="ant-layout-sider ant-layout-sider-light" style="flex: 0 0 200px; width: 200px">
+    <nav aria-label="主导航">
+      <ul class="ant-menu ant-menu-root ant-menu-inline" role="menu">
+        <li class="ant-menu-item" role="menuitem"><span class="ant-menu-title-content">工作台</span></li>
+        <li class="ant-menu-item ant-menu-item-selected" role="menuitem"><span class="ant-menu-title-content">客户管理</span></li>
+        <li class="ant-menu-item" role="menuitem"><span class="ant-menu-title-content">回款管理</span></li>
+      </ul>
+    </nav>
+  </aside>
+  <main class="ant-layout-content" style="padding: 24px">
+    <div class="std-page-header" style="display: flex; justify-content: space-between">
+      <h1 style="font-size: 20px; margin: 0">客户管理</h1>
+      <button type="button" class="ant-btn ant-btn-primary"><span role="img" aria-label="plus" class="anticon anticon-plus"></span><span>新增客户</span></button>
+    </div>
+    <div role="alert" class="ant-alert ant-alert-info"><div class="ant-alert-content"><div class="ant-alert-message">信用额度超过 100 万的客户需要财务审批后才能生效。</div></div></div>
+    <form class="ant-form ant-form-inline">
+      <div class="ant-form-item"><div class="ant-form-item-control"><input type="text" class="ant-input" placeholder="搜索客户名称 / 编码"></div></div>
+      <div class="ant-form-item"><div class="ant-select" style="width: 160px"><div class="ant-select-selector"><span class="ant-select-selection-search"><input role="combobox" readonly class="ant-select-selection-search-input" aria-controls="filter_region_list" data-placeholder="全部区域" data-pomaster-options='["华东","华南","华北"]'></span><span class="ant-select-selection-placeholder">全部区域</span></div></div></div>
+      <div class="ant-form-item"><button type="submit" class="ant-btn ant-btn-default"><span>查询</span></button></div>
+    </form>
+    <div class="ant-tabs"><div role="tablist" class="ant-tabs-nav-list">
+      <div role="tab" aria-selected="true" class="ant-tabs-tab ant-tabs-tab-active">合作中 (12)</div>
+      <div role="tab" aria-selected="false" class="ant-tabs-tab">已停用 (3)</div>
+    </div></div>
+    <div class="ant-table-wrapper"><div class="ant-table"><table style="table-layout: fixed">
+      <thead class="ant-table-thead"><tr>
+        <th class="ant-table-cell ant-table-selection-column ant-table-cell-fix-left"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input"></span></label></th>
+        <th class="ant-table-cell ant-table-cell-fix-left">客户名称</th>
+        <th class="ant-table-cell">区域</th>
+        <th class="ant-table-cell" style="text-align: right">信用额度（元）</th>
+        <th class="ant-table-cell">状态</th>
+        <th class="ant-table-cell ant-table-cell-fix-right">操作</th>
+      </tr></thead>
+      <tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input"></span></label></td><td class="ant-table-cell">上海星河</td><td class="ant-table-cell">华东</td><td class="ant-table-cell" style="text-align: right">1,200,000.00</td><td class="ant-table-cell"><span class="ant-tag ant-tag-success">合作中</span></td><td class="ant-table-cell"><a>编辑</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input"></span></label></td><td class="ant-table-cell">广州南岭</td><td class="ant-table-cell">华南</td><td class="ant-table-cell" style="text-align: right">300,000.00</td><td class="ant-table-cell"><span class="ant-tag ant-tag-error">已停用</span></td><td class="ant-table-cell"><a>编辑</a></td></tr>
+      </tbody>
+    </table></div></div>
+  </main>
+</section>
+<div class="ant-modal-root">
+  <div class="ant-modal-mask"></div>
+  <div class="ant-modal-wrap" role="dialog" aria-labelledby="customer-dialog-title">
+    <div class="ant-modal" style="width: 640px">
+      <div class="ant-modal-content">
+        <div class="ant-modal-header"><div class="ant-modal-title" id="customer-dialog-title">新增客户</div></div>
+        <div class="ant-modal-body">
+          <form class="ant-form ant-form-vertical">
+            <div class="ant-divider ant-divider-horizontal ant-divider-with-text ant-divider-with-text-left" role="separator"><span class="ant-divider-inner-text">基本信息</span></div>
+            <div class="ant-form-item"><div class="ant-row ant-form-item-row"><div class="ant-col ant-form-item-label"><label for="customer_name" class="ant-form-item-required" title="客户名称">客户名称</label></div><div class="ant-col ant-form-item-control"><input id="customer_name" type="text" class="ant-input" maxlength="50"></div></div></div>
+            <div class="ant-form-item"><div class="ant-row ant-form-item-row"><div class="ant-col ant-form-item-label"><label for="customer_region" class="ant-form-item-required" title="所属区域">所属区域</label></div><div class="ant-col ant-form-item-control"><div class="ant-select"><div class="ant-select-selector"><span class="ant-select-selection-search"><input id="customer_region" role="combobox" readonly aria-required="true" class="ant-select-selection-search-input" data-pomaster-options='["华东","华南","华北"]'></span><span class="ant-select-selection-placeholder">请选择</span></div></div></div></div></div>
+            <div class="ant-form-item"><div class="ant-row ant-form-item-row"><div class="ant-col ant-form-item-label"><label for="customer_credit" title="信用额度（元）">信用额度（元）<span class="ant-form-item-tooltip" role="img" aria-label="question-circle" title="超过 100 万需财务审批"></span></label></div><div class="ant-col ant-form-item-control"><div class="ant-input-number"><input id="customer_credit" role="spinbutton" class="ant-input-number-input" aria-valuemin="0"></div></div></div></div>
+            <div class="ant-divider ant-divider-horizontal ant-divider-with-text ant-divider-with-text-left" role="separator"><span class="ant-divider-inner-text">联系人</span></div>
+            <div class="ant-form-item"><div class="ant-row ant-form-item-row"><div class="ant-col ant-form-item-label"><label for="customer_contact" class="ant-form-item-required" title="联系人">联系人</label></div><div class="ant-col ant-form-item-control"><input id="customer_contact" type="text" class="ant-input"></div></div></div>
+            <div class="ant-form-item"><div class="ant-row ant-form-item-row"><div class="ant-col ant-form-item-label"><label for="customer_phone" title="联系电话">联系电话</label></div><div class="ant-col ant-form-item-control"><input id="customer_phone" type="tel" class="ant-input"></div></div></div>
+          </form>
+        </div>
+        <div class="ant-modal-footer"><button type="button" class="ant-btn ant-btn-default"><span>取消</span></button><button type="button" class="ant-btn ant-btn-primary"><span>保存</span></button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

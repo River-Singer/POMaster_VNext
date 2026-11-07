@@ -37,6 +37,7 @@ import {
   type SchemaChangeStatement,
 } from "./scaffold-mysql.js";
 import { OPENAPI_TEMPLATE_SET, openApiPath, renderOpenApi } from "./scaffold-openapi.js";
+import { FRONTEND_TEMPLATE_SET, renderAdminFrontend, type FrontendTemplateId } from "./scaffold-frontend.js";
 import type { NormalizedDomainSpec } from "./scaffold-spec.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE, SCAFFOLD_GENERATION_MANIFEST_RELATIVE, journalFilePath } from "./store-layout.js";
 
@@ -45,12 +46,13 @@ export const SCAFFOLD_GENERATED_EVENT = "SCAFFOLD_GENERATED";
 /** 脚手架受管文件在 KEYBINDING 上的治理 id 前缀（hook 据此给出「改规格再生成」的指路）。 */
 export const SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD.";
 
-export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public";
+export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public" | FrontendTemplateId;
 
 /** 当前生效的模板集（清单逐个记录版本；版本变了要单独评估升级）。 */
 export const SCAFFOLD_TEMPLATE_SETS: readonly { readonly id: string; readonly version: string }[] = [
   MYSQL_TEMPLATE_SET,
   OPENAPI_TEMPLATE_SET,
+  FRONTEND_TEMPLATE_SET,
 ];
 
 export interface ScaffoldManagedFile {
@@ -150,6 +152,10 @@ export function scaffoldDatabaseCanonicalId(appKey: string): string {
 
 export function scaffoldApiCanonicalId(appKey: string, surface: "admin" | "public"): string {
   return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.API.${idSegment(surface)}`;
+}
+
+export function scaffoldUiCanonicalId(appKey: string, surface: "admin" | "public"): string {
+  return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.UI.${idSegment(surface)}`;
 }
 
 function keybindingId(appKey: string, fileSegment: string): string {
@@ -341,6 +347,17 @@ async function buildPlan(
       entities: spec.entities.filter((entity) => entity.exposure[surface] !== undefined).map((entity) => entity.key),
       keybindingSegment: `OPENAPI_${surface.toUpperCase()}`,
       canonicalId: scaffoldApiCanonicalId(spec.app.key, surface),
+    });
+  }
+  // 管理侧前端（S1-7，vue-antd-admin@1）：接口客户端、列表页、编辑抽屉、路由、文案字典与公共文件。
+  for (const file of renderAdminFrontend(spec)) {
+    regenerable.push({
+      path: file.path,
+      content: file.content,
+      template: file.template,
+      entities: file.entities,
+      keybindingSegment: file.keybindingSegment,
+      canonicalId: file.entities.length === 1 ? scaffoldEntityCanonicalId(spec.app.key, file.entities[0] as string) : scaffoldUiCanonicalId(spec.app.key, "admin"),
     });
   }
   for (const item of regenerable) {

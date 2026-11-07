@@ -180,7 +180,7 @@ describe("unbound recipe → 显式 not_run（非绿非红，counts 显式全零
     expect(validate(toGateResultJson(record))).toBe(true);
   });
 
-  it("七份 recipe 全量派发实跑：恰一份绑定 contract，其余六份 not_run（P-v06 增量 5→6；脚手架 S1-4 6→7——同步面无 kernel 执行器，kernel_native 两份均 not_run）", () => {
+  it("八份 recipe 全量派发实跑：恰一份绑定 contract，其余七份 not_run（P-v06 增量 5→6；脚手架 S1-4 6→7；设计规范 D2 7→8——同步面无 kernel 执行器，kernel_native 三份均 not_run）", () => {
     const verdicts = CATALOG_GATE_RECIPES.map((entry, index) =>
       runGateRecipe(entry, {
         projectRoot: "D:/bare-project",
@@ -191,6 +191,7 @@ describe("unbound recipe → 显式 not_run（非绿非红，counts 显式全零
     // 裸工程（无 contract-gate.json）下绑定腿也是缺席——not_configured（adapter 自己的判词）。
     expect(verdicts).toEqual([
       "not_configured",
+      "not_run",
       "not_run",
       "not_run",
       "not_run",

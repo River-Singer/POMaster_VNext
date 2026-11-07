@@ -1,0 +1,1045 @@
+# design-standards/skeleton.yaml —— 前端设计规范的统一骨架（两套设计体系的并集）
+#
+# Storybook 里 Vue · Ant Design 与 React · Geist 两个抽屉的目录完全相同：领域、领域下的条目（规则）、
+# 组件清单都取两套体系的并集，写在这份骨架里。每套体系的规范（antd.yaml / geist.yaml）按骨架写内容：
+#   - 领域键、标题、分区、规则前缀、先后顺序与骨架一致（不一致就报错）；
+#   - 条目编号、标题、先后顺序与骨架一致；骨架里有而规范里没写的条目，规范页显示「待补」并给警告；
+#   - 组件领域标出两套体系各自对应的现成组件（counterparts）；某套体系没有现成组件时为空表，
+#     由该体系自行设计。
+#
+# 怎么改：先改这份骨架（加领域、加条目、加组件），再分别补两套规范；
+# `pomaster design validate --system antd|geist` 会逐条报出没对齐的地方。
+schema: pomaster.design-skeleton/v1
+
+areas:
+  # ═════════════════════════════ 基础 ═════════════════════════════
+  - key: color
+    title_zh: 色彩
+    group: foundations
+    prefix: COLOR
+    summary_zh: 色板与每一档的用途、中性色分层、品牌色与状态色；颜色只经 token 取。
+    topics:
+      - { id: COLOR.PALETTE, title_zh: 色板 }
+      - { id: COLOR.TOKENS_ONLY, title_zh: 颜色只经 token 取 }
+      - { id: COLOR.NEUTRAL_LAYERS, title_zh: 中性色分层 }
+      - { id: COLOR.BRAND, title_zh: 品牌色 }
+      - { id: COLOR.STATUS, title_zh: 状态色 }
+      - { id: COLOR.BORDERS, title_zh: 边框 }
+      - { id: COLOR.NO_DECORATION, title_zh: 不用装饰性效果 }
+  - key: typography
+    title_zh: 字体
+    group: foundations
+    prefix: TYPE
+    summary_zh: 字体族、字阶、字重、单行与多行、文字颜色、等宽数字、行宽、富文本与溢出。
+    topics:
+      - { id: TYPE.FAMILY, title_zh: 字体族 }
+      - { id: TYPE.SCALE, title_zh: 字阶 }
+      - { id: TYPE.WEIGHT, title_zh: 字重 }
+      - { id: TYPE.LINE_ROLES, title_zh: 单行与多行 }
+      - { id: TYPE.COLOR, title_zh: 文字颜色 }
+      - { id: TYPE.TABULAR_NUMS, title_zh: 等宽数字 }
+      - { id: TYPE.READING, title_zh: 长文行宽 }
+      - { id: TYPE.RICH_TEXT, title_zh: 富文本 }
+      - { id: TYPE.OVERFLOW, title_zh: 文字溢出 }
+  - key: headings
+    title_zh: 标题层级
+    group: foundations
+    prefix: HEADING
+    summary_zh: 应用界面与内容型页面各用几级标题；一个视图一个 h1；逐级下降；用真正的标题元素。
+    topics:
+      - { id: HEADING.APP_LEVELS, title_zh: 应用界面的标题级数 }
+      - { id: HEADING.SINGLE_H1, title_zh: 每个视图一个 h1 }
+      - { id: HEADING.ORDER, title_zh: 标题不跳级 }
+      - { id: HEADING.CONTENT_LEVELS, title_zh: 内容型页面的标题 }
+      - { id: HEADING.REAL_ELEMENT, title_zh: 用真正的标题元素 }
+  - key: icons
+    title_zh: 图标
+    group: foundations
+    prefix: ICON
+    summary_zh: 一套图标库、一种风格；尺寸与间距跟随文字；颜色跟随文字；同一动作同一图标；纯图标按钮有名字。
+    topics:
+      - { id: ICON.LIBRARY, title_zh: 图标库 }
+      - { id: ICON.STYLE, title_zh: 图标风格 }
+      - { id: ICON.SIZE, title_zh: 图标尺寸 }
+      - { id: ICON.SPACING, title_zh: 图标与文字的间距 }
+      - { id: ICON.COLOR, title_zh: 图标颜色 }
+      - { id: ICON.SEMANTICS, title_zh: 同一动作同一图标 }
+      - { id: ICON.BUTTON_LABEL, title_zh: 纯图标按钮的名称 }
+  - key: materials
+    title_zh: 材质
+    group: foundations
+    prefix: MATERIAL
+    summary_zh: 圆角、页面内的表面、浮层与阴影：每一级表面固定的圆角和阴影，阴影只表达层级。
+    topics:
+      - { id: MATERIAL.RADIUS, title_zh: 圆角 }
+      - { id: MATERIAL.SURFACES, title_zh: 页面内的表面 }
+      - { id: MATERIAL.FLOATING, title_zh: 浮层 }
+      - { id: MATERIAL.SHADOWS, title_zh: 阴影 }
+  - key: radius
+    title_zh: 圆角管理
+    group: foundations
+    prefix: RADIUS
+    summary_zh: 圆角只取规范的档位；每类组件用哪一档有对照表；同一组件的尺寸越大圆角越大但有上限；嵌套时内层 = 外层 − 内边距；贴边与相接的那侧没有圆角；整圆只给短小的元素；媒体随容器裁切。
+    topics:
+      - { id: RADIUS.TOKENS, title_zh: 只用规范的圆角档 }
+      - { id: RADIUS.BY_COMPONENT, title_zh: 组件与圆角对照 }
+      - { id: RADIUS.SIZE_SCALE, title_zh: 尺寸越大圆角越大，但有上限 }
+      - { id: RADIUS.NESTED, title_zh: 嵌套时内层 = 外层 − 内边距 }
+      - { id: RADIUS.FLUSH, title_zh: 贴边与相接的那侧没有圆角 }
+      - { id: RADIUS.PILL, title_zh: 整圆只给短小的元素 }
+      - { id: RADIUS.MEDIA, title_zh: 媒体随容器裁切 }
+  - key: elevation
+    title_zh: 投影
+    group: foundations
+    prefix: ELEV
+    summary_zh: 投影只表达离页面多远：四个层级各一个阴影 token；页面内的区块用边框不用阴影；不手写阴影、不做发光；悬停最多升一级；阴影层级与叠放层级同序；深色主题改用更亮的表面；吸顶与固定列的阴影只在滚动后出现。
+    topics:
+      - { id: ELEV.LEVELS, title_zh: 四个层级各一个阴影 }
+      - { id: ELEV.FLAT_FIRST, title_zh: 页面内的区块用边框不用阴影 }
+      - { id: ELEV.ONE_TOKEN, title_zh: 不手写阴影、不做发光 }
+      - { id: ELEV.HOVER, title_zh: 悬停最多升一级 }
+      - { id: ELEV.Z_PAIR, title_zh: 阴影层级与叠放层级同序 }
+      - { id: ELEV.DARK, title_zh: 深色主题改用更亮的表面 }
+      - { id: ELEV.STICKY, title_zh: 吸顶与固定列的阴影只在滚动后出现 }
+  - key: layout
+    title_zh: 布局
+    group: foundations
+    prefix: LAYOUT
+    summary_zh: 管理侧与用户侧的页面骨架、适配宽度、内容区边距与宽度、换行优先、滚动归属、层级。
+    topics:
+      - { id: LAYOUT.ADMIN_SHELL, title_zh: 管理侧页面骨架 }
+      - { id: LAYOUT.PUBLIC_SHELL, title_zh: 用户侧页面骨架 }
+      - { id: LAYOUT.ADAPTIVE, title_zh: 适配基准与验收宽度 }
+      - { id: LAYOUT.CONTENT_REGION, title_zh: 内容区边距与宽度 }
+      - { id: LAYOUT.REFLOW, title_zh: 先换行再缩小 }
+      - { id: LAYOUT.OVERFLOW, title_zh: 尺寸与滚动的归属 }
+      - { id: LAYOUT.Z_INDEX, title_zh: 层级 }
+  - key: grid
+    title_zh: 栅格
+    group: foundations
+    prefix: GRID
+    summary_zh: 栅格列数、列间距、一行的列数之和、断点，以及参考线什么时候画。
+    topics:
+      - { id: GRID.COLUMNS, title_zh: 栅格列数 }
+      - { id: GRID.GUTTER, title_zh: 列间距 }
+      - { id: GRID.ROW_SUM, title_zh: 一行的列数之和 }
+      - { id: GRID.BREAKPOINTS, title_zh: 断点 }
+      - { id: GRID.GUIDES, title_zh: 参考线 }
+  - key: spacing
+    title_zh: 间距
+    group: foundations
+    prefix: SPACING
+    summary_zh: 间距只取阶梯值，按元素之间的关系选档。
+    topics:
+      - { id: SPACING.SCALE, title_zh: 间距阶梯 }
+      - { id: SPACING.TIERS, title_zh: 间距分档 }
+  - key: motion
+    title_zh: 动效
+    group: foundations
+    prefix: MOTION
+    summary_zh: 动效只用来说明变化；时长取 token；尊重减少动效的系统设置。
+    topics:
+      - { id: MOTION.PURPOSE, title_zh: 动效要有理由 }
+      - { id: MOTION.DURATION, title_zh: 时长与缓动 }
+      - { id: MOTION.REDUCED, title_zh: 减少动效 }
+  - key: press_feedback
+    title_zh: 点击反馈
+    group: foundations
+    prefix: PRESS
+    summary_zh: 每个可点的元素都有默认、悬停、按下、聚焦与禁用；按下的瞬间就有反馈，颜色加深一档、不移动不变尺寸；波纹只用组件库自带的；时长取快档；触屏去掉点击延迟、目标够大；键盘触发同样的反馈；禁用与加载中不响应；减少动效时只保留颜色变化。
+    topics:
+      - { id: PRESS.STATES, title_zh: 可点的元素都有五态 }
+      - { id: PRESS.VISUAL, title_zh: 按下时颜色加深一档 }
+      - { id: PRESS.WAVE, title_zh: 波纹只用组件库自带的 }
+      - { id: PRESS.TIMING, title_zh: 按下即时、回弹取快档 }
+      - { id: PRESS.TOUCH, title_zh: 触屏：无延迟、目标够大 }
+      - { id: PRESS.KEYBOARD, title_zh: 键盘触发同样的反馈 }
+      - { id: PRESS.DISABLED, title_zh: 禁用与加载中不响应 }
+      - { id: PRESS.REDUCED, title_zh: 减少动效时只保留颜色变化 }
+  - key: focus_ring
+    title_zh: 焦点环
+    group: foundations
+    prefix: FOCUS
+    summary_zh: 焦点只在键盘聚焦时显示且永远不去掉；全站一种焦点样式；与相邻颜色有足够对比；不被裁切、不被吸顶栏遮住；焦点顺序与视觉顺序一致，弹层进出时焦点有去处；焦点环跟随元素圆角。
+    topics:
+      - { id: FOCUS.VISIBLE, title_zh: 键盘聚焦时显示，永远不去掉 }
+      - { id: FOCUS.STYLE, title_zh: 全站一种焦点样式 }
+      - { id: FOCUS.CONTRAST, title_zh: 与相邻颜色对比足够 }
+      - { id: FOCUS.NOT_OBSCURED, title_zh: 不被裁切、不被遮住 }
+      - { id: FOCUS.ORDER, title_zh: 焦点顺序与去处 }
+      - { id: FOCUS.RADIUS, title_zh: 焦点环跟随元素圆角 }
+  # ═════════════════════════════ 组件 · 通用 ═════════════════════════════
+  - key: button
+    title_zh: 按钮
+    group: components.general
+    prefix: CMP.BUTTON
+    summary_zh: 触发一个会改变状态的动作。改 URL 用链接按钮；一行有多个相关动作时用分裂按钮或下拉菜单。
+    counterparts: { antd: [Button], geist: [Button, ButtonLink] }
+    topics:
+      - { id: CMP.BUTTON.USAGE, title_zh: 何时用 }
+      - { id: CMP.BUTTON.VARIANTS, title_zh: 变体 }
+      - { id: CMP.BUTTON.DANGER, title_zh: 危险操作 }
+      - { id: CMP.BUTTON.SIZES, title_zh: 尺寸 }
+      - { id: CMP.BUTTON.SHAPES, title_zh: 形状 }
+      - { id: CMP.BUTTON.ICONS, title_zh: 搭配图标 }
+      - { id: CMP.BUTTON.ICON_ONLY, title_zh: 纯图标按钮 }
+      - { id: CMP.BUTTON.LOADING, title_zh: 加载 }
+      - { id: CMP.BUTTON.DISABLED, title_zh: 禁用 }
+      - { id: CMP.BUTTON.LINK, title_zh: 链接按钮 }
+      - { id: CMP.BUTTON.WIDTH, title_zh: 宽度 }
+      - { id: CMP.BUTTON.SUBMIT, title_zh: 表单提交 }
+      - { id: CMP.BUTTON.LABEL, title_zh: 文案 }
+  - { key: split_button, title_zh: 分裂按钮, group: components.general, prefix: CMP.SPLIT_BUTTON, summary_zh: 一个默认动作加一组相近的动作。, counterparts: { antd: [Dropdown.Button], geist: [Split Button] }, topics: [] }
+  - { key: copy_button, title_zh: 复制按钮, group: components.general, prefix: CMP.COPY_BUTTON, summary_zh: 把一段文字复制到剪贴板并给出反馈。, counterparts: { antd: [Typography.copyable], geist: [Copy Button, Text With Copy Button] }, topics: [] }
+  - { key: float_button, title_zh: 悬浮按钮, group: components.general, prefix: CMP.FLOAT_BUTTON, summary_zh: 悬浮在页面上的全局功能入口。, counterparts: { antd: [FloatButton], geist: [] }, topics: [] }
+  - { key: typography_text, title_zh: 排版文本, group: components.general, prefix: CMP.TEXT, summary_zh: 标题、正文、强调、删除线、可复制与可编辑文本。, counterparts: { antd: [Typography], geist: [Text, Label] }, topics: [] }
+  - { key: code_block, title_zh: 代码块, group: components.general, prefix: CMP.CODE_BLOCK, summary_zh: 多行、带高亮的源代码。, counterparts: { antd: [], geist: [Code Block, Code] }, topics: [] }
+  - { key: snippet, title_zh: 命令片段, group: components.general, prefix: CMP.SNIPPET, summary_zh: 可一键复制的命令行。, counterparts: { antd: [], geist: [Snippet] }, topics: [] }
+  - { key: kbd, title_zh: 键盘按键, group: components.general, prefix: CMP.KBD, summary_zh: 展示触发动作的快捷键。, counterparts: { antd: [Typography.keyboard], geist: [Keyboard Input] }, topics: [] }
+  # ═════════════════════════════ 组件 · 布局 ═════════════════════════════
+  - key: divider
+    title_zh: 分割线
+    group: components.layout
+    prefix: CMP.DIVIDER
+    summary_zh: 把内容分成不同区块。
+    counterparts: { antd: [Divider], geist: [Separator] }
+    topics:
+      - { id: CMP.DIVIDER.SPACING_FIRST, title_zh: 先用间距，再用线 }
+      - { id: CMP.DIVIDER.TEXT, title_zh: 带文字的分隔线用于分段 }
+      - { id: CMP.DIVIDER.VERTICAL, title_zh: 竖线分隔行内元素 }
+  - { key: flex, title_zh: 弹性布局, group: components.layout, prefix: CMP.FLEX, summary_zh: 一维排布与对齐。, counterparts: { antd: [Flex], geist: [] }, topics: [] }
+  - key: space
+    title_zh: 间距组合
+    group: components.layout
+    prefix: CMP.SPACE
+    summary_zh: 统一相邻元素的间距。
+    counterparts: { antd: [Space], geist: [] }
+    topics:
+      - { id: CMP.SPACE.USE, title_zh: 用间距组件，不手写外边距 }
+      - { id: CMP.SPACE.WRAP, title_zh: 放不下就换行 }
+      - { id: CMP.SPACE.ALIGN, title_zh: 对齐基线 }
+  - { key: grid_component, title_zh: 栅格组件, group: components.layout, prefix: CMP.GRID, summary_zh: 按栅格排布内容。, counterparts: { antd: [Row, Col], geist: [Grid] }, topics: [] }
+  - { key: page_layout, title_zh: 页面布局, group: components.layout, prefix: CMP.LAYOUT, summary_zh: 顶栏、侧栏、内容区与页脚组成的页面框架。, counterparts: { antd: [Layout], geist: [] }, topics: [] }
+  - { key: scroller, title_zh: 滚动区, group: components.layout, prefix: CMP.SCROLLER, summary_zh: 沿一个方向滚动的一组同类条目。, counterparts: { antd: [], geist: [Scroller] }, topics: [] }
+  # ═════════════════════════════ 组件 · 导航 ═════════════════════════════
+  - { key: anchor, title_zh: 锚点, group: components.navigation, prefix: CMP.ANCHOR, summary_zh: 在长页面内跳到指定区块。, counterparts: { antd: [Anchor], geist: [] }, topics: [] }
+  - key: breadcrumb
+    title_zh: 面包屑
+    group: components.navigation
+    prefix: CMP.BREADCRUMB
+    summary_zh: 显示当前页面在层级中的位置。
+    counterparts: { antd: [Breadcrumb], geist: [Breadcrumbs] }
+    topics:
+      - { id: CMP.BREADCRUMB.PATH, title_zh: 从一级开始、最后一项不可点 }
+      - { id: CMP.BREADCRUMB.COLLAPSE, title_zh: 太深就折叠 }
+      - { id: CMP.BREADCRUMB.NAMES, title_zh: 名称与菜单一致 }
+  - key: dropdown
+    title_zh: 下拉菜单
+    group: components.navigation
+    prefix: CMP.DROPDOWN
+    summary_zh: 从一个按钮展开一组动作。
+    counterparts: { antd: [Dropdown], geist: [Menu, Dots Menu] }
+    topics:
+      - { id: CMP.DROPDOWN.TRIGGER, title_zh: 触发器说清会展开什么 }
+      - { id: CMP.DROPDOWN.ITEMS, title_zh: 动作排序、危险最后 }
+      - { id: CMP.DROPDOWN.SIZE, title_zh: 菜单不宜过长 }
+  - { key: context_menu, title_zh: 右键菜单, group: components.navigation, prefix: CMP.CONTEXT_MENU, summary_zh: 右击或长按时出现的上下文动作。, counterparts: { antd: [Dropdown.contextMenu], geist: [Context Menu] }, topics: [] }
+  - { key: command_menu, title_zh: 命令面板, group: components.navigation, prefix: CMP.COMMAND_MENU, summary_zh: 全局的键盘优先命令入口。, counterparts: { antd: [], geist: [Command Menu] }, topics: [] }
+  - key: nav_menu
+    title_zh: 导航菜单
+    group: components.navigation
+    prefix: CMP.NAV_MENU
+    summary_zh: 页面的主导航与子导航。
+    counterparts: { antd: [Menu], geist: [] }
+    topics:
+      - { id: CMP.NAV_MENU.DEPTH, title_zh: 不超过两级 }
+      - { id: CMP.NAV_MENU.ACTIVE, title_zh: 当前位置高亮 }
+      - { id: CMP.NAV_MENU.PERMISSION, title_zh: 按权限出现 }
+  - key: pagination
+    title_zh: 分页
+    group: components.navigation
+    prefix: CMP.PAGINATION
+    summary_zh: 在分页数据或相邻页面之间切换。
+    counterparts: { antd: [Pagination], geist: [Pagination] }
+    topics:
+      - { id: CMP.PAGINATION.TOTAL, title_zh: 显示总数与范围 }
+      - { id: CMP.PAGINATION.URL, title_zh: 页码进 URL }
+      - { id: CMP.PAGINATION.POSITION, title_zh: 位置固定 }
+  - { key: load_more, title_zh: 加载更多, group: components.navigation, prefix: CMP.LOAD_MORE, summary_zh: 在列表末尾追加下一批数据，或展开收起的内容。, counterparts: { antd: [List.loadMore], geist: [Load More Button, Show More] }, topics: [] }
+  - key: steps
+    title_zh: 步骤条
+    group: components.navigation
+    prefix: CMP.STEPS
+    summary_zh: 显示多步流程的进度。
+    counterparts: { antd: [Steps], geist: [] }
+    topics:
+      - { id: CMP.STEPS.COUNT, title_zh: 3–5 步 }
+      - { id: CMP.STEPS.STATUS, title_zh: 状态分明 }
+      - { id: CMP.STEPS.SAVE, title_zh: 跨步保存 }
+  - key: tabs
+    title_zh: 标签页
+    group: components.navigation
+    prefix: CMP.TABS
+    summary_zh: 在同一页面内切换平级视图。
+    counterparts: { antd: [Tabs], geist: [Tabs] }
+    topics:
+      - { id: CMP.TABS.WHEN, title_zh: 平级视图才用标签页 }
+      - { id: CMP.TABS.URL, title_zh: 当前标签进 URL }
+      - { id: CMP.TABS.LABEL, title_zh: 标签名短，可带计数 }
+  # ═════════════════════════════ 组件 · 数据录入 ═════════════════════════════
+  - { key: auto_complete, title_zh: 自动完成, group: components.entry, prefix: CMP.AUTO_COMPLETE, summary_zh: 输入时给出补全建议。, counterparts: { antd: [AutoComplete], geist: [] }, topics: [] }
+  - { key: combobox, title_zh: 可搜索选择, group: components.entry, prefix: CMP.COMBOBOX, summary_zh: 输入关键字过滤一个已知列表并选中一项。, counterparts: { antd: [Select.showSearch], geist: [Combobox] }, topics: [] }
+  - { key: cascader, title_zh: 级联选择, group: components.entry, prefix: CMP.CASCADER, summary_zh: 从有层级的选项里逐级选择。, counterparts: { antd: [Cascader], geist: [] }, topics: [] }
+  - key: checkbox
+    title_zh: 多选框
+    group: components.entry
+    prefix: CMP.CHECKBOX
+    summary_zh: 在一组选项里选多个，或确认一句声明。
+    counterparts: { antd: [Checkbox], geist: [Checkbox] }
+    topics:
+      - { id: CMP.CHECKBOX.LAYOUT, title_zh: 竖排、标签可点 }
+      - { id: CMP.CHECKBOX.INDETERMINATE, title_zh: 全选有半选态 }
+      - { id: CMP.CHECKBOX.NOT_SWITCH, title_zh: 立即生效用开关，提交生效用多选框 }
+  - { key: choicebox, title_zh: 选择卡片, group: components.entry, prefix: CMP.CHOICEBOX, summary_zh: 带说明的大号单选或多选。, counterparts: { antd: [], geist: [Choicebox] }, topics: [] }
+  - key: date_picker
+    title_zh: 日期选择
+    group: components.entry
+    prefix: CMP.DATE_PICKER
+    summary_zh: 选择日期或日期范围。
+    counterparts: { antd: [DatePicker], geist: [Calendar] }
+    topics:
+      - { id: CMP.DATE_PICKER.FORMAT, title_zh: 显示格式统一 }
+      - { id: CMP.DATE_PICKER.RANGE, title_zh: 范围选择有快捷项与上限 }
+      - { id: CMP.DATE_PICKER.DISABLED, title_zh: 不可选的日期置灰 }
+  - { key: time_picker, title_zh: 时间选择, group: components.entry, prefix: CMP.TIME_PICKER, summary_zh: 选择时间。, counterparts: { antd: [TimePicker], geist: [] }, topics: [] }
+  - key: form
+    title_zh: 表单
+    group: components.entry
+    prefix: CMP.FORM
+    summary_zh: 字段的标签、分组、校验与提交。
+    counterparts: { antd: [Form], geist: [Fieldset, Label] }
+    topics:
+      - { id: CMP.FORM.LAYOUT, title_zh: 标签在上，按业务分组 }
+      - { id: CMP.FORM.REQUIRED, title_zh: 必填只标星号 }
+      - { id: CMP.FORM.SUBMIT, title_zh: 提交整体校验并定位 }
+      - { id: CMP.FORM.ACTIONS, title_zh: 操作区固定位置 }
+  - key: input
+    title_zh: 输入框
+    group: components.entry
+    prefix: CMP.INPUT
+    summary_zh: 单行文字输入。
+    counterparts: { antd: [Input], geist: [Input, Clearable Input] }
+    topics:
+      - { id: CMP.INPUT.LABEL, title_zh: 标签在外，占位符只放示例 }
+      - { id: CMP.INPUT.VALIDATION, title_zh: 就地校验，失败说清怎么改 }
+      - { id: CMP.INPUT.AFFIX, title_zh: 前后缀只放单位与固定内容 }
+      - { id: CMP.INPUT.WIDTH, title_zh: 宽度跟内容长度走 }
+  - { key: search_input, title_zh: 搜索框, group: components.entry, prefix: CMP.SEARCH_INPUT, summary_zh: 带搜索图标与清除按钮的输入框。, counterparts: { antd: [Input.Search], geist: [Search Input] }, topics: [] }
+  - key: textarea
+    title_zh: 多行输入
+    group: components.entry
+    prefix: CMP.TEXTAREA
+    summary_zh: 多行文字输入。
+    counterparts: { antd: [Input.TextArea], geist: [Textarea] }
+    topics:
+      - { id: CMP.TEXTAREA.ROWS, title_zh: 初始行数与自动增高 }
+      - { id: CMP.TEXTAREA.COUNT, title_zh: 有上限就显示计数 }
+      - { id: CMP.TEXTAREA.WHEN, title_zh: 长文本才用多行 }
+  - key: input_number
+    title_zh: 数字输入
+    group: components.entry
+    prefix: CMP.INPUT_NUMBER
+    summary_zh: 输入有范围的数字。
+    counterparts: { antd: [InputNumber], geist: [] }
+    topics:
+      - { id: CMP.INPUT_NUMBER.RANGE, title_zh: 范围、精度、单位写清 }
+      - { id: CMP.INPUT_NUMBER.ALIGN, title_zh: 数字右对齐、等宽 }
+      - { id: CMP.INPUT_NUMBER.STEP, title_zh: 步进按钮只给小范围 }
+  - { key: mentions, title_zh: 提及, group: components.entry, prefix: CMP.MENTIONS, summary_zh: 在输入中提及某人或某物。, counterparts: { antd: [Mentions], geist: [] }, topics: [] }
+  - key: radio
+    title_zh: 单选框
+    group: components.entry
+    prefix: CMP.RADIO
+    summary_zh: 在几个互斥的选项里选一个。
+    counterparts: { antd: [Radio], geist: [Radio] }
+    topics:
+      - { id: CMP.RADIO.WHEN, title_zh: 选项少且要看全才用单选 }
+      - { id: CMP.RADIO.DEFAULT, title_zh: 给安全的默认值 }
+      - { id: CMP.RADIO.BUTTON_STYLE, title_zh: 按钮样式只用于切换视图 }
+  - { key: rate, title_zh: 评分, group: components.entry, prefix: CMP.RATE, summary_zh: 打分。, counterparts: { antd: [Rate], geist: [] }, topics: [] }
+  - key: select
+    title_zh: 选择器
+    group: components.entry
+    prefix: CMP.SELECT
+    summary_zh: 从下拉列表里选一项。
+    counterparts: { antd: [Select], geist: [Select] }
+    topics:
+      - { id: CMP.SELECT.WHEN, title_zh: 选项数量决定控件 }
+      - { id: CMP.SELECT.OPTIONS, title_zh: 选项短、互斥、有序 }
+      - { id: CMP.SELECT.EMPTY, title_zh: 空与加载有反馈 }
+      - { id: CMP.SELECT.VALUE, title_zh: 值与显示分开 }
+  - { key: multi_select, title_zh: 多选选择器, group: components.entry, prefix: CMP.MULTI_SELECT, summary_zh: 从下拉列表里选多项。, counterparts: { antd: [Select.multiple], geist: [Multi Select] }, topics: [] }
+  - { key: slider, title_zh: 滑块, group: components.entry, prefix: CMP.SLIDER, summary_zh: 在一个范围内拖动取值。, counterparts: { antd: [Slider], geist: [Slider] }, topics: [] }
+  - key: switch
+    title_zh: 开关
+    group: components.entry
+    prefix: CMP.SWITCH
+    summary_zh: 切换一个即时生效的布尔设置。
+    counterparts: { antd: [Switch], geist: [Toggle] }
+    topics:
+      - { id: CMP.SWITCH.IMMEDIATE, title_zh: 开关立即生效 }
+      - { id: CMP.SWITCH.LOADING, title_zh: 切换中加载、防重复 }
+      - { id: CMP.SWITCH.CONFIRM, title_zh: 有副作用先确认 }
+  - { key: segmented, title_zh: 分段控制器, group: components.entry, prefix: CMP.SEGMENTED, summary_zh: 在两三个互斥视图之间切换。, counterparts: { antd: [Segmented], geist: [Switch] }, topics: [] }
+  - { key: transfer, title_zh: 穿梭框, group: components.entry, prefix: CMP.TRANSFER, summary_zh: 在两个列表之间移动条目。, counterparts: { antd: [Transfer], geist: [] }, topics: [] }
+  - { key: tree_select, title_zh: 树选择, group: components.entry, prefix: CMP.TREE_SELECT, summary_zh: 从树形结构里选择。, counterparts: { antd: [TreeSelect], geist: [] }, topics: [] }
+  - key: upload
+    title_zh: 上传
+    group: components.entry
+    prefix: CMP.UPLOAD
+    summary_zh: 选择并上传文件。
+    counterparts: { antd: [Upload], geist: [] }
+    topics:
+      - { id: CMP.UPLOAD.LIMITS, title_zh: 格式、大小、数量写在前面 }
+      - { id: CMP.UPLOAD.PROGRESS, title_zh: 进度、取消、重试 }
+      - { id: CMP.UPLOAD.SEPARATE, title_zh: 上传与提交分开 }
+  - { key: address_input, title_zh: 地址输入, group: components.entry, prefix: CMP.ADDRESS_INPUT, summary_zh: 搜索地址或按国家填写地址字段。, counterparts: { antd: [], geist: [Address Input] }, topics: [] }
+  - { key: destructive_input, title_zh: 破坏性确认输入, group: components.entry, prefix: CMP.DESTRUCTIVE_INPUT, summary_zh: 输入资源名确认破坏性操作。, counterparts: { antd: [], geist: [Destructive Confirmation Input] }, topics: [] }
+  - { key: filter_bar, title_zh: 筛选条, group: components.entry, prefix: CMP.FILTER_BAR, summary_zh: 与 URL 同步的筛选条件栏。, counterparts: { antd: [], geist: [Filter Params] }, topics: [] }
+  - { key: feedback_widget, title_zh: 反馈收集, group: components.entry, prefix: CMP.FEEDBACK_WIDGET, summary_zh: 收集带情绪的文字反馈。, counterparts: { antd: [], geist: [Feedback] }, topics: [] }
+  - { key: theme_switcher, title_zh: 主题切换, group: components.entry, prefix: CMP.THEME_SWITCHER, summary_zh: 在浅色、跟随系统、深色之间切换。, counterparts: { antd: [], geist: [Theme Switcher] }, topics: [] }
+  # ═════════════════════════════ 组件 · 数据展示 ═════════════════════════════
+  - { key: avatar, title_zh: 头像, group: components.display, prefix: CMP.AVATAR, summary_zh: 代表一个人、团队或组织。, counterparts: { antd: [Avatar], geist: [Avatar] }, topics: [] }
+  - key: badge
+    title_zh: 徽标数
+    group: components.display
+    prefix: CMP.BADGE
+    summary_zh: 角标上的数字或红点。
+    counterparts: { antd: [Badge], geist: [] }
+    topics:
+      - { id: CMP.BADGE.COUNT, title_zh: 计数封顶 }
+      - { id: CMP.BADGE.DOT, title_zh: 状态点配文字 }
+      - { id: CMP.BADGE.RESTRAINT, title_zh: 克制使用 }
+  - key: tag
+    title_zh: 标签
+    group: components.display
+    prefix: CMP.TAG
+    summary_zh: 状态、分类等短的元数据标签。
+    counterparts: { antd: [Tag], geist: [Badge, Pill] }
+    topics:
+      - { id: CMP.TAG.SEMANTIC, title_zh: 颜色有固定语义 }
+      - { id: CMP.TAG.SHORT, title_zh: 文字短 }
+      - { id: CMP.TAG.CLOSABLE, title_zh: 可关闭的标签只用于条件 }
+  - { key: status_dot, title_zh: 状态点, group: components.display, prefix: CMP.STATUS_DOT, summary_zh: 用一个点表示对象的状态。, counterparts: { antd: [Badge.status], geist: [Status Dot] }, topics: [] }
+  - { key: calendar, title_zh: 日历, group: components.display, prefix: CMP.CALENDAR, summary_zh: 按日历展示日期相关的数据。, counterparts: { antd: [Calendar], geist: [] }, topics: [] }
+  - key: card
+    title_zh: 卡片
+    group: components.display
+    prefix: CMP.CARD
+    summary_zh: 承载一组相关信息的容器。
+    counterparts: { antd: [Card], geist: [] }
+    topics:
+      - { id: CMP.CARD.STRUCTURE, title_zh: 标题、内容、操作 }
+      - { id: CMP.CARD.SPACING, title_zh: 等距与等高 }
+      - { id: CMP.CARD.CLICKABLE, title_zh: 整卡可点要说清 }
+  - { key: carousel, title_zh: 走马灯, group: components.display, prefix: CMP.CAROUSEL, summary_zh: 轮流展示一组平级内容。, counterparts: { antd: [Carousel], geist: [] }, topics: [] }
+  - { key: collapse, title_zh: 折叠面板, group: components.display, prefix: CMP.COLLAPSE, summary_zh: 可展开收起的内容区块。, counterparts: { antd: [Collapse], geist: [Collapse] }, topics: [] }
+  - key: descriptions
+    title_zh: 描述列表
+    group: components.display
+    prefix: CMP.DESCRIPTIONS
+    summary_zh: 成组的键值信息。
+    counterparts: { antd: [Descriptions], geist: [Description] }
+    topics:
+      - { id: CMP.DESCRIPTIONS.LAYOUT, title_zh: 标签与值成对对齐 }
+      - { id: CMP.DESCRIPTIONS.EMPTY, title_zh: 空值显示占位 }
+      - { id: CMP.DESCRIPTIONS.LONG, title_zh: 长文本独占一行 }
+  - key: empty
+    title_zh: 空状态
+    group: components.display
+    prefix: CMP.EMPTY
+    summary_zh: 没有内容时的占位与引导。
+    counterparts: { antd: [Empty], geist: [Empty State] }
+    topics:
+      - { id: CMP.EMPTY.REASON, title_zh: 说清为什么空 }
+      - { id: CMP.EMPTY.NEXT, title_zh: 给出下一步 }
+      - { id: CMP.EMPTY.QUIET, title_zh: 插图克制 }
+  - { key: image, title_zh: 图片, group: components.display, prefix: CMP.IMAGE, summary_zh: 可预览的图片。, counterparts: { antd: [Image], geist: [] }, topics: [] }
+  - { key: video, title_zh: 视频, group: components.display, prefix: CMP.VIDEO, summary_zh: 带播放控制与懒加载的视频。, counterparts: { antd: [], geist: [Video] }, topics: [] }
+  - { key: list, title_zh: 列表, group: components.display, prefix: CMP.LIST, summary_zh: 一组结构相同的条目。, counterparts: { antd: [List], geist: [Entity] }, topics: [] }
+  - { key: popover, title_zh: 气泡卡片, group: components.display, prefix: CMP.POPOVER, summary_zh: 悬停或聚焦时出现的富内容浮层。, counterparts: { antd: [Popover], geist: [Context Card] }, topics: [] }
+  - { key: relative_time, title_zh: 相对时间, group: components.display, prefix: CMP.RELATIVE_TIME, summary_zh: 以相对时间显示，悬停看本地与 UTC 时间。, counterparts: { antd: [], geist: [Relative Time Card] }, topics: [] }
+  - { key: qrcode, title_zh: 二维码, group: components.display, prefix: CMP.QRCODE, summary_zh: 把链接或文字生成二维码。, counterparts: { antd: [QRCode], geist: [] }, topics: [] }
+  - { key: statistic, title_zh: 统计数值, group: components.display, prefix: CMP.STATISTIC, summary_zh: 突出显示一个统计数字。, counterparts: { antd: [Statistic], geist: [] }, topics: [] }
+  - { key: gauge, title_zh: 仪表, group: components.display, prefix: CMP.GAUGE, summary_zh: 用圆环表示占比。, counterparts: { antd: [Progress.dashboard], geist: [Gauge, Pie Gauge] }, topics: [] }
+  - key: table
+    title_zh: 表格
+    group: components.display
+    prefix: CMP.TABLE
+    summary_zh: 结构相同、需要横向比较的多行数据。
+    counterparts: { antd: [Table], geist: [Table] }
+    topics:
+      - { id: CMP.TABLE.COLUMNS, title_zh: 列的顺序与对齐 }
+      - { id: CMP.TABLE.ACTIONS, title_zh: 操作列在最右，最多三个 }
+      - { id: CMP.TABLE.STATES, title_zh: 空、加载、错误保持表头 }
+      - { id: CMP.TABLE.PAGING, title_zh: 分页规则 }
+  - { key: timeline, title_zh: 时间轴, group: components.display, prefix: CMP.TIMELINE, summary_zh: 按时间先后排列的事件。, counterparts: { antd: [Timeline], geist: [] }, topics: [] }
+  - key: tooltip
+    title_zh: 文字提示
+    group: components.display
+    prefix: CMP.TOOLTIP
+    summary_zh: 悬停或聚焦时补充一句说明。
+    counterparts: { antd: [Tooltip], geist: [Tooltip] }
+    topics:
+      - { id: CMP.TOOLTIP.SUPPLEMENT, title_zh: 只补充，不承载必需信息 }
+      - { id: CMP.TOOLTIP.A11Y, title_zh: 键盘与读屏可达 }
+      - { id: CMP.TOOLTIP.NO_ACTIONS, title_zh: 提示里不放可点内容 }
+  - { key: tour, title_zh: 漫游引导, group: components.display, prefix: CMP.TOUR, summary_zh: 分步介绍界面功能。, counterparts: { antd: [Tour], geist: [] }, topics: [] }
+  - { key: tree, title_zh: 树形控件, group: components.display, prefix: CMP.TREE, summary_zh: 可展开的层级结构。, counterparts: { antd: [Tree], geist: [File Tree] }, topics: [] }
+  - { key: json_view, title_zh: JSON 查看器, group: components.display, prefix: CMP.JSON_VIEW, summary_zh: 以可折叠的树展示 JSON。, counterparts: { antd: [], geist: [JSON View] }, topics: [] }
+  - { key: middle_truncate, title_zh: 中间省略, group: components.display, prefix: CMP.MIDDLE_TRUNCATE, summary_zh: 保留首尾、省略中间的长字符串。, counterparts: { antd: [Typography.ellipsis], geist: [MiddleTruncate] }, topics: [] }
+  - { key: device_frame, title_zh: 设备外框, group: components.display, prefix: CMP.DEVICE_FRAME, summary_zh: 把截图放进浏览器或手机外框里展示。, counterparts: { antd: [], geist: [Browser, Phone] }, topics: [] }
+  - { key: book, title_zh: 书封, group: components.display, prefix: CMP.BOOK, summary_zh: 营销页里用书本外形展示一组内容。, counterparts: { antd: [], geist: [Book] }, topics: [] }
+  - { key: comment, title_zh: 评论, group: components.display, prefix: CMP.COMMENT, summary_zh: 带作者与时间的评论条目。, counterparts: { antd: [Comment], geist: [] }, topics: [] }
+  - { key: page_header, title_zh: 页头, group: components.display, prefix: CMP.PAGE_HEADER, summary_zh: 页面标题、返回、操作区。, counterparts: { antd: [PageHeader], geist: [] }, topics: [] }
+  # ═════════════════════════════ 组件 · 反馈 ═════════════════════════════
+  - key: alert
+    title_zh: 警告提示
+    group: components.feedback
+    prefix: CMP.ALERT
+    summary_zh: 贴着相关内容的提示信息。
+    counterparts: { antd: [Alert], geist: [Note] }
+    topics:
+      - { id: CMP.ALERT.TYPE, title_zh: 按语义选类型 }
+      - { id: CMP.ALERT.PLACEMENT, title_zh: 放在受影响内容的上方 }
+      - { id: CMP.ALERT.DISMISS, title_zh: 只有可忽略的才能关 }
+  - { key: banner, title_zh: 横幅, group: components.feedback, prefix: CMP.BANNER, summary_zh: 页面或项目级、需要处理的通知。, counterparts: { antd: [Alert.banner], geist: [Banner, Project Banner] }, topics: [] }
+  - key: drawer
+    title_zh: 侧边抽屉
+    group: components.feedback
+    prefix: CMP.DRAWER
+    summary_zh: 从侧边滑出的详情或操作面板。
+    counterparts: { antd: [Drawer], geist: [Sheet] }
+    topics:
+      - { id: CMP.DRAWER.WHEN, title_zh: 对照页面内容时用抽屉 }
+      - { id: CMP.DRAWER.SIZE, title_zh: 宽度取档位 }
+      - { id: CMP.DRAWER.CLOSE, title_zh: 未保存先确认 }
+  - { key: bottom_sheet, title_zh: 底部抽屉, group: components.feedback, prefix: CMP.BOTTOM_SHEET, summary_zh: 小屏上从底部弹出的面板。, counterparts: { antd: [Drawer.bottom], geist: [Drawer] }, topics: [] }
+  - key: message
+    title_zh: 全局提示
+    group: components.feedback
+    prefix: CMP.MESSAGE
+    summary_zh: 操作后的轻量反馈，自动消失。
+    counterparts: { antd: [message], geist: [Toast] }
+    topics:
+      - { id: CMP.MESSAGE.WHEN, title_zh: 只给轻量的结果 }
+      - { id: CMP.MESSAGE.ONE, title_zh: 同一时间一条 }
+      - { id: CMP.MESSAGE.WORDING, title_zh: 措辞用结果 }
+  - key: notification
+    title_zh: 通知提醒框
+    group: components.feedback
+    prefix: CMP.NOTIFICATION
+    summary_zh: 带标题与操作的通知。
+    counterparts: { antd: [notification], geist: [Toast.action] }
+    topics:
+      - { id: CMP.NOTIFICATION.WHEN, title_zh: 系统级消息用通知 }
+      - { id: CMP.NOTIFICATION.CONTENT, title_zh: 标题、描述、一个动作 }
+      - { id: CMP.NOTIFICATION.STACK, title_zh: 堆叠有上限 }
+  - key: modal
+    title_zh: 对话框
+    group: components.feedback
+    prefix: CMP.MODAL
+    summary_zh: 需要用户先做决定的弹窗。
+    counterparts: { antd: [Modal], geist: [Modal] }
+    topics:
+      - { id: CMP.MODAL.WHEN, title_zh: 只用于短流程 }
+      - { id: CMP.MODAL.CONTENT, title_zh: 标题与按钮写动作 }
+      - { id: CMP.MODAL.KEYBOARD, title_zh: 键盘与焦点 }
+      - { id: CMP.MODAL.ASYNC, title_zh: 确认中锁定 }
+  - { key: destructive_modal, title_zh: 危险操作确认, group: components.feedback, prefix: CMP.DESTRUCTIVE_MODAL, summary_zh: 删除、吊销等操作的确认弹窗。, counterparts: { antd: [Modal.confirm], geist: [Destructive Action Modal] }, topics: [] }
+  - key: popconfirm
+    title_zh: 气泡确认
+    group: components.feedback
+    prefix: CMP.POPCONFIRM
+    summary_zh: 就地确认一个轻量操作。
+    counterparts: { antd: [Popconfirm], geist: [] }
+    topics:
+      - { id: CMP.POPCONFIRM.WHEN, title_zh: 轻量确认就地问 }
+      - { id: CMP.POPCONFIRM.WORDING, title_zh: 问句 + 动作按钮 }
+      - { id: CMP.POPCONFIRM.ASYNC, title_zh: 确认中加载 }
+  - key: progress
+    title_zh: 进度条
+    group: components.feedback
+    prefix: CMP.PROGRESS
+    summary_zh: 已知总量的任务进度。
+    counterparts: { antd: [Progress], geist: [Progress] }
+    topics:
+      - { id: CMP.PROGRESS.DETERMINATE, title_zh: 能估计就显示百分比 }
+      - { id: CMP.PROGRESS.INDETERMINATE, title_zh: 不能估计就显示阶段 }
+      - { id: CMP.PROGRESS.BACKGROUND, title_zh: 长任务转后台 }
+  - { key: result, title_zh: 结果与错误, group: components.feedback, prefix: CMP.RESULT, summary_zh: 操作结果页，以及区块加载失败时的错误信息。, counterparts: { antd: [Result], geist: [Error, Error Card] }, topics: [] }
+  - { key: skeleton, title_zh: 骨架屏, group: components.feedback, prefix: CMP.SKELETON, summary_zh: 数据加载时按最终布局占位。, counterparts: { antd: [Skeleton], geist: [Skeleton] }, topics: [] }
+  - key: spin
+    title_zh: 加载中
+    group: components.feedback
+    prefix: CMP.SPIN
+    summary_zh: 不确定时长的等待。
+    counterparts: { antd: [Spin], geist: [Spinner, Loading Dots] }
+    topics:
+      - { id: CMP.SPIN.SCOPE, title_zh: 只盖住正在加载的区域 }
+      - { id: CMP.SPIN.DELAY, title_zh: 延迟出现 }
+      - { id: CMP.SPIN.TEXT, title_zh: 久了要说话 }
+  - { key: watermark, title_zh: 水印, group: components.feedback, prefix: CMP.WATERMARK, summary_zh: 给页面加文字或图片水印。, counterparts: { antd: [Watermark], geist: [] }, topics: [] }
+  # ═════════════════════════════ 组件 · 其他 ═════════════════════════════
+  - { key: affix, title_zh: 固钉, group: components.other, prefix: CMP.AFFIX, summary_zh: 滚动时把元素固定在视口内。, counterparts: { antd: [Affix], geist: [] }, topics: [] }
+  - { key: config_provider, title_zh: 全局配置, group: components.other, prefix: CMP.CONFIG_PROVIDER, summary_zh: 主题、语言与组件默认值的统一配置。, counterparts: { antd: [ConfigProvider, App, LocaleProvider], geist: [GeistProvider] }, topics: [] }
+  # ═════════════════════════════ 设计模式 · 全局规则 ═════════════════════════════
+  - key: feedback
+    title_zh: 反馈
+    group: patterns.global
+    prefix: FEEDBACK
+    summary_zh: 按重要程度选提示方式；失败留得住、给出路；加载、字段错误、空状态、部分成功与徽标。
+    topics:
+      - { id: FEEDBACK.CHOOSE, title_zh: 按重要程度选提示方式 }
+      - { id: FEEDBACK.FAILURE, title_zh: 失败的处理 }
+      - { id: FEEDBACK.LOADING, title_zh: 加载反馈 }
+      - { id: FEEDBACK.FIELD_ERROR, title_zh: 字段错误 }
+      - { id: FEEDBACK.EMPTY, title_zh: 空状态 }
+      - { id: FEEDBACK.PARTIAL, title_zh: 部分成功 }
+      - { id: FEEDBACK.BADGE, title_zh: 徽标 }
+  - key: navigation
+    title_zh: 导航
+    group: patterns.global
+    prefix: NAV
+    summary_zh: 主导航、顶部导航、面包屑、标签页、步骤条与分页的选型和上限。
+    topics:
+      - { id: NAV.ADMIN_SIDE, title_zh: 管理侧主导航 }
+      - { id: NAV.TOP, title_zh: 顶部导航 }
+      - { id: NAV.BREADCRUMB, title_zh: 面包屑 }
+      - { id: NAV.TABS, title_zh: 标签页 }
+      - { id: NAV.STEPS, title_zh: 步骤条 }
+      - { id: NAV.PAGINATION, title_zh: 分页 }
+  - key: data_entry
+    title_zh: 数据录入
+    group: patterns.global
+    prefix: ENTRY
+    summary_zh: 标签常驻、按选项数选控件、开关即时生效、提示放对位置、校验分工、上传方式。
+    topics:
+      - { id: ENTRY.LABEL, title_zh: 输入标签 }
+      - { id: ENTRY.CHOICE_CONTROL, title_zh: 选择控件 }
+      - { id: ENTRY.SWITCH_IMMEDIATE, title_zh: 开关即时生效 }
+      - { id: ENTRY.HINTS, title_zh: 提示 }
+      - { id: ENTRY.VALIDATION, title_zh: 校验 }
+      - { id: ENTRY.UPLOAD, title_zh: 上传 }
+  - key: data_display
+    title_zh: 数据展示
+    group: patterns.global
+    prefix: DISPLAY
+    summary_zh: 表格列、卡片排布、折叠、时间轴、轮播，以及超长和空数据。
+    topics:
+      - { id: DISPLAY.TABLE_COLUMNS, title_zh: 表格列 }
+      - { id: DISPLAY.CARD_GRID, title_zh: 卡片排布 }
+      - { id: DISPLAY.COLLAPSE, title_zh: 折叠 }
+      - { id: DISPLAY.TIMELINE, title_zh: 时间轴 }
+      - { id: DISPLAY.CAROUSEL, title_zh: 轮播 }
+      - { id: DISPLAY.EDGE_CASES, title_zh: 超长与空数据 }
+  - key: data_format
+    title_zh: 数据格式
+    group: patterns.global
+    prefix: FORMAT
+    summary_zh: 数字、金额、日期时间、相对时间与脱敏的固定格式。
+    topics:
+      - { id: FORMAT.NUMBER, title_zh: 数字 }
+      - { id: FORMAT.AMOUNT, title_zh: 金额 }
+      - { id: FORMAT.DATETIME, title_zh: 日期时间 }
+      - { id: FORMAT.RELATIVE_TIME, title_zh: 相对时间 }
+      - { id: FORMAT.MASKING, title_zh: 脱敏 }
+  - key: copywriting
+    title_zh: 文案
+    group: patterns.global
+    prefix: COPY
+    summary_zh: 文案走字典；站在用户这边写；语气平和；报错说清怎么办；标点与用词统一。
+    topics:
+      - { id: COPY.NO_LITERAL, title_zh: 文案字典 }
+      - { id: COPY.USER_VIEW, title_zh: 用户视角 }
+      - { id: COPY.TONE, title_zh: 语气 }
+      - { id: COPY.ERROR_MESSAGE, title_zh: 报错文案 }
+      - { id: COPY.PUNCTUATION, title_zh: 标点与空格 }
+      - { id: COPY.TERMS, title_zh: 用词 }
+  - key: buttons
+    title_zh: 按钮
+    group: patterns.global
+    prefix: BUTTON
+    summary_zh: 按用途选按钮类型；一个按钮区一个主按钮；顺序、位置、文案与分组。
+    topics:
+      - { id: BUTTON.TYPES, title_zh: 按钮类型 }
+      - { id: BUTTON.SINGLE_PRIMARY, title_zh: 主按钮 }
+      - { id: BUTTON.ORDER, title_zh: 按钮顺序 }
+      - { id: BUTTON.PLACEMENT, title_zh: 按钮位置 }
+      - { id: BUTTON.COPY, title_zh: 按钮文案 }
+      - { id: BUTTON.GROUPING, title_zh: 按钮分组 }
+  - key: data_list
+    title_zh: 数据列表
+    group: patterns.global
+    prefix: LIST
+    summary_zh: 列表形态、查询方式、分页与位置、详情入口、批量操作、新建与删除。
+    topics:
+      - { id: LIST.FORM, title_zh: 列表形态 }
+      - { id: LIST.QUERY, title_zh: 查询方式 }
+      - { id: LIST.PAGING, title_zh: 分页与位置 }
+      - { id: LIST.DETAIL_ENTRY, title_zh: 详情入口 }
+      - { id: LIST.BATCH, title_zh: 批量操作 }
+      - { id: LIST.CREATE, title_zh: 新建入口 }
+      - { id: LIST.DELETE, title_zh: 删除 }
+  # ═════════════════════════════ 设计模式 · 原则 ═════════════════════════════
+  - { key: proximity, title_zh: 亲密性, group: patterns.principles, prefix: PROXIMITY, summary_zh: 用间距远近表达分组。, topics: [{ id: PROXIMITY.GROUPING, title_zh: 分组 }] }
+  - { key: alignment, title_zh: 对齐, group: patterns.principles, prefix: ALIGN, summary_zh: 文字、表单标签与数字的对齐方式。, topics: [{ id: ALIGN.TEXT, title_zh: 文字对齐 }, { id: ALIGN.FORM_LABEL, title_zh: 表单标签对齐 }, { id: ALIGN.NUMBERS, title_zh: 数字对齐 }] }
+  - { key: contrast, title_zh: 对比, group: patterns.principles, prefix: CONTRAST, summary_zh: 主次分明；状态不只靠颜色。, topics: [{ id: CONTRAST.PRIMARY_ACTION, title_zh: 主次对比 }, { id: CONTRAST.STATUS, title_zh: 状态区分 }] }
+  - { key: repetition, title_zh: 重复, group: patterns.principles, prefix: REPEAT, summary_zh: 同类元素全系统一致。, topics: [{ id: REPEAT.CONSISTENCY, title_zh: 一致性 }] }
+  - { key: direct, title_zh: 直截了当, group: patterns.principles, prefix: DIRECT, summary_zh: 在哪看就在哪改；拖拽有替代方式。, topics: [{ id: DIRECT.INLINE_EDIT, title_zh: 就地编辑 }, { id: DIRECT.DRAG, title_zh: 拖拽 }] }
+  - { key: stay, title_zh: 足不出户, group: patterns.principles, prefix: STAY, summary_zh: 能在当前页完成的不跳页。, topics: [{ id: STAY.ON_PAGE, title_zh: 不跳页 }] }
+  - { key: lightweight, title_zh: 简化交互, group: patterns.principles, prefix: LIGHT, summary_zh: 工具按重要程度常驻；可点区域做大。, topics: [{ id: LIGHT.TOOLS, title_zh: 工具常驻 }, { id: LIGHT.HOTSPOT, title_zh: 可点区域 }] }
+  - { key: invitation, title_zh: 提供邀请, group: patterns.principles, prefix: INVITE, summary_zh: 不易发现的交互要有邀请。, topics: [{ id: INVITE.DISCOVERABILITY, title_zh: 交互邀请 }] }
+  - { key: transition, title_zh: 巧用过渡, group: patterns.principles, prefix: TRANSITION, summary_zh: 用过渡说明发生了什么。, topics: [{ id: TRANSITION.EXPLAIN, title_zh: 用过渡说明变化 }] }
+  - { key: reaction, title_zh: 即时反应, group: patterns.principles, prefix: REACT, summary_zh: 输入时即时反应。, topics: [{ id: REACT.IMMEDIATE, title_zh: 即时反应 }] }
+  # ═════════════════════════════ 设计模式 · 模板文档 ═════════════════════════════
+  - { key: visualization_page, title_zh: 数据可视化页, group: patterns.templates, prefix: VIZ, summary_zh: 先定页面类型；版面布局；选对图表、讲清口径。, topics: [{ id: VIZ.TYPES, title_zh: 页面类型 }, { id: VIZ.LAYOUT, title_zh: 版面布局 }, { id: VIZ.CHART, title_zh: 图表与口径 }] }
+  - { key: detail_page, title_zh: 详情页, group: patterns.templates, prefix: DETAIL, summary_zh: 按复杂度选布局；信息平铺；分隔方式对应层级；流程操作放页脚。, topics: [{ id: DETAIL.LAYOUT, title_zh: 布局 }, { id: DETAIL.FLAT, title_zh: 信息平铺 }, { id: DETAIL.SEPARATORS, title_zh: 分隔方式 }, { id: DETAIL.ACTIONS, title_zh: 流程操作 }] }
+  # ═════════════════════════════ 设计模式 · 体验管理 ═════════════════════════════
+  - key: ui_stills
+    title_zh: 界面静帧
+    group: patterns.experience
+    prefix: STILL
+    summary_zh: 文档、功能卡片、空状态与引导里的产品静帧：像真产品、只给故事主角真实文字、裁切有意图、一个焦点、按展示尺寸设计、动画先定封面帧、用规范组件与图标。
+    topics:
+      - { id: STILL.WHEN, title_zh: 什么时候用静帧 }
+      - { id: STILL.RESTRAINT, title_zh: 只给故事主角真实文字 }
+      - { id: STILL.FRAMING, title_zh: 裁切与出血 }
+      - { id: STILL.FOCAL, title_zh: 一个焦点 }
+      - { id: STILL.SCALE, title_zh: 按展示尺寸设计 }
+      - { id: STILL.POSTER, title_zh: 动画先定封面帧 }
+      - { id: STILL.REAL_PARTS, title_zh: 用规范组件与图标 }
+  - key: component_motion
+    title_zh: 组件动效
+    group: patterns.experience
+    prefix: CMOTION
+    summary_zh: 动效只说明变化：每个动作有原因；出现和离开都有过渡；动关系而不只动对象；数字与文字就地变化；成组只在首次出现时错峰；可以打断；只动 transform 与透明度；减少动效时状态变化仍看得见。
+    topics:
+      - { id: CMOTION.CAUSE, title_zh: 每个动作有原因 }
+      - { id: CMOTION.ENTER_EXIT, title_zh: 出现与离开 }
+      - { id: CMOTION.RELATIONSHIP, title_zh: 动关系而不只动对象 }
+      - { id: CMOTION.VALUE_CHANGE, title_zh: 数字与文字就地变化 }
+      - { id: CMOTION.STAGGER, title_zh: 成组错峰只在首次出现 }
+      - { id: CMOTION.INTERRUPT, title_zh: 可以打断 }
+      - { id: CMOTION.PERF, title_zh: 只动 transform 与透明度 }
+      - { id: CMOTION.REDUCED, title_zh: 减少动效时保留状态变化 }
+  - key: bento_grid
+    title_zh: Bento 栅格
+    group: patterns.experience
+    prefix: BENTO
+    summary_zh: 一组格子拼成一张图：一个主角格；格子不全是界面截图，邻格类型交替；同一套外框；跨度取栅格整数；数字格一行写完；窄屏重新排；可点的格整格可点。
+    topics:
+      - { id: BENTO.WHEN, title_zh: 什么时候用 }
+      - { id: BENTO.HERO, title_zh: 一个主角格 }
+      - { id: BENTO.KINDS, title_zh: 邻格类型交替 }
+      - { id: BENTO.FRAME, title_zh: 同一套外框 }
+      - { id: BENTO.SPANS, title_zh: 跨度取栅格整数 }
+      - { id: BENTO.STAT, title_zh: 数字格一行写完 }
+      - { id: BENTO.RESPONSIVE, title_zh: 窄屏重新排 }
+      - { id: BENTO.CLICK, title_zh: 可点的格整格可点 }
+  - key: state_feedback
+    title_zh: 状态反馈
+    group: patterns.experience
+    prefix: SFB
+    summary_zh: 每个数据视图都有完整的状态；反馈出现在动作发生的地方；确认的力度跟操作的分量走；乐观更新只用于可回滚的小操作；能撤销就不弹确认；长操作给进度；读屏能感知状态变化。
+    topics:
+      - { id: SFB.STATES, title_zh: 每个视图都有完整状态 }
+      - { id: SFB.IN_PLACE, title_zh: 反馈出现在动作发生的地方 }
+      - { id: SFB.WEIGHT, title_zh: 确认的力度跟操作的分量走 }
+      - { id: SFB.OPTIMISTIC, title_zh: 乐观更新只用于可回滚的小操作 }
+      - { id: SFB.UNDO, title_zh: 能撤销就不弹确认 }
+      - { id: SFB.PROGRESS, title_zh: 长操作给进度 }
+      - { id: SFB.LIVE, title_zh: 读屏能感知状态变化 }
+  - key: context
+    title_zh: 上下文管理
+    group: patterns.experience
+    prefix: CTX
+    summary_zh: 保住用户的位置（分页、筛选、滚动、选中）；未保存的内容有去处；就地操作与工具栏一致；当前位置始终可见；切换团队或身份时显式清理；代码里的上下文只放稳定的跨层依赖。
+    topics:
+      - { id: CTX.PRESERVE, title_zh: 保住用户的位置 }
+      - { id: CTX.DRAFTS, title_zh: 未保存的内容有去处 }
+      - { id: CTX.INLINE_ACTIONS, title_zh: 就地操作与工具栏一致 }
+      - { id: CTX.WAYFINDING, title_zh: 当前位置始终可见 }
+      - { id: CTX.SCOPE_SWITCH, title_zh: 切换团队或身份时显式清理 }
+      - { id: CTX.PROVIDER, title_zh: 代码里的上下文只放稳定的跨层依赖 }
+  - key: sidebar
+    title_zh: 侧边栏管理
+    group: patterns.experience
+    prefix: SIDEBAR
+    summary_zh: 宽度取规范值；收起后只留图标并有名字；收起状态按用户记住；窄屏变抽屉；当前项与路由同源；最多两级；分组按使用频率；自己滚动、底部固定；键盘可操作。
+    topics:
+      - { id: SIDEBAR.WIDTH, title_zh: 宽度取规范值 }
+      - { id: SIDEBAR.COLLAPSE, title_zh: 收起与展开 }
+      - { id: SIDEBAR.ACTIVE, title_zh: 当前项与路由同源 }
+      - { id: SIDEBAR.DEPTH, title_zh: 最多两级 }
+      - { id: SIDEBAR.GROUPS, title_zh: 分组按使用频率 }
+      - { id: SIDEBAR.SCROLL, title_zh: 自己滚动、底部固定 }
+      - { id: SIDEBAR.KEYBOARD, title_zh: 键盘可操作 }
+  - key: card_hover
+    title_zh: 卡片悬停
+    group: patterns.experience
+    prefix: HOVER
+    summary_zh: 悬停只表示可点；幅度克制（边框或阴影升一级，不缩放）；不引起布局移动；键盘焦点的反馈不弱于悬停；触屏不依赖悬停；悬停才出现的操作不挤开内容；时长取 token。
+    topics:
+      - { id: HOVER.SIGNAL, title_zh: 悬停只表示可点 }
+      - { id: HOVER.SUBTLE, title_zh: 幅度克制 }
+      - { id: HOVER.NO_SHIFT, title_zh: 不引起布局移动 }
+      - { id: HOVER.FOCUS_PARITY, title_zh: 焦点反馈不弱于悬停 }
+      - { id: HOVER.TOUCH, title_zh: 触屏不依赖悬停 }
+      - { id: HOVER.REVEAL, title_zh: 悬停出现的操作不挤开内容 }
+      - { id: HOVER.TIMING, title_zh: 时长取 token }
+  - key: loading_bar
+    title_zh: 加载条
+    group: patterns.experience
+    prefix: LBAR
+    summary_zh: 选对加载形态；快的请求不显示加载条，出现后至少停留一会儿；不确定进度时缓慢推进、完成时补满；全局只有一条；有确切进度时显示百分比与剩余并能取消；读屏能感知。
+    topics:
+      - { id: LBAR.KIND, title_zh: 选对加载形态 }
+      - { id: LBAR.DELAY, title_zh: 快的不显示，出现了停一会儿 }
+      - { id: LBAR.TRICKLE, title_zh: 不确定进度时缓慢推进 }
+      - { id: LBAR.SINGLE, title_zh: 全局只有一条 }
+      - { id: LBAR.DETERMINATE, title_zh: 确定进度显示百分比与剩余 }
+      - { id: LBAR.A11Y, title_zh: 读屏能感知 }
+  # ═════════════════════════════ 设计模式 · 数据呈现 ═════════════════════════════
+  - key: data_grid
+    title_zh: 数据网格
+    group: patterns.data
+    prefix: DGRID
+    summary_zh: 先分清表格与数据网格；列的对齐、冻结与宽度有规则；排序筛选在服务端并进 URL；跨页选择说清范围；大数据虚拟滚动；行内编辑可撤回；密度三档按用户记住；空与加载保持列结构。
+    topics:
+      - { id: DGRID.WHEN, title_zh: 表格还是数据网格 }
+      - { id: DGRID.COLUMNS, title_zh: 列的对齐、冻结与宽度 }
+      - { id: DGRID.SORT_FILTER, title_zh: 排序与筛选在服务端并进 URL }
+      - { id: DGRID.SELECTION, title_zh: 跨页选择说清范围 }
+      - { id: DGRID.VIRTUAL, title_zh: 大数据虚拟滚动 }
+      - { id: DGRID.EDIT, title_zh: 行内编辑可撤回 }
+      - { id: DGRID.DENSITY, title_zh: 密度三档按用户记住 }
+      - { id: DGRID.EMPTY_LOADING, title_zh: 空与加载保持列结构 }
+  - key: charts
+    title_zh: 图表
+    group: patterns.data
+    prefix: CHART
+    summary_zh: 图表库全项目一个；按问题选图；配色取 token、不只靠颜色区分；坐标轴与单位写清，柱状图从 0 开始；提示给精确值与口径；空、加载、出错与列表一致；提供数据表替代；大数据降采样；随容器重绘、卸载时销毁。
+    topics:
+      - { id: CHART.LIBRARY, title_zh: 图表库全项目一个 }
+      - { id: CHART.CHOOSE, title_zh: 按问题选图 }
+      - { id: CHART.COLOR, title_zh: 配色取 token、不只靠颜色 }
+      - { id: CHART.AXES, title_zh: 坐标轴与单位写清 }
+      - { id: CHART.TOOLTIP, title_zh: 提示给精确值与口径 }
+      - { id: CHART.STATES, title_zh: 空、加载、出错与列表一致 }
+      - { id: CHART.A11Y, title_zh: 提供数据表替代 }
+      - { id: CHART.PERF, title_zh: 大数据降采样 }
+      - { id: CHART.LIFECYCLE, title_zh: 随容器重绘、卸载时销毁 }
+  - key: reports
+    title_zh: 报表
+    group: patterns.data
+    prefix: REPORT
+    summary_zh: 报表结构固定（标题与口径、筛选、指标、明细）；口径与数据截至时间写清；筛选与对比期进 URL；合计与小计规则明确；数字格式统一；导出与页面同口径并受权限控制；打印有专门样式；大报表服务端聚合。
+    topics:
+      - { id: REPORT.STRUCTURE, title_zh: 报表结构固定 }
+      - { id: REPORT.DEFINITIONS, title_zh: 口径与截至时间写清 }
+      - { id: REPORT.FILTERS, title_zh: 筛选与对比期进 URL }
+      - { id: REPORT.TOTALS, title_zh: 合计与小计规则明确 }
+      - { id: REPORT.NUMBERS, title_zh: 数字格式统一 }
+      - { id: REPORT.EXPORT, title_zh: 导出与页面同口径并受权限控制 }
+      - { id: REPORT.PRINT, title_zh: 打印有专门样式 }
+      - { id: REPORT.PERF, title_zh: 大报表服务端聚合 }
+  # ═════════════════════════════ 工程规范 ═════════════════════════════
+  - key: state
+    title_zh: 状态管理
+    group: engineering
+    prefix: STATE
+    summary_zh: 每份状态先定属主再定存放处：服务端数据进查询缓存，跨页稳定状态进全局 store，可分享的视图状态进 URL。
+    topics:
+      - { id: STATE.OWNERSHIP, title_zh: 状态放哪 }
+      - { id: STATE.SERVER_STATE, title_zh: 服务端数据 }
+      - { id: STATE.GLOBAL_STORE, title_zh: 全局 store }
+      - { id: STATE.URL, title_zh: URL 状态 }
+      - { id: STATE.REQUESTS, title_zh: 请求入口 }
+      - { id: STATE.CACHE_KEYS, title_zh: 缓存 key 与失效 }
+      - { id: STATE.CLEANUP, title_zh: 清理与竞态 }
+      - { id: STATE.FORM_MODEL, title_zh: 表单模型 }
+      - { id: STATE.BROWSER_STORAGE, title_zh: 浏览器存储 }
+  - key: performance
+    title_zh: 性能
+    group: engineering
+    prefix: PERF
+    summary_zh: 先定预算；按需加载；大列表分页与虚拟化；输入防抖；并行初始化；渲染里不做重计算；度量分清口径。
+    topics:
+      - { id: PERF.BUDGET, title_zh: 性能预算 }
+      - { id: PERF.LAZY_LOAD, title_zh: 按需加载 }
+      - { id: PERF.ON_DEMAND_LIBRARY, title_zh: 组件库按需引入 }
+      - { id: PERF.LARGE_LISTS, title_zh: 大列表 }
+      - { id: PERF.INPUT, title_zh: 输入与过期响应 }
+      - { id: PERF.PARALLEL_INIT, title_zh: 并行初始化 }
+      - { id: PERF.COMPUTE, title_zh: 渲染计算 }
+      - { id: PERF.MEASURE, title_zh: 度量口径 }
+  - key: security
+    title_zh: 安全
+    group: engineering
+    prefix: SEC
+    summary_zh: 不可信内容不进危险渲染；链接与跳转走白名单；状态变更请求带 CSRF 防护；不用 eval 一类动态执行；第三方脚本登记并校验完整性；前端隐藏不是鉴权；敏感值不出现在 URL、日志、埋点和剪贴板；跨窗口消息校验来源。
+    topics:
+      - { id: SEC.XSS, title_zh: 不可信内容不进危险渲染 }
+      - { id: SEC.LINKS, title_zh: 链接与跳转走白名单 }
+      - { id: SEC.CSRF, title_zh: 状态变更请求带 CSRF 防护 }
+      - { id: SEC.NO_EVAL, title_zh: 不用动态执行 }
+      - { id: SEC.THIRD_PARTY, title_zh: 第三方脚本登记并校验完整性 }
+      - { id: SEC.AUTHZ_UI, title_zh: 前端隐藏不是鉴权 }
+      - { id: SEC.SENSITIVE, title_zh: 敏感值不外泄 }
+      - { id: SEC.POSTMESSAGE, title_zh: 跨窗口消息校验来源 }
+  - key: session
+    title_zh: 会话与凭据
+    group: engineering
+    prefix: SESSION
+    summary_zh: 凭据放在脚本读不到的地方；Cookie 属性收紧；登录后换会话；空闲与绝对超时；敏感操作重新验证；静默刷新只试一次；登出全面清理并同步到所有标签页；非必要 Cookie 先征得同意。
+    topics:
+      - { id: SESSION.STORAGE, title_zh: 凭据放在脚本读不到的地方 }
+      - { id: SESSION.COOKIE, title_zh: Cookie 属性收紧 }
+      - { id: SESSION.ROTATE, title_zh: 登录后换会话 }
+      - { id: SESSION.TIMEOUT, title_zh: 空闲与绝对超时 }
+      - { id: SESSION.STEP_UP, title_zh: 敏感操作重新验证 }
+      - { id: SESSION.REFRESH, title_zh: 静默刷新只试一次 }
+      - { id: SESSION.LOGOUT, title_zh: 登出全面清理并同步 }
+      - { id: SESSION.CONSENT, title_zh: 非必要 Cookie 先征得同意 }
+  - key: tamper
+    title_zh: 防篡改与防劫持
+    group: engineering
+    prefix: TAMPER
+    summary_zh: 前端的一切都可被篡改：价格、权限、状态以服务端为准；关键写请求防重放；传输全程 HTTPS 与 HSTS；页面不被别人嵌套（防点击劫持）；外链防反向标签页劫持；本地数据读回先校验；前端混淆不是安全措施。
+    topics:
+      - { id: TAMPER.SERVER_TRUTH, title_zh: 以服务端为准 }
+      - { id: TAMPER.REPLAY, title_zh: 关键写请求防重放 }
+      - { id: TAMPER.TRANSPORT, title_zh: 传输全程 HTTPS }
+      - { id: TAMPER.FRAMING, title_zh: 页面不被别人嵌套 }
+      - { id: TAMPER.TABNABBING, title_zh: 外链防反向标签页劫持 }
+      - { id: TAMPER.LOCAL_DATA, title_zh: 本地数据读回先校验 }
+      - { id: TAMPER.OBFUSCATION, title_zh: 前端混淆不是安全措施 }
+  - key: robustness
+    title_zh: 健壮性
+    group: engineering
+    prefix: ROBUST
+    summary_zh: 接口数据在边界按契约解析；渲染不怕空值与缺字段；每个请求有超时；离线和弱网有处理；非核心模块失败不影响主流程；界面承受重复与乱序；资源在卸载时清理；输入上限前端先拦。
+    topics:
+      - { id: ROBUST.PARSE, title_zh: 接口数据在边界按契约解析 }
+      - { id: ROBUST.NULLS, title_zh: 渲染不怕空值与缺字段 }
+      - { id: ROBUST.TIMEOUT, title_zh: 每个请求有超时 }
+      - { id: ROBUST.OFFLINE, title_zh: 离线和弱网有处理 }
+      - { id: ROBUST.DEGRADE, title_zh: 非核心模块失败不影响主流程 }
+      - { id: ROBUST.REPEAT_ORDER, title_zh: 承受重复与乱序 }
+      - { id: ROBUST.CLEANUP, title_zh: 资源在卸载时清理 }
+      - { id: ROBUST.LIMITS, title_zh: 输入上限前端先拦 }
+  - key: error_handling
+    title_zh: 报错管理
+    group: engineering
+    prefix: ERRH
+    summary_zh: 错误归一成统一结构；按状态码分别处理；路由级与区块级错误边界，局部失败不白屏；全局兜底捕获并脱敏上报；文案说清发生了什么、怎么办；不吞错误；错误码到界面状态的映射只有一份。
+    topics:
+      - { id: ERRH.NORMALIZE, title_zh: 错误归一成统一结构 }
+      - { id: ERRH.MAPPING, title_zh: 按状态码分别处理 }
+      - { id: ERRH.BOUNDARY, title_zh: 局部失败不白屏 }
+      - { id: ERRH.GLOBAL, title_zh: 全局兜底捕获并脱敏上报 }
+      - { id: ERRH.MESSAGE, title_zh: 文案说清发生了什么、怎么办 }
+      - { id: ERRH.NO_SWALLOW, title_zh: 不吞错误 }
+      - { id: ERRH.REPORT, title_zh: 上报可定位、不刷屏 }
+  - key: route_guard
+    title_zh: 保护页
+    group: engineering
+    prefix: GUARD
+    summary_zh: 每个路由声明访问要求；守卫集中在路由层；未登录去登录再回来；无权限与不存在有统一的页面；判定完成前不渲染受保护内容；会话过期保住现场；按钮级权限规则统一。
+    topics:
+      - { id: GUARD.DECLARE, title_zh: 每个路由声明访问要求 }
+      - { id: GUARD.CENTRAL, title_zh: 守卫集中在路由层 }
+      - { id: GUARD.LOGIN_REDIRECT, title_zh: 未登录去登录再回来 }
+      - { id: GUARD.FORBIDDEN, title_zh: 无权限与不存在有统一的页面 }
+      - { id: GUARD.NO_FLASH, title_zh: 判定完成前不渲染受保护内容 }
+      - { id: GUARD.EXPIRED, title_zh: 会话过期保住现场 }
+      - { id: GUARD.BUTTON, title_zh: 按钮级权限规则统一 }
+  - key: page_loading
+    title_zh: 页面加载
+    group: engineering
+    prefix: PLOAD
+    summary_zh: 路由分包并预取；首屏骨架保持布局；先框架后数据、核心优先；异步加载的边界给全加载、出错、超时；分包加载失败能自愈；不跳布局；字体与图片有加载策略。
+    topics:
+      - { id: PLOAD.SPLIT, title_zh: 路由分包并预取 }
+      - { id: PLOAD.SKELETON, title_zh: 首屏骨架保持布局 }
+      - { id: PLOAD.PROGRESSIVE, title_zh: 先框架后数据、核心优先 }
+      - { id: PLOAD.ASYNC_BOUNDARY, title_zh: 异步边界给全加载、出错、超时 }
+      - { id: PLOAD.CHUNK_ERROR, title_zh: 分包加载失败能自愈 }
+      - { id: PLOAD.NO_SHIFT, title_zh: 不跳布局 }
+      - { id: PLOAD.ASSETS, title_zh: 字体与图片有加载策略 }
+  - key: caching
+    title_zh: 缓存
+    group: engineering
+    prefix: CACHE
+    summary_zh: 分清每一层缓存的用途；每类数据定新鲜度；先显示旧数据、后台刷新；写后失效；按身份隔离；持久化只存可过期的非敏感数据；静态资源带指纹、入口页不缓存。
+    topics:
+      - { id: CACHE.LAYERS, title_zh: 分清每一层缓存 }
+      - { id: CACHE.FRESHNESS, title_zh: 每类数据定新鲜度 }
+      - { id: CACHE.SWR, title_zh: 先显示旧数据、后台刷新 }
+      - { id: CACHE.INVALIDATE, title_zh: 写后失效 }
+      - { id: CACHE.ISOLATION, title_zh: 按身份隔离 }
+      - { id: CACHE.PERSIST, title_zh: 持久化只存可过期的非敏感数据 }
+      - { id: CACHE.ASSETS, title_zh: 静态资源带指纹、入口页不缓存 }
+  - key: async
+    title_zh: 异步处理
+    group: engineering
+    prefix: ASYNC
+    summary_zh: 请求可取消；只认最新一次的结果；无依赖的并行、部分失败要处理；重试只对幂等与可重试错误、指数退避；输入防抖、滚动节流；轮询会暂停会停止；每个 Promise 都有去处。
+    topics:
+      - { id: ASYNC.CANCEL, title_zh: 请求可取消 }
+      - { id: ASYNC.LATEST, title_zh: 只认最新一次的结果 }
+      - { id: ASYNC.PARALLEL, title_zh: 无依赖的并行、部分失败要处理 }
+      - { id: ASYNC.RETRY, title_zh: 重试只对幂等与可重试错误 }
+      - { id: ASYNC.DEBOUNCE, title_zh: 输入防抖、滚动节流 }
+      - { id: ASYNC.POLLING, title_zh: 轮询会暂停会停止 }
+      - { id: ASYNC.NO_FLOATING, title_zh: 每个 Promise 都有去处 }
+  - key: concurrency
+    title_zh: 高并发
+    group: engineering
+    prefix: CONC
+    summary_zh: 相同的在途请求合并；批量操作有并发上限；多个小请求合成批量接口；收到限流就退避排队；写冲突用版本号；实时推送重连退避、去重保序；高频更新合帧渲染。
+    topics:
+      - { id: CONC.DEDUP, title_zh: 相同的在途请求合并 }
+      - { id: CONC.LIMIT, title_zh: 批量操作有并发上限 }
+      - { id: CONC.BATCH, title_zh: 多个小请求合成批量接口 }
+      - { id: CONC.RATE_LIMIT, title_zh: 收到限流就退避排队 }
+      - { id: CONC.VERSION, title_zh: 写冲突用版本号 }
+      - { id: CONC.REALTIME, title_zh: 实时推送重连退避、去重保序 }
+      - { id: CONC.RENDER, title_zh: 高频更新合帧渲染 }
+  - key: click_guard
+    title_zh: 防重复点击
+    group: engineering
+    prefix: CLICK
+    summary_zh: 提交中锁住并显示加载；创建类写请求带幂等键；回车与按钮共用一把锁；刷新、点赞这类按钮节流或合并；重复导航不重复入栈；锁定期间有反馈；按钮锁只是体验，后端仍要幂等。
+    topics:
+      - { id: CLICK.LOCK, title_zh: 提交中锁住并显示加载 }
+      - { id: CLICK.IDEMPOTENCY, title_zh: 创建类写请求带幂等键 }
+      - { id: CLICK.ONE_PATH, title_zh: 回车与按钮共用一把锁 }
+      - { id: CLICK.THROTTLE, title_zh: 刷新、点赞这类按钮节流或合并 }
+      - { id: CLICK.NAVIGATION, title_zh: 重复导航不重复入栈 }
+      - { id: CLICK.FEEDBACK, title_zh: 锁定期间有反馈 }
+  - key: prototype_intake
+    title_zh: 原型转换
+    group: engineering
+    prefix: PROTO
+    summary_zh: BA 交来的 spec 与 HTML 原型拆成四层：业务事实、信息结构、交互意图原样保留，表现全部丢掉；表现里藏着的事实翻译成语义；冲突进提问；按规范重绘后用同一个抽取器做事实对账。
+    topics:
+      - { id: PROTO.LAYERS, title_zh: 拆成四层，只丢表现 }
+      - { id: PROTO.EXTRACT, title_zh: 去表现化抽取 }
+      - { id: PROTO.TRANSLATE, title_zh: 表现里藏着的事实翻译成语义 }
+      - { id: PROTO.SPEC_FACTS, title_zh: spec 里读业务规则 }
+      - { id: PROTO.CONFLICTS, title_zh: 冲突进提问，不自己挑 }
+      - { id: PROTO.MAP, title_zh: 映射到规范，记下依据 }
+      - { id: PROTO.REBUILD, title_zh: 按规范重绘 }
+      - { id: PROTO.VERIFY, title_zh: 用同一个抽取器做事实对账 }

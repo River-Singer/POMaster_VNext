@@ -56,6 +56,7 @@
       "gates/gate.be.api.contract_checks.json",
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
+      "gates/gate.design.standard.json",
       "gates/gate.new-entity.checks.json",
       "gates/gate.scaffold.consistency.json",
       "gates/gate.web.api.request_checks.json",
@@ -329,6 +330,7 @@
       "gates/gate.be.api.contract_checks.json",
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
+      "gates/gate.design.standard.json",
       "gates/gate.new-entity.checks.json",
       "gates/gate.scaffold.consistency.json",
       "gates/gate.web.api.request_checks.json",
@@ -780,6 +782,12 @@
       "path": "gates/gate.chg.prechange_checks.json",
       "content_sha256": "sha256:3c683ff9f1f90cb8c32b4504217cf83df6b5804604431f19d8fd26c353ce45d2",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
+    },
+    {
+      "id": "GATE.DESIGN.STANDARD",
+      "path": "gates/gate.design.standard.json",
+      "content_sha256": "sha256:ea7c69809f97014de7405c66e950702a78465d5f09a12662574d5b542d087583",
+      "source_ref": "package://catalog/gates/gate.design.standard.json"
     },
     {
       "id": "GATE.NEW_ENTITY.CHECKS",

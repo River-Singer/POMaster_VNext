@@ -1,0 +1,92 @@
+{
+  "x-design-standard": {
+    "status": "registered",
+    "note": "设计规范 D2 门禁：项目落地的设计规范（.pomaster/baseline/frontend/design-standard.yaml）里 enforcement=gate 的条文，由同一个判卷器静态扫描前端源码。判卷核心住 packages/cli/src/design-check.ts assessDesignStandard（`pomaster design check`、closeout、check --gates 三消费面同一函数）；check --gates 以 kernel_native 直调形态派发（GATE.SCAFFOLD.CONSISTENCY 先例），结果作为 GRN 入账。项目没落地规范或找不到前端源码时门不适用（not_configured）。",
+    "locked_vocab_untouched": true
+  },
+  "id": "GATE.DESIGN.STANDARD",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "设计规范门禁",
+  "statement_zh": "设计规范门禁：项目设计规范里每条 enforcement=gate 的条文都有一条机器检查，阈值取条文参数（间距阶梯、字阶、字重、圆角档位、栅格列数、列间距、断点、禁用词、全局状态库……）；前端源码里的违规阻断，带理由的逐行豁免放行并计数；参数仍是决策位的检查记待定，不按默认值判。",
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "项目落地了设计规范（.pomaster/baseline/frontend/design-standard.yaml 在场）且能找到前端源码目录",
+    "applicability_note": "规范缺席 = 项目还没采用设计规范，门不适用（not_configured，非绿非红）；参数还是决策位的检查记待定，不计入适用面"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.DESIGN.STANDARD@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver' 且与 recipe id 同源（runner 分母自检强制）",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填（C1）：参数仍是决策位的检查计入 not_applicable，不计入 scanned 的适用面",
+      "trust_twin": "asserted/recomputed 孪生字段组：判卷以现盘源码重扫为准（每次从规范参数重算阈值、逐文件重扫），不采信任何自报的通过状态（C5）",
+      "blindspot_evidence": "门不适用时落 not_configured 并写明原因，禁止当 passed；规范没通过校验或判卷器故障落 blocked；规范绑定了但还没实现的检查在 scope_note 列为待接入",
+      "aggregate_honesty": "passed ⇔ 适用检查零违规；豁免计数与待定检查写入 scope_note，不吞没也不冒充违规"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "standard_valid",
+      "statement_zh": "项目设计规范通过 pomaster.design-standard/v1 校验（出处、token 引用、硬规范锚点、检查词表）",
+      "judgeability": "machine",
+      "machine_support": "design.ts loadDesignStandard（DESIGN_STANDARD_INVALID → blocked）"
+    },
+    {
+      "seq": 2,
+      "check_id": "gate_rules_scanned",
+      "statement_zh": "每条 enforcement=gate 的条文按其检查编号扫描前端源码，阈值取条文参数；违规逐处给出文件、行列与条文编号",
+      "judgeability": "machine",
+      "machine_support": "design-check.ts CHECKS 实现表（与 DESIGN_CHECKS.active 对账；DESIGN_CHECK_VIOLATIONS）"
+    },
+    {
+      "seq": 3,
+      "check_id": "suppressions_reasoned",
+      "statement_zh": "例外只经逐行豁免 `pomaster-design-ignore <检查编号>: 理由`，没写理由的豁免不生效并给警告",
+      "judgeability": "machine",
+      "machine_support": "design-check.ts suppressionsOf（DESIGN_SUPPRESSION_REASON_MISSING 警告）"
+    }
+  ],
+  "policy_refs": [
+    "POMaster_VNext/catalog/gates/gate.scaffold.consistency.json（kernel_native 派发同构先例）",
+    "POMaster_VNext/docs/design-standard.md（设计规范与门禁）"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "design-standard-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "packages/cli/seeds/design-standards/antd.yaml",
+      "captured_by": "agent:claude/design-standard-d2",
+      "locator": {
+        "section": "enforcement: { kind: gate, check: … } 条文"
+      }
+    }
+  ],
+  "review_notes": [
+    "判卷核心住 CLI design-check.ts（单一实现，三消费面）；检查全部机判，参数决策位未定时记待定"
+  ]
+}

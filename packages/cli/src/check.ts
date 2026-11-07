@@ -61,6 +61,7 @@ import { allocateEvidenceRef } from "./evidence.js";
 import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { newEntityKernelGateExecutor } from "./new-entity.js";
 import { scaffoldConsistencyKernelGateExecutor } from "./scaffold-check.js";
+import { designStandardKernelGateExecutor } from "./design-check.js";
 import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 import { TRUTH_INDEX_RELATIVE } from "./store-layout.js";
 import { runsDirPath } from "./store-layout.js";
@@ -677,6 +678,7 @@ export async function runCheckGates(
     deps?.kernelGates ?? {
       "GATE.NEW_ENTITY.CHECKS": newEntityKernelGateExecutor(),
       "GATE.SCAFFOLD.CONSISTENCY": scaffoldConsistencyKernelGateExecutor(),
+      "GATE.DESIGN.STANDARD": designStandardKernelGateExecutor(),
     };
   const grns = allocateGateRecipeGrns(runsDirPath(rootDir), recipes.length);
   const records: GateResultRecord[] = [];
