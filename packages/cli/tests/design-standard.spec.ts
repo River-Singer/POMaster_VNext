@@ -88,7 +88,7 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：55 个领域、318 条规则——基础 9 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
+  it("预设通过校验：59 个领域、346 条规则——基础 13 篇、组件 1 篇（按钮）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 14 篇；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -96,7 +96,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const standard = loaded.normalized!;
     expect(standard.meta).toEqual({ origin: "preset", customized: false, design_system: "antd", ui_library: "ant-design-vue@4.2.6" });
     const groups = standard.areas.map((area) => area.group);
-    expect(groups.filter((group) => group === "foundations")).toHaveLength(9);
+    expect(groups.filter((group) => group === "foundations")).toHaveLength(13);
     expect(standard.areas.filter((area) => area.group === "components.general").map((area) => area.key)).toEqual(["button"]);
     expect(groups.filter((group) => group === "patterns.global")).toHaveLength(8);
     expect(groups.filter((group) => group === "patterns.principles")).toHaveLength(10);
@@ -109,7 +109,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 55, rules: 318, gate_rules: 41, review_rules: 277, pending_params: 31 });
+    expect(loaded.summary).toEqual({ areas: 59, rules: 346, gate_rules: 43, review_rules: 303, pending_params: 31 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -485,9 +485,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(318);
+    expect(envelope.result.summary.rules).toBe(346);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_AREA_UNCOVERED", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(55);
+    expect(envelope.result.normalized.areas).toHaveLength(59);
     expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
@@ -505,7 +505,7 @@ describe("pomaster design validate / show", () => {
 
   it("项目规范有错：exit 1，逐条列出错误码与路标", async () => {
     seedProject((raw) => {
-      raw["areas"][6]["rules"][1]["params"]["gutter"]["source"] = "SRC.NOWHERE";
+      raw["areas"][8]["rules"][1]["params"]["gutter"]["source"] = "SRC.NOWHERE";
     });
     const json = await run(["--dir", dir, "design", "validate", "--json"]);
     expect(json.code).toBe(1);
@@ -515,7 +515,7 @@ describe("pomaster design validate / show", () => {
     const human = await run(["--dir", dir, "design", "validate"]);
     expect(human.code).toBe(1);
     expect(human.out).toContain("设计规范未通过");
-    expect(human.out).toContain("areas[6].rules[1].params.gutter.source");
+    expect(human.out).toContain("areas[8].rules[1].params.gutter.source");
   });
 
   it("--system：未知体系 → DESIGN_SYSTEM_UNKNOWN；某个体系还没有预设 → DESIGN_UNREADABLE 并说明原因", async () => {
@@ -536,7 +536,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 35, rules: 247, gate_rules: 33, review_rules: 214, pending_params: 32 });
+    expect(result.summary).toEqual({ areas: 39, rules: 275, gate_rules: 35, review_rules: 240, pending_params: 34 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
@@ -640,11 +640,11 @@ const SKELETON_GRID = {
 const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
 
 describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
-  it("骨架通过校验：151 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
+  it("骨架通过校验：155 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
     const read = readDesignSkeleton(SKELETON_PATH)!;
     expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);
     const skeleton = read.skeleton!;
-    expect(skeleton.areas).toHaveLength(151);
+    expect(skeleton.areas).toHaveLength(155);
     const button = skeleton.areas.find((area) => area.key === "button")!;
     expect(button.counterparts).toEqual({ antd: ["Button"], geist: ["Button", "ButtonLink"] });
     expect(button.topics.map((topic) => topic.id)).toContain("CMP.BUTTON.ICON_ONLY");

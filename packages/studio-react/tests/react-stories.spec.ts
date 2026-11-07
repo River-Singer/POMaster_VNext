@@ -95,8 +95,8 @@ describe("studio-react generators · antd 对齐族（S2）", () => {
       const b = walk(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
       // 总文件数 = 68 对齐族 + 1 Foundations/Design Tokens 对照 story（F-M2 R2 增量）
-      // + 152 规范页（总览 + 统一骨架的 151 个领域，含待补；D3 起目录取骨架）。
-      expect(a.size).toBe(221);
+      // + 156 规范页（总览 + 统一骨架的 155 个领域，含待补；D3 起目录取骨架）。
+      expect(a.size).toBe(225);
       let diffs = 0;
       for (const [key, value] of a) if (b.get(key) !== value) diffs += 1;
       expect(diffs).toBe(0);

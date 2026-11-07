@@ -133,6 +133,8 @@ export const DESIGN_CHECKS: readonly DesignCheckSpec[] = [
   { id: "perf.lazy-load", title_zh: "路由与重组件按需加载", description_zh: "路由组件用动态 import；应用入口不同步引入重型依赖", active: false },
   { id: "perf.no-full-library-import", title_zh: "组件库按需引入", description_zh: "不整包注册或引入组件库（如 app.use(Antd)、全量引入 Vant、整包引入图标库）", active: false },
   { id: "format.no-local-pattern", title_zh: "日期数字走格式化注册表", description_zh: "页面里不手拼日期格式串、不硬编码货币符号，统一经格式化注册表输出", active: false },
+  { id: "style.radius-token", title_zh: "圆角取规范档位", description_zh: "border-radius 只用圆角 token 或规范的圆角类，不写档位外的值", active: false },
+  { id: "style.shadow-token", title_zh: "阴影取规范层级", description_zh: "box-shadow 只用层级阴影 token 或规范的阴影类，不手写阴影", active: false },
   { id: "motion.transform-only", title_zh: "过渡只动 transform 与透明度", description_zh: "transition / animation 不作用于 width、height、top、left、margin 等触发重排的属性", active: false },
   { id: "motion.reduced-motion", title_zh: "关键帧动画有减少动效分支", description_zh: "定义了 @keyframes 的样式文件同时写 prefers-reduced-motion 分支", active: false },
   { id: "security.no-unsafe-html", title_zh: "不进危险渲染", description_zh: "不用 v-html / innerHTML / dangerouslySetInnerHTML，富文本只经登记的净化组件输出", active: false },

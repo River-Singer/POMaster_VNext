@@ -39,19 +39,23 @@ function tempRoot(prefix: string): string {
 }
 
 describe("Geist 规范 · 装载模型", () => {
-  it("目录取统一骨架：151 个领域，本体系写了基础 9 篇、按钮、体验管理 8 篇、数据呈现 3 篇与工程规范 14 篇，共 247 条规则；其余标为待补", () => {
+  it("目录取统一骨架：155 个领域，本体系写了基础 13 篇、按钮、体验管理 8 篇、数据呈现 3 篇与工程规范 14 篇，共 275 条规则；其余标为待补", () => {
     expect(model.meta).toMatchObject({ design_system: "geist", design_system_title_zh: "Vercel Geist", origin: "preset" });
-    expect(model.areas.length).toBe(151);
+    expect(model.areas.length).toBe(155);
     expect(covered.map((area: { key: string }) => area.key)).toEqual([
       "color",
       "typography",
       "headings",
       "icons",
       "materials",
+      "radius",
+      "elevation",
       "layout",
       "grid",
       "spacing",
       "motion",
+      "press_feedback",
+      "focus_ring",
       "button",
       "ui_stills",
       "component_motion",
@@ -79,8 +83,8 @@ describe("Geist 规范 · 装载模型", () => {
       "click_guard",
       "prototype_intake",
     ]);
-    expect(covered.filter((area: { group: string }) => area.group === "foundations").length).toBe(9);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(247);
+    expect(covered.filter((area: { group: string }) => area.group === "foundations").length).toBe(13);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(275);
     for (const area of covered) expect(area.topics.every((topic: { covered: boolean }) => topic.covered)).toBe(true);
     const grid = areaOf("grid");
     expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview", playground_id: null, matrix_id: null });
@@ -210,7 +214,7 @@ describe("Geist 规范 · Storybook 页面", () => {
     const second = tempRoot("pages-b");
     try {
       const result = generateStandardPagesReact(first, model);
-      expect(result).toMatchObject({ count: 152, areas: 151, covered: 35, rules: 247 });
+      expect(result).toMatchObject({ count: 156, areas: 155, covered: 39, rules: 275 });
       generateStandardPagesReact(second, model);
       const files = readdirSync(first).sort();
       expect(files).toEqual(readdirSync(second).sort());

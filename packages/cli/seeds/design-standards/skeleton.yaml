@@ -75,6 +75,32 @@ areas:
       - { id: MATERIAL.SURFACES, title_zh: 页面内的表面 }
       - { id: MATERIAL.FLOATING, title_zh: 浮层 }
       - { id: MATERIAL.SHADOWS, title_zh: 阴影 }
+  - key: radius
+    title_zh: 圆角管理
+    group: foundations
+    prefix: RADIUS
+    summary_zh: 圆角只取规范的档位；每类组件用哪一档有对照表；同一组件的尺寸越大圆角越大但有上限；嵌套时内层 = 外层 − 内边距；贴边与相接的那侧没有圆角；整圆只给短小的元素；媒体随容器裁切。
+    topics:
+      - { id: RADIUS.TOKENS, title_zh: 只用规范的圆角档 }
+      - { id: RADIUS.BY_COMPONENT, title_zh: 组件与圆角对照 }
+      - { id: RADIUS.SIZE_SCALE, title_zh: 尺寸越大圆角越大，但有上限 }
+      - { id: RADIUS.NESTED, title_zh: 嵌套时内层 = 外层 − 内边距 }
+      - { id: RADIUS.FLUSH, title_zh: 贴边与相接的那侧没有圆角 }
+      - { id: RADIUS.PILL, title_zh: 整圆只给短小的元素 }
+      - { id: RADIUS.MEDIA, title_zh: 媒体随容器裁切 }
+  - key: elevation
+    title_zh: 投影
+    group: foundations
+    prefix: ELEV
+    summary_zh: 投影只表达离页面多远：四个层级各一个阴影 token；页面内的区块用边框不用阴影；不手写阴影、不做发光；悬停最多升一级；阴影层级与叠放层级同序；深色主题改用更亮的表面；吸顶与固定列的阴影只在滚动后出现。
+    topics:
+      - { id: ELEV.LEVELS, title_zh: 四个层级各一个阴影 }
+      - { id: ELEV.FLAT_FIRST, title_zh: 页面内的区块用边框不用阴影 }
+      - { id: ELEV.ONE_TOKEN, title_zh: 不手写阴影、不做发光 }
+      - { id: ELEV.HOVER, title_zh: 悬停最多升一级 }
+      - { id: ELEV.Z_PAIR, title_zh: 阴影层级与叠放层级同序 }
+      - { id: ELEV.DARK, title_zh: 深色主题改用更亮的表面 }
+      - { id: ELEV.STICKY, title_zh: 吸顶与固定列的阴影只在滚动后出现 }
   - key: layout
     title_zh: 布局
     group: foundations
@@ -116,6 +142,32 @@ areas:
       - { id: MOTION.PURPOSE, title_zh: 动效要有理由 }
       - { id: MOTION.DURATION, title_zh: 时长与缓动 }
       - { id: MOTION.REDUCED, title_zh: 减少动效 }
+  - key: press_feedback
+    title_zh: 点击反馈
+    group: foundations
+    prefix: PRESS
+    summary_zh: 每个可点的元素都有默认、悬停、按下、聚焦与禁用；按下的瞬间就有反馈，颜色加深一档、不移动不变尺寸；波纹只用组件库自带的；时长取快档；触屏去掉点击延迟、目标够大；键盘触发同样的反馈；禁用与加载中不响应；减少动效时只保留颜色变化。
+    topics:
+      - { id: PRESS.STATES, title_zh: 可点的元素都有五态 }
+      - { id: PRESS.VISUAL, title_zh: 按下时颜色加深一档 }
+      - { id: PRESS.WAVE, title_zh: 波纹只用组件库自带的 }
+      - { id: PRESS.TIMING, title_zh: 按下即时、回弹取快档 }
+      - { id: PRESS.TOUCH, title_zh: 触屏：无延迟、目标够大 }
+      - { id: PRESS.KEYBOARD, title_zh: 键盘触发同样的反馈 }
+      - { id: PRESS.DISABLED, title_zh: 禁用与加载中不响应 }
+      - { id: PRESS.REDUCED, title_zh: 减少动效时只保留颜色变化 }
+  - key: focus_ring
+    title_zh: 焦点环
+    group: foundations
+    prefix: FOCUS
+    summary_zh: 焦点只在键盘聚焦时显示且永远不去掉；全站一种焦点样式；与相邻颜色有足够对比；不被裁切、不被吸顶栏遮住；焦点顺序与视觉顺序一致，弹层进出时焦点有去处；焦点环跟随元素圆角。
+    topics:
+      - { id: FOCUS.VISIBLE, title_zh: 键盘聚焦时显示，永远不去掉 }
+      - { id: FOCUS.STYLE, title_zh: 全站一种焦点样式 }
+      - { id: FOCUS.CONTRAST, title_zh: 与相邻颜色对比足够 }
+      - { id: FOCUS.NOT_OBSCURED, title_zh: 不被裁切、不被遮住 }
+      - { id: FOCUS.ORDER, title_zh: 焦点顺序与去处 }
+      - { id: FOCUS.RADIUS, title_zh: 焦点环跟随元素圆角 }
   # ═════════════════════════════ 组件 · 通用 ═════════════════════════════
   - key: button
     title_zh: 按钮

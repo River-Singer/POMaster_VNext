@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:eede4685219d9daa2fed42d9685f95237cdbaed6b764beb2391fa55433685db1`；状态 origin=preset。
+> 规范指纹 `sha256:3d66e865fb3f39a37d47a7678a9ae1e90f96e9ff0d1318e7eb855df05f070484`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -412,6 +412,135 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - 示例（别这样做）：不透明的灰色阴影
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-materials--material-shadows
 
+## 基础 / 圆角管理（RADIUS）
+
+圆角只取规范的档位；每类组件用哪一档有对照表；同一组件的尺寸越大圆角越大但有上限；嵌套时内层 = 外层 − 内边距；贴边与相接的那侧没有圆角；整圆只给短小的元素；媒体随容器裁切。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--overview
+
+### RADIUS.TOKENS 只用规范的圆角档
+
+圆角值只取 MATERIAL.RADIUS 的三档（6 / 12 / 16，对应 rounded-md / rounded-xl / rounded-2xl），外加整圆 rounded-full；不写 rounded-[10px] 这类任意值，不在组件外层再套一层不同的圆角。
+
+- 执行：机器门禁 `style.radius-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
+- 示例（这样做）：用档位类
+- 示例（别这样做）：任意值
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-tokens
+
+### RADIUS.BY_COMPONENT 组件与圆角对照
+
+每类组件用哪一档圆角按对照表执行，新组件先归到表里的一类再取值；同一页面上同类组件的圆角一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 对照表「组件用哪一档圆角」（组件 → 用途）：
+  - `按钮、输入框、选择器、提示气泡（rounded-md）`：6px
+  - `卡片、菜单、对话框（rounded-xl）`：12px
+  - `全屏层（rounded-2xl）`：16px
+  - `头像、徽标、开关、进度条（rounded-full）`：整圆
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-by-component
+
+### RADIUS.SIZE_SCALE 尺寸越大圆角越大，但有上限
+
+控件统一用 6px，不随尺寸变化；容器按层级取 12px 或 16px，不超过 16px；不按像素尺寸按比例算圆角。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-size-scale
+
+### RADIUS.NESTED 嵌套时内层 = 外层 − 内边距
+
+圆角容器里再放圆角元素时，内层圆角 = 外层圆角 − 两者之间的内边距（不小于 0），这样角落同心；内层直接贴边（没有内边距）时由外层裁切（overflow: hidden），内层不再单写圆角。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：内层减去内边距
+- 示例（别这样做）：内外同样的圆角
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-nested
+
+### RADIUS.FLUSH 贴边与相接的那侧没有圆角
+
+元素贴着容器边缘时，贴边那一侧不要圆角（卡片顶部的封面图只保留上面两个角，表格贴满卡片时由卡片裁切）；按钮组、输入框与前后缀相接处圆角为 0，只保留整组外侧的圆角（first:rounded-l-md last:rounded-r-md，中间 rounded-none）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-flush
+
+### RADIUS.PILL 整圆只给短小的元素
+
+整圆（胶囊、圆形）只用于徽标、计数、标签型状态、开关、进度条和头像；按钮、输入框不做胶囊，除非整个产品在主题里统一改；圆形图标按钮宽高相等。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-pill
+
+### RADIUS.MEDIA 媒体随容器裁切
+
+图片、视频、地图、图表在圆角容器里由容器裁切，不各自再加圆角；单独出现的缩略图用控件那一档；头像用整圆；用户上传的图片不加阴影、描边之外的装饰。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-radius--radius-media
+
+## 基础 / 投影（ELEV）
+
+投影只表达离页面多远：四个层级各一个阴影 token；页面内的区块用边框不用阴影；不手写阴影、不做发光；悬停最多升一级；阴影层级与叠放层级同序；深色主题改用更亮的表面；吸顶与固定列的阴影只在滚动后出现。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--overview
+
+### ELEV.LEVELS 四个层级各一个阴影
+
+层级固定为四层：0 层贴在页面上；1 层是悬停抬起与吸顶后的元素；2 层是下拉、气泡、悬浮按钮；3 层是对话框、抽屉、通知。每层只有一个阴影 token，组件按所在层级取用（方向规则见 MATERIAL.SHADOWS）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：层级阴影 `p.values`：待项目决定——四个层级的阴影各取什么值？（Geist 未公开，与 MATERIAL.SHADOWS 同一决策）
+- 对照表「四个层级」（层级 → 用途）：
+  - `第 0 层：贴在页面上（区块、表格、未悬停的卡片）`：无阴影，用边框或底色区分
+  - `第 1 层：可点卡片悬停、吸顶表头滚动后`：shadow-sm（近似，值待定）
+  - `第 2 层：菜单、提示气泡、悬浮按钮`：shadow-md（近似，值待定）
+  - `第 3 层：对话框、抽屉、通知`：shadow-lg（近似，值待定）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-levels
+
+### ELEV.FLAT_FIRST 页面内的区块用边框不用阴影
+
+页面里的区块、表格、表单分组用边框或底色区分，不用阴影；阴影只给浮在页面上、或者正在被拖动的东西；同一个元素不同时用粗边框和大阴影。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-flat-first
+
+### ELEV.ONE_TOKEN 不手写阴影、不做发光
+
+阴影只取规范定下的层级类，不写 shadow-[…] 任意值；不做彩色、发光、内阴影装饰；阴影保持半透明，和底色融在一起。
+
+- 执行：机器门禁 `style.shadow-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
+- 示例（别这样做）：彩色发光阴影
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-one-token
+
+### ELEV.HOVER 悬停最多升一级
+
+可点的卡片悬停时从 0 层升到 1 层（见 HOVER.SUBTLE），不跳到 2、3 层；浮层本身悬停不再变化；拖动中的元素升到 2 层，放下后回到原层。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-hover
+
+### ELEV.Z_PAIR 阴影层级与叠放层级同序
+
+阴影层级和叠放层级（z-index，见 LAYOUT.Z_INDEX）同序：叠放在下面的元素不能有更重的阴影；同一层的两个浮层互相覆盖时，后出现的在上面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-z-pair
+
+### ELEV.DARK 深色主题改用更亮的表面
+
+深色背景上阴影几乎看不见，深色主题里层级改用更亮一档的表面色加细边框表达；阴影 token 随主题切换，组件不判断当前主题。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「表格、图表、弹层、焦点和状态随主题同步。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-dark
+
+### ELEV.STICKY 吸顶与固定列的阴影只在滚动后出现
+
+吸顶的表头、工具栏和固定列，只有在内容滚到它下面时才显示分隔阴影或边框，静止时不显示（用滚动位置或 IntersectionObserver 切换一个类）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-sticky
+
 ## 基础 / 布局（LAYOUT）
 
 管理侧是顶栏加页内标签页；用户侧是移动端单列；先换行再缩小；外层管尺寸和滚动；层级只取预设档位。
@@ -593,6 +722,133 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级」
 - 示例（这样做）：只在允许动效时转动
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-motion--motion-reduced
+
+## 基础 / 点击反馈（PRESS）
+
+每个可点的元素都有默认、悬停、按下、聚焦与禁用；按下的瞬间就有反馈，颜色加深一档、不移动不变尺寸；波纹只用组件库自带的；时长取快档；触屏去掉点击延迟、目标够大；键盘触发同样的反馈；禁用与加载中不响应；减少动效时只保留颜色变化。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--overview
+
+### PRESS.STATES 可点的元素都有五态
+
+每个可点的元素都设计默认、悬停、按下、聚焦、禁用五态；按下态在按下的瞬间出现，不等请求返回；松开后回到悬停态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：按下态——按住按钮看按下态；松开回到悬停态。
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「hover、active、focus、disabled、loading、empty、error 状态完整。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-states
+
+### PRESS.VISUAL 按下时颜色加深一档
+
+按下时背景比悬停再深一档（如 hover:bg-ds-gray-100 → active:bg-ds-gray-200）；不移动位置、不改尺寸、不改边框宽度；按钮是否加轻微缩小由项目统一决定。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：按下缩放 `p.scale`：待项目决定——按钮按下时是否缩小？（候选 不缩小 / scale(0.98)）
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-visual
+
+### PRESS.WAVE 波纹只用组件库自带的
+
+Geist 不用点击波纹；按钮、列表行、卡片的按下都用背景色变化表示，不引入 ripple 一类效果。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-wave
+
+### PRESS.TIMING 按下即时、回弹取快档
+
+按下态即时出现（不加过渡延迟），松开回弹用快档时长；点击动画不长于 200ms，也不阻塞下一次点击。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：回弹时长 `p.release` = 150ms（Tailwind CSS · 过渡（默认时长与缓动））
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-timing
+
+### PRESS.TOUCH 触屏：无延迟、目标够大
+
+可点元素设 touch-action: manipulation 去掉双击缩放带来的点击延迟；去掉系统的灰色点按高亮时必须提供自己的按下态；点击目标至少 24×24 CSS px（建议 44×44），相邻目标之间留出间距。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最小点击目标 `p.target_min` = 24px（pomaster 主题硬规范 · UI 呈现与设计）
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「触控目标尺寸至少 24×24 CSS px，且目标之间提供足够间距（WCAG 2.5.8）；建议达到 44×44（AAA）。」
+- 示例（这样做）：触屏点按
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-touch
+
+### PRESS.KEYBOARD 键盘触发同样的反馈
+
+可点元素用真正的 button / a 元素，空格与回车能触发并显示按下态；用 div 模拟按钮时要补上 role、tabindex 和键盘处理，否则不算可点。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-keyboard
+
+### PRESS.DISABLED 禁用与加载中不响应
+
+禁用和加载中的元素没有悬停、按下效果，点击不触发任何反馈动画；禁用的光标为 not-allowed；加载中的按钮保持宽度不变（见 CMP.BUTTON.LOADING）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-disabled
+
+### PRESS.REDUCED 减少动效时只保留颜色变化
+
+减少动效模式下去掉缩放与波纹，保留按下时的颜色变化；状态仍然看得出来。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-press-feedback--press-reduced
+
+## 基础 / 焦点环（FOCUS）
+
+焦点只在键盘聚焦时显示且永远不去掉；全站一种焦点样式；与相邻颜色有足够对比；不被裁切、不被吸顶栏遮住；焦点顺序与视觉顺序一致，弹层进出时焦点有去处；焦点环跟随元素圆角。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--overview
+
+### FOCUS.VISIBLE 键盘聚焦时显示，永远不去掉
+
+焦点样式写在 :focus-visible 上（鼠标点击不出现，键盘聚焦一定出现）；不写 outline: none 而不给同等可见的替代。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 演示：用 Tab 键依次聚焦——点击不出焦点环，按 Tab 才出；自定义元素与组件同一种样式。
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 移除焦点轮廓而无同等级可见替代。」
+- 示例（别这样做）：去掉焦点不给替代
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-visible
+
+### FOCUS.STYLE 全站一种焦点样式
+
+全站一种焦点样式：2px 蓝色轮廓（ds-blue-700）、外偏移 2px（与 Button 组件一致），写成共享的类，自己写的可点元素都用它。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：轮廓宽度 `p.width` = 2px（pomaster 预设约定（Geist 体系））
+- 参数：轮廓偏移 `p.offset` = 2px（pomaster 预设约定（Geist 体系））
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「SHOULD 提供统一、设计系统级别的 focus indicator token（颜色、宽度、offset、:focus-visible）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-style
+
+### FOCUS.CONTRAST 与相邻颜色对比足够
+
+焦点指示与相邻背景的对比度至少 3:1；在深色、彩色背景上换用能看清的颜色，不靠颜色变化本身表示焦点。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「颜色不得作为唯一信息来源；文本对比度至少 4.5:1，大文本至少 3:1，UI 组件/图标边界至少 3:1（WCAG 1.4.1 / 1.4.3 / 1.4.11）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-contrast
+
+### FOCUS.NOT_OBSCURED 不被裁切、不被遮住
+
+overflow: hidden 的容器里改用内收的轮廓（负偏移或 inset 阴影），避免焦点环被裁掉；吸顶栏、固定底栏不能盖住获得焦点的元素（给滚动容器设 scroll-padding）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「焦点必须可见，且不得被吸顶栏、浮层、sticky 元素完全遮挡（WCAG 2.4.7 / 2.4.11）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-not-obscured
+
+### FOCUS.ORDER 焦点顺序与去处
+
+Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对话框打开时焦点进入，关闭后回到触发它的元素；只有模态层把焦点困在里面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「弹层、抽屉、对话框打开后必须接管焦点，关闭后返回触发元素；背景不得保持可 Tab（WCAG 2.4.3 / 2.1.2）。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-order
+
+### FOCUS.RADIUS 焦点环跟随元素圆角
+
+焦点轮廓的圆角与元素一致（outline 会跟随 border-radius；用 box-shadow 画焦点时同样带圆角）；圆形按钮的焦点环也是圆的。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-focus-ring--focus-radius
 
 ## 组件/通用 / 按钮（CMP.BUTTON）
 

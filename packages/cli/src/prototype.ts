@@ -127,10 +127,11 @@ interface DomElement {
 
 /** 用 Playwright 渲染后取 DOM（没装就返回 null 与原因）。 */
 async function renderHtml(file: string, allowNetwork: boolean): Promise<{ html: string | null; reason: string | null; errors: string[] }> {
-  let playwright: { chromium: { launch: () => Promise<unknown> } } | null = null;
+  type PlaywrightModule = { chromium: { launch: () => Promise<unknown> } };
+  let playwright: PlaywrightModule | null = null;
   for (const name of ["playwright", "playwright-core"]) {
     try {
-      playwright = (await import(name)) as typeof playwright;
+      playwright = (await import(name)) as PlaywrightModule;
       break;
     } catch {
       // 继续试下一个

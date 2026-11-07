@@ -908,6 +908,166 @@ areas:
               <div style={{ boxShadow: "0 4px 12px #bbbbbb" }}>…</div>
             lang: tsx
 
+  # ───────────────────────────── 基础 · 圆角管理 ─────────────────────────────
+  - key: radius
+    title_zh: 圆角管理
+    group: foundations
+    prefix: RADIUS
+    summary_zh: 圆角只取规范的档位；每类组件用哪一档有对照表；同一组件的尺寸越大圆角越大但有上限；嵌套时内层 = 外层 − 内边距；贴边与相接的那侧没有圆角；整圆只给短小的元素；媒体随容器裁切。
+    rules:
+      - id: RADIUS.TOKENS
+        title_zh: 只用规范的圆角档
+        statement_zh: 圆角值只取 MATERIAL.RADIUS 的三档（6 / 12 / 16，对应 rounded-md / rounded-xl / rounded-2xl），外加整圆 rounded-full；不写 rounded-[10px] 这类任意值，不在组件外层再套一层不同的圆角。
+        anchors:
+          - { spec: ui, quote: MUST NOT 写孤立色值、魔法间距和临时阴影。 }
+        enforcement: { kind: gate, check: style.radius-token }
+        examples:
+          - kind: do
+            title_zh: 用档位类
+            code: |-
+              <div className="rounded-xl border border-ds-gray-400">…</div>
+            lang: tsx
+          - kind: dont
+            title_zh: 任意值
+            code: |-
+              <div className="rounded-[10px]">…</div>
+            lang: tsx
+
+      - id: RADIUS.BY_COMPONENT
+        title_zh: 组件与圆角对照
+        statement_zh: 每类组件用哪一档圆角按对照表执行，新组件先归到表里的一类再取值；同一页面上同类组件的圆角一致。
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 组件用哪一档圆角
+            name_label_zh: 组件
+            rows:
+              - name: 按钮、输入框、选择器、提示气泡（rounded-md）
+                usage_zh: 6px
+                jsx: |-
+                  <div className="flex items-center gap-2"><Button size="small">按钮</Button><Input placeholder="输入框" className="w-36" /></div>
+              - name: 卡片、菜单、对话框（rounded-xl）
+                usage_zh: 12px
+                jsx: |-
+                  <div className="w-56 rounded-xl border border-ds-gray-400 bg-ds-background-100 p-4 text-label-14">卡片</div>
+              - name: 全屏层（rounded-2xl）
+                usage_zh: 16px
+                jsx: |-
+                  <div className="h-16 w-56 rounded-2xl border border-ds-gray-400 bg-ds-background-200" />
+              - name: 头像、徽标、开关、进度条（rounded-full）
+                usage_zh: 整圆
+                jsx: |-
+                  <div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-ds-gray-200 text-label-13">王</span><Badge>Ready</Badge><Switch defaultChecked aria-label="开关" /></div>
+
+      - id: RADIUS.SIZE_SCALE
+        title_zh: 尺寸越大圆角越大，但有上限
+        statement_zh: 控件统一用 6px，不随尺寸变化；容器按层级取 12px 或 16px，不超过 16px；不按像素尺寸按比例算圆角。
+        enforcement: { kind: review }
+
+      - id: RADIUS.NESTED
+        title_zh: 嵌套时内层 = 外层 − 内边距
+        statement_zh: "圆角容器里再放圆角元素时，内层圆角 = 外层圆角 − 两者之间的内边距（不小于 0），这样角落同心；内层直接贴边（没有内边距）时由外层裁切（overflow: hidden），内层不再单写圆角。"
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 内层减去内边距
+            jsx: |-
+              <div className="w-56 rounded-xl border border-ds-gray-400 p-1.5"><div className="rounded-md bg-ds-gray-100 p-3 text-label-13">外 12 − 内边距 6 = 内 6</div></div>
+          - kind: dont
+            title_zh: 内外同样的圆角
+            jsx: |-
+              <div className="w-56 rounded-xl border border-ds-gray-400 p-1.5"><div className="rounded-xl bg-ds-gray-100 p-3 text-label-13">内外都是 12，角落不同心</div></div>
+
+      - id: RADIUS.FLUSH
+        title_zh: 贴边与相接的那侧没有圆角
+        statement_zh: 元素贴着容器边缘时，贴边那一侧不要圆角（卡片顶部的封面图只保留上面两个角，表格贴满卡片时由卡片裁切）；按钮组、输入框与前后缀相接处圆角为 0，只保留整组外侧的圆角（first:rounded-l-md last:rounded-r-md，中间 rounded-none）。
+        enforcement: { kind: review }
+
+      - id: RADIUS.PILL
+        title_zh: 整圆只给短小的元素
+        statement_zh: 整圆（胶囊、圆形）只用于徽标、计数、标签型状态、开关、进度条和头像；按钮、输入框不做胶囊，除非整个产品在主题里统一改；圆形图标按钮宽高相等。
+        enforcement: { kind: review }
+
+      - id: RADIUS.MEDIA
+        title_zh: 媒体随容器裁切
+        statement_zh: 图片、视频、地图、图表在圆角容器里由容器裁切，不各自再加圆角；单独出现的缩略图用控件那一档；头像用整圆；用户上传的图片不加阴影、描边之外的装饰。
+        enforcement: { kind: review }
+
+  # ───────────────────────────── 基础 · 投影 ─────────────────────────────
+  - key: elevation
+    title_zh: 投影
+    group: foundations
+    prefix: ELEV
+    summary_zh: 投影只表达离页面多远：四个层级各一个阴影 token；页面内的区块用边框不用阴影；不手写阴影、不做发光；悬停最多升一级；阴影层级与叠放层级同序；深色主题改用更亮的表面；吸顶与固定列的阴影只在滚动后出现。
+    rules:
+      - id: ELEV.LEVELS
+        title_zh: 四个层级各一个阴影
+        statement_zh: 层级固定为四层：0 层贴在页面上；1 层是悬停抬起与吸顶后的元素；2 层是下拉、气泡、悬浮按钮；3 层是对话框、抽屉、通知。每层只有一个阴影 token，组件按所在层级取用（方向规则见 MATERIAL.SHADOWS）。
+        params:
+          values: { decision: 四个层级的阴影各取什么值？（Geist 未公开，与 MATERIAL.SHADOWS 同一决策）, label_zh: 层级阴影 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: specimen
+            title_zh: 四个层级
+            name_label_zh: 层级
+            rows:
+              - name: 第 0 层：贴在页面上（区块、表格、未悬停的卡片）
+                usage_zh: 无阴影，用边框或底色区分
+                jsx: |-
+                  <div className="h-12 w-56 rounded-xl border border-ds-gray-400 bg-ds-background-100" />
+              - name: 第 1 层：可点卡片悬停、吸顶表头滚动后
+                usage_zh: shadow-sm（近似，值待定）
+                jsx: |-
+                  <div className="h-12 w-56 rounded-xl border border-ds-gray-400 bg-ds-background-100 shadow-sm" />
+              - name: 第 2 层：菜单、提示气泡、悬浮按钮
+                usage_zh: shadow-md（近似，值待定）
+                jsx: |-
+                  <div className="h-12 w-56 rounded-xl border border-ds-gray-400 bg-ds-background-100 shadow-md" />
+              - name: 第 3 层：对话框、抽屉、通知
+                usage_zh: shadow-lg（近似，值待定）
+                jsx: |-
+                  <div className="h-12 w-56 rounded-xl border border-ds-gray-400 bg-ds-background-100 shadow-lg" />
+
+      - id: ELEV.FLAT_FIRST
+        title_zh: 页面内的区块用边框不用阴影
+        statement_zh: 页面里的区块、表格、表单分组用边框或底色区分，不用阴影；阴影只给浮在页面上、或者正在被拖动的东西；同一个元素不同时用粗边框和大阴影。
+        enforcement: { kind: review }
+
+      - id: ELEV.ONE_TOKEN
+        title_zh: 不手写阴影、不做发光
+        statement_zh: 阴影只取规范定下的层级类，不写 shadow-[…] 任意值；不做彩色、发光、内阴影装饰；阴影保持半透明，和底色融在一起。
+        anchors:
+          - { spec: ui, quote: MUST NOT 写孤立色值、魔法间距和临时阴影。 }
+        enforcement: { kind: gate, check: style.shadow-token }
+        examples:
+          - kind: dont
+            title_zh: 彩色发光阴影
+            code: |-
+              .promo { box-shadow: 0 0 24px rgba(99, 102, 241, 0.6); }
+            lang: css
+
+      - id: ELEV.HOVER
+        title_zh: 悬停最多升一级
+        statement_zh: 可点的卡片悬停时从 0 层升到 1 层（见 HOVER.SUBTLE），不跳到 2、3 层；浮层本身悬停不再变化；拖动中的元素升到 2 层，放下后回到原层。
+        enforcement: { kind: review }
+
+      - id: ELEV.Z_PAIR
+        title_zh: 阴影层级与叠放层级同序
+        statement_zh: 阴影层级和叠放层级（z-index，见 LAYOUT.Z_INDEX）同序：叠放在下面的元素不能有更重的阴影；同一层的两个浮层互相覆盖时，后出现的在上面。
+        enforcement: { kind: review }
+
+      - id: ELEV.DARK
+        title_zh: 深色主题改用更亮的表面
+        statement_zh: 深色背景上阴影几乎看不见，深色主题里层级改用更亮一档的表面色加细边框表达；阴影 token 随主题切换，组件不判断当前主题。
+        anchors:
+          - { spec: ui, quote: 表格、图表、弹层、焦点和状态随主题同步。 }
+        enforcement: { kind: review }
+
+      - id: ELEV.STICKY
+        title_zh: 吸顶与固定列的阴影只在滚动后出现
+        statement_zh: 吸顶的表头、工具栏和固定列，只有在内容滚到它下面时才显示分隔阴影或边框，静止时不显示（用滚动位置或 IntersectionObserver 切换一个类）。
+        enforcement: { kind: review }
+
   # ───────────────────────────── 基础 · 布局 ─────────────────────────────
   - key: layout
     title_zh: 布局
@@ -1142,6 +1302,150 @@ areas:
             code: |-
               <Loader2Icon className="motion-safe:animate-spin" />
             lang: tsx
+
+  # ───────────────────────────── 基础 · 点击反馈 ─────────────────────────────
+  - key: press_feedback
+    title_zh: 点击反馈
+    group: foundations
+    prefix: PRESS
+    summary_zh: 每个可点的元素都有默认、悬停、按下、聚焦与禁用；按下的瞬间就有反馈，颜色加深一档、不移动不变尺寸；波纹只用组件库自带的；时长取快档；触屏去掉点击延迟、目标够大；键盘触发同样的反馈；禁用与加载中不响应；减少动效时只保留颜色变化。
+    rules:
+      - id: PRESS.STATES
+        title_zh: 可点的元素都有五态
+        statement_zh: 每个可点的元素都设计默认、悬停、按下、聚焦、禁用五态；按下态在按下的瞬间出现，不等请求返回；松开后回到悬停态。
+        anchors:
+          - { spec: ui, quote: hover、active、focus、disabled、loading、empty、error 状态完整。 }
+        enforcement: { kind: review }
+        showcase:
+          - kind: demo
+            title_zh: 按下态
+            description_zh: 按住按钮看按下态；松开回到悬停态。
+            jsx: |-
+              <div className="flex items-center gap-3">
+                <Button>按住看按下态</Button>
+                <Button variant="secondary">次要按钮</Button>
+                <button type="button" className="rounded-md px-3 py-2 text-label-14 transition-colors duration-150 hover:bg-ds-gray-100 active:bg-ds-gray-200">列表行式的按钮</button>
+              </div>
+
+      - id: PRESS.VISUAL
+        title_zh: 按下时颜色加深一档
+        statement_zh: 按下时背景比悬停再深一档（如 hover:bg-ds-gray-100 → active:bg-ds-gray-200）；不移动位置、不改尺寸、不改边框宽度；按钮是否加轻微缩小由项目统一决定。
+        params:
+          scale: { decision: 按钮按下时是否缩小？, candidates: [不缩小, scale(0.98)], label_zh: 按下缩放 }
+        enforcement: { kind: review }
+
+      - id: PRESS.WAVE
+        title_zh: 波纹只用组件库自带的
+        statement_zh: Geist 不用点击波纹；按钮、列表行、卡片的按下都用背景色变化表示，不引入 ripple 一类效果。
+        enforcement: { kind: review }
+
+      - id: PRESS.TIMING
+        title_zh: 按下即时、回弹取快档
+        statement_zh: 按下态即时出现（不加过渡延迟），松开回弹用快档时长；点击动画不长于 200ms，也不阻塞下一次点击。
+        params:
+          release: { value: 150ms, source: SRC.TAILWIND.TRANSITIONS, label_zh: 回弹时长 }
+        enforcement: { kind: review }
+
+      - id: PRESS.TOUCH
+        title_zh: 触屏：无延迟、目标够大
+        statement_zh: "可点元素设 touch-action: manipulation 去掉双击缩放带来的点击延迟；去掉系统的灰色点按高亮时必须提供自己的按下态；点击目标至少 24×24 CSS px（建议 44×44），相邻目标之间留出间距。"
+        params:
+          target_min: { value: 24, unit: px, source: SRC.POMASTER.UI_SPEC, label_zh: 最小点击目标 }
+        anchors:
+          - { spec: ui, quote: 触控目标尺寸至少 24×24 CSS px，且目标之间提供足够间距（WCAG 2.5.8）；建议达到 44×44（AAA）。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 触屏点按
+            code: |-
+              button, a, [role='button'] {
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent; /* 前提：有自己的 :active 样式 */
+              }
+            lang: css
+
+      - id: PRESS.KEYBOARD
+        title_zh: 键盘触发同样的反馈
+        statement_zh: 可点元素用真正的 button / a 元素，空格与回车能触发并显示按下态；用 div 模拟按钮时要补上 role、tabindex 和键盘处理，否则不算可点。
+        enforcement: { kind: review }
+
+      - id: PRESS.DISABLED
+        title_zh: 禁用与加载中不响应
+        statement_zh: 禁用和加载中的元素没有悬停、按下效果，点击不触发任何反馈动画；禁用的光标为 not-allowed；加载中的按钮保持宽度不变（见 CMP.BUTTON.LOADING）。
+        enforcement: { kind: review }
+
+      - id: PRESS.REDUCED
+        title_zh: 减少动效时只保留颜色变化
+        statement_zh: 减少动效模式下去掉缩放与波纹，保留按下时的颜色变化；状态仍然看得出来。
+        anchors:
+          - { spec: ui, quote: 尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级 }
+        enforcement: { kind: review }
+
+  # ───────────────────────────── 基础 · 焦点环 ─────────────────────────────
+  - key: focus_ring
+    title_zh: 焦点环
+    group: foundations
+    prefix: FOCUS
+    summary_zh: 焦点只在键盘聚焦时显示且永远不去掉；全站一种焦点样式；与相邻颜色有足够对比；不被裁切、不被吸顶栏遮住；焦点顺序与视觉顺序一致，弹层进出时焦点有去处；焦点环跟随元素圆角。
+    rules:
+      - id: FOCUS.VISIBLE
+        title_zh: 键盘聚焦时显示，永远不去掉
+        statement_zh: "焦点样式写在 :focus-visible 上（鼠标点击不出现，键盘聚焦一定出现）；不写 outline: none 而不给同等可见的替代。"
+        anchors:
+          - { spec: ui, quote: MUST NOT 移除焦点轮廓而无同等级可见替代。 }
+        enforcement: { kind: review }
+        examples:
+          - kind: dont
+            title_zh: 去掉焦点不给替代
+            code: |-
+              button:focus { outline: none; }
+            lang: css
+        showcase:
+          - kind: demo
+            title_zh: 用 Tab 键依次聚焦
+            description_zh: 点击不出焦点环，按 Tab 才出；自定义元素与组件同一种样式。
+            jsx: |-
+              <div className="flex items-center gap-3">
+                <Button variant="secondary">按 Tab 看焦点</Button>
+                <Input placeholder="输入框" className="w-36" />
+                <a href="#" className="rounded-md text-label-14 text-ds-gray-1000 no-underline underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-blue-700">自定义链接</a>
+              </div>
+
+      - id: FOCUS.STYLE
+        title_zh: 全站一种焦点样式
+        statement_zh: 全站一种焦点样式：2px 蓝色轮廓（ds-blue-700）、外偏移 2px（与 Button 组件一致），写成共享的类，自己写的可点元素都用它。
+        params:
+          width: { value: 2, unit: px, source: SRC.POMASTER.PRESET, label_zh: 轮廓宽度 }
+          offset: { value: 2, unit: px, source: SRC.POMASTER.PRESET, label_zh: 轮廓偏移 }
+        anchors:
+          - { spec: ui, quote: SHOULD 提供统一、设计系统级别的 focus indicator token（颜色、宽度、offset、:focus-visible）。 }
+        enforcement: { kind: review }
+
+      - id: FOCUS.CONTRAST
+        title_zh: 与相邻颜色对比足够
+        statement_zh: 焦点指示与相邻背景的对比度至少 3:1；在深色、彩色背景上换用能看清的颜色，不靠颜色变化本身表示焦点。
+        anchors:
+          - { spec: ui, quote: 颜色不得作为唯一信息来源；文本对比度至少 4.5:1，大文本至少 3:1，UI 组件/图标边界至少 3:1（WCAG 1.4.1 / 1.4.3 / 1.4.11）。 }
+        enforcement: { kind: review }
+
+      - id: FOCUS.NOT_OBSCURED
+        title_zh: 不被裁切、不被遮住
+        statement_zh: "overflow: hidden 的容器里改用内收的轮廓（负偏移或 inset 阴影），避免焦点环被裁掉；吸顶栏、固定底栏不能盖住获得焦点的元素（给滚动容器设 scroll-padding）。"
+        anchors:
+          - { spec: ui, quote: 焦点必须可见，且不得被吸顶栏、浮层、sticky 元素完全遮挡（WCAG 2.4.7 / 2.4.11）。 }
+        enforcement: { kind: review }
+
+      - id: FOCUS.ORDER
+        title_zh: 焦点顺序与去处
+        statement_zh: Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对话框打开时焦点进入，关闭后回到触发它的元素；只有模态层把焦点困在里面。
+        anchors:
+          - { spec: ui, quote: 弹层、抽屉、对话框打开后必须接管焦点，关闭后返回触发元素；背景不得保持可 Tab（WCAG 2.4.3 / 2.1.2）。 }
+        enforcement: { kind: review }
+
+      - id: FOCUS.RADIUS
+        title_zh: 焦点环跟随元素圆角
+        statement_zh: 焦点轮廓的圆角与元素一致（outline 会跟随 border-radius；用 box-shadow 画焦点时同样带圆角）；圆形按钮的焦点环也是圆的。
+        enforcement: { kind: review }
 
   # ───────────────────────────── 组件 · 通用 · 按钮 ─────────────────────────────
   - key: button

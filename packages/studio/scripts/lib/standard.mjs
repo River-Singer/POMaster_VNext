@@ -70,6 +70,8 @@ export const CHECK_TITLES = {
   "perf.lazy-load": "路由与重组件按需加载",
   "perf.no-full-library-import": "组件库按需引入",
   "format.no-local-pattern": "日期数字走格式化注册表",
+  "style.radius-token": "圆角取规范档位",
+  "style.shadow-token": "阴影取规范层级",
   "motion.transform-only": "过渡只动 transform 与透明度",
   "motion.reduced-motion": "关键帧动画有减少动效分支",
   "security.no-unsafe-html": "不进危险渲染",

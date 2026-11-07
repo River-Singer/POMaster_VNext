@@ -58,3 +58,12 @@
     opacity: 1;
   }
 }
+
+/* 自定义可点元素的共享焦点样式（FOCUS.STYLE 的示例类；与 antd 组件的焦点同色）。 */
+.antd-live .std-focus-link {
+  border-radius: 4px;
+}
+.antd-live .std-focus-link:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: 2px;
+}

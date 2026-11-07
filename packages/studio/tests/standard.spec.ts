@@ -45,11 +45,11 @@ function areaOf(key: string): any {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("目录取统一骨架：151 个领域按骨架顺序，本体系写了 55 个、318 条规则，其余标为待补", () => {
-    expect(model.areas.length).toBe(151);
+  it("目录取统一骨架：155 个领域按骨架顺序，本体系写了 59 个、346 条规则，其余标为待补", () => {
+    expect(model.areas.length).toBe(155);
     expect(model.areas.map((area: { key: string }) => area.key)).toEqual(skeleton.areas.map((area) => area.key));
-    expect(covered.length).toBe(55);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(318);
+    expect(covered.length).toBe(59);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(346);
     for (const area of model.areas) {
       const skeletonArea = skeleton.areas.find((item) => item.key === area.key)!;
       expect([area.title_zh, area.group, area.prefix, area.counterparts]).toEqual([skeletonArea.title_zh, skeletonArea.group, skeletonArea.prefix, skeletonArea.counterparts]);
@@ -65,7 +65,7 @@ describe("规范分区 · 装载模型", () => {
 
   it("Storybook 标题与 id 按分区派生：基础、组件（按类）、设计模式、工程规范", () => {
     const titles = model.areas.map((area: { storybook: { title: string } }) => area.storybook.title);
-    expect(titles.slice(0, 9)).toEqual(["色彩", "字体", "标题层级", "图标", "材质", "布局", "栅格", "间距", "动效"].map((name) => `规范/基础/${name}`));
+    expect(titles.slice(0, 13)).toEqual(["色彩", "字体", "标题层级", "图标", "材质", "圆角管理", "投影", "布局", "栅格", "间距", "动效", "点击反馈", "焦点环"].map((name) => `规范/基础/${name}`));
     expect(titles).toContain("规范/组件/通用/按钮");
     expect(titles).toContain("规范/设计模式/全局规则/按钮");
     expect(titles).toContain("规范/工程规范/状态管理");
@@ -153,7 +153,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 152, areas: 151, covered: 55, rules: 318 });
+      expect(result).toMatchObject({ count: 156, areas: 155, covered: 59, rules: 346 });
       const overview = readFileSync(join(out, "000-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);
@@ -240,8 +240,8 @@ describe("规范分区 · AI 孪生", () => {
       "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
       "packages/cli/seeds/design-standards/skeleton.yaml",
     ]);
-    expect(twin.areas.length).toBe(151);
-    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(55);
+    expect(twin.areas.length).toBe(155);
+    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(59);
     const grid = twin.areas.find((area: { key: string }) => area.key === "grid");
     const gutter = grid.rules[1];
     expect(gutter.id).toBe("GRID.GUTTER");
