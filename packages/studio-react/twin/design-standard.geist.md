@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:852f548ab7814dfd85628cbafce9bdedf978423f61b685ff93d866c8112de0ca`；状态 origin=preset。
+> 规范指纹 `sha256:43681aaede245630d99389fe8f63177e4c7656a4246477d88af95783e2239fc4`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -1324,14 +1324,14 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 ### CMP.INPUT.VALIDATION 就地校验，失败说清怎么改
 
-格式与长度在失焦时校验，错误显示在输入框下方并把边框标为错误态（status=error / aria-invalid）；提示写清规则与改法（「车牌号为 7–8 位，如沪A12345」），不写「格式错误」；用户改动后立即撤掉错误。
+格式与长度在失焦时校验，错误显示在输入框下方（用 aria-describedby 关联），输入框标 aria-invalid 让边框变为错误态；提示写清规则与改法（「车牌号为 7–8 位，如沪A12345」），不写「格式错误」；用户改动后立即撤掉错误。
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-entry-input--cmp-input-validation
 
 ### CMP.INPUT.AFFIX 前后缀只放单位与固定内容
 
-单位、货币代码、固定前缀（https://）放在前后缀里，不让用户输入；图标前缀只用于搜索、账号这类约定俗成的场景；清除按钮（allowClear）给可选字段，必填字段不清空为空串。
+单位、货币代码、固定前缀（https://）放在输入框两侧的附加区里，不让用户输入；图标前缀只用于搜索、账号这类约定俗成的场景；清除按钮（带 aria-label 的纯图标按钮）给可选字段，必填字段不清空为空串。
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-entry-input--cmp-input-affix
@@ -1439,10 +1439,10 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 ### CMP.SELECT.WHEN 选项数量决定控件
 
-2–5 个互斥选项且需要一眼看全时用单选组或分段控制；6 个以上用选择器；超过 7 个打开搜索（showSearch）；超过 50 个或来自接口时改远程搜索，并防抖、显示加载态。
+2–5 个互斥选项且需要一眼看全时用单选组或分段控制；6 个以上用选择器（Select）；超过 7 个改用可搜索的组合框（Combobox：Popover 里放带搜索框的列表）；超过 50 个或来自接口时改远程搜索，并防抖、显示加载态。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 演示：可搜索的选择器与禁用原因
+- 演示：选择器与停用项
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-entry-select--cmp-select-when
 
 ### CMP.SELECT.OPTIONS 选项短、互斥、有序
@@ -2530,7 +2530,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 参数：虚拟滚动阈值 `p.virtual_threshold` = 500 个（pomaster 推荐默认（数值类决策位的缺省取值））
-- 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
+- 硬规范依据：specs/hard/themes/performance-and-capacity.md「面对大数据必须虚拟滚动或分页」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-virtual
 
 ### DGRID.EDIT 行内编辑可撤回
@@ -2702,6 +2702,104 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 - 执行：人工评审；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 串行发起可并行的页面初始化请求（须并行或后端聚合）。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-perf
+
+## 工程规范 / 前端架构（ARCH）
+
+技术栈以项目基线为准：React + TypeScript + Vite、shadcn/ui + Tailwind CSS 4、TanStack Query、Zustand、react-hook-form + zod；目录按职责分层，模块只经公开入口互相引用；函数组件 + hooks；组件源码进项目由项目维护；接口客户端由 OpenAPI 生成；表单、路由、类型与测试各有固定做法。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--overview
+
+### ARCH.STACK 技术栈以基线为准，同类库只用一套
+
+框架与配套以项目技术基线（.pomaster/baseline/frontend/stack.yaml）为准：React + TypeScript + Vite（管理端是单页应用，除非基线另有决定，不上服务端渲染框架），组件 shadcn/ui（Radix）+ Tailwind CSS 4 + lucide-react，接口数据 @tanstack/react-query，全局状态 Zustand，表单 react-hook-form + zod，单元测试 Vitest。路由库由项目在基线里选定（见参数）；同一类能力（请求、日期、表单校验、图表）全项目只用一套。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：路由库 `p.router`：待项目决定——路由库用哪一个？（候选 react-router / tanstack-router）
+- 硬规范依据：specs/hard/stacks/react/react-framework-overlay.md「必须固定并记录 react、react-dom、路由库（React Router 或 TanStack Router，二选一）、服务端状态库（@tanstack/react-query）与 TypeScript 工具链的版本位与来源；版本位经实抓核实，不得沿用旧主版本记忆。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-stack
+
+### ARCH.LAYOUT 目录按职责分层
+
+src 下按职责分目录：api/（由 OpenAPI 生成的接口客户端与查询 hooks）、routes/<模块>/（路由页面与 loader）、features/<模块>/（模块内的组件、hooks、表单）、components/ui/（shadcn 组件源码）、components/（跨模块、与业务无关的组件）、hooks/、stores/（Zustand，一个 store 一个文件）、lib/（cn、格式化等工具）、locales/、styles/。每个顶层目录在 README 里写清职责；不新建没有说明的顶层目录。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「顶层目录和模块职责必须文档化。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 新建无职责说明的顶层目录。」
+- 示例（这样做）：目录
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-layout
+
+### ARCH.BOUNDARY 模块只经公开入口互相引用
+
+业务模块之间只经模块的公开入口（features/<模块>/index.ts 导出）引用，不引用别的模块内部的文件，路由页面之间不互相 import；几个模块共同参与的流程放到单独的编排模块；带业务语义的组件不下沉到 components/ 或 components/ui/；循环依赖由 lint 检查并阻止。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「模块外部只能通过 Public API 引用。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 因方便把业务能力放进 shared。」
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「循环依赖必须被工具检测并阻止。」
+- 示例（别这样做）：引用别的模块内部文件
+- 示例（这样做）：经公开入口
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-boundary
+
+### ARCH.COMPONENT 组件写法
+
+组件写成函数组件 + hooks，不写 class 组件；props 用 TypeScript 类型声明；可复用的有状态逻辑抽成自定义 hook（useXxx），hooks 只在组件顶层调用、依赖数组写全（eslint-plugin-react-hooks 检查）；路由组件负责取数据，展示组件只收 props、通过回调把事件交出去；不在 useEffect 里同步派生状态，能在渲染时算的直接算。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/stacks/react/react-framework-overlay.md「hooks 只在组件或自定义 hook 的顶层调用，不放进条件、循环和回调；依赖数组写全，由 eslint-plugin-react-hooks 的规则检查，不关闭规则来掩盖问题。」
+- 示例（别这样做）：用 effect 同步派生值
+- 示例（这样做）：渲染时直接算
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-component
+
+### ARCH.UI_LIBRARY 组件库怎么用、怎么改
+
+shadcn/ui 组件用它的 CLI 拷进 components/ui/，源码归项目维护：改外观改组件文件里的类，调用处只追加布局类，不整套覆盖；颜色、字号只用 Geist 主题变量与排版类；组件依赖 Radix 的放在 Radix 上，不自己重写焦点和键盘逻辑；升级时对照上游变更手工合并。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/architecture-and-module-boundaries.md「MUST NOT 因方便把业务能力放进 shared。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-ui-library
+
+### ARCH.DATA_LAYER 接口请求层
+
+接口客户端由 OpenAPI 生成（类型同源）；每个资源一组 useQuery / useMutation hooks（useVehicleList、useUpdateVehicle，基于 @tanstack/react-query），组件只调这些 hooks，不直接调 fetch；进入路由前需要的数据在 loader 里用 queryClient.ensureQueryData 预取，组件里再用同一个 key 读；鉴权、CSRF、超时、错误归一在 HTTP 客户端统一处理（见 SEC.CSRF、ROBUST.TIMEOUT、ERRH.NORMALIZE）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「server state 由查询缓存层管理。」
+- 示例（这样做）：资源的查询 hook
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-data-layer
+
+### ARCH.FORMS 表单
+
+表单用 react-hook-form + zod（zodResolver），schema 与接口类型同源，defaultValues 从接口数据转换而来、不直接用 DTO；字段与 Label 用 id 关联，错误用 aria-describedby 关联；提交返回 422 时用 setError 把字段错误挂回对应字段；isDirty、isSubmitting 留在表单里，不进全局 store。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「表单区分 initial、current、dirty、errors、submitting 和 conflict。」
+- 示例（这样做）：schema 驱动的表单
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-forms
+
+### ARCH.ROUTING 路由组织
+
+路由集中定义（路由配置对象或文件路由，全项目选一种），按模块分组；每个路由懒加载，在 handle（或路由上下文）里声明访问要求与布局（见 GUARD.DECLARE）；数据在 loader 里预取，出错由路由的错误元素承接（见 ERRH.BOUNDARY）；列表的筛选与分页进搜索参数（见 STATE.URL）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-routing
+
+### ARCH.TYPES 类型严格、接口类型生成
+
+TypeScript 开 strict，类型检查用 tsc --noEmit 进 CI；接口类型从 OpenAPI 生成，不手写重复的 DTO 类型；组件 props 用 type 声明，不用 React.FC；不用 any 逃逸，确实不知道类型时用 unknown 再收窄。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/engineering-toolchain-and-dependencies.md「TypeScript 项目必须启用与代码库兼容的严格类型检查；暂不能启用的严格选项必须有范围、Owner、迁移计划和期限。」
+- 硬规范依据：specs/hard/themes/engineering-toolchain-and-dependencies.md「MUST NOT 用项目级忽略、`any`、类型断言或关闭规则掩盖局部问题；例外必须最小化并可追踪。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-types
+
+### ARCH.TESTING 测试分层
+
+hooks、store 和关键组件用 Vitest + Testing Library 测，按用户看得到的角色和文字找元素（getByRole、getByLabelText），不测实现细节；关键业务流程用 Playwright 端到端测；接口用 MSW 按 OpenAPI 模拟加载、空、出错、部分成功、正常五种状态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 硬规范依据：specs/hard/themes/testing-and-verification.md「Contract Mock：由正式 schema 生成或校验的 Mock。」
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-architecture--arch-testing
 
 ## 工程规范 / 状态管理（STATE）
 

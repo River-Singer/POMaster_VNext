@@ -220,13 +220,15 @@ describe("studio generators · antdv 组件目录（71 组件族 story + S1 态�
   });
 });
 
-describe("studio generators · overlay 能力清单（19 族）", () => {
-  it("覆盖 19 族 stack（B6H h5 18→19），capability/requires/源指向在座", () => {
+describe("studio generators · overlay 能力清单（21 族）", () => {
+  it("覆盖 21 族 stack（B6H h5 18→19，B8-VNEXT react / tailwind 19→21），capability/requires/源指向在座", () => {
     const out = tempRoot("ovl");
     try {
       const { count, slugs } = generateOverlayPages(out);
-      expect(count).toBe(19);
+      expect(count).toBe(21);
       expect(slugs).toContain("css");
+      expect(slugs).toContain("react");
+      expect(slugs).toContain("tailwind");
       expect(slugs).toContain("h5");
       expect(slugs).toContain("vue3");
       expect(slugs).toContain("spring-boot");
@@ -312,10 +314,10 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const a = snapshotTree(first);
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      // 总文件数 = 41 + 71 + 19 + 1 + 1 + 1（B6H 增 h5 overlay 页；六类页面分母：S5 增 Database Struct 占位分区；
-      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 156（总览 1 + 统一骨架的 155 个领域，
-      // 含待补；设计规范预设与骨架同源生成）= 290。
-      expect(a.size).toBe(290);
+      // 总文件数 = 41 + 71 + 21 + 1 + 1 + 1（B6H 增 h5 overlay 页、B8-VNEXT 增 react / tailwind overlay 页；六类页面分母：
+      // S5 增 Database Struct 占位分区；F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 157（总览 1 + 统一骨架的
+      // 156 个领域，含待补；设计规范预设与骨架同源生成）= 293。
+      expect(a.size).toBe(293);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;

@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:07810d090be4f144b779dfc81d43bd31ef21a1c17a9dbd837d0de078d536d815",
+  "fingerprint": "sha256:4b628e844a2fa076b3743b7550c5ff62243726f7ae1cc44b7bf9646a64189f80",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/antd.yaml",
-      "sha256": "1f66a10549f1f388364cb935036fd1eb7b8a223c8a36548317acb947638f3afe"
+      "sha256": "4be580ed5a75212e9fd7b30f84cddd5e8e394d3ef46be676dd7aa60a7f49eab1"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -17,7 +17,7 @@
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
-      "sha256": "7fb6f670f5465b475f12685d643d931ec3fb615bc2514aa118f0bf8d9318d452"
+      "sha256": "d0139bbeca5045a377d09a60f837d41ef50d4ecf203edd0bdc2fabb229afc388"
     }
   ],
   "edit": {
@@ -9831,7 +9831,7 @@
           "showcase": [
             {
               "kind": "demo",
-              "title_zh": "可搜索的选择器与禁用原因",
+              "title_zh": "可搜索的选择器与停用项",
               "description_zh": null,
               "template": "<a-select show-search placeholder=\"选择车型\" :style=\"{ width: '280px' }\" :options=\"[{ value: 'M01', label: '轻型厢式货车' }, { value: 'M02', label: '中型栏板货车' }, { value: 'M09', label: '重型牵引车（已停用）', disabled: true }]\" />",
               "jsx": null
@@ -20022,6 +20022,417 @@
       ]
     },
     {
+      "key": "architecture",
+      "title_zh": "前端架构",
+      "group": "engineering",
+      "group_title_zh": "工程规范",
+      "prefix": "ARCH",
+      "summary_zh": "技术栈以项目基线为准：Vue 3 + TypeScript + Vite、ant-design-vue、vue-router、Pinia、TanStack Query；目录按职责分层，模块只经公开入口互相引用；单文件组件 + 组合式函数；接口客户端由 OpenAPI 生成；表单、路由、类型与测试各有固定做法。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "ARCH.STACK",
+          "title_zh": "技术栈以基线为准，同类库只用一套",
+          "covered": true
+        },
+        {
+          "id": "ARCH.LAYOUT",
+          "title_zh": "目录按职责分层",
+          "covered": true
+        },
+        {
+          "id": "ARCH.BOUNDARY",
+          "title_zh": "模块只经公开入口互相引用",
+          "covered": true
+        },
+        {
+          "id": "ARCH.COMPONENT",
+          "title_zh": "组件写法",
+          "covered": true
+        },
+        {
+          "id": "ARCH.UI_LIBRARY",
+          "title_zh": "组件库怎么用、怎么改",
+          "covered": true
+        },
+        {
+          "id": "ARCH.DATA_LAYER",
+          "title_zh": "接口请求层",
+          "covered": true
+        },
+        {
+          "id": "ARCH.FORMS",
+          "title_zh": "表单",
+          "covered": true
+        },
+        {
+          "id": "ARCH.ROUTING",
+          "title_zh": "路由组织",
+          "covered": true
+        },
+        {
+          "id": "ARCH.TYPES",
+          "title_zh": "类型严格、接口类型生成",
+          "covered": true
+        },
+        {
+          "id": "ARCH.TESTING",
+          "title_zh": "测试分层",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/工程规范/前端架构",
+        "id": "standard-engineering-architecture--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "ARCH.STACK",
+          "title_zh": "技术栈以基线为准，同类库只用一套",
+          "statement_zh": "框架与配套以项目技术基线（.pomaster/baseline/frontend/stack.yaml）为准：Vue 3 + TypeScript + Vite，组件库 ant-design-vue 4，路由 vue-router，全局状态 Pinia，接口数据 @tanstack/vue-query，单元测试 Vitest。状态与路由用官方方案，不自造替代；基线没登记的库不引入，同一类能力（请求、日期、表单校验、图表）全项目只用一套。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "vue3",
+              "doc": "stacks/vue3/vue3-framework-overlay.md",
+              "quote": "状态与路由必须选官方方案：新应用状态管理选 Pinia（Vue 核心团队维护；Vuex 已是维护模式），SPA 路由选官方 Vue Router——两者是官方口径，不自造替代。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-stack",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-stack"
+          }
+        },
+        {
+          "id": "ARCH.LAYOUT",
+          "title_zh": "目录按职责分层",
+          "statement_zh": "src 下按职责分目录：api/（由 OpenAPI 生成的接口客户端与查询）、pages/<模块>/（路由页面）、components/（跨模块、与业务无关的组件）、composables/（组合式函数）、stores/（Pinia，一个 store 一个文件）、router/、locales/、styles/、utils/。每个顶层目录在 README 里写清职责；不新建没有说明的顶层目录。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "顶层目录和模块职责必须文档化。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 新建无职责说明的顶层目录。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "目录",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "src/\n  api/            # 生成的接口客户端 + useXxxQuery\n  pages/vehicle/  # VehicleList.vue、VehicleEditDrawer.vue\n  components/     # 与业务无关的通用组件\n  composables/    # usePagination、usePermission\n  stores/         # user.ts、preferences.ts\n  router/  locales/  styles/  utils/",
+              "lang": "text"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-layout",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-layout"
+          }
+        },
+        {
+          "id": "ARCH.BOUNDARY",
+          "title_zh": "模块只经公开入口互相引用",
+          "statement_zh": "业务模块之间只经模块的公开入口（index.ts 导出）引用，不引用别的模块内部的文件，页面之间不互相 import；几个模块共同参与的流程放到单独的编排模块；带业务语义的组件不下沉到通用 components/；循环依赖由 lint 检查并阻止。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "模块外部只能通过 Public API 引用。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 因方便把业务能力放进 shared。"
+            },
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "循环依赖必须被工具检测并阻止。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "dont",
+              "title_zh": "引用别的模块内部文件",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "import { formatPlate } from '@/pages/vehicle/utils/plate'",
+              "lang": "ts"
+            },
+            {
+              "kind": "do",
+              "title_zh": "经公开入口",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "import { formatPlate } from '@/pages/vehicle'",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-boundary",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-boundary"
+          }
+        },
+        {
+          "id": "ARCH.COMPONENT",
+          "title_zh": "组件写法",
+          "statement_zh": "组件写成单文件组件，用 <script setup lang=\"ts\">；props 与 emits 用 defineProps / defineEmits 的类型声明；可复用的有状态逻辑抽成组合式函数（useXxx，放 composables/），不用 mixin；页面组件负责取数据和路由，展示组件只收 props、发事件。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "vue3",
+              "doc": "stacks/vue3/vue3-framework-overlay.md",
+              "quote": "组合式函数必须遵守官方约定（命名、入参、返回值、副作用、使用限制），生命周期钩子按官方注册时机使用。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "类型化的 props 与事件",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "<script setup lang=\"ts\">\nconst props = defineProps<{ vehicle: Vehicle; readonly?: boolean }>()\nconst emit = defineEmits<{ save: [value: VehicleInput] }>()\n</script>",
+              "lang": "vue"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-component",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-component"
+          }
+        },
+        {
+          "id": "ARCH.UI_LIBRARY",
+          "title_zh": "组件库怎么用、怎么改",
+          "statement_zh": "ant-design-vue 按组件引入（见 PERF.ON_DEMAND_LIBRARY）；主题只经 ConfigProvider 的 theme token 统一定制（见基础篇的色彩与圆角），不在页面里覆盖组件内部类名（.ant-*）或写 !important；需要组件库没有的组件时先在 components/ 里按规范组合，不另装第二套组件库。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "arch",
+              "doc": "themes/architecture-and-module-boundaries.md",
+              "quote": "MUST NOT 因方便把业务能力放进 shared。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-ui-library",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-ui-library"
+          }
+        },
+        {
+          "id": "ARCH.DATA_LAYER",
+          "title_zh": "接口请求层",
+          "statement_zh": "接口客户端由 OpenAPI 生成（类型同源）；每个资源一组查询与变更的组合式函数（useVehicleList、useUpdateVehicle，基于 @tanstack/vue-query），页面只调这些函数，不直接调 HTTP 客户端；鉴权、CSRF、超时、错误归一在 HTTP 客户端统一处理（见 SEC.CSRF、ROBUST.TIMEOUT、ERRH.NORMALIZE）。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "server state 由查询缓存层管理。"
+            }
+          ],
+          "showcase": [],
+          "examples": [
+            {
+              "kind": "do",
+              "title_zh": "资源的查询函数",
+              "note_zh": null,
+              "template": null,
+              "jsx": null,
+              "code": "export function useVehicleList(params: Ref<VehicleQuery>) {\n  return useQuery({ queryKey: ['vehicles', params], queryFn: ({ signal }) => api.listVehicles(params.value, { signal }) })\n}",
+              "lang": "ts"
+            }
+          ],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-data-layer",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-data-layer"
+          }
+        },
+        {
+          "id": "ARCH.FORMS",
+          "title_zh": "表单",
+          "statement_zh": "表单用 a-form 绑定独立的表单模型（reactive 对象，不直接绑接口返回的 DTO），校验规则从与接口同源的 schema 生成；提交返回 422 时把字段错误挂回对应字段；初始值、是否改过、提交中留在表单里，不进全局 store。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "state",
+              "doc": "themes/frontend-state-and-client-data.md",
+              "quote": "表单区分 initial、current、dirty、errors、submitting 和 conflict。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-forms",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-forms"
+          }
+        },
+        {
+          "id": "ARCH.ROUTING",
+          "title_zh": "路由组织",
+          "statement_zh": "路由表集中在 router/，按模块分组；每个路由懒加载页面组件，在 meta 里声明访问要求与布局（见 GUARD.DECLARE）；路由有稳定的 name，跳转用 name 不拼字符串路径；列表的筛选与分页进 query（见 STATE.URL）。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "page",
+              "doc": "themes/page-composition-and-browser-environment.md",
+              "quote": "每个页面路由有稳定 name、path、page key、title、权限和布局 meta。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-routing",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-routing"
+          }
+        },
+        {
+          "id": "ARCH.TYPES",
+          "title_zh": "类型严格、接口类型生成",
+          "statement_zh": "TypeScript 开 strict，类型检查用 vue-tsc --noEmit 进 CI；接口类型从 OpenAPI 生成，不手写重复的 DTO 类型；不用 any 逃逸，确实不知道类型时用 unknown 再收窄。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "toolchain",
+              "doc": "themes/engineering-toolchain-and-dependencies.md",
+              "quote": "TypeScript 项目必须启用与代码库兼容的严格类型检查；暂不能启用的严格选项必须有范围、Owner、迁移计划和期限。"
+            },
+            {
+              "spec": "toolchain",
+              "doc": "themes/engineering-toolchain-and-dependencies.md",
+              "quote": "MUST NOT 用项目级忽略、`any`、类型断言或关闭规则掩盖局部问题；例外必须最小化并可追踪。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-types",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-types"
+          }
+        },
+        {
+          "id": "ARCH.TESTING",
+          "title_zh": "测试分层",
+          "statement_zh": "组合式函数、store 和关键组件用 Vitest + @vue/test-utils 测；关键业务流程用 Playwright 端到端测；接口用 MSW 按 OpenAPI 模拟加载、空、出错、部分成功、正常五种状态。",
+          "rationale_zh": null,
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [
+            {
+              "spec": "testing",
+              "doc": "themes/testing-and-verification.md",
+              "quote": "Contract Mock：由正式 schema 生成或校验的 Mock。"
+            }
+          ],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-engineering-architecture--arch-testing",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-architecture--arch-testing"
+          }
+        }
+      ]
+    },
+    {
       "key": "state",
       "title_zh": "状态管理",
       "group": "engineering",
@@ -24887,6 +25298,9 @@
     "security": "themes/security.md",
     "api": "themes/api-contract-and-error-semantics.md",
     "permission": "themes/permission-and-authorization.md",
-    "obs": "themes/observability-and-analytics.md"
+    "obs": "themes/observability-and-analytics.md",
+    "arch": "themes/architecture-and-module-boundaries.md",
+    "toolchain": "themes/engineering-toolchain-and-dependencies.md",
+    "testing": "themes/testing-and-verification.md"
   }
 }

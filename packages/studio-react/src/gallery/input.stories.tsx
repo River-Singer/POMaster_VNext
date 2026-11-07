@@ -15,11 +15,11 @@ export const Labeled: Story = {
   name: "标签与占位符",
   render: () => (
     <Column className="w-80">
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="plate">车牌号</Label>
         <Input id="plate" placeholder="例：沪A12345" />
       </div>
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="mileage">里程（km）</Label>
         <Input id="mileage" type="number" min={0} placeholder="0" className="text-right" />
       </div>
@@ -31,14 +31,14 @@ export const States: Story = {
   name: "出错与禁用",
   render: () => (
     <Column className="w-80">
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="plate-bad">车牌号</Label>
         <Input id="plate-bad" defaultValue="沪A1" aria-invalid="true" aria-describedby="plate-bad-hint" />
         <span id="plate-bad-hint" className="text-copy-13 text-ds-red-900">
           车牌号为 7–8 位，如沪A12345
         </span>
       </div>
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="vin">车架号</Label>
         <Input id="vin" defaultValue="LSVAM4187C2184321" disabled />
       </div>
