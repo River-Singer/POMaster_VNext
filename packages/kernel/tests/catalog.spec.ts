@@ -6,7 +6,7 @@
  *    （vocab-lock catalog_layer_vocab，PR-0001），词表外/必填缺失 SCHEMA_INVALID
  *    fail-closed（坏物料 ≠ catalog 缺席，禁静默当空）。
  * 2) lock 校验（D24 read-side 指纹）：repo 实物全量对账 ok——producer 写入口径
- *    sha256(utf-8 字节) 与对账端同源；entries 分母 271（policies 206/gates 7/knowledge 11/sensors 6/archetypes 41——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目 + P-v06 批次 2.6 Browser Eyes：knowledge 10→11（KNOWLEDGE.WEB.BROWSER.MCP_EYES）+ P-v06 批次 3 archetypes 十七条目（Backend/API/Data，backend-references.md 2026-09-03 锚）+ P-v06 批次 4 archetypes 两条目（RUNTIME：ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，runtime-references.md 2026-09-03 锚）+ B6b-I FE 播种移植物料 25 条（policies 79→104：catalog/tools/seed_b6b_frontend.py——D5 精选 22 required + 3 advisory，x-b6-porting 注记 + enforcement 轴断言）+ B6b-II FE 播种移植物料 25 条（policies 104→129：同工具 B6B-2 批——FE 24-45+index 分母，D5 上限 25/批内执行）+ B6c BE+stacks 播种移植物料 35 条（policies 129→164：catalog/tools/seed_b6c_backend.py——BE universal 分母 policy 面 25 [22 required + 3 advisory] + stacks/profile TECHNOLOGY_PROFILE 分类面 10）+ 裁定批 F/D3-R1 逐卡复核物料 25 条（policies 164→189：catalog/tools/seed_d3_review.py——72 张保守排除卡复核：required 9 补锚 + advisory 16，维持排除 30 + 留 D3-R2 17）+ 裁定批 G/D3-R2 收尾轮物料 17 条（policies 189→206：同工具 D3-R2 批——R1 后余量 advisory 全量入册，13 SHOULD 锚 + 4 扩展段/Change Policy 锚，新 id 域段 BE 候选注记在册））。
+ *    sha256(utf-8 字节) 与对账端同源；entries 分母 272（policies 206/gates 8/knowledge 11/sensors 6/archetypes 41——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目 + P-v06 批次 2.6 Browser Eyes：knowledge 10→11（KNOWLEDGE.WEB.BROWSER.MCP_EYES）+ P-v06 批次 3 archetypes 十七条目（Backend/API/Data，backend-references.md 2026-09-03 锚）+ P-v06 批次 4 archetypes 两条目（RUNTIME：ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，runtime-references.md 2026-09-03 锚）+ B6b-I FE 播种移植物料 25 条（policies 79→104：catalog/tools/seed_b6b_frontend.py——D5 精选 22 required + 3 advisory，x-b6-porting 注记 + enforcement 轴断言）+ B6b-II FE 播种移植物料 25 条（policies 104→129：同工具 B6B-2 批——FE 24-45+index 分母，D5 上限 25/批内执行）+ B6c BE+stacks 播种移植物料 35 条（policies 129→164：catalog/tools/seed_b6c_backend.py——BE universal 分母 policy 面 25 [22 required + 3 advisory] + stacks/profile TECHNOLOGY_PROFILE 分类面 10）+ 裁定批 F/D3-R1 逐卡复核物料 25 条（policies 164→189：catalog/tools/seed_d3_review.py——72 张保守排除卡复核：required 9 补锚 + advisory 16，维持排除 30 + 留 D3-R2 17）+ 裁定批 G/D3-R2 收尾轮物料 17 条（policies 189→206：同工具 D3-R2 批——R1 后余量 advisory 全量入册，13 SHOULD 锚 + 4 扩展段/Change Policy 锚，新 id 域段 BE 候选注记在册））。
  * 3) 漂移检出：临时 catalog 副本构造 content_drift / missing / unexpected_file /
  *    lock 缺失 → 显式检出（「catalog 物料被改而 lock 未重锁」的事故通道封死）。
  * 4) 重锁计算（P-v06 批次 2.5）：relockCatalog 纯计算零写盘——漂移重算/幂等注记/
@@ -107,13 +107,13 @@ describe("resolveCatalogRoot（缺省定位与显式注入）", () => {
 });
 
 describe("readCatalogLock（lock 文档形态）", () => {
-  it("版本/profile/entries 分母与排序（分母锁：271 entries，id 确定性排序；P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193、B6c BE+stacks 移植 193→228、裁定批 F/D3-R1 复核批 228→253、裁定批 G/D3-R2 收尾轮 253→270、脚手架 S1-4 GATE.SCAFFOLD.CONSISTENCY 270→271）", () => {
+  it("版本/profile/entries 分母与排序（分母锁：272 entries，id 确定性排序；P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193、B6c BE+stacks 移植 193→228、裁定批 F/D3-R1 复核批 228→253、裁定批 G/D3-R2 收尾轮 253→270、脚手架 S1-4 GATE.SCAFFOLD.CONSISTENCY 270→271、设计规范 D2 GATE.DESIGN.STANDARD 271→272）", () => {
     const lock = readCatalogLock(REPO_CATALOG);
     expect(lock.catalog_version).toBe("0.1.0-pilot");
     expect(lock.profile).toBe("web-standard@0");
-    expect(lock.entries.length).toBe(271);
-    expect(lock.controlled_children.allowed.length).toBe(271);
-    expect(lock.controlled_children.required.length).toBe(271);
+    expect(lock.entries.length).toBe(272);
+    expect(lock.controlled_children.allowed.length).toBe(272);
+    expect(lock.controlled_children.required.length).toBe(272);
     const sorted = [...lock.entries].sort((a, b) => (a.id < b.id ? -1 : 1));
     expect(lock.entries).toEqual(sorted);
   });
@@ -369,9 +369,9 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
 // ============================================================
 
 describe("verifyCatalogLock（repo 实物：producer 与对账端同口径）", () => {
-  it("全量对账 ok：271 entries 哈希 + 管辖面双向对账零漂移（P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193、B6c BE+stacks 移植 193→228、裁定批 F/D3-R1 复核批 228→253、裁定批 G/D3-R2 收尾轮 253→270、脚手架 S1-4 GATE.SCAFFOLD.CONSISTENCY 270→271）", () => {
+  it("全量对账 ok：272 entries 哈希 + 管辖面双向对账零漂移（P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193、B6c BE+stacks 移植 193→228、裁定批 F/D3-R1 复核批 228→253、裁定批 G/D3-R2 收尾轮 253→270、脚手架 S1-4 GATE.SCAFFOLD.CONSISTENCY 270→271、设计规范 D2 GATE.DESIGN.STANDARD 271→272）", () => {
     const verification = verifyCatalogLock(REPO_CATALOG);
-    expect(verification).toEqual({ ok: true, entries_checked: 271, drifts: [] });
+    expect(verification).toEqual({ ok: true, entries_checked: 272, drifts: [] });
   });
 });
 
@@ -467,8 +467,8 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
       (candidate) => candidate.path === "archetypes/archetype.page.master_data.json",
     );
     expect(entry?.content_sha256).toBe(sha256OfUtf8(readFileSync(target, "utf8")));
-    expect(report.next.entries).toHaveLength(271);
-    expect(report.previous.entries).toHaveLength(271);
+    expect(report.next.entries).toHaveLength(272);
+    expect(report.previous.entries).toHaveLength(272);
     expect(report.next.catalog_version).toBe(report.previous.catalog_version);
     // 纯计算零写盘：lock 磁盘字节零变化（落盘归 CLI 层，分层纪律同 status/explain）。
     expect(readFileSync(lockPath, "utf8")).toBe(lockBefore);
@@ -516,9 +516,9 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
     expect(added.removed).toEqual([]);
     // diff 互斥（分母「两侧都在」）：新增路径不计入 refreshed（否则 CLI 呈现 +/~ 双标）。
     expect(added.refreshed).toEqual([]);
-    expect(added.next.entries).toHaveLength(272);
-    expect(added.next.controlled_children.allowed).toHaveLength(272);
-    expect(added.next.controlled_children.required).toHaveLength(272);
+    expect(added.next.entries).toHaveLength(273);
+    expect(added.next.controlled_children.allowed).toHaveLength(273);
+    expect(added.next.controlled_children.required).toHaveLength(273);
     const probe = added.next.entries.find(
       (candidate) => candidate.id === "KNOWLEDGE.RELOCK.PROBE",
     );
@@ -530,9 +530,9 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
     const removed = relockCatalog(catalogRoot);
     expect(removed.removed).toEqual(["knowledge/knowledge.relock.probe.json"]);
     expect(removed.added).toEqual([]);
-    expect(removed.next.entries).toHaveLength(271);
-    expect(removed.next.controlled_children.allowed).toHaveLength(271);
-    expect(removed.next.controlled_children.required).toHaveLength(271);
+    expect(removed.next.entries).toHaveLength(272);
+    expect(removed.next.controlled_children.allowed).toHaveLength(272);
+    expect(removed.next.controlled_children.required).toHaveLength(272);
   });
 
   it("fail-closed：物料缺 id → SCHEMA_INVALID；lock 缺失 → NOT_CONFIGURED（relock 不是初始化工具）", () => {

@@ -43,7 +43,39 @@ export const STORYBOOK_SITE_URL = "https://river-singer.github.io/POMaster_VNext
 export const STORYBOOK_BASE_URL = `${STORYBOOK_SITE_URL}vue/`;
 
 /** 已接入门禁的检查（与 CLI DESIGN_CHECKS 的 active 一致；对账测试钉住）。 */
-export const ACTIVE_CHECKS = new Set([]);
+export const ACTIVE_CHECKS = new Set([
+  "error.no-empty-catch",
+  "format.no-local-pattern",
+  "grid.gutter-allowed",
+  "grid.span-range",
+  "guard.route-meta",
+  "icon.single-library",
+  "markup.heading-level-max",
+  "markup.heading-order",
+  "markup.icon-button-label",
+  "markup.single-h1",
+  "motion.reduced-motion",
+  "motion.transform-only",
+  "perf.lazy-load",
+  "perf.no-full-library-import",
+  "security.no-eval",
+  "security.no-token-storage",
+  "security.no-unsafe-html",
+  "security.safe-link",
+  "state.no-direct-request",
+  "state.store-library",
+  "style.breakpoint-allowed",
+  "style.font-family-token",
+  "style.font-size-scale",
+  "style.font-weight-allowed",
+  "style.no-raw-color",
+  "style.no-raw-z-index",
+  "style.radius-token",
+  "style.shadow-token",
+  "style.spacing-scale",
+  "text.banned-terms",
+  "text.no-literal-copy",
+]);
 
 /** 检查编号 → 中文名（展示用；与 CLI DESIGN_CHECKS 对账）。 */
 export const CHECK_TITLES = {

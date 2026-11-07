@@ -171,17 +171,21 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     expect(loaded.issues.filter((issue) => issue.code === "DESIGN_DECISION_PENDING")).toHaveLength(1);
   });
 
-  it("门禁规则引用的检查都在词表内；D1a 阶段检查均未接入，汇总为一条 DESIGN_CHECK_PENDING 警告", () => {
+  it("门禁规则引用的检查都在词表内；active 跟着检查词表走，未接入的汇总为一条 DESIGN_CHECK_PENDING 警告", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
-    const ids = new Set(DESIGN_CHECKS.map((check) => check.id));
+    const checks = new Map(DESIGN_CHECKS.map((check) => [check.id, check.active]));
+    const pending = new Set<string>();
     for (const area of loaded.normalized!.areas) {
       for (const r of area.rules) {
         if (r.enforcement.kind === "gate") {
-          expect(ids.has(r.enforcement.check)).toBe(true);
-          expect(r.enforcement.active).toBe(false);
+          expect(checks.has(r.enforcement.check)).toBe(true);
+          expect(r.enforcement.active).toBe(checks.get(r.enforcement.check));
+          if (!r.enforcement.active) pending.add(r.enforcement.check);
         }
       }
     }
+    // D2 接入后只剩两条（按结构判的主按钮数与一行跨度和）
+    expect([...pending].sort()).toEqual(["grid.row-sum", "markup.single-primary-button"]);
     expect(loaded.issues.filter((issue) => issue.code === "DESIGN_CHECK_PENDING")).toHaveLength(1);
   });
 });
@@ -373,9 +377,9 @@ describe("校验：硬规范锚点与执行方式", () => {
     expect(codes(validateDesignStandard(raw, ctx()))).toEqual(["DESIGN_SHAPE"]);
   });
 
-  it("检查词表编号唯一，D1a 阶段都还没有接入门禁", () => {
+  it("检查词表编号唯一；D2 起大部分检查已接入（与 design-check.ts 实现表对账见 design-check.spec）", () => {
     expect(new Set(DESIGN_CHECKS.map((check) => check.id)).size).toBe(DESIGN_CHECKS.length);
-    expect(DESIGN_CHECKS.every((check) => check.active === false)).toBe(true);
+    expect(DESIGN_CHECKS.filter((check) => !check.active).map((check) => check.id).sort()).toEqual(["grid.row-sum", "markup.single-primary-button"]);
   });
 });
 
@@ -592,7 +596,8 @@ describe("pomaster design validate / show", () => {
     expect(text).toContain("基础 / 栅格（GRID，5 条）");
     expect(text).toContain("GRID.GUTTER");
     expect(text).toContain("允许的列间距：16px / 24px（出处 SRC.ANTD.SPEC.BASICS）");
-    expect(text).toContain("门禁 grid.gutter-allowed（待接入，暂按评审执行）");
+    expect(text).toContain("[门禁 grid.gutter-allowed · 两个面]");
+    expect(text).toContain("门禁 grid.row-sum（待接入，暂按评审执行）");
 
     const one = runDesignShow(dir, { rule: "LAYOUT.CONTENT_REGION" });
     expect(one.result!.areas.flatMap((a) => a.rules.map((r) => r.id))).toEqual(["LAYOUT.CONTENT_REGION"]);
@@ -682,7 +687,7 @@ describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
     const skeleton = miniSkeleton([SKELETON_GRID, SKELETON_SPACING]);
     const ok = validateDesignStandard(minimal(), ctx({ skeleton }));
     expect(ok.ok).toBe(true);
-    expect(codes(ok, "warning")).toEqual(["DESIGN_AREA_UNCOVERED", "DESIGN_TOPIC_UNCOVERED", "DESIGN_CHECK_PENDING"]);
+    expect(codes(ok, "warning")).toEqual(["DESIGN_AREA_UNCOVERED", "DESIGN_TOPIC_UNCOVERED"]);
     expect(ok.issues.find((issue) => issue.code === "DESIGN_TOPIC_UNCOVERED")!.message).toContain("GRID.COLUMNS");
 
     const renamed = minimal();

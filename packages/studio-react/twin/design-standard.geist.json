@@ -38,62 +38,62 @@
     {
       "id": "style.no-raw-color",
       "title_zh": "不写裸色值",
-      "active": false
+      "active": true
     },
     {
       "id": "style.spacing-scale",
       "title_zh": "间距在阶梯内",
-      "active": false
+      "active": true
     },
     {
       "id": "style.font-size-scale",
       "title_zh": "字号在字阶内",
-      "active": false
+      "active": true
     },
     {
       "id": "style.font-weight-allowed",
       "title_zh": "字重在允许集内",
-      "active": false
+      "active": true
     },
     {
       "id": "style.font-family-token",
       "title_zh": "字体族取 token",
-      "active": false
+      "active": true
     },
     {
       "id": "style.breakpoint-allowed",
       "title_zh": "断点取规范值",
-      "active": false
+      "active": true
     },
     {
       "id": "style.no-raw-z-index",
       "title_zh": "z-index 取层级 token",
-      "active": false
+      "active": true
     },
     {
       "id": "markup.single-h1",
       "title_zh": "每个页面视图一个 h1",
-      "active": false
+      "active": true
     },
     {
       "id": "markup.heading-order",
       "title_zh": "标题不跳级",
-      "active": false
+      "active": true
     },
     {
       "id": "markup.heading-level-max",
       "title_zh": "应用界面标题不超过三级",
-      "active": false
+      "active": true
     },
     {
       "id": "markup.icon-button-label",
       "title_zh": "纯图标按钮有可访问名称",
-      "active": false
+      "active": true
     },
     {
       "id": "grid.span-range",
       "title_zh": "栅格跨度合法",
-      "active": false
+      "active": true
     },
     {
       "id": "grid.row-sum",
@@ -103,12 +103,12 @@
     {
       "id": "grid.gutter-allowed",
       "title_zh": "gutter 取规范值",
-      "active": false
+      "active": true
     },
     {
       "id": "icon.single-library",
       "title_zh": "只用一套图标库",
-      "active": false
+      "active": true
     },
     {
       "id": "markup.single-primary-button",
@@ -118,87 +118,87 @@
     {
       "id": "text.no-literal-copy",
       "title_zh": "界面文字走文案字典",
-      "active": false
+      "active": true
     },
     {
       "id": "text.banned-terms",
       "title_zh": "不用禁用词",
-      "active": false
+      "active": true
     },
     {
       "id": "state.store-library",
       "title_zh": "全局状态库只用规定的一个",
-      "active": false
+      "active": true
     },
     {
       "id": "state.no-direct-request",
       "title_zh": "组件不直接发请求",
-      "active": false
+      "active": true
     },
     {
       "id": "perf.lazy-load",
       "title_zh": "路由与重组件按需加载",
-      "active": false
+      "active": true
     },
     {
       "id": "perf.no-full-library-import",
       "title_zh": "组件库按需引入",
-      "active": false
+      "active": true
     },
     {
       "id": "format.no-local-pattern",
       "title_zh": "日期数字走格式化注册表",
-      "active": false
+      "active": true
     },
     {
       "id": "style.radius-token",
       "title_zh": "圆角取规范档位",
-      "active": false
+      "active": true
     },
     {
       "id": "style.shadow-token",
       "title_zh": "阴影取规范层级",
-      "active": false
+      "active": true
     },
     {
       "id": "motion.transform-only",
       "title_zh": "过渡只动 transform 与透明度",
-      "active": false
+      "active": true
     },
     {
       "id": "motion.reduced-motion",
       "title_zh": "关键帧动画有减少动效分支",
-      "active": false
+      "active": true
     },
     {
       "id": "security.no-unsafe-html",
       "title_zh": "不进危险渲染",
-      "active": false
+      "active": true
     },
     {
       "id": "security.safe-link",
       "title_zh": "外链与跳转安全",
-      "active": false
+      "active": true
     },
     {
       "id": "security.no-eval",
       "title_zh": "不用动态执行",
-      "active": false
+      "active": true
     },
     {
       "id": "security.no-token-storage",
       "title_zh": "凭据不进浏览器存储",
-      "active": false
+      "active": true
     },
     {
       "id": "error.no-empty-catch",
       "title_zh": "不吞错误",
-      "active": false
+      "active": true
     },
     {
       "id": "guard.route-meta",
       "title_zh": "路由声明访问要求",
-      "active": false
+      "active": true
     }
   ],
   "areas": [
@@ -1118,7 +1118,7 @@
             "kind": "gate",
             "check": "style.no-raw-color",
             "check_title_zh": "不写裸色值",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -1548,7 +1548,7 @@
             "kind": "gate",
             "check": "style.font-family-token",
             "check_title_zh": "字体族取 token",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -1634,7 +1634,7 @@
             "kind": "gate",
             "check": "style.font-size-scale",
             "check_title_zh": "字号在字阶内",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -1986,7 +1986,7 @@
             "kind": "gate",
             "check": "style.font-weight-allowed",
             "check_title_zh": "字重在允许集内",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -2105,7 +2105,7 @@
             "kind": "gate",
             "check": "style.no-raw-color",
             "check_title_zh": "不写裸色值",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -2374,7 +2374,7 @@
             "kind": "gate",
             "check": "markup.heading-level-max",
             "check_title_zh": "应用界面标题不超过三级",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -2464,7 +2464,7 @@
             "kind": "gate",
             "check": "markup.single-h1",
             "check_title_zh": "每个页面视图一个 h1",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -2488,7 +2488,7 @@
             "kind": "gate",
             "check": "markup.heading-order",
             "check_title_zh": "标题不跳级",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -2679,7 +2679,7 @@
             "kind": "gate",
             "check": "icon.single-library",
             "check_title_zh": "只用一套图标库",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -2992,7 +2992,7 @@
             "kind": "gate",
             "check": "markup.icon-button-label",
             "check_title_zh": "纯图标按钮有可访问名称",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -3489,7 +3489,7 @@
             "kind": "gate",
             "check": "style.radius-token",
             "check_title_zh": "圆角取规范档位",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -3870,7 +3870,7 @@
             "kind": "gate",
             "check": "style.shadow-token",
             "check_title_zh": "阴影取规范层级",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -4283,7 +4283,7 @@
             "kind": "gate",
             "check": "style.no-raw-z-index",
             "check_title_zh": "z-index 取层级 token",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -4455,7 +4455,7 @@
             "kind": "gate",
             "check": "grid.gutter-allowed",
             "check_title_zh": "gutter 取规范值",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -4520,7 +4520,7 @@
             "kind": "gate",
             "check": "style.breakpoint-allowed",
             "check_title_zh": "断点取规范值",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -4642,7 +4642,7 @@
             "kind": "gate",
             "check": "style.spacing-scale",
             "check_title_zh": "间距在阶梯内",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -6016,7 +6016,7 @@
             "kind": "gate",
             "check": "markup.icon-button-label",
             "check_title_zh": "纯图标按钮有可访问名称",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -10140,7 +10140,7 @@
             "kind": "gate",
             "check": "motion.transform-only",
             "check_title_zh": "过渡只动 transform 与透明度",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -10183,7 +10183,7 @@
             "kind": "gate",
             "check": "motion.reduced-motion",
             "check_title_zh": "关键帧动画有减少动效分支",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -12682,7 +12682,7 @@
             "kind": "gate",
             "check": "format.no-local-pattern",
             "check_title_zh": "日期数字走格式化注册表",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -12999,7 +12999,7 @@
             "kind": "gate",
             "check": "state.store-library",
             "check_title_zh": "全局状态库只用规定的一个",
-            "active": false
+            "active": true
           },
           "params": [
             {
@@ -13092,7 +13092,7 @@
             "kind": "gate",
             "check": "state.no-direct-request",
             "check_title_zh": "组件不直接发请求",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -13436,7 +13436,7 @@
             "kind": "gate",
             "check": "perf.lazy-load",
             "check_title_zh": "路由与重组件按需加载",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -13485,7 +13485,7 @@
             "kind": "gate",
             "check": "perf.no-full-library-import",
             "check_title_zh": "组件库按需引入",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -13768,7 +13768,7 @@
             "kind": "gate",
             "check": "security.no-unsafe-html",
             "check_title_zh": "不进危险渲染",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -13817,7 +13817,7 @@
             "kind": "gate",
             "check": "security.safe-link",
             "check_title_zh": "外链与跳转安全",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -13892,7 +13892,7 @@
             "kind": "gate",
             "check": "security.no-eval",
             "check_title_zh": "不用动态执行",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -14127,7 +14127,7 @@
             "kind": "gate",
             "check": "security.no-token-storage",
             "check_title_zh": "凭据不进浏览器存储",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -14673,7 +14673,7 @@
             "kind": "gate",
             "check": "security.safe-link",
             "check_title_zh": "外链与跳转安全",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],
@@ -15294,7 +15294,7 @@
             "kind": "gate",
             "check": "error.no-empty-catch",
             "check_title_zh": "不吞错误",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -15418,7 +15418,7 @@
             "kind": "gate",
             "check": "guard.route-meta",
             "check_title_zh": "路由声明访问要求",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -15688,7 +15688,7 @@
             "kind": "gate",
             "check": "perf.lazy-load",
             "check_title_zh": "路由与重组件按需加载",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [
@@ -17306,7 +17306,7 @@
             "kind": "gate",
             "check": "style.no-raw-color",
             "check_title_zh": "不写裸色值",
-            "active": false
+            "active": true
           },
           "params": [],
           "anchors": [],

@@ -104,7 +104,7 @@ areas:
 
 ### 执行方式
 
-- `gate`：机器门禁，违反即拦截。`check` 必须在检查词表内（`packages/cli/src/design-standard.ts` 的 `DESIGN_CHECKS`）；检查还没接入门禁时，规则先按评审执行，页面和孪生都会标出来。
+- `gate`：机器门禁，违反即拦截。`check` 必须在检查词表内（`packages/cli/src/design-standard.ts` 的 `DESIGN_CHECKS`）；检查还没接入门禁时，规则先按评审执行，页面和孪生都会标出来；接入的检查见下文「规范门禁」。
 - `review`：机器查不出来的规则，评审时逐条核对。
 
 ### 展示块
@@ -169,11 +169,24 @@ BA 交来的 spec 与 HTML 原型结构、风格、样式各不相同，规则�
 
 1. `pomaster prototype ingest <page.html...> --spec <spec.md...> [--render]`：去掉表现读出四层——业务事实（字段、操作、状态、提示）、信息结构（页面、区域、分组、顺序）、交互意图（隐藏的弹窗、点什么打开什么）原样保留；样式、栅格、字体、组件长相丢掉；星号、红绿状态字、删除线、右对齐、固定列这类「表现里藏着的事实」翻译成语义（必填、语气、作废、数值列、冻结列）。产物在 `.pomaster/prototype/<名字>/`：大纲（`*.outline.md` 给人和 agent 读）、事实清单 `facts.json`（每条带出处）、冲突 `questions.json`（Question Gate 申报分类 + 默认口径：业务规则以 spec 为准，信息结构以 HTML 为准，呈现以规范为准）、UX 中间表示草稿 `ux-ir.json`（区域到规范模式与规则编号的初步映射）。`--render` 用 Playwright 渲染后再读（表格行、导航常是脚本生成的），并展开组件库的下拉记下选项。
 2. agent 按规范重绘：布局、间距、字号、组件全部取本规范，原型的 class、样式、字体、颜色不进实现。
-3. `pomaster prototype diff <facts.json> <重绘后的页面.html> [--render]`：用同一个抽取器读重绘后的页面（任何组件库的 DOM 都按 ARIA 与语义元素读），与事实清单逐条对账：缺失、改动、新增、调序都为零才算完成，结果作为 verify 证据。
+3. `pomaster prototype check <facts.json> <重绘后的页面.html> [--render]`：用同一个抽取器读重绘后的页面（任何组件库的 DOM 都按 ARIA 与语义元素读），与事实清单逐条对账：缺失、改动、新增、调序都为零才算完成，结果作为 verify 证据。
 
 抽取器在 `packages/cli/src/prototype-extract.ts`（纯函数，零依赖），Storybook 的 `prototype.convert` 实验用同一份代码。
 
-后续：组件按类分批补齐（两边同步），规范门禁接入。
+## 规范门禁（`pomaster design check`）
+
+规范里 `enforcement: { kind: gate, check: … }` 的条文都有一条机器检查，实现在 `packages/cli/src/design-check.ts`。检查不自带阈值，阈值从条文参数读：antd 的间距阶梯是 `SPACING.SCALE` 的 4 / 8 / 12 / 16 / 24 / 32，Geist 是 `base: 0.25rem` 的整数倍；字阶、字重、栅格列数、允许的列间距、断点、禁用词、全局状态库同理。参数还是决策位时（如 Geist 的列间距），这条检查记「待定」，不按默认值判。
+
+扫描是静态的：`.vue` 拆成模板、脚本、样式三段；`.tsx` / `.ts` 整体当脚本（JSX 在里面）；`.css` / `.scss` / `.less` 当样式；Tailwind 类只在「像类名串」的字符串里找。注释先抹掉，所以注释里的写法不算。它找的是源码写法上的违规；渲染出来的问题（对比度、溢出、真实交互）归 verify 的浏览器检查与原型事实对账。
+
+- 扫哪里：缺省探测 `frontend/src`、`web/src`、`client/src`、`ui/src`、`app/src`、`apps/*/src`，都没有才用根下的 `src`；`--root` 指定。不扫依赖、构建产物、测试、故事文件和 `components/ui`（shadcn 一类按文件落进项目的组件库层）。
+- 例外：在违规行或上一行写 `pomaster-design-ignore <检查编号>: 理由`。没写理由的豁免不生效并给警告。
+- 老项目：`--write-baseline` 把现有违规按「检查 × 文件」记成存量（`.pomaster/baseline/frontend/design-check-baseline.json`），之后只拦超出存量的部分；违规减少时提示收紧，`--ignore-baseline` 看全量。
+- 三处用同一个判卷：`pomaster design check`（命令面，违规退出码非 0）、`pomaster check --gates` 的 `GATE.DESIGN.STANDARD`（结果作为 GRN 入账；项目没落地规范时 `not_configured`）、closeout（项目落地了规范才适用，违规阻断）。
+
+还没实现的两条（`markup.single-primary-button` 一个按钮区一个主按钮、`grid.row-sum` 一行跨度之和）要按元素结构判，先按评审执行，页面和孪生都标「待接入」。
+
+后续：组件按类分批补齐（两边同步）。
 
 ## 错误码
 
@@ -192,5 +205,8 @@ BA 交来的 spec 与 HTML 原型结构、风格、样式各不相同，规则�
 | `DESIGN_EXAMPLE` | 实时内容形态不对，或引用了不存在 / 待定的参数与 token |
 | `DESIGN_AREA_SKELETON` | 领域或规则与统一骨架不一致（标题、分区、前缀、顺序） |
 | `DESIGN_SKELETON_SHAPE` | 骨架本身的形状不对 |
+| `DESIGN_CHECK_VIOLATIONS` | `design check`：源码违反门禁条文（超出存量基线的部分） |
+| `DESIGN_STANDARD_INVALID` | `design check`：规范没通过校验，无法据此判卷 |
+| `DESIGN_BASELINE_UNREADABLE` | `design check`：存量基线文件坏了 |
 
-警告：`DESIGN_DECISION_PENDING`（待定参数清单）、`DESIGN_CHECK_PENDING`（检查待接入的门禁规则）、`DESIGN_AREA_UNCOVERED` / `DESIGN_TOPIC_UNCOVERED`（骨架里还没写的领域 / 条目）、`DESIGN_AREA_EXTRA` / `DESIGN_TOPIC_EXTRA`（骨架外的领域 / 条目）、`DESIGN_SKELETON_UNAVAILABLE`、`DESIGN_TOKENS_UNAVAILABLE`、`DESIGN_SPECS_UNAVAILABLE`。
+警告：`DESIGN_DECISION_PENDING`（待定参数清单）、`DESIGN_CHECK_PENDING`（检查待接入的门禁规则）、`DESIGN_AREA_UNCOVERED` / `DESIGN_TOPIC_UNCOVERED`（骨架里还没写的领域 / 条目）、`DESIGN_AREA_EXTRA` / `DESIGN_TOPIC_EXTRA`（骨架外的领域 / 条目）、`DESIGN_SKELETON_UNAVAILABLE`、`DESIGN_TOKENS_UNAVAILABLE`、`DESIGN_SPECS_UNAVAILABLE`；`design check` 另有 `DESIGN_SUPPRESSION_REASON_MISSING`、`DESIGN_BASELINE_TIGHTENABLE`、`DESIGN_CHECK_ROOT_MISSING`、`DESIGN_CHECK_TRUNCATED`、`DESIGN_CHECK_FILE_SKIPPED`。

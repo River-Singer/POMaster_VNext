@@ -35,7 +35,7 @@
 
 颜色只经主题变量取：Geist 色阶用 ds- 前缀的颜色类（bg-ds-gray-100、text-ds-gray-900），shadcn/ui 的成对变量（background / foreground、primary / primary-foreground）已映射到 Geist 色阶。不在组件里写死色值。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
 - 示例（这样做）：用 Geist 色阶类
 - 示例（别这样做）：写死色值
@@ -107,7 +107,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 正文、标题、标签、控件、表格、图表都用 Geist Sans；Geist Mono 只用于代码、命令、路径、原始 token、时间戳和短标识。字体从 Google Fonts 加载，字重 400 到 600。字体族只经 font-sans / font-mono（或带 -mono 的排版类）取，不写内联 font-family：主题里的字体栈带系统字体兜底，中文字形由系统无衬线字体补上。
 
-- 执行：机器门禁 `style.font-family-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-family-token`；适用：管理侧与用户侧
 - 参数：无衬线 `p.sans` = Geist（Vercel design.md（官方设计技能文档：栅格、间距角色、字体、色彩、动效、可访问性））
 - 参数：等宽 `p.mono` = Geist Mono（Vercel design.md（官方设计技能文档：栅格、间距角色、字体、色彩、动效、可访问性））
 - 参数：字重范围 `p.weights` = 400 / 600（Vercel design.md（官方设计技能文档：栅格、间距角色、字体、色彩、动效、可访问性））
@@ -119,7 +119,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 字号只用 Geist 的四组排版类，类名里的数字就是字号。标题类开启页面或区块；按钮类只在按钮组件里用；标签类用于单行文字；正文类用于多行文字。不自造字号。
 
-- 执行：机器门禁 `style.font-size-scale`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-size-scale`；适用：管理侧与用户侧
 - 参数：标题 `p.heading` = 72px / 64px / 56px / 48px / 40px / 32px / 24px / 20px / 16px / 14px（Geist · Typography）
 - 参数：按钮 `p.button` = 16px / 14px / 12px（Geist · Typography）
 - 参数：标签 `p.label` = 20px / 18px / 16px / 14px / 13px / 12px（Geist · Typography）
@@ -164,7 +164,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 字重跟着排版类走，不单独写 font-weight。需要在一段文字里强调时，在排版类里嵌套 strong 元素（Geist 的 Strong / Subtle 修饰）。
 
-- 执行：机器门禁 `style.font-weight-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-weight-allowed`；适用：管理侧与用户侧
 - 参数：行高 / 字重 / 字距 `p.class_metrics`：待项目决定——各排版类的行高、字重、字距取多少？（Geist 的完整数值在设计稿里，当前排版类只实现了字号）
 - 示例（这样做）：用 strong 强调
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-typography--type-weight
@@ -184,7 +184,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 文字只用两档：主要文字 gray-1000，次要文字 gray-900。更弱的灰只用于禁用态，不用来写说明文字。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 参数：主要文字 `p.primary` = gray-1000（Geist · Colors（色阶、档位用途、gray 与 gray-alpha 的取舍））
 - 参数：次要文字 `p.secondary` = gray-900（Geist · Colors（色阶、档位用途、gray 与 gray-alpha 的取舍））
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「颜色不得作为唯一信息来源；文本对比度至少 4.5:1」
@@ -235,7 +235,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 应用界面最多三级标题：页面标题 text-heading-24 或 32，区块标题 text-heading-20，子区块 text-heading-16；更大的标题类留给营销页和文档首页。
 
-- 执行：机器门禁 `markup.heading-level-max`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.heading-level-max`；适用：管理侧与用户侧
 - 参数：页面标题 `p.page` = 24px / 32px（pomaster 预设约定（Geist 体系））
 - 参数：区块标题 `p.section` = 20px（pomaster 预设约定（Geist 体系））
 - 参数：子区块 `p.subsection` = 16px（pomaster 预设约定（Geist 体系））
@@ -247,14 +247,14 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 每个页面视图只有一个 h1，就是页面标题；卡片、对话框里的标题从 h2 往下排。
 
-- 执行：机器门禁 `markup.single-h1`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.single-h1`；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-headings--heading-single-h1
 
 ### HEADING.ORDER 标题不跳级
 
 标题逐级下降，不从 h2 直接跳到 h4；视觉层级和标题层级一致。
 
-- 执行：机器门禁 `markup.heading-order`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.heading-order`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「标题层级 h1–h6 与视觉层级一致，不跳过层级」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-headings--heading-order
 
@@ -287,7 +287,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 图标统一用 lucide-react，不混用第二套。Vercel 文档里的官方图标包 @vercel/geistcn-assets 在公开 npm 上装不到，能装后再评估替换。图标只在一个约定俗成的图标能让操作更快被认出时才用。
 
-- 执行：机器门禁 `icon.single-library`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `icon.single-library`；适用：管理侧与用户侧
 - 参数：图标库 `p.library` = lucide-react（pomaster 预设约定（Geist 体系））
 - 参数：Geist 官方图标包 `p.official` = @vercel/geistcn-assets（公开 npm 上装不到）（Vercel Geist 设计体系）
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-icons--icon-library
@@ -346,7 +346,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 只有图标的按钮必须带 aria-label，名称写动作和对象（「复制部署地址」），不写图标名（「复制」）；悬停时用文字提示显示同样的文字。按钮已经有可见文字时不要再加 aria-label。
 
-- 执行：机器门禁 `markup.icon-button-label`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.icon-button-label`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。」
 - 示例（这样做）：带 aria-label
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-icons--icon-button-label
@@ -422,7 +422,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 圆角值只取 MATERIAL.RADIUS 的三档（6 / 12 / 16，对应 rounded-md / rounded-xl / rounded-2xl），外加整圆 rounded-full；不写 rounded-[10px] 这类任意值，不在组件外层再套一层不同的圆角。
 
-- 执行：机器门禁 `style.radius-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.radius-token`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
 - 示例（这样做）：用档位类
 - 示例（别这样做）：任意值
@@ -507,7 +507,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 阴影只取规范定下的层级类，不写 shadow-[…] 任意值；不做彩色、发光、内阴影装饰；阴影保持半透明，和底色融在一起。
 
-- 执行：机器门禁 `style.shadow-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.shadow-token`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
 - 示例（别这样做）：彩色发光阴影
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-elevation--elev-one-token
@@ -600,7 +600,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 层级只取预设档位，从低到高：内容、吸顶元素、下拉与提示、抽屉、对话框、全局提示；不写任意的 z-index 数字。
 
-- 执行：机器门禁 `style.no-raw-z-index`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-z-index`；适用：管理侧与用户侧
 - 参数：层级档位 `p.layers`：待项目决定——各层级的 z-index 取多少？
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-layout--layout-z-index
 
@@ -626,7 +626,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 列间距取间距阶梯，同一个栅格里固定一档，不随窗口缩放。
 
-- 执行：机器门禁 `grid.gutter-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `grid.gutter-allowed`；适用：管理侧与用户侧
 - 参数：列间距 `p.gutter`：待项目决定——列间距取 16 还是 24？（候选 16px / 24px）
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-grid--grid-gutter
 
@@ -641,7 +641,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 响应式布局在 sm、md、lg 三个断点都写明列数和行数，让格子在手机、平板、桌面之间按预期重排；只用 Tailwind 的断点档，不自造断点。
 
-- 执行：机器门禁 `style.breakpoint-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.breakpoint-allowed`；适用：管理侧与用户侧
 - 参数：必写的断点 `p.breakpoints` = sm / md / lg（Geist · Grid）
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-grid--grid-breakpoints
 
@@ -664,7 +664,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 
 间距只用间距阶梯（Tailwind 的 --spacing 基数 0.25rem 的整数倍），不写任意值。
 
-- 执行：机器门禁 `style.spacing-scale`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.spacing-scale`；适用：管理侧与用户侧
 - 参数：间距基数 --spacing `p.base` = 0.25rem（Tailwind CSS · 间距（--spacing 基数））
 - 对照表「常用档位」（类名 · 像素 → 用途）：
   - `gap-1 · 4px`：图标与 12 号文字
@@ -922,7 +922,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 纯图标按钮设 svgOnly，并且必须带 aria-label；名称写动作和对象（「复制部署地址」），不写图标名。
 
-- 执行：机器门禁 `markup.icon-button-label`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.icon-button-label`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。」
 - 示例（这样做）：有名称
 - 示例（别这样做）：读屏只能读出「按钮」
@@ -1101,7 +1101,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 过渡只作用于 transform 和 opacity，高度展开用 grid-template-rows 过渡；不过渡 width、height、top、left、margin 这类触发重排的属性；will-change 只在动画期间加在动的那个元素上，不全局铺。
 
-- 执行：机器门禁 `motion.transform-only`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `motion.transform-only`；适用：管理侧与用户侧
 - 示例（这样做）：位移与透明度
 - 示例（别这样做）：过渡布局属性
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-perf
@@ -1110,7 +1110,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 减少动效模式下状态变化仍要看得见：淡入淡出或直接切换，去掉位移、缩放、视差和自动播放；数字滚动直接显示最终值；每段关键帧动画都写 prefers-reduced-motion 分支（全局降级见 MOTION.REDUCED）。
 
-- 执行：机器门禁 `motion.reduced-motion`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `motion.reduced-motion`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级」
 - 示例（这样做）：关键帧动画的降级分支
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-reduced
@@ -1675,7 +1675,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 金额、数量、比率按数据格式规范输出：千分位、固定小数位、单位写在表头或指标名里、负数格式统一；空值显示「—」，和 0 区分开；数字右对齐、用等宽数字。
 
-- 执行：机器门禁 `format.no-local-pattern`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-reports--report-numbers
 
 ### REPORT.EXPORT 导出与页面同口径并受权限控制
@@ -1739,7 +1739,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 全局 store 用 Zustand，只放跨页面且稳定的状态（当前用户、团队、偏好设置）；每个 store 一个文件，文件头写明属主；组件用选择器只订阅自己用到的字段。
 
-- 执行：机器门禁 `state.store-library`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `state.store-library`；适用：管理侧与用户侧
 - 参数：全局状态库 `p.library` = Zustand（项目选型决策（Owner 2026-11-06：服务端数据用 TanStack Query，全局 store Vue 用 Pinia、React 用 Zustand））
 - 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「全局 store 只保存稳定跨页面状态。」
 - 示例（这样做）：用选择器订阅
@@ -1759,7 +1759,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 组件不直接调用 fetch，一律经生成的接口客户端（类型与 OpenAPI 同源）和查询；展示组件不请求接口、不改路由、不改全局状态，数据从属性传入。
 
-- 执行：机器门禁 `state.no-direct-request`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `state.no-direct-request`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 让展示组件偷偷请求接口、改路由或全局状态。」
 - 示例（别这样做）：组件里直接 fetch
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-state--state-requests
@@ -1824,7 +1824,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 路由一律懒加载（lazy 路由或 React.lazy）；图表、富文本编辑器、大表格等重组件在用到的页面里按需加载；应用入口不同步引入这些重型依赖。
 
-- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.lazy-load`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
 - 示例（这样做）：路由懒加载
 - 示例（别这样做）：入口同步引入图表库
@@ -1834,7 +1834,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 组件按文件引入（shadcn/ui 的组件本来就在 src/components/ui 下按文件存在）；lucide-react 按图标名具名引入，不整包引入或用动态名字查整个图标表。
 
-- 执行：机器门禁 `perf.no-full-library-import`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.no-full-library-import`；适用：管理侧与用户侧
 - 示例（这样做）：具名引入图标
 - 示例（别这样做）：整包引入图标表
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-on-demand-library
@@ -1892,7 +1892,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 不用 dangerouslySetInnerHTML 渲染用户输入或接口返回的富文本；确实要渲染富文本时，经项目唯一的净化组件（白名单 sanitizer，如 DOMPurify）输出；不拼接 HTML 字符串。
 
-- 执行：机器门禁 `security.no-unsafe-html`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-unsafe-html`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST NOT 使用 `v-html` / `innerHTML` / `dangerouslySetInnerHTML` 渲染不可信内容；富文本必须使用白名单 sanitizer。」
 - 示例（别这样做）：直接渲染接口返回的 HTML
 - 示例（这样做）：经净化组件
@@ -1902,7 +1902,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 用户或接口提供的链接只接受 http、https、mailto 协议（拒绝 javascript:、data:）；登录后的回跳地址只接受站内相对路径；新窗口打开外链一律带 rel="noopener noreferrer"。
 
-- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.safe-link`；适用：管理侧与用户侧
 - 示例（这样做）：回跳地址只认站内路径
 - 示例（这样做）：外链
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-links
@@ -1920,7 +1920,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 
 不用 eval、new Function、字符串形式的 setTimeout / setInterval，不用内联事件属性；生产环境按严格 CSP 部署（script-src 不含 'unsafe-inline' 和 'unsafe-eval'）。
 
-- 执行：机器门禁 `security.no-eval`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-eval`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST 部署 CSP，默认 `default-src 'self'`；脚本/样式/img/font/connect/frame 按业务最小白名单开放。」
 - 示例（别这样做）：字符串当代码执行
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-security--sec-no-eval
@@ -1970,7 +1970,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 
 会话标识与刷新令牌放在 HttpOnly Cookie 里，由后端设置；短期访问令牌只放内存（模块变量或状态库里不持久化的字段）；不存进 localStorage、sessionStorage、IndexedDB，不放进 URL 和 URL 片段。
 
-- 执行：机器门禁 `security.no-token-storage`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-token-storage`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST 禁止将 session identifier、refresh token、access token、secret、密码等价凭据持久化到 localStorage/sessionStorage/IndexedDB（除非经安全 Owner 批准的短期例外）。」
 - 示例（别这样做）：令牌存进 localStorage
 - 示例（这样做）：令牌只放内存
@@ -2084,7 +2084,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 
 target=_blank 的链接一律带 rel="noopener noreferrer"；用 window.open 打开外部页面时传 noopener；不把 window.opener 交给外部页面。
 
-- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.safe-link`；适用：管理侧与用户侧
 - 示例（这样做）：window.open 带 noopener
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-tabnabbing
 
@@ -2230,7 +2230,7 @@ HTTP 客户端把所有失败归一成一个结构：类别（网络、超时、
 
 catch 之后要么处理并告知用户，要么继续向上抛；不写空 catch，不只 console.log 了事；不用 try/catch 包住整段代码掩盖问题。
 
-- 执行：机器门禁 `error.no-empty-catch`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `error.no-empty-catch`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 吞掉字段错误、冲突或 TraceId。」
 - 示例（别这样做）：空 catch
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-error-handling--errh-no-swallow
@@ -2253,7 +2253,7 @@ catch 之后要么处理并告知用户，要么继续向上抛；不写空 catc
 
 路由定义的 handle（或路由配置的元数据）里声明这个页面要求什么：是否登录、权限码、功能开关、布局；没有声明的路由在开发期就报错，不默认放行。
 
-- 执行：机器门禁 `guard.route-meta`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `guard.route-meta`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
 - 示例（这样做）：路由声明访问要求
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-route-guard--guard-declare
@@ -2316,7 +2316,7 @@ catch 之后要么处理并告知用户，要么继续向上抛；不写空 catc
 
 每个路由懒加载成独立分包（lazy 路由或 React.lazy）；导航链接在悬停或进入视口时预取目标路由；首屏只加载当前路由需要的代码。
 
-- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.lazy-load`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-page-loading--pload-split
 
@@ -2684,7 +2684,7 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 
 重绘时布局、间距、字号、颜色、组件全部来自本规范的 token 与组件；不复制原型的 class、内联样式、字体、颜色值、栅格列数和像素宽度；原型里的分组、顺序、主次和文案保留。原型用了另一套组件库或 CDN 引入的样式框架，实现里都不出现。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-rebuild
 
 ### PROTO.VERIFY 用同一个抽取器做事实对账

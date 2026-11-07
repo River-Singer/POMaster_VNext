@@ -251,7 +251,7 @@ function readmeText(result: { readonly out: string; readonly questions: readonly
     `2. 处理 \`questions.json\` 里的 ${result.questions.length} 个冲突（交给 Question Gate；裁决前按每条的默认口径）。`,
     "3. 复核 `ux-ir.json`：页面类型与区域到规范模式的映射，补上 rule_refs 依据。",
     "4. 按设计规范重绘（布局、间距、字号、组件全部取规范；原型的 class、样式、字体、颜色不进实现）。",
-    "5. 对账：`pomaster prototype diff <本目录>/facts.json <重绘后的页面.html> [--render]`，缺失 / 改动 / 新增都为零才算完成，结果作为 verify 证据。",
+    "5. 对账：`pomaster prototype check <本目录>/facts.json <重绘后的页面.html> [--render]`，缺失 / 改动 / 新增都为零才算完成，结果作为 verify 证据。",
     "",
     "## 页面",
     "",
@@ -323,7 +323,7 @@ export async function runPrototypeIngest(dir: string, input: PrototypeIngestInpu
     design_system: standard.normalized?.meta.design_system ?? null,
     pages: irPages,
     questions: questions.map((question) => question.id),
-    notes_zh: ["pattern 与 rule_refs 是按结构推出的初步映射，agent 按设计规范复核后再重绘", "facts 里列的事实在重绘后必须一条不少（pomaster prototype diff 对账）"],
+    notes_zh: ["pattern 与 rule_refs 是按结构推出的初步映射，agent 按设计规范复核后再重绘", "facts 里列的事实在重绘后必须一条不少（pomaster prototype check 对账）"],
   };
   writeFileSync(join(outDir, "facts.json"), `${JSON.stringify(factsFile, null, 2)}\n`, "utf8");
   writeFileSync(join(outDir, "questions.json"), `${JSON.stringify({ schema: "pomaster.prototype-questions/v1", questions }, null, 2)}\n`, "utf8");
@@ -335,43 +335,43 @@ export async function runPrototypeIngest(dir: string, input: PrototypeIngestInpu
     `原型已抽取到 ${result.out_dir}：${pages.length} 个页面、${allFacts.length} 条原型事实、${specFacts.length} 条 spec 事实、${questions.length} 个待裁决的冲突`,
     ...pages.map((page) => `  - ${page.title ?? page.source}：${page.facts} 条事实${page.rendered ? "（已渲染）" : ""}`),
     ...questions.slice(0, 10).map((question) => `  [${question.classification}] ${question.question_zh}（默认：${question.default_zh}）`),
-    "下一步：读 *.outline.md 与 facts.json，按设计规范重绘，再用 pomaster prototype diff 对账",
+    "下一步：读 *.outline.md 与 facts.json，按设计规范重绘，再用 pomaster prototype check 对账",
   ];
   return okOutcome("prototype ingest", result, human, warnings);
 }
 
-export interface PrototypeDiffInput {
+export interface PrototypeCheckInput {
   readonly facts: string;
   readonly html: readonly string[];
   readonly render?: boolean;
   readonly allowNetwork?: boolean;
 }
 
-export interface PrototypeDiffResult extends FactDiff {
+export interface PrototypeCheckResult extends FactDiff {
   readonly facts_file: string;
   readonly against: readonly string[];
 }
 
-export async function runPrototypeDiff(dir: string, input: PrototypeDiffInput): Promise<CommandOutcome<PrototypeDiffResult | null>> {
+export async function runPrototypeCheck(dir: string, input: PrototypeCheckInput): Promise<CommandOutcome<PrototypeCheckResult | null>> {
   const factsPath = resolve(dir, input.facts.endsWith(".json") ? input.facts : join(input.facts, "facts.json"));
   if (!existsSync(factsPath)) {
-    return failOutcome("prototype diff", null, [{ code: "PROTOTYPE_FACTS_NOT_FOUND", message: `找不到事实清单 ${input.facts}`, hint: "先跑 pomaster prototype ingest 生成 facts.json" }], [`找不到事实清单 ${input.facts}`]);
+    return failOutcome("prototype check", null, [{ code: "PROTOTYPE_FACTS_NOT_FOUND", message: `找不到事实清单 ${input.facts}`, hint: "先跑 pomaster prototype ingest 生成 facts.json" }], [`找不到事实清单 ${input.facts}`]);
   }
   let file: PrototypeFactsFile;
   try {
     file = JSON.parse(readFileSync(factsPath, "utf8")) as PrototypeFactsFile;
   } catch (error) {
-    return failOutcome("prototype diff", null, [{ code: "PROTOTYPE_FACTS_UNREADABLE", message: `facts.json 读不出来：${(error as Error).message}`, hint: "重新跑 pomaster prototype ingest" }], ["facts.json 读不出来"]);
+    return failOutcome("prototype check", null, [{ code: "PROTOTYPE_FACTS_UNREADABLE", message: `facts.json 读不出来：${(error as Error).message}`, hint: "重新跑 pomaster prototype ingest" }], ["facts.json 读不出来"]);
   }
   if (file.schema !== PROTOTYPE_FACTS_SCHEMA) {
-    return failOutcome("prototype diff", null, [{ code: "PROTOTYPE_FACTS_SCHEMA", message: `facts.json 的 schema 不是 ${PROTOTYPE_FACTS_SCHEMA}`, hint: "用当前版本的 pomaster prototype ingest 重新生成" }], ["facts.json 版本不对"]);
+    return failOutcome("prototype check", null, [{ code: "PROTOTYPE_FACTS_SCHEMA", message: `facts.json 的 schema 不是 ${PROTOTYPE_FACTS_SCHEMA}`, hint: "用当前版本的 pomaster prototype ingest 重新生成" }], ["facts.json 版本不对"]);
   }
   const warnings: CliWarning[] = [];
   const actual: PrototypeFact[] = [];
   for (const page of input.html) {
     const absolute = resolve(dir, page);
     if (!existsSync(absolute)) {
-      return failOutcome("prototype diff", null, [{ code: "PROTOTYPE_INPUT_NOT_FOUND", message: `找不到文件 ${page}`, hint: "给出重绘后页面的 HTML（Storybook 或浏览器里另存的渲染结果），或加 --render 读源页面" }], [`找不到文件 ${page}`]);
+      return failOutcome("prototype check", null, [{ code: "PROTOTYPE_INPUT_NOT_FOUND", message: `找不到文件 ${page}`, hint: "给出重绘后页面的 HTML（Storybook 或浏览器里另存的渲染结果），或加 --render 读源页面" }], [`找不到文件 ${page}`]);
     }
     let html = readFileSync(absolute, "utf8");
     if (input.render === true) {
@@ -383,7 +383,7 @@ export async function runPrototypeDiff(dir: string, input: PrototypeDiffInput): 
   }
   const expected = file.facts.filter((fact) => !fact.kind.startsWith("spec_"));
   const diff = diffFacts(expected, actual);
-  const result: PrototypeDiffResult = { ...diff, facts_file: relative(dir, factsPath).replace(/\\/g, "/"), against: input.html };
+  const result: PrototypeCheckResult = { ...diff, facts_file: relative(dir, factsPath).replace(/\\/g, "/"), against: input.html };
   const blocking = diff.differences.filter((item) => item.blocking);
   const human = [
     diff.ok ? `事实对账通过：比较了 ${diff.compared} 条，阻断差异 0 条（提示 ${diff.differences.length} 条）` : `事实对账未通过：${blocking.length} 条阻断差异`,
@@ -391,7 +391,7 @@ export async function runPrototypeDiff(dir: string, input: PrototypeDiffInput): 
   ];
   if (!diff.ok) {
     const errors: CliError[] = blocking.slice(0, 20).map((item) => ({ code: `PROTOTYPE_FACT_${item.change.toUpperCase()}`, message: item.detail_zh, hint: "重绘只能换表现，业务事实要一条不少；确需改动的事实先走提问记录裁决" }));
-    return failOutcome("prototype diff", result, errors, human, warnings);
+    return failOutcome("prototype check", result, errors, human, warnings);
   }
-  return okOutcome("prototype diff", result, human, warnings);
+  return okOutcome("prototype check", result, human, warnings);
 }

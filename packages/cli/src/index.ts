@@ -326,7 +326,8 @@ import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
 import { runDesignShow, runDesignValidate } from "./design.js";
-import { runPrototypeDiff, runPrototypeIngest } from "./prototype.js";
+import { runDesignCheck } from "./design-check.js";
+import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -1003,7 +1004,17 @@ export {
 export type { CaptureSourceSnapshotInput, RunSourceStabilityJudgment } from "./source-snapshot.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runDesignValidate, runDesignShow, resolveDesignInputs, loadDesignStandard, formatDesignParam } from "./design.js";
-export { runPrototypeIngest, runPrototypeDiff, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
+export {
+  runDesignCheck,
+  assessDesignStandard,
+  designStandardGateErrors,
+  designStandardKernelGateExecutor,
+  designStandardToRecord,
+  discoverDesignRoots,
+  IMPLEMENTED_DESIGN_CHECKS,
+} from "./design-check.js";
+export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
+export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
 export { parseHtml, outlineOf, factsOf, specFactsOf, questionsOf, diffFacts, extractPrototype, outlineMarkdown } from "./prototype-extract.js";
 export type {
   DesignInputs,
@@ -2962,7 +2973,7 @@ export function createProgram(
   const design = program
     .command("design")
     .description(
-      "前端设计规范命令面：validate = 校验规范源 pomaster.design-standard/v1；show = 按领域 / 规则输出规范（已解析的数值、出处、硬规范锚点、执行方式），与 Storybook 规范页、AI 孪生同源同指纹",
+      "前端设计规范命令面：validate = 校验规范源 pomaster.design-standard/v1；show = 按领域 / 规则输出规范（已解析的数值、出处、硬规范锚点、执行方式），与 Storybook 规范页、AI 孪生同源同指纹；check = 按规范的门禁条文扫描前端源码",
     );
   design
     .command("validate")
@@ -2996,12 +3007,35 @@ export function createProgram(
       });
       record({ command: "design show", outcome, asJson: command.opts().json === true });
     });
+  design
+    .command("check")
+    .description(
+      "设计规范门禁：按规范里 enforcement=gate 的条文静态扫描前端源码（阈值取条文参数：间距阶梯、字阶、字重、圆角档位、栅格列数、列间距、断点、禁用词、全局状态库……；参数仍是决策位的检查记待定）。违规退出码非 0；带理由的 `pomaster-design-ignore <检查编号>: 理由` 豁免该行与下一行。与 check --gates 的 GATE.DESIGN.STANDARD、closeout 同一判卷。错误码：DESIGN_CHECK_VIOLATIONS / DESIGN_STANDARD_INVALID / DESIGN_BASELINE_UNREADABLE；警告：DESIGN_BASELINE_TIGHTENABLE / DESIGN_CHECK_ROOT_MISSING / DESIGN_CHECK_TRUNCATED / DESIGN_CHECK_FILE_SKIPPED / DESIGN_SUPPRESSION_REASON_MISSING",
+    )
+    .option("--root <dir>", "扫描的源码目录（可重复；缺省探测 frontend/src、web/src、apps/*/src、src…）", collectValues)
+    .option("--only <check>", "只跑这几条检查（可重复，如 style.spacing-scale）", collectValues)
+    .option("--write-baseline", "把这次扫到的全部违规记为存量基线（.pomaster/baseline/frontend/design-check-baseline.json）：老项目采用规范时用，之后只拦新增")
+    .option("--ignore-baseline", "不读存量基线，看全量违规")
+    .option("--file <path>", "规范文件（缺省 = 项目规范，项目没有则用工具预设）")
+    .option("--system <system>", "项目没有规范时用哪套工具预设：antd / geist；缺省 antd")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runDesignCheck(resolveDir(command), {
+        ...(opts.file !== undefined ? { file: opts.file as string } : {}),
+        ...(opts.system !== undefined ? { system: opts.system as DesignSystem } : {}),
+        ...(opts.root !== undefined ? { roots: opts.root as string[] } : {}),
+        ...(opts.only !== undefined ? { only: opts.only as string[] } : {}),
+        writeBaseline: opts.writeBaseline === true,
+        ignoreBaseline: opts.ignoreBaseline === true,
+      });
+      record({ command: "design check", outcome, asJson: command.opts().json === true });
+    });
 
   // —— 原型转换：BA 的 spec + HTML → 业务事实与信息结构 → 按设计规范重绘 → 事实对账 ——
   const prototype = program
     .command("prototype")
     .description(
-      "原型转换（设计规范「工程规范 / 原型转换」）：ingest = 读 BA 交来的 HTML 原型与 spec，去掉表现（样式、栅格、字体、组件长相），抽出业务事实、信息结构与交互意图，对出冲突；diff = 用同一个抽取器读按规范重绘后的页面，与事实清单逐条对账",
+      "原型转换（设计规范「工程规范 / 原型转换」）：ingest = 读 BA 交来的 HTML 原型与 spec，去掉表现（样式、栅格、字体、组件长相），抽出业务事实、信息结构与交互意图，对出冲突；check = 用同一个抽取器读按规范重绘后的页面，与事实清单逐条对账",
     );
   prototype
     .command("ingest")
@@ -3025,7 +3059,7 @@ export function createProgram(
       record({ command: "prototype ingest", outcome, asJson: command.opts().json === true });
     });
   prototype
-    .command("diff")
+    .command("check")
     .description("事实对账：重绘后的页面与 facts.json 逐条比较（缺失 / 改动 / 新增 / 顺序），有阻断差异时失败。错误码：PROTOTYPE_FACTS_NOT_FOUND / PROTOTYPE_FACTS_UNREADABLE / PROTOTYPE_FACTS_SCHEMA / PROTOTYPE_INPUT_NOT_FOUND / PROTOTYPE_FACT_MISSING / PROTOTYPE_FACT_CHANGED / PROTOTYPE_FACT_ADDED / PROTOTYPE_FACT_REORDERED")
     .argument("<facts>", "facts.json 或 ingest 的输出目录")
     .argument("<html...>", "重绘后页面的 HTML（渲染后另存的 DOM，或加 --render 直接读）")
@@ -3033,8 +3067,8 @@ export function createProgram(
     .option("--allow-network", "渲染时允许联网")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (facts: string, html: string[], opts, command) => {
-      const outcome = await runPrototypeDiff(resolveDir(command), { facts, html, render: opts.render === true, allowNetwork: opts.allowNetwork === true });
-      record({ command: "prototype diff", outcome, asJson: command.opts().json === true });
+      const outcome = await runPrototypeCheck(resolveDir(command), { facts, html, render: opts.render === true, allowNetwork: opts.allowNetwork === true });
+      record({ command: "prototype check", outcome, asJson: command.opts().json === true });
     });
 
   // —— Agent Behavioral Eval（PRD §44.10；§94.3 触发面配套） ——

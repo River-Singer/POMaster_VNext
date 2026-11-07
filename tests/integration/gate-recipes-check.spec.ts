@@ -38,7 +38,7 @@ async function runJson(
   };
 }
 
-describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；P-v06 增量 5→6；脚手架 S1-4 6→7）", () => {
+describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；P-v06 增量 5→6；脚手架 S1-4 6→7；设计规范 D2 7→8）", () => {
   it("① + ②：七 recipe 全量消费、七条 GRN 落盘、seq 推进、缺席显式非绿", async () => {
     expect((await runJson(["init"])).code).toBe(0);
 
@@ -48,12 +48,12 @@ describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；
     expect(check.envelope.command).toBe("check");
 
     const result = check.envelope.result as Record<string, unknown>;
-    expect(result["recipes_total"]).toBe(7);
+    expect(result["recipes_total"]).toBe(8);
     expect(result["passed"]).toBe(0);
     // 裁定批 D D2：init 预植占 seq=1 → check --gates 单事务 applied_seq=2。
     expect(result["applied_seq"]).toBe(2);
     const rows = result["rows"] as Record<string, unknown>[];
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(8);
     expect(rows.map((row) => row["verdict"])).toEqual([
       "not_configured",
       "not_run",
@@ -61,6 +61,7 @@ describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；
       "not_run",
       "not_run",
       "not_run",
+      "not_configured",
       "not_configured",
     ]);
     expect(rows.map((row) => row["grn"])).toEqual([
@@ -71,6 +72,7 @@ describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；
       "GRN-0005",
       "GRN-0006",
       "GRN-0007",
+      "GRN-0008",
     ]);
 
     // 证据平面：七条 GRN 文件逐一落盘且 inline 形态齐备（三件套强制上报纪律）。
@@ -83,6 +85,7 @@ describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；
       "GRN-0005.json",
       "GRN-0006.json",
       "GRN-0007.json",
+      "GRN-0008.json",
     ]);
     for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(
@@ -125,7 +128,7 @@ describe("check --gates 全链路（init → 派发 7 recipe → 7 GRN 入账；
     const second = await runJson(["check", "--gates"]);
     const result = second.envelope.result as Record<string, unknown>;
     const rows = result["rows"] as Record<string, unknown>[];
-    expect(rows[0]?.["grn"]).toBe("GRN-0008"); // 续号不重号（evidence 平面追加语义；脚手架 S1-4 后 7 recipe，二次从 0008 起）
+    expect(rows[0]?.["grn"]).toBe("GRN-0009"); // 续号不重号（evidence 平面追加语义；脚手架 S1-4 后 7 recipe，二次从 0008 起）
     // 裁定批 D D2：init 预植 seq=1、首次 check seq=2 → 二次 check applied_seq=3。
     expect(result["applied_seq"]).toBe(3);
   });

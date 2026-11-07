@@ -41,7 +41,7 @@
 
 组件和页面里的颜色只从主题 token 取（品牌色、文字色、边框色这类），不写十六进制或 rgb 字面量；换主题、换暗色时颜色才能一起变。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 在业务页面创建第二套视觉语言。」
 - 示例（这样做）：颜色从 token 取
 - 示例（别这样做）：写死色值
@@ -114,7 +114,7 @@
 
 界面文字用规范无衬线字体族，代码和需要等宽的数字用规范等宽字体族；不引入第三种字体，也不在单个组件里另外指定字体。
 
-- 执行：机器门禁 `style.font-family-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-family-token`；适用：管理侧与用户侧
 - 参数：无衬线字体族 `p.sans` = -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'（token `typography.family.sans`）
 - 参数：等宽字体族 `p.mono` = 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace（token `typography.family.mono`）
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 在业务页面创建第二套视觉语言。」
@@ -125,7 +125,7 @@
 
 字号只取字阶 12、14、16、20、24、30、38（46、56、68 只用于展示型页面），每级行高是字号加 8。正文 14 号、行高 22。一个系统里常用的字号控制在 5 种以内。
 
-- 执行：机器门禁 `style.font-size-scale`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-size-scale`；适用：管理侧与用户侧
 - 参数：字阶 `p.scale` = 12px / 14px / 16px / 20px / 24px / 30px / 38px（Ant Design v5 主题算法 · 字阶与行高（genFontSizes / genFontMapToken））
 - 参数：对应行高 `p.line_heights` = 20px / 22px / 24px / 28px / 32px / 38px / 46px（Ant Design v5 主题算法 · 字阶与行高（genFontSizes / genFontMapToken））
 - 参数：展示型字阶 `p.display_scale` = 46px / 56px / 68px（Ant Design v5 主题算法 · 字阶与行高（genFontSizes / genFontMapToken））
@@ -147,7 +147,7 @@
 
 正文用常规 400，需要强调的短文字用 500；600 只用于标题和英文加粗。强调时选一种手段，不要加粗、换色、放大同时叠加。
 
-- 执行：机器门禁 `style.font-weight-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.font-weight-allowed`；适用：管理侧与用户侧
 - 参数：常规 `p.regular` = 400（Ant Design 设计规范 · 字体）
 - 参数：中粗 `p.medium` = 500（Ant Design 设计规范 · 字体）
 - 参数：标题 `p.semibold` = 600（token `typography.weight.semibold`）
@@ -168,7 +168,7 @@
 
 文字颜色只用四档文本 token：主要、次要、辅助、禁用。正文、标题与背景的对比度以 7:1 为目标，最低不得低于 4.5:1；颜色不能是传达信息的唯一手段。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 参数：主要 `p.primary` = rgba(0, 0, 0, 0.88)（token `color.text.primary`）
 - 参数：次要 `p.secondary` = rgba(0, 0, 0, 0.65)（token `color.text.secondary`）
 - 参数：辅助 `p.tertiary` = rgba(0, 0, 0, 0.45)（token `color.text.tertiary`）
@@ -232,7 +232,7 @@
 
 列表、表单、详情等工作页最多用三级标题：h1 是页面标题，20px；h2 是卡片或区块标题，16px；h3 是区块里的分组标题，14px；三级都用 600 字重。更细的层次用间距和分组表达，不再加标题级。
 
-- 执行：机器门禁 `markup.heading-level-max`（待接入，暂按评审执行）；适用：管理侧
+- 执行：机器门禁 `markup.heading-level-max`；适用：管理侧
 - 参数：h1 页面标题 `p.h1_size` = 20px（ant-design-vue PageHeader 样式（页面标题取 fontSizeHeading4、字重 600））
 - 参数：h2 卡片 / 区块标题 `p.h2_size` = 16px（ant-design-vue Card 样式（卡片标题取 fontSizeLG 与 fontWeightStrong；内嵌小卡片标题取 fontSize））
 - 参数：h3 分组标题 `p.h3_size` = 14px（ant-design-vue Card 样式（卡片标题取 fontSizeLG 与 fontWeightStrong；内嵌小卡片标题取 fontSize））
@@ -244,7 +244,7 @@
 
 每个页面视图（一个路由页面，或一个全屏抽屉、模态）只有一个一级标题，内容就是这个页面叫什么；路由切换后同步更新浏览器标签页标题。
 
-- 执行：机器门禁 `markup.single-h1`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.single-h1`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「路由/页面切换后必须更新 document.title 并宣布页面变化」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-headings--heading-single-h1
 
@@ -252,7 +252,7 @@
 
 标题的语义层级与视觉层级一致，逐级下降：h1 下面是 h2，h2 下面是 h3，不能从 h1 直接跳到 h3。
 
-- 执行：机器门禁 `markup.heading-order`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.heading-order`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「标题层级 h1–h6 与视觉层级一致，不跳过层级」
 - 示例（这样做）：h1 → h2 → h3
 - 示例（别这样做）：h1 直接跳到 h3
@@ -289,7 +289,7 @@
 
 管理侧系统图标只用 @ant-design/icons-vue 的图标组件；不混用第二套图标库，也不用切图或内联 SVG 充当系统图标。用户侧（H5）的图标库待项目决定。
 
-- 执行：机器门禁 `icon.single-library`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `icon.single-library`；适用：管理侧与用户侧
 - 参数：管理侧图标库 `p.admin_library` = @ant-design/icons-vue（ant-design-vue 图标示例（图标来自 @ant-design/icons-vue））
 - 参数：用户侧图标库 `p.public_library`：待项目决定——用户侧（H5）的图标库用哪一套？（候选 Vant Icon）
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-icons--icon-library
@@ -334,7 +334,7 @@
 
 系统图标跟随相邻文字的颜色；只有表达状态时才用语义色 token（成功、警告、错误、信息），并且同时配文字，不能只靠图标颜色传达状态。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 参数：success `p.success` = #52c41a（token `color.semantic.success`）
 - 参数：warning `p.warning` = #faad14（token `color.semantic.warning`）
 - 参数：error `p.error` = #ff4d4f（token `color.semantic.error`）
@@ -358,7 +358,7 @@
 
 只有图标、没有文字的按钮必须带可访问名称（aria-label），悬停时用 tooltip 显示同样的文字。
 
-- 执行：机器门禁 `markup.icon-button-label`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.icon-button-label`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。」
 - 示例（这样做）：aria-label 与 tooltip 同名
 - 示例（别这样做）：读屏只能读出「按钮」
@@ -427,7 +427,7 @@
 
 圆角值只取 MATERIAL.RADIUS 的三档（radius.sm / md / lg = 4 / 6 / 8），写成 token；组件库的圆角经主题 token（borderRadius、borderRadiusSM、borderRadiusLG）统一调，不在页面里逐个覆盖；不写 3px、5px、10px 这类档位外的值。
 
-- 执行：机器门禁 `style.radius-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.radius-token`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
 - 示例（这样做）：用 token
 - 示例（别这样做）：档位外的值
@@ -514,7 +514,7 @@
 
 阴影只取 elevation token（或组件库的 boxShadow 一类主题 token），不手写 box-shadow；不做彩色、发光、内阴影装饰；光从上方来，阴影向下（特殊位置按 MATERIAL.SHADOWS）。
 
-- 执行：机器门禁 `style.shadow-token`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.shadow-token`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 写孤立色值、魔法间距和临时阴影。」
 - 示例（别这样做）：彩色发光阴影
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-elevation--elev-one-token
@@ -590,7 +590,7 @@
 
 内容区内边距、相邻区块之间的间距、内容最大宽度全站各用一个值，都取规范 token，不在单个页面里另定。
 
-- 执行：机器门禁 `style.spacing-scale`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.spacing-scale`；适用：管理侧与用户侧
 - 参数：内容区内边距 `p.page_padding`：待定（token `layout.page_padding` 仍为 UNKNOWN）
 - 参数：区块间距 `p.section_gap`：待定（token `spacing.section_gap` 仍为 UNKNOWN）
 - 参数：内容最大宽度 `p.content_max_width`：待定（token `layout.content_max_width` 仍为 UNKNOWN）
@@ -618,7 +618,7 @@
 
 z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一档），不写死数字。
 
-- 执行：机器门禁 `style.no-raw-z-index`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-z-index`；适用：管理侧与用户侧
 - 参数：layers `p.layers`：待项目决定——层级 token 怎么分档？下拉、气泡、消息、抽屉、模态各取多少 z-index（现有 token 合同还没有层级分组）？
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「z-index 只能来自层级 token。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-foundations-layout--layout-z-index
@@ -633,7 +633,7 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 
 页面区块按 24 列栅格切分，每个区块从某一列开始、到某一列结束；不用小数跨度或百分比宽度拼区块。
 
-- 执行：机器门禁 `grid.span-range`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `grid.span-range`；适用：管理侧与用户侧
 - 参数：列数 `p.columns` = 24 个（Ant Design 设计规范 · 布局）
 - 示例（这样做）：三个等宽区块各占 8 列
 - 示例（别这样做）：用百分比宽度拼区块——百分比宽度不对齐栅格，和页面其他区块的列线错位。
@@ -643,7 +643,7 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 
 列间距（gutter）是固定值，不随窗口缩放，只取 16 或 24；窗口变化时变的是列宽，不是间距。
 
-- 执行：机器门禁 `grid.gutter-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `grid.gutter-allowed`；适用：管理侧与用户侧
 - 参数：允许的列间距 `p.gutter` = 16px / 24px（Ant Design 设计基础简版（官方 Wiki））
 - 示例（这样做）：gutter 取 16
 - 示例（别这样做）：gutter 取 10
@@ -663,7 +663,7 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 
 响应式只用规范断点（sm 576、md 768、lg 992、xl 1200），在 a-col 上用 xs / sm / md / lg / xl 声明各断点的跨度；样式里不自定义媒体查询断点。
 
-- 执行：机器门禁 `style.breakpoint-allowed`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.breakpoint-allowed`；适用：管理侧与用户侧
 - 参数：sm `p.sm` = 576px（token `breakpoints.sm`）
 - 参数：md `p.md` = 768px（token `breakpoints.md`）
 - 参数：lg `p.lg` = 992px（token `breakpoints.lg`）
@@ -690,7 +690,7 @@ z-index 只能取层级 token（下拉、气泡、消息、抽屉、模态各一
 
 间距只取间距阶梯 4、8、12、16、24、32。基础单位是 8，4 和 12 只用于组件内部的紧凑间距。margin、padding、gap 不写阶梯以外的数值，比如 10px、13px、15px。
 
-- 执行：机器门禁 `style.spacing-scale`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.spacing-scale`；适用：管理侧与用户侧
 - 参数：基础单位 `p.base_unit` = 8px（Ant Design 设计规范 · 布局）
 - 参数：xs `p.xs` = 4px（token `spacing.xs`）
 - 参数：sm `p.sm` = 8px（token `spacing.sm`）
@@ -959,7 +959,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 只有图标的按钮必须有可访问名称（aria-label），并配文字提示显示同样的文字；名称写动作和对象，如「刷新车型列表」，不写图标名。
 
-- 执行：机器门禁 `markup.icon-button-label`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `markup.icon-button-label`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 图标按钮缺少 aria-label 或等效可访问名称。」
 - 示例（这样做）：有名称，悬停有提示
 - 示例（别这样做）：读屏只能读出「按钮」
@@ -1298,7 +1298,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 金额写成货币代码加数字（CNY 1,280.00），保留到分（两位小数），列表里右对齐并用等宽数字；货币代码用 ISO 4217，不在代码里写死 ¥、$ 符号；经格式化注册表输出。
 
-- 执行：机器门禁 `format.no-local-pattern`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
 - 参数：人民币代码 `p.code` = CNY（Ant Design 设计规范 · 数据格式）
 - 参数：小数位 `p.decimals` = 2 个（pomaster 预设约定）
 - 硬规范依据：specs/hard/themes/internationalization-and-copywriting.md「货币代码使用 ISO 4217（`CNY`、`USD`、`EUR`）；禁止用 `$`、`￥` 符号硬编码。」
@@ -1310,7 +1310,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 日期 YYYY-MM-DD，时间 24 小时制 HH:mm:ss，日期与时间之间一个空格；日期区间用「～」，两侧各一个空格；存储用 ISO 8601（UTC），显示按用户时区转换；全部经格式化注册表输出，页面里不手拼格式串。
 
-- 执行：机器门禁 `format.no-local-pattern`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
 - 参数：日期 `p.date` = YYYY-MM-DD（Ant Design 设计规范 · 数据格式）
 - 参数：时间 `p.time` = HH:mm:ss（Ant Design 设计规范 · 数据格式）
 - 参数：日期时间 `p.datetime` = YYYY-MM-DD HH:mm:ss（Ant Design 设计规范 · 数据格式）
@@ -1348,7 +1348,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 模板、组件、脚本里不写死界面文字，统一经文案字典的 key 取用（用户数据除外）；key 用稳定的点分标识，如 vehicleModel.form.code，不用文案本身作 key；插值用命名占位符 {name}。
 
-- 执行：机器门禁 `text.no-literal-copy`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `text.no-literal-copy`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/internationalization-and-copywriting.md「禁止在模板/组件/脚本中硬编码任何自然语言文本（用户数据除外）。」
 - 硬规范依据：specs/hard/themes/internationalization-and-copywriting.md「key 使用稳定标识，禁止用中文/英文文案本身作为 key。」
 - 示例（这样做）：经 key 取文案
@@ -1391,7 +1391,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 规范用词：写「其他」不写「其它」，写「登录」不写「登陆」，指代时「此」比「该」更明确；统计数字用阿拉伯数字。禁用词表随项目补充。
 
-- 执行：机器门禁 `text.banned-terms`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `text.banned-terms`；适用：管理侧与用户侧
 - 参数：禁用词 → 规范词 `p.banned` = 其它 → 其他，登陆 → 登录（Ant Design 设计规范 · 文案）
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-global-copywriting--copy-terms
 
@@ -1892,7 +1892,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 过渡只作用于 transform 和 opacity，高度展开用 grid-template-rows 过渡；不过渡 width、height、top、left、margin 这类触发重排的属性；will-change 只在动画期间加在动的那个元素上，不全局铺。
 
-- 执行：机器门禁 `motion.transform-only`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `motion.transform-only`；适用：管理侧与用户侧
 - 示例（这样做）：位移与透明度
 - 示例（别这样做）：过渡布局属性
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-experience-component-motion--cmotion-perf
@@ -1901,7 +1901,7 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 减少动效模式下状态变化仍要看得见：淡入淡出或直接切换，去掉位移、缩放、视差和自动播放；数字滚动直接显示最终值；每段关键帧动画都写 prefers-reduced-motion 分支（全局降级见 MOTION.REDUCED）。
 
-- 执行：机器门禁 `motion.reduced-motion`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `motion.reduced-motion`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「尊重 prefers-reduced-motion：动画、滚动、过渡在减少动效模式下关闭或降级」
 - 示例（这样做）：关键帧动画的降级分支
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-experience-component-motion--cmotion-reduced
@@ -2463,7 +2463,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 金额、数量、比率按数据格式规范输出：千分位、固定小数位、单位写在表头或指标名里、负数格式统一；空值显示「—」，和 0 区分开；数字右对齐、用等宽数字。
 
-- 执行：机器门禁 `format.no-local-pattern`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `format.no-local-pattern`；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-patterns-data-reports--report-numbers
 
 ### REPORT.EXPORT 导出与页面同口径并受权限控制
@@ -2522,7 +2522,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 全局状态库用 Pinia（Vuex 已是维护模式，不再使用）；全局 store 只放跨页面且稳定的状态，比如当前用户、权限、偏好设置；每个 store 一个文件，放在约定目录，文件头写明属主。
 
-- 执行：机器门禁 `state.store-library`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `state.store-library`；适用：管理侧与用户侧
 - 参数：全局状态库 `p.library` = Pinia（pomaster 技术栈规范 · Vue 3（状态与路由选官方方案））
 - 硬规范依据：specs/hard/stacks/vue3/vue3-framework-overlay.md「新应用状态管理选 Pinia」
 - 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「全局 store 只保存稳定跨页面状态。」
@@ -2543,7 +2543,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 组件不直接调用 fetch、axios，一律经生成的接口客户端（类型与 OpenAPI 同源）和查询缓存；展示组件不请求接口、不改路由、不改全局状态，数据从参数传入。
 
-- 执行：机器门禁 `state.no-direct-request`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `state.no-direct-request`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/ui-presentation-and-design.md「MUST NOT 让展示组件偷偷请求接口、改路由或全局状态。」
 - 示例（别这样做）：组件里直接 fetch
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-state--state-requests
@@ -2610,7 +2610,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 路由一律懒加载；图表、富文本编辑器、大表格等重组件在用到的页面里按需加载；应用入口（main.ts）不同步引入这些重型依赖；页面先加载核心内容，非核心的延后。
 
-- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.lazy-load`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 在应用入口同步 import 重型编辑器、图表库或大表组件（首屏重依赖）。」
 - 示例（这样做）：路由懒加载
@@ -2621,7 +2621,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 组件库按需引入，不整包注册：管理侧按组件引入 ant-design-vue；用户侧 Vant 用官方的自动按需引入插件，不与全量引入混用。
 
-- 执行：机器门禁 `perf.no-full-library-import`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.no-full-library-import`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/stacks/h5/h5-mobile-overlay.md「Vant 引入必须走官方口径」
 - 示例（别这样做）：整包注册
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-performance--perf-on-demand-library
@@ -2683,7 +2683,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 不用 v-html 渲染用户输入或接口返回的富文本；确实要渲染富文本时，经项目唯一的净化组件（白名单 sanitizer，如 DOMPurify）输出；不拼接 HTML 字符串。
 
-- 执行：机器门禁 `security.no-unsafe-html`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-unsafe-html`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST NOT 使用 `v-html` / `innerHTML` / `dangerouslySetInnerHTML` 渲染不可信内容；富文本必须使用白名单 sanitizer。」
 - 示例（别这样做）：直接渲染接口返回的 HTML
 - 示例（这样做）：经净化组件
@@ -2693,7 +2693,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 用户或接口提供的链接只接受 http、https、mailto 协议（拒绝 javascript:、data:）；登录后的回跳地址只接受站内相对路径；新窗口打开外链一律带 rel="noopener noreferrer"。
 
-- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.safe-link`；适用：管理侧与用户侧
 - 示例（这样做）：回跳地址只认站内路径
 - 示例（这样做）：外链
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-security--sec-links
@@ -2711,7 +2711,7 @@ provide / inject 只放跨多层、变化少的依赖（主题、当前团队、
 
 不用 eval、new Function、字符串形式的 setTimeout / setInterval，不用内联事件属性；生产环境按严格 CSP 部署（script-src 不含 'unsafe-inline' 和 'unsafe-eval'）。
 
-- 执行：机器门禁 `security.no-eval`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-eval`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST 部署 CSP，默认 `default-src 'self'`；脚本/样式/img/font/connect/frame 按业务最小白名单开放。」
 - 示例（别这样做）：字符串当代码执行
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-security--sec-no-eval
@@ -2761,7 +2761,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 
 会话标识与刷新令牌放在 HttpOnly Cookie 里，由后端设置；短期访问令牌只放内存（模块变量或状态库里不持久化的字段）；不存进 localStorage、sessionStorage、IndexedDB，不放进 URL 和 URL 片段。
 
-- 执行：机器门禁 `security.no-token-storage`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.no-token-storage`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/security.md「MUST 禁止将 session identifier、refresh token、access token、secret、密码等价凭据持久化到 localStorage/sessionStorage/IndexedDB（除非经安全 Owner 批准的短期例外）。」
 - 示例（别这样做）：令牌存进 localStorage
 - 示例（这样做）：令牌只放内存
@@ -2875,7 +2875,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 
 target=_blank 的链接一律带 rel="noopener noreferrer"；用 window.open 打开外部页面时传 noopener；不把 window.opener 交给外部页面。
 
-- 执行：机器门禁 `security.safe-link`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `security.safe-link`；适用：管理侧与用户侧
 - 示例（这样做）：window.open 带 noopener
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-tamper--tamper-tabnabbing
 
@@ -3021,7 +3021,7 @@ HTTP 客户端把所有失败归一成一个结构：类别（网络、超时、
 
 catch 之后要么处理并告知用户，要么继续向上抛；不写空 catch，不只 console.log 了事；不用 try/catch 包住整段代码掩盖问题。
 
-- 执行：机器门禁 `error.no-empty-catch`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `error.no-empty-catch`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 吞掉字段错误、冲突或 TraceId。」
 - 示例（别这样做）：空 catch
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-error-handling--errh-no-swallow
@@ -3044,7 +3044,7 @@ catch 之后要么处理并告知用户，要么继续向上抛；不写空 catc
 
 路由表的 meta 里声明这个页面要求什么：是否登录、权限码、功能开关、布局；没有声明的路由在开发期就报错，不默认放行。
 
-- 执行：机器门禁 `guard.route-meta`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `guard.route-meta`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/page-composition-and-browser-environment.md「每个页面路由有稳定 name、path、page key、title、权限和布局 meta。」
 - 示例（这样做）：路由声明访问要求
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-route-guard--guard-declare
@@ -3107,7 +3107,7 @@ catch 之后要么处理并告知用户，要么继续向上抛；不写空 catc
 
 每个路由懒加载成独立分包；导航链接在悬停或进入视口时预取目标路由的分包；首屏只加载当前路由需要的代码。
 
-- 执行：机器门禁 `perf.lazy-load`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `perf.lazy-load`；适用：管理侧与用户侧
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「路由、图表和重组件按需加载。」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-page-loading--pload-split
 
@@ -3476,7 +3476,7 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 
 重绘时布局、间距、字号、颜色、组件全部来自本规范的 token 与组件；不复制原型的 class、内联样式、字体、颜色值、栅格列数和像素宽度；原型里的分组、顺序、主次和文案保留。原型用了另一套组件库或 CDN 引入的样式框架，实现里都不出现。
 
-- 执行：机器门禁 `style.no-raw-color`（待接入，暂按评审执行）；适用：管理侧与用户侧
+- 执行：机器门禁 `style.no-raw-color`；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-prototype-intake--proto-rebuild
 
 ### PROTO.VERIFY 用同一个抽取器做事实对账

@@ -16,7 +16,7 @@ import {
   textOf,
   type PrototypeFact,
 } from "../src/prototype-extract.js";
-import { runPrototypeDiff, runPrototypeIngest } from "../src/prototype.js";
+import { runPrototypeCheck, runPrototypeIngest } from "../src/prototype.js";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "prototype");
 const read = (name: string) => readFileSync(join(FIXTURES, name), "utf8");
@@ -142,9 +142,9 @@ describe("pomaster prototype ingest / diff", () => {
       expect(ir.pages[0].regions.map((region: { pattern: string }) => region.pattern)).toEqual(expect.arrayContaining(["navigation", "data_list", "form_dialog"]));
       expect(ingest.result?.questions).toHaveLength(4);
 
-      const pass = await runPrototypeDiff(dir, { facts: ".pomaster/prototype/ba-customer", html: ["ba/rebuilt-antd.html"] });
+      const pass = await runPrototypeCheck(dir, { facts: ".pomaster/prototype/ba-customer", html: ["ba/rebuilt-antd.html"] });
       expect(pass.ok).toBe(true);
-      const fail = await runPrototypeDiff(dir, { facts: ".pomaster/prototype/ba-customer/facts.json", html: ["ba/rebuilt-broken.html"] });
+      const fail = await runPrototypeCheck(dir, { facts: ".pomaster/prototype/ba-customer/facts.json", html: ["ba/rebuilt-broken.html"] });
       expect(fail.ok).toBe(false);
       expect(fail.errors.map((error) => error.code)).toEqual(expect.arrayContaining(["PROTOTYPE_FACT_MISSING", "PROTOTYPE_FACT_CHANGED", "PROTOTYPE_FACT_REORDERED"]));
     } finally {
@@ -157,7 +157,7 @@ describe("pomaster prototype ingest / diff", () => {
     try {
       expect((await runPrototypeIngest(dir, { html: [] })).errors[0]?.code).toBe("PROTOTYPE_INPUT_MISSING");
       expect((await runPrototypeIngest(dir, { html: ["ba/none.html"] })).errors[0]?.code).toBe("PROTOTYPE_INPUT_NOT_FOUND");
-      expect((await runPrototypeDiff(dir, { facts: "nowhere", html: ["ba/rebuilt-antd.html"] })).errors[0]?.code).toBe("PROTOTYPE_FACTS_NOT_FOUND");
+      expect((await runPrototypeCheck(dir, { facts: "nowhere", html: ["ba/rebuilt-antd.html"] })).errors[0]?.code).toBe("PROTOTYPE_FACTS_NOT_FOUND");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

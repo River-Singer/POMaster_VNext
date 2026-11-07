@@ -829,7 +829,11 @@
       },
       "packages/cli/tests/prototype.spec.ts": {
         "layer": "L1",
-        "note": "原型转换：BA 的 HTML 原型与 spec 去掉表现后抽出业务事实与信息结构、冲突进提问；按 antd 与 Geist 重绘的页面用同一个抽取器对账为零，漏字段、改选项、调顺序、丢提示逐条报出；ingest / diff 命令面与错误码。无域（原型转换契约面）。"
+        "note": "原型转换：BA 的 HTML 原型与 spec 去掉表现后抽出业务事实与信息结构、冲突进提问；按 antd 与 Geist 重绘的页面用同一个抽取器对账为零，漏字段、改选项、调顺序、丢提示逐条报出；ingest / check 命令面与错误码。无域（原型转换契约面）。"
+      },
+      "packages/cli/tests/design-check.spec.ts": {
+        "layer": "L1",
+        "note": "设计规范门禁：按规范的门禁条文扫 Vue / TSX / 样式 / Tailwind，阈值取条文参数（决策位未定的检查记待定）；注释不算；带理由的豁免生效；存量基线只拦新增；design check、closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷（没落地规范 not_configured，规范坏了 blocked）"
       },
       "packages/studio/tests/drawers.spec.ts": {
         "layer": "L1",

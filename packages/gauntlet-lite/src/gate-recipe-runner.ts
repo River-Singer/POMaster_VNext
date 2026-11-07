@@ -57,7 +57,7 @@ export interface CatalogGateRecipeDescriptor {
 }
 
 /**
- * catalog/gates/ recipe 投影（P12b 时点五份；P-v06 增 NEW_ENTITY、脚手架 S1-4 增 SCAFFOLD.CONSISTENCY，现七份；增删必须同步自检测试）。
+ * catalog/gates/ recipe 投影（P12b 时点五份；P-v06 增 NEW_ENTITY、脚手架 S1-4 增 SCAFFOLD.CONSISTENCY、设计规范 D2 增 DESIGN.STANDARD，现八份；增删必须同步自检测试）。
  * 字段值逐字来自各 recipe 文件（gate-recipe-runner.spec.ts 逐文件复核，漂移即红）。
  */
 export const CATALOG_GATE_RECIPES: readonly CatalogGateRecipeDescriptor[] = [
@@ -110,6 +110,13 @@ export const CATALOG_GATE_RECIPES: readonly CatalogGateRecipeDescriptor[] = [
     titleZh: "脚手架一致性门禁",
     lane: "any",
   },
+  {
+    file: "gate.design.standard.json",
+    id: "GATE.DESIGN.STANDARD",
+    gateDef: "GATE.DESIGN.STANDARD@0.1.0",
+    titleZh: "设计规范门禁",
+    lane: "frontend",
+  },
 ];
 
 // ============================================================
@@ -152,6 +159,9 @@ export type GateRecipeDispatch =
  * - GATE.SCAFFOLD.CONSISTENCY → kernel_native 直调形态（脚手架 S1-4，NEW_ENTITY 同构）：
  *   判卷核心住 CLI scaffold-check.ts assessScaffoldConsistency（scaffold check / closeout /
  *   check --gates 三消费面同一函数），执行器由命令面注入；项目没有领域规格 → not_configured；
+ * - GATE.DESIGN.STANDARD → kernel_native 直调形态（设计规范 D2，SCAFFOLD.CONSISTENCY 同构）：
+ *   判卷核心住 CLI design-check.ts assessDesignStandard（design check / closeout /
+ *   check --gates 三消费面同一函数）；项目没落地设计规范 → not_configured；
  * - 其余四份 recipe 的检查项均无机器执行器（五类消费者对账 / prechange 六项 /
  *   请求层静态扫描 / 表格 registry 对账）→ unbound 显式缺席。
  */
@@ -179,6 +189,7 @@ export const RECIPE_GATE_DISPATCH: Readonly<Record<string, GateRecipeDispatch>> 
   },
   "GATE.NEW_ENTITY.CHECKS": { kind: "kernel_native" },
   "GATE.SCAFFOLD.CONSISTENCY": { kind: "kernel_native" },
+  "GATE.DESIGN.STANDARD": { kind: "kernel_native" },
 };
 
 // ============================================================
