@@ -808,6 +808,10 @@
       "packages/cli/tests/scaffold-check.spec.ts": {
         "layer": "L1"
       },
+      "packages/cli/tests/scaffold-frontend.spec.ts": {
+        "layer": "L1",
+        "note": "脚手架 S1-7 管理侧前端（vue-antd-admin@1）：每个实体的接口客户端、列表、编辑抽屉、路由、文案与公共文件；确定性；生成物用 Ant Design 规范跑 design check 零违规；文案只在字典、路由按需加载并声明权限码、接口取管理侧 base_path；只读实体无抽屉与操作列、只对用户侧暴露的实体不生成。无域（脚手架生成契约面）。"
+      },
       "packages/cli/tests/scaffold-openapi.spec.ts": {
         "layer": "L1"
       },

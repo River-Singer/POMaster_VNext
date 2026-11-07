@@ -47,7 +47,8 @@ const SKIP_FILE =
   /(\.d\.ts|\.(spec|test|stories)\.[cm]?[jt]sx?|\.stories\.vue|\.min\.(js|css))$|(^|\/)[^/]+\.config\.[cm]?[jt]s$/;
 /** shadcn 一类「按文件落进项目」的组件库层：等同依赖，不按业务代码判。 */
 const LIBRARY_LAYER = /(^|\/)components\/ui\//;
-const DEFAULT_ROOT_CANDIDATES = ["frontend/src", "web/src", "client/src", "ui/src", "app/src"];
+/** 脚手架生成的管理侧 / 用户侧前端在 frontend/<面>/src。 */
+const DEFAULT_ROOT_CANDIDATES = ["frontend/admin/src", "frontend/public/src", "frontend/src", "web/src", "client/src", "ui/src", "app/src"];
 const MAX_FILES = 5000;
 const MAX_FILE_BYTES = 512 * 1024;
 const FINDINGS_PER_FILE_CHECK = 10;

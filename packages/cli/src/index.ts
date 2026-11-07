@@ -900,6 +900,8 @@ export {
   operationId as scaffoldOperationId,
   renderOpenApi,
 } from "./scaffold-openapi.js";
+export { renderAdminFrontend, FRONTEND_TEMPLATE_SET, ADMIN_FRONTEND_ROOT } from "./scaffold-frontend.js";
+export type { FrontendFile, FrontendTemplateId } from "./scaffold-frontend.js";
 export {
   MYSQL_TEMPLATE_SET,
   columnType,

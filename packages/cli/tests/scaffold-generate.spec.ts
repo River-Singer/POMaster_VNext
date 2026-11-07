@@ -44,6 +44,21 @@ const MIGRATION_DIR = "backend/fleet-core/src/main/resources/db/migration";
 const GRANTS = "backend/db/grants.sql";
 const ADMIN_OAS = "api/openapi/admin.openapi.json";
 const PUBLIC_OAS = "api/openapi/public.openapi.json";
+/** 管理侧前端（S1-7，vue-antd-admin@1）：按路径排序；[路径, 模板, 治理 id, KEYBINDING 段]。 */
+const UI = "frontend/admin/src";
+const ADMIN_UI: readonly (readonly [string, string, string, string])[] = [
+  [`${UI}/api/http.ts`, "vue.admin.http", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_http"],
+  [`${UI}/api/vehicle-model.ts`, "vue.admin.api", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_api_vehicle_model"],
+  [`${UI}/auth/permission.ts`, "vue.admin.permission", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_permission"],
+  [`${UI}/locales/zh-CN/index.ts`, "vue.admin.locale-index", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_locale_index"],
+  [`${UI}/locales/zh-CN/vehicle-model.ts`, "vue.admin.locale", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_locale_vehicle_model"],
+  [`${UI}/router/scaffold.ts`, "vue.admin.routes-index", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_routes_index"],
+  [`${UI}/router/vehicle-model.ts`, "vue.admin.routes", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_routes_vehicle_model"],
+  [`${UI}/utils/format.ts`, "vue.admin.format", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_format"],
+  [`${UI}/views/vehicle-model/VehicleModelForm.vue`, "vue.admin.form", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_form_vehicle_model"],
+  [`${UI}/views/vehicle-model/VehicleModelList.vue`, "vue.admin.list", "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL", "ui_admin_list_vehicle_model"],
+];
+const ADMIN_UI_PATHS = ADMIN_UI.map(([path]) => path);
 const CATALOG = loadCatalogArchetypes(resolveCatalogRoot()).map((material) => ({
   id: material.id,
   operations: material.operations,
@@ -336,6 +351,7 @@ describe("generate：生成记账与写入约束", () => {
       `create ${PUBLIC_OAS}`,
       `create ${GRANTS}`,
       `create ${MIGRATION_DIR}/V1__create_vehicle_model.sql`,
+      ...ADMIN_UI_PATHS.map((path) => `create ${path}`),
     ]);
   });
 
@@ -349,7 +365,7 @@ describe("generate：生成记账与写入约束", () => {
     await confirmed();
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
-    expect(outcome.result.written).toEqual([ADMIN_OAS, PUBLIC_OAS, GRANTS, `${MIGRATION_DIR}/V1__create_vehicle_model.sql`]);
+    expect(outcome.result.written).toEqual([ADMIN_OAS, PUBLIC_OAS, GRANTS, `${MIGRATION_DIR}/V1__create_vehicle_model.sql`, ...ADMIN_UI_PATHS]);
 
     const migration = read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`);
     expect(migration).toContain("-- 受管文件，不要手改");
@@ -365,12 +381,14 @@ describe("generate：生成记账与写入约束", () => {
     expect(manifest.template_sets).toEqual([
       { id: "mysql-flyway", version: "1" },
       { id: "openapi-3.1", version: "1" },
+      { id: "vue-antd-admin", version: "1" },
     ]);
     expect(manifest.files.map((file) => [file.path, file.template, file.immutable, file.canonical_id])).toEqual([
       [ADMIN_OAS, "openapi.admin", false, "CAPABILITY.SCAFFOLD.FLEET.API.ADMIN"],
       [PUBLIC_OAS, "openapi.public", false, "CAPABILITY.SCAFFOLD.FLEET.API.PUBLIC"],
       [GRANTS, "mysql.grants", false, "CAPABILITY.SCAFFOLD.FLEET.DATABASE"],
       [`${MIGRATION_DIR}/V1__create_vehicle_model.sql`, "mysql.migration", true, "CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL"],
+      ...ADMIN_UI.map(([path, template, canonical]) => [path, template, false, canonical]),
     ]);
     expect(manifest.history).toHaveLength(1);
     expect(manifest.spec_snapshot.entities[0]?.key).toBe("vehicle_model");
@@ -381,6 +399,7 @@ describe("generate：生成记账与写入约束", () => {
       "keybinding.scaffold.fleet.migration_v1.json",
       "keybinding.scaffold.fleet.openapi_admin.json",
       "keybinding.scaffold.fleet.openapi_public.json",
+      ...ADMIN_UI.map(([, , , segment]) => `keybinding.scaffold.fleet.${segment}.json`).sort(),
     ]);
     for (const name of rows) {
       const row = JSON.parse(read(`.pomaster/truth/keybindings/${name}`)) as Record<string, string>;
@@ -392,7 +411,7 @@ describe("generate：生成记账与写入约束", () => {
     const events = journalEvents(SCAFFOLD_GENERATED_EVENT);
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
-      template_sets: ["mysql-flyway@1", "openapi-3.1@1"],
+      template_sets: ["mysql-flyway@1", "openapi-3.1@1", "vue-antd-admin@1"],
       created: outcome.result.written,
       updated: [],
       retired: [],
@@ -458,7 +477,15 @@ describe("generate：生成记账与写入约束", () => {
     expect((await runScaffoldConfirm(dir, { by: OWNER, change: "CHANGE.SCAFFOLD_COLOR" })).ok).toBe(true);
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
-    expect(outcome.result.written).toEqual([ADMIN_OAS, `${MIGRATION_DIR}/V2__alter_vehicle_model.sql`]);
+    // 新字段同步进管理侧前端：接口客户端、文案、列表、编辑抽屉
+    expect(outcome.result.written).toEqual([
+      ADMIN_OAS,
+      `${MIGRATION_DIR}/V2__alter_vehicle_model.sql`,
+      `${UI}/api/vehicle-model.ts`,
+      `${UI}/locales/zh-CN/vehicle-model.ts`,
+      `${UI}/views/vehicle-model/VehicleModelForm.vue`,
+      `${UI}/views/vehicle-model/VehicleModelList.vue`,
+    ]);
     expect(read(ADMIN_OAS)).toContain('"color"');
     expect(read(PUBLIC_OAS)).toBe(golden("public.openapi.json"));
     expect(read(`${MIGRATION_DIR}/V2__alter_vehicle_model.sql`)).toContain(
@@ -468,7 +495,7 @@ describe("generate：生成记账与写入约束", () => {
     const manifestRead = await readGenerationManifest(dir);
     if (manifestRead.kind !== "ok") throw new Error("manifest");
     expect(manifestRead.manifest.history).toHaveLength(2);
-    expect(manifestRead.manifest.files).toHaveLength(5);
+    expect(manifestRead.manifest.files).toHaveLength(5 + ADMIN_UI.length);
   });
 
   it("需要数据迁移的变化（删字段）→ SCAFFOLD_MIGRATION_NOT_ADDITIVE 且零写入", async () => {
@@ -599,7 +626,7 @@ describe("generate：生成记账与写入约束", () => {
     expect(JSON.parse(lines.join("\n")).command).toBe("scaffold plan");
     lines.length = 0;
     expect(await runCli(["--dir", dir, "scaffold", "generate", "--json"], io)).toBe(0);
-    expect(JSON.parse(lines.join("\n")).result.written).toHaveLength(4);
+    expect(JSON.parse(lines.join("\n")).result.written).toHaveLength(4 + ADMIN_UI.length);
     lines.length = 0;
     writeFileSync(join(dir, ...GRANTS.split("/")), "-- hand edit\n");
     expect(await runCli(["--dir", dir, "scaffold", "generate"], io)).toBe(1);

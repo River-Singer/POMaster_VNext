@@ -190,7 +190,7 @@ BA 交来的 spec 与 HTML 原型结构、风格、样式各不相同，规则�
 
 扫描是静态的：`.vue` 拆成模板、脚本、样式三段；`.tsx` / `.ts` 整体当脚本（JSX 在里面）；`.css` / `.scss` / `.less` 当样式；Tailwind 类只在「像类名串」的字符串里找。注释先抹掉，所以注释里的写法不算。它找的是源码写法上的违规；渲染出来的问题（对比度、溢出、真实交互）归 verify 的浏览器检查与原型事实对账。
 
-- 扫哪里：缺省探测 `frontend/src`、`web/src`、`client/src`、`ui/src`、`app/src`、`apps/*/src`，都没有才用根下的 `src`；`--root` 指定。不扫依赖、构建产物、测试、故事文件和 `components/ui`（shadcn 一类按文件落进项目的组件库层）。
+- 扫哪里：缺省探测 `frontend/admin/src`、`frontend/public/src`（脚手架生成的位置）、`frontend/src`、`web/src`、`client/src`、`ui/src`、`app/src`、`apps/*/src`，都没有才用根下的 `src`；`--root` 指定。不扫依赖、构建产物、测试、故事文件和 `components/ui`（shadcn 一类按文件落进项目的组件库层）。
 - 例外：在违规行或上一行写 `pomaster-design-ignore <检查编号>: 理由`。没写理由的豁免不生效并给警告。
 - 老项目：`--write-baseline` 把现有违规按「检查 × 文件」记成存量（`.pomaster/baseline/frontend/design-check-baseline.json`），之后只拦超出存量的部分；违规减少时提示收紧，`--ignore-baseline` 看全量。
 - 三处用同一个判卷：`pomaster design check`（命令面，违规退出码非 0）、`pomaster check --gates` 的 `GATE.DESIGN.STANDARD`（结果作为 GRN 入账；项目没落地规范时 `not_configured`）、closeout（项目落地了规范才适用，违规阻断）。
