@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:6233767926264fca4fb40d342323e119e9da08fc071232641c03bf6ae08ac783`；状态 origin=preset。
+> 规范指纹 `sha256:fa4d69f5996602ae3098a4608888b5f933df4684d463592e32448e76fab6e8ea`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -552,7 +552,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 管理侧页面是「顶栏（团队与项目切换）+ 页内标签页导航 + 内容区」；平级视图用标签页切换，不另开侧边菜单。内容区居中，最大宽度待项目决定。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：内容区最大宽度 `p.max_width`：待项目决定——内容区最大宽度取多少？（候选 1200px / 1400px）
+- 参数：内容区最大宽度 `p.max_width` = 1400px（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-layout--layout-admin-shell
 
 ### LAYOUT.PUBLIC_SHELL 用户侧页面骨架
@@ -601,7 +601,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 层级只取预设档位，从低到高：内容、吸顶元素、下拉与提示、抽屉、对话框、全局提示；不写任意的 z-index 数字。
 
 - 执行：机器门禁 `style.no-raw-z-index`；适用：管理侧与用户侧
-- 参数：层级档位 `p.layers`：待项目决定——各层级的 z-index 取多少？
+- 参数：层级档位 `p.layers` = base → 0，sticky → 10，header → 20，dropdown → 30，overlay → 40，modal → 50（Tailwind CSS · z-index（z-0、z-10 … z-50））
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-layout--layout-z-index
 
 ## 基础 / 栅格（GRID）
@@ -627,7 +627,7 @@ Geist Sans 与 Geist Mono；字号只用 Geist 的四组排版类（标题、按
 列间距取间距阶梯，同一个栅格里固定一档，不随窗口缩放。
 
 - 执行：机器门禁 `grid.gutter-allowed`；适用：管理侧与用户侧
-- 参数：列间距 `p.gutter`：待项目决定——列间距取 16 还是 24？（候选 16px / 24px）
+- 参数：列间距 `p.gutter` = 16px / 24px（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-foundations-grid--grid-gutter
 
 ### GRID.ROW_SUM 一行的列数之和
@@ -2086,8 +2086,8 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 只有一组元素首次一起出现时才错峰：按阅读顺序、间隔小、总时长有上限；刷新数据、翻页、筛选时整组一次出现，不逐行飞入；栅格卡片首次进入视口时可以错峰一次。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：错峰间隔 `p.interval`：待项目决定——同组错峰间隔取多少毫秒？（候选 40ms / 60ms / 80ms）
-- 参数：总时长上限 `p.total`：待项目决定——一组错峰的总时长上限取多少毫秒？（候选 300ms / 400ms）
+- 参数：错峰间隔 `p.interval` = 60ms（Stageshow（Benji Taylor 的 agent skill，MIT））
+- 参数：总时长上限 `p.total` = 400ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 示例（别这样做）：每次刷新逐行飞入
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-component-motion--cmotion-stagger
 
@@ -2320,7 +2320,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 - 执行：人工评审；适用：管理侧与用户侧
 - 参数：展开宽度 `p.width` = 16rem（shadcn/ui · Sidebar）
 - 参数：手机抽屉宽度 `p.mobile_width` = 18rem（shadcn/ui · Sidebar）
-- 参数：收起宽度 `p.collapsed_width`：待项目决定——收起成图标栏时宽度取多少？（候选 3rem）
+- 参数：收起宽度 `p.collapsed_width` = 3rem（shadcn/ui · Sidebar）
 - 演示：收起与展开——点按钮收起：只留图标，每项有名字；当前项保持高亮。
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-sidebar--sidebar-width
 
@@ -2450,8 +2450,8 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 请求在延迟阈值内完成就不显示加载条，避免一闪；一旦显示，至少停留最短时长再淡出；两个值全局统一，在 HTTP 客户端或路由层实现，页面不各自写。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：出现延迟 `p.delay`：待项目决定——加载条延迟多少毫秒出现？（候选 100ms / 200ms / 300ms）
-- 参数：最短停留 `p.min_visible`：待项目决定——加载条出现后至少停留多少毫秒？（候选 300ms / 400ms / 500ms）
+- 参数：出现延迟 `p.delay` = 200ms（Nielsen Norman Group · Response Times: The 3 Important Limits）
+- 参数：最短停留 `p.min_visible` = 400ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 实验 `loading.delay`：实验：加载条的延迟出现与最短停留——分别发一个快请求和一个慢请求：快的不出现加载条；慢的出现后至少停留一会儿再收起。打开「错误做法」看快请求让加载条一闪而过。
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-experience-loading-bar--lbar-delay
 
@@ -2529,7 +2529,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 行数超过阈值时启用虚拟滚动，行高固定，表头与冻结列保持；不一次渲染全部行；滚动时不做重计算。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——多少行以上启用虚拟滚动？（候选 200 个 / 500 个）
+- 参数：虚拟滚动阈值 `p.virtual_threshold` = 500 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「MUST NOT 大列表用普通 `v-for` 渲染全量数据（须虚拟滚动或分页）。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-data-grid--dgrid-virtual
 
@@ -2624,7 +2624,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 点数超过阈值时先在服务端聚合或降采样；大量点用 canvas 渲染；聚合计算不放在主线程的渲染路径里；实时图表合并更新、按帧刷新。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：单系列点数上限 `p.max_points`：待项目决定——单条折线最多渲染多少个点？（候选 1000 个 / 2000 个）
+- 参数：单系列点数上限 `p.max_points` = 2000 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-patterns-data-charts--chart-perf
 
 ### CHART.LIFECYCLE 随容器重绘、卸载时销毁
@@ -2816,8 +2816,8 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 - 参数：LCP（p75） `p.lcp` = 2500ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
 - 参数：INP（p75） `p.inp` = 200ms（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
 - 参数：CLS（p75） `p.cls` = 0.1（pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标））
-- 参数：首屏脚本体积 `p.initial_js`：待项目决定——首屏脚本（压缩后）体积上限是多少 KB？
-- 参数：路由分包体积 `p.route_chunk`：待项目决定——单个路由分包（压缩后）体积上限是多少 KB？
+- 参数：首屏脚本体积（KB，压缩后） `p.initial_js` = 170（pomaster 推荐默认（数值类决策位的缺省取值））
+- 参数：路由分包体积（KB，压缩后） `p.route_chunk` = 100（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「定义首屏、包体、交互和核心页面预算。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-budget
 
@@ -2845,7 +2845,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 大列表走服务端分页、筛选、排序；行数多或列很多的表格用虚拟滚动（TanStack Virtual）；不用 map 一次渲染全量数据；列表项有稳定的 key。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：虚拟滚动阈值 `p.virtual_threshold`：待项目决定——表格多少行以上启用虚拟滚动？（候选 200 个 / 500 个）
+- 参数：虚拟滚动阈值 `p.virtual_threshold` = 500 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「大列表服务端分页，宽表虚拟化。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-large-lists
 
@@ -2854,7 +2854,7 @@ React Context 只放跨多层、变化少的依赖（主题、当前团队、权
 搜索、联想等随输入触发的请求做防抖，或用 useDeferredValue 让输入保持跟手；新请求发出时取消旧请求；过期的响应不覆盖新状态（查询 key 带上关键字时由查询缓存层处理）。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
+- 参数：防抖间隔 `p.debounce` = 300ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-performance--perf-input
 
@@ -3061,7 +3061,7 @@ postMessage 指定目标 origin，不用 '*'；接收方先校验 event.origin �
 支付、审批、转账这类关键写请求带一次性随机数和时间戳，由后端校验时效并拒绝重复；需要时对请求体签名（密钥不在前端代码里，由后端按会话下发短期签名凭据）；重放保护与幂等键一起使用。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：时间窗口 `p.window`：待项目决定——时间戳允许的偏差是多少？（候选 60 秒 / 300 秒）
+- 参数：时间窗口（秒） `p.window` = 300（pomaster 推荐默认（数值类决策位的缺省取值））
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-tamper--tamper-replay
 
 ### TAMPER.TRANSPORT 传输全程 HTTPS
@@ -3132,7 +3132,7 @@ target=_blank 的链接一律带 rel="noopener noreferrer"；用 window.open 打
 HTTP 客户端给每个请求设超时（上传、导出等长请求单独设）；超时、取消、离线、服务端错误分别处理与提示；超时的请求不自动重发非幂等写操作。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：请求超时（秒） `p.timeout`：待项目决定——普通请求的超时取多少秒？（候选 10 / 15 / 30）
+- 参数：请求超时（秒） `p.timeout` = 15（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「HTTP Client 统一处理 base URL、认证、超时、取消、trace 和 envelope。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-robustness--robust-timeout
 
@@ -3388,7 +3388,7 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 - 执行：人工评审；适用：管理侧与用户侧
 - 参数：缓存保留（gcTime 缺省） `p.gc_time` = 5 分钟（TanStack Query）
 - 参数：查询失败重试（缺省） `p.query_retry` = 3 个（TanStack Query）
-- 参数：字典新鲜度 `p.dict_stale`：待项目决定——字典类数据的 staleTime 取多少？（候选 30 分钟 / Infinity（手动失效））
+- 参数：字典新鲜度 `p.dict_stale` = 1800000ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/frontend-state-and-client-data.md「每个缓存声明 key、参数、身份/权限隔离、stale、保留和失效规则。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-caching--cache-freshness
 
@@ -3472,8 +3472,8 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 只重试读请求和声明了幂等的写请求，且只在错误可重试时（网络错误、超时、5xx、429）；指数退避加随机抖动，有次数上限，服务端给了 Retry-After 就按它等；重试过程可以取消，用户能看到「正在重试」。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：重试上限 `p.max_attempts`：待项目决定——最多重试几次？（候选 2 个 / 3 个）
-- 参数：起始间隔 `p.base_delay`：待项目决定——退避的起始间隔取多少毫秒？（候选 500ms / 1000ms）
+- 参数：重试上限 `p.max_attempts` = 3 个（TanStack Query）
+- 参数：起始间隔 `p.base_delay` = 1000ms（TanStack Query）
 - 实验 `async.retry`：实验：重试与退避——调用一个时好时坏的接口：正确做法按指数退避重试、在上限内成功或明确失败；对不幂等的提交不自动重试。打开「错误做法」看立即重试把接口打爆。
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「重试必须服从幂等性、服务端 `Retry-After` 或受控退避，并能取消；取消或已被替代的请求不得提示为用户错误。」
 - 硬规范依据：specs/hard/themes/api-contract-and-error-semantics.md「MUST NOT 对非幂等 mutation 默认自动重试。」
@@ -3484,8 +3484,8 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 随输入触发的查询做防抖；滚动、窗口尺寸变化、拖动这类高频事件做节流或合到动画帧；防抖和节流的间隔全项目统一。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：防抖间隔 `p.debounce`：待项目决定——输入防抖间隔取多少毫秒？（候选 300ms）
-- 参数：节流间隔 `p.throttle`：待项目决定——滚动节流间隔取多少毫秒？（候选 100ms / 16ms）
+- 参数：防抖间隔 `p.debounce` = 300ms（pomaster 推荐默认（数值类决策位的缺省取值））
+- 参数：节流间隔 `p.throttle` = 100ms（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「搜索防抖、旧请求取消、过期响应丢弃。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-async--async-debounce
 
@@ -3525,7 +3525,7 @@ HTTP 缓存管静态资源；查询缓存（TanStack Query）管接口数据；�
 批量上传、批量导入、批量调用接口用并发池，同时进行的数量有上限，并显示整体进度；单项失败可以单独重试；不一次性发出全部请求。
 
 - 执行：人工评审；适用：管理侧与用户侧
-- 参数：并发上限 `p.pool`：待项目决定——批量请求的并发上限取多少？（候选 3 个 / 4 个 / 6 个）
+- 参数：并发上限 `p.pool` = 4 个（pomaster 推荐默认（数值类决策位的缺省取值））
 - 硬规范依据：specs/hard/themes/performance-and-capacity.md「请求并发安全。」
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-concurrency--conc-limit
 
@@ -3814,3 +3814,5 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - `SRC.IETF.IDEMPOTENCY_KEY` IETF HTTPAPI · The Idempotency-Key HTTP Header Field（草案）：https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/（核实 2026-11-06）
 - `SRC.SHADCN.SIDEBAR` shadcn/ui · Sidebar：https://ui.shadcn.com/docs/components/sidebar（核实 2026-11-06）
 - `SRC.POMASTER.PERF_SPEC` pomaster 主题硬规范 · 性能与容量（Core Web Vitals 默认参考目标）：repo:packages/cli/seeds/specs/hard/themes/performance-and-capacity.md（核实 2026-11-06）
+- `SRC.POMASTER.DEFAULTS` pomaster 推荐默认（数值类决策位的缺省取值）：repo:docs/design-standard.md（核实 2026-11-07）
+- `SRC.TAILWIND.Z_INDEX` Tailwind CSS · z-index（z-0、z-10 … z-50）：https://tailwindcss.com/docs/z-index（核实 2026-11-07）

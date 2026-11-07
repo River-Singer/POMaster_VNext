@@ -52,7 +52,9 @@ describe("design adopt", () => {
     expect(adopted.result?.system).toBe("geist");
     expect(adopted.result?.system_reason_zh).toContain("web/package.json");
     expect(adopted.result?.tokens_copied).toBe(false);
-    expect(adopted.result?.pending.map((item) => item.param)).toContain("GRID.GUTTER.gutter");
+    expect(adopted.result?.pending.map((item) => item.param)).toContain("STATE.FORM_MODEL.form_library");
+    // 数值类决策位已有预设默认，不再列为待定
+    expect(adopted.result?.pending.map((item) => item.param)).not.toContain("GRID.GUTTER.gutter");
     expect(readFileSync(join(dir, STANDARD), "utf8")).toBe(readFileSync(join(SEEDS, "design-standards", "geist.yaml"), "utf8"));
     expect(loadDesignStandard(dir, {}).mode).toBe("project");
 
@@ -77,35 +79,38 @@ describe("design adopt", () => {
 });
 
 describe("design set", () => {
-  it("定下决策位：只改那一行，出处记项目决策，按它判卷的检查不再待定", () => {
+  it("改取值：只改那一行，出处记项目决策，按它判卷的检查随之用新值", () => {
     initLike();
     runDesignAdopt(dir, { system: "geist" });
     const before = readFileSync(join(dir, STANDARD), "utf8");
-    write("src/app/page.tsx", `export default () => <div className="grid grid-cols-12 gap-5" />;\n`);
-    const pending = assessDesignStandard(dir, { only: ["grid.gutter-allowed"] });
-    if (!("checks" in pending)) throw new Error(pending.code);
-    expect(pending.checks[0]?.status).toBe("pending");
+    write("src/app/page.tsx", `export default () => <div className="grid grid-cols-12 gap-4" />;\n`);
+    const judgedBefore = assessDesignStandard(dir, { only: ["grid.gutter-allowed"] });
+    if (!("checks" in judgedBefore)) throw new Error(judgedBefore.code);
+    expect(judgedBefore.checks[0]?.status).toBe("passed");
 
-    const set = runDesignSet(dir, { target: "GRID.GUTTER.gutter", value: "[16, 24]", by: "human:owner", note: "与 antd 管理端一致" });
+    const set = runDesignSet(dir, { target: "GRID.GUTTER.gutter", value: "[24]", by: "human:owner", note: "本项目只用常规档" });
     expect(set.ok).toBe(true);
-    expect(set.result?.value).toEqual([16, 24]);
+    expect(set.result?.previous).toEqual([16, 24]);
+    expect(set.result?.value).toEqual([24]);
     const after = readFileSync(join(dir, STANDARD), "utf8");
     const changed = after.split("\n").filter((line, index) => line !== before.split("\n")[index]);
-    expect(changed.some((line) => line.startsWith("          gutter: { value: [16, 24], unit: px, source: SRC.PROJECT.DECISIONS, label_zh: 列间距, note_zh: "))).toBe(true);
+    expect(changed.some((line) => line.startsWith("          gutter: { value: [24], unit: px, source: SRC.PROJECT.DECISIONS, label_zh: 列间距, note_zh: "))).toBe(true);
     expect(after).toContain("  origin: customized\n  customized: true\n");
     expect(after).toContain("  SRC.PROJECT.DECISIONS:\n");
     const param = loadDesignStandard(dir, {}).normalized!.areas.flatMap((area) => area.rules).find((rule) => rule.id === "GRID.GUTTER")!.params[0]!;
-    expect([param.kind, param.value, param.source, param.pending]).toEqual(["value", [16, 24], "SRC.PROJECT.DECISIONS", false]);
+    expect([param.kind, param.value, param.source, param.pending]).toEqual(["value", [24], "SRC.PROJECT.DECISIONS", false]);
     expect(param.note_zh).toContain("human:owner");
-    expect(param.note_zh).toContain("与 antd 管理端一致");
+    expect(param.note_zh).toContain("本项目只用常规档");
 
     const judged = assessDesignStandard(dir, { only: ["grid.gutter-allowed"] });
     if (!("checks" in judged)) throw new Error(judged.code);
     expect(judged.checks[0]?.status).toBe("failed");
-    expect(judged.findings[0]?.message).toContain("gap-5（20px）");
+    expect(judged.findings[0]?.message).toContain("gap-4（16px）");
 
-    // 再改一次已有取值：note 记下原值；源只登记一次
-    expect(runDesignSet(dir, { target: "GRID.GUTTER.gutter", value: "[24]", by: "human:owner" }).result?.previous).toEqual([16, 24]);
+    // 定下一个决策位：note 记下回答的问题；源只登记一次
+    const decided = runDesignSet(dir, { target: "STATE.FORM_MODEL.form_library", value: '"React Hook Form"', by: "human:owner" });
+    expect(decided.ok).toBe(true);
+    expect(decided.result?.previous).toBeNull();
     expect(readFileSync(join(dir, STANDARD), "utf8").match(/^  SRC\.PROJECT\.DECISIONS:/gm)).toHaveLength(1);
   });
 

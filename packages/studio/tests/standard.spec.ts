@@ -264,7 +264,8 @@ describe("规范分区 · AI 孪生", () => {
     }
     expect(md).toContain("## 待补的领域（63 个）");
     expect(md).toContain("分裂按钮（`split_button`，前缀 CMP.SPLIT_BUTTON）");
-    expect(md).toContain("待项目决定——层级 token 怎么分档？");
+    expect(md).toContain("待项目决定——用户侧（H5）的图标库用哪一套？");
+    expect(md).toContain("SRC.POMASTER.DEFAULTS");
     expect(md).toContain(model.fingerprint);
   });
 });

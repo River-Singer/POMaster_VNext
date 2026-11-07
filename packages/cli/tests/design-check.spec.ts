@@ -3,7 +3,7 @@
  *
  * 判据：
  * - 只跑规范里 enforcement=gate 的条文，阈值取条文参数（antd：间距 4/8/12/16/24/32、24 列、gutter 16/24……；
- *   geist：间距 4 的倍数、圆角 6/12/16、字重 400–600……），参数仍是决策位的检查记待定；
+ *   geist：间距 4 的倍数、圆角 6/12/16、字重 400–600、列间距 16/24……），参数仍是决策位的检查记待定；
  * - Vue SFC 三段、TSX、样式文件、Tailwind 类都能读；注释里的写法不算；
  * - 带理由的豁免生效，没理由的不生效并警告；
  * - 存量基线只拦新增；
@@ -311,10 +311,10 @@ describe("geist 规范扫 React + Tailwind 工程", () => {
     expect(result.findings.filter((finding) => finding.check === "state.store-library").map((finding) => finding.message)).toEqual([
       "引入了全局状态库 @reduxjs/toolkit，规范只用 zustand",
     ]);
-    // Geist 的列间距还是决策位：这条检查记待定，不按默认值判
+    // Geist 的列间距取预设数值默认 16 / 24：gap-5（20px）违规
     const gutter = result.checks.find((check) => check.id === "grid.gutter-allowed");
-    expect(gutter?.status).toBe("pending");
-    expect(gutter?.pending_zh).toContain("GRID.GUTTER.gutter");
+    expect(gutter?.status).toBe("failed");
+    expect(result.findings.find((finding) => finding.check === "grid.gutter-allowed")?.message).toContain("gap-5（20px）");
   });
 
   it("组件库层（components/ui）与测试、故事文件不扫", () => {
