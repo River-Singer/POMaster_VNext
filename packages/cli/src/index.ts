@@ -881,6 +881,7 @@ export {
   runScaffoldPlan,
   scaffoldDatabaseCanonicalId,
   scaffoldEntityCanonicalId,
+  renderAdminFrontendFor,
 } from "./scaffold-generate.js";
 export type {
   ScaffoldGenerateInput,
@@ -902,6 +903,10 @@ export {
 } from "./scaffold-openapi.js";
 export { renderAdminFrontend, FRONTEND_TEMPLATE_SET, ADMIN_FRONTEND_ROOT } from "./scaffold-frontend.js";
 export type { FrontendFile, FrontendTemplateId } from "./scaffold-frontend.js";
+export { renderAdminFrontendReact, REACT_FRONTEND_TEMPLATE_SET } from "./scaffold-frontend-react.js";
+export type { ReactFrontendTemplateId } from "./scaffold-frontend-react.js";
+export { chooseFrontendTemplate, chooseFrontendTemplateFromStack } from "./scaffold-frontend-stack.js";
+export type { FrontendTemplateChoice } from "./scaffold-frontend-stack.js";
 export {
   MYSQL_TEMPLATE_SET,
   columnType,
