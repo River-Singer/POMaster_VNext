@@ -501,7 +501,8 @@ export const FAMILY_EXAMPLES = new Map([
           template:
             '<Dropdown :menu="dropdownMenu" :trigger="[\'click\']"><Button>点击触发</Button></Dropdown>' +
             '<Dropdown :menu="dropdownMenu" placement="topLeft"><Button>顶部弹出</Button></Dropdown>' +
-            '<DropdownButton :menu="dropdownMenu" type="primary">主要按钮下拉</DropdownButton>',
+            '<DropdownButton :menu="dropdownMenu" type="primary">主要按钮下拉</DropdownButton>' +
+            '<Dropdown :menu="dropdownMenu" :trigger="[\'contextmenu\']"><span class="studio-demo-chip">在这里点右键</span></Dropdown>',
         },
       ],
     },
@@ -698,7 +699,12 @@ export const FAMILY_EXAMPLES = new Map([
             "</List>" +
             '<List :data-source="listData" :split="false" footer="无分割线列表">' +
             '<template #renderItem="{ item }"><ListItem><ListItemMeta title="条目标题" :description="item" /></ListItem></template>' +
+            "</List>" +
+            '<List :data-source="listData">' +
+            '<template #renderItem="{ item }"><ListItem><ListItemMeta title="动态" :description="item" /></ListItem></template>' +
+            '<template #loadMore><div style="text-align: center; margin-top: 12px;"><Button>加载更多</Button></div></template>' +
             "</List>",
+          extraImports: ["Button"],
         },
       ],
     },
@@ -789,7 +795,8 @@ export const FAMILY_EXAMPLES = new Map([
           minCount: 2,
           template:
             '<Modal :open="true" title="确认对话框" ok-text="确认" cancel-text="取消" :confirm-loading="true"><p>确认加载态</p></Modal>' +
-            '<Modal :open="true" title="无页脚" :footer="null"><p>无页脚内容</p></Modal>',
+            '<Modal :open="true" title="无页脚" :footer="null"><p>无页脚内容</p></Modal>' +
+            '<Modal :open="true" title="删除这辆车？" ok-text="删除" :ok-button-props="{ danger: true }"><p>删除后不能恢复。</p></Modal>',
         },
       ],
     },
@@ -1037,7 +1044,8 @@ export const FAMILY_EXAMPLES = new Map([
             '<Select :options="selectOptions" mode="multiple" placeholder="多选" style="width: 200px;" />' +
             '<Select :options="selectOptions" mode="tags" placeholder="标签" style="width: 200px;" />' +
             '<Select :options="selectOptions" status="error" placeholder="错误态" style="width: 160px;" />' +
-            '<Select :options="selectOptions" :bordered="false" placeholder="无边框" style="width: 160px;" />',
+            '<Select :options="selectOptions" :bordered="false" placeholder="无边框" style="width: 160px;" />' +
+            '<Select :options="selectOptions" show-search option-filter-prop="label" placeholder="可搜索选择" style="width: 160px;" />',
         },
       ],
     },
@@ -1761,7 +1769,8 @@ export const FAMILY_EXAMPLES = new Map([
             "<TypographyText mark>标记文本</TypographyText>" +
             "<TypographyText code>代码文本</TypographyText>" +
             "<TypographyText underline delete>删除下划线文本</TypographyText>" +
-            "<TypographyParagraph strong copyable>可复制加粗段落</TypographyParagraph>",
+            "<TypographyParagraph strong copyable>可复制加粗段落</TypographyParagraph>" +
+            "<TypographyText keyboard>Esc</TypographyText>",
         },
       ],
     },

@@ -1,6 +1,22 @@
 // 规范页实时示例可用的辅助组件（Vue · Ant Design 抽屉）。antd 没有现成组件、规范又要演示的行为放在这里，
 // 写法与规范条文一致，可以直接搬进项目。React 画廊对应的组件在 studio-react/src/components/ui 下。
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, ref, type PropType } from "vue";
+import { PmAddressInput } from "../components/address-input";
+import { PmBook } from "../components/book";
+import { PmChoicebox } from "../components/choicebox";
+import { PmCodeBlock } from "../components/code-block";
+import { PmCommandMenu } from "../components/command-menu";
+import { PmDestructiveInput } from "../components/destructive-input";
+import { PmBrowserFrame, PmPhoneFrame } from "../components/device-frame";
+import { PmFeedbackWidget } from "../components/feedback-widget";
+import { PmFilterBar } from "../components/filter-bar";
+import { PmJsonView } from "../components/json-view";
+import { PmMiddleTruncate } from "../components/middle-truncate";
+import { PmRelativeTime } from "../components/relative-time";
+import { PmScroller } from "../components/scroller";
+import { PmSnippet } from "../components/snippet";
+import { PmThemeSwitcher } from "../components/theme-switcher";
+import { PmVideo } from "../components/video";
 
 type Part = { readonly key: string; readonly digit: number } | { readonly key: string; readonly char: string };
 
@@ -77,4 +93,27 @@ export const StdNumberRoll = defineComponent({
 });
 
 /** 实时示例里能直接用的辅助组件（模板里写 <std-number-roll>）。 */
-export const LIVE_EXTRAS = { StdNumberRoll } as const;
+/**
+ * 实时示例里可用的全部辅助组件：数字滚动 + 「AntDV 组件/自建」的组件（ant-design-vue 没有、按 antd token 自建，
+ * 源码 src/components/）。模板里按 kebab-case 写（<pm-code-block>、<pm-snippet>……）。
+ */
+export const LIVE_EXTRAS = {
+  StdNumberRoll,
+  PmAddressInput,
+  PmBook,
+  PmBrowserFrame,
+  PmChoicebox,
+  PmCodeBlock,
+  PmCommandMenu,
+  PmDestructiveInput,
+  PmFeedbackWidget,
+  PmFilterBar,
+  PmJsonView,
+  PmMiddleTruncate,
+  PmPhoneFrame,
+  PmRelativeTime,
+  PmScroller,
+  PmSnippet,
+  PmThemeSwitcher,
+  PmVideo,
+} as const;
