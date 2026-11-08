@@ -24,6 +24,7 @@
 - **目录相同**：领域、领域下的条目、组件清单取两套体系的并集，写在统一骨架 `packages/cli/seeds/design-standards/skeleton.yaml`（`pomaster.design-skeleton/v1`）。两份预设按骨架写：领域键、标题、分区、规则前缀、先后顺序，以及条目编号、标题、顺序都要和骨架一致，`pomaster design validate` 逐条核对（`DESIGN_AREA_SKELETON`）。骨架里有、本体系还没写的领域与条目照样出现在侧栏和页面上，标「待补」，并汇总成一条警告（`DESIGN_AREA_UNCOVERED` / `DESIGN_TOPIC_UNCOVERED`）。
 - **样子相同**：两边的页面由同一个构建器 `packages/studio/src/standard/page.ts` 生成同一棵节点树，外框样式是同一份 `packages/studio/src/standard/standard.css`（按 Geist 文档的样子做：标题 + 一句话说明、演示卡片带「显示代码」、对照表、色板、并排的「这样做 / 别这样做」、说明在卡片下面、右侧本页目录）。两个运行时只负责把节点树渲染成 Vue / React 元素，并把实时位换成本体系的组件（antd 或 Geist）。
 - **组件按并集补齐**：骨架的组件领域标出两套体系各自对应的现成组件（`counterparts`）；某套体系没有现成组件时为空表，由该体系自行设计。Ant Design 的组件类型更多，Geist 一侧按同样的数量做设计；Geist 规范了图标尺寸，Ant Design 一侧同样规范图标尺寸——依此类推。
+- **组件画廊也按并集**：骨架的 97 个组件领域在两个抽屉里都有组件页。React · Geist 抽屉的「Geist 组件」分区每个领域一页，Geist / shadcn / Radix 没有的（级联选择、穿梭框、评分、水印、二维码……）用 Geist 的 token 自建（`packages/studio-react/src/components/ui/`）；Vue · Ant Design 抽屉里 ant-design-vue 有的落到「AntDV 组件/<族>」页（页说明写「对应规范组件领域」），没有的 16 个（代码块、命令片段、滚动区、命令面板、选择卡片、地址输入、破坏性确认输入、筛选条、反馈收集、主题切换、视频、相对时间、JSON 查看器、中间省略、设备外框、书封）用 antd 的 token 自建，页在「AntDV 组件/自建」（`packages/studio/src/components/`，映射表 `packages/studio/scripts/lib/component-areas.mjs`）。两边的测试核对每个组件领域都有页。
 
 **架构锁定以后**：项目定下前端架构、规范落地到 `.pomaster/baseline/frontend/design-standard.yaml` 后，总 Storybook 只留对应的抽屉。编排脚本 `scripts/studio.mjs` 读 `POMASTER_STUDIO_PROJECT` 指向的项目里那份规范的 `meta.design_system`；也可以用 `POMASTER_STUDIO_SYSTEM=antd|geist` 直接指定（规则见 `packages/studio/scripts/lib/drawers.mjs`）。设了 `POMASTER_STUDIO_PROJECT` 时，留下的那个抽屉的「规范」分区也从项目这份规范生成（`projectStandard()`）：项目改过的参数、定下的决策位、补的条文都在页面上。
 
@@ -136,7 +137,7 @@ areas:
 
 示例、演示、对照表的行都可以是实时内容：
 
-- `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系），包在 `.antd-live` 里（antd 的字体、字色与行高）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`），`s` 是这个示例自己的一份可写状态（演示展开收起、切换状态：`@click="s.open = !s.open"`）；除 antd 组件与图标外还能用 `<std-number-roll>`（数字滚动，`packages/studio/src/standard/live-extras.ts`）；只能引用已定的值，不能有 `<script>` / `<style>`。
+- `template`：Vue 模板，Vue 画廊里用 antdv 实时渲染（Ant Design 体系），包在 `.antd-live` 里（antd 的字体、字色与行高）。模板里 `p` 是本条规则的参数，`t` 是 token 表（如 `t['spacing.lg']`），`s` 是这个示例自己的一份可写状态（演示展开收起、切换状态：`@click="s.open = !s.open"`）；除 antd 组件与图标外还能用 `<std-number-roll>`（数字滚动）和「AntDV 组件/自建」的组件（`<pm-code-block>`、`<pm-snippet>`、`<pm-scroller>`、`<pm-choicebox>`……，登记在 `packages/studio/src/standard/live-extras.ts`）；只能引用已定的值，不能有 `<script>` / `<style>`。
 - `jsx`：JSX 片段，React 画廊里实时渲染（Geist 体系），包在 `.geist-root` 里。同样用 `p` / `t` 取值，可写状态是 `s` 与 `set({ … })`；只能用 `packages/studio-react/src/components/ui/` 里登记的组件（Button、ButtonLink、Badge、Card、Input、Label、Alert、Separator、Switch、Skeleton、Table 一组、Checkbox、RadioGroup、Select 一组、Tabs 一组、Dialog 一组、DropdownMenu 一组、Popover 一组、Tooltip 一组、Progress，以及收录自 affectUI 的 NumberTicker——MIT，见 `THIRD_PARTY_NOTICES.md`）和 lucide-react 图标（`XxxIcon` 命名），用了没登记的组件生成就失败；不能写 `import` / `export`。Geist 色阶在 Tailwind 里是 `ds-` 前缀的颜色类（`bg-ds-gray-100`、`text-ds-gray-900`）。
 - `code` + `lang`：只展示的代码片段（`vue` / `ts` / `tsx` / `css` / `html` / `text`，目录树这类纯文本用 `text`）。
 

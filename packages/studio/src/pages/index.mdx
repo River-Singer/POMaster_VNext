@@ -24,9 +24,19 @@ import { Meta } from '@storybook/addon-docs/blocks';
 | --- | --- | --- | --- |
 | Archetype 语义卡 | 41 | MDX 纯文档页（unattached，含「建议组件组合」映射节） | `catalog/archetypes/*.json` + studio 映射层配置 |
 | AntDV 组件 | 71 族 / 178 stories | CSF3 story（真渲染：Default + 交互态矩阵） | `ant-design-vue@4.2.6` es/components.js 枚举 + 官方 API 词形 |
+| AntDV 组件 · 自建 | 16 | 手写 CSF3 story（`src/gallery/`） | ant-design-vue 没有、Geist 有的组件类型，按 antd token 自建（`src/components/`） |
 | Overlay 能力清单 | 18 | MDX 纯文档页 | `packages/cli/seeds/specs/hard/stacks/*` |
 | Foundations 与边界 | 3 + 2 | 手写 MDX + 生成导航页 + 生成 seed 只读渲染 story | geist/css overlay、`seeds/baseline/`（design-tokens.yaml 九组值只读视觉呈现——44 真值 + 14 UNKNOWN 诚实占位，见「Foundations/Design Tokens」页） |
 | Database Struct | 1 | 生成 MDX 占位分区页 | `themes/data-and-transactions.md` + `seeds/baseline/data/` |
+
+## 组件类型取并集
+
+统一骨架的 97 个组件领域在本画廊都有组件页（与 React · Geist 抽屉对称）：ant-design-vue 有的落到
+「AntDV 组件/<族>」页，页说明里写「对应规范组件领域」（如 Dropdown 页对应分裂按钮、下拉菜单、右键菜单）；
+ant-design-vue 没有的 16 个类型——代码块、命令片段、滚动区、命令面板、选择卡片、地址输入、破坏性确认输入、
+筛选条、反馈收集、主题切换、视频、相对时间、JSON 查看器、中间省略、设备外框、书封——按 antd 的 token
+（`theme.useToken()`：色、圆角、字号、间距、投影）自建在 `src/components/`，交互件尽量用 antdv 的组件拼，
+页在「AntDV 组件/自建」。映射表是 `scripts/lib/component-areas.mjs`，`tests/component-areas.spec.ts` 核对。
 
 ## 交互态矩阵（S1）与语义映射层（S4）
 

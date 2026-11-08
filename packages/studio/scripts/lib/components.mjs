@@ -37,6 +37,7 @@ import {
   deriveReverseMap,
   readArchetypeComponentMap,
 } from "./archetype-map.mjs";
+import { areasByFamily } from "./component-areas.mjs";
 
 /** 基础渲染时补默认 slot 文本的导出名（仅限裸挂载可呈现内容的叶子件——生成器数据，非逐个手写 story）。 */
 const SLOT_TEXT_BY_NAME = new Map([
@@ -150,8 +151,15 @@ export function serviceSceneNote(primary, reverseMap) {
   return ` 服务场景（archetype 反向映射）：${shown}${more}——见 Archetype 语义卡「建议组件组合」。`;
 }
 
+/** 「对应规范组件领域」注记（组件类型取并集：骨架组件领域 → 族页，见 component-areas.mjs；无映射返回空串）。 */
+export function areaNote(primary, familyAreas) {
+  const areas = familyAreas?.get(primary);
+  if (!areas || areas.length === 0) return "";
+  return ` 对应规范组件领域：${areas.join("、")}。`;
+}
+
 /** 单组件族 → CSF3 story 文本（形态由 family-examples.mjs 配置表裁定；含 states 多导出）。 */
-export function renderComponentStory(family, reverseMap) {
+export function renderComponentStory(family, reverseMap, familyAreas = areasByFamily()) {
   const { primary, secondary } = family;
   const entry = FAMILY_EXAMPLES.get(primary);
   const kind = entry?.kind ?? "default";
@@ -171,7 +179,7 @@ export function renderComponentStory(family, reverseMap) {
   ];
   const importStatement = `import { ${importNames.join(", ")} } from 'ant-design-vue';`;
 
-  const sceneNote = serviceSceneNote(primary, reverseMap);
+  const sceneNote = serviceSceneNote(primary, reverseMap) + areaNote(primary, familyAreas).replace(/'/g, "\\'");
 
   if (kind === "service") {
     // 服务式 API：真实调用演示（挂载的是触发按钮，点击调 message/notification）；
@@ -308,11 +316,12 @@ export function generateComponentStories(outDir, componentsJsPath = ANTDV_COMPON
     readArchetypeComponentMap(),
     families.map((family) => family.primary),
   );
+  const familyAreas = areasByFamily();
   resetDir(outDir);
   const files = [];
   for (const family of families) {
     const target = join(outDir, `${family.primary}.stories.ts`);
-    writeFileEnsuringDir(target, renderComponentStory(family, reverseMap));
+    writeFileEnsuringDir(target, renderComponentStory(family, reverseMap, familyAreas));
     files.push(target);
   }
   return {

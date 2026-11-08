@@ -713,6 +713,14 @@
         "layer": "L1",
         "note": "09-06-gallery-and-baseline-presets Step 2（G-A）：画廊生成器钉测——41/71/18/1/1 计数分母 + 双跑 diff 空幂等 + 发布面纪律（private/零运行时 deps）。无域（生成器契约面，非 ir/state/permit/router 四域）。；T4 R4 增钉 studio-react private:true 非发布面"
       },
+      "packages/studio/tests/component-areas.spec.ts": {
+        "layer": "L1",
+        "note": "Vue · Ant Design 抽屉组件类型取并集：骨架 97 个组件领域逐一落到 antdv 族页（via 写法在演示模板里真出现）或「AntDV 组件/自建」页；自建组件只取 antd token。无域（画廊契约面）。"
+      },
+      "packages/studio/tests/gallery-mount.spec.ts": {
+        "layer": "L1",
+        "note": "「AntDV 组件/自建」16 页真实挂载（happy-dom + antdv 全局插件）：逐页无 Vue 警告；选择卡片、JSON 折叠、破坏性确认输入、中间省略交互。无域（画廊挂载面）。"
+      },
       "packages/studio/tests/components-mount.spec.ts": {
         "layer": "L1",
         "note": "0.5.0 审计修复批 3（N4）：71 组件族真实挂载测试——逐族挂载生成 story 真实渲染体（@vue/test-utils + happy-dom，per-file 环境切换），断言挂载不抛错 + keyDom 关键 DOM 存在（选择器/最小计数由 family-examples.mjs 配置表声明）。含审计症状钉（Menu role=menu/menuitem 不再 prefixCls 崩、Tabs 非空 tablist）与配置表↔components.js 解析面对账。无域（生成器契约面，非四域）。"
