@@ -29,7 +29,7 @@ export const PmAddressInput = defineComponent({
       <a-form layout="vertical">
         <a-form-item label="省 / 市 / 区"><a-cascader :value="value.region" :options="regions" placeholder="请选择" @change="(v) => patch({ region: v })" /></a-form-item>
         <a-form-item label="详细地址"><a-input :value="value.detail" autocomplete="street-address" placeholder="街道、门牌号" @update:value="(v) => patch({ detail: v })" /></a-form-item>
-        <a-form-item v-if="withPostcode" label="邮政编码"><a-input :value="value.postcode" autocomplete="postal-code" inputmode="numeric" maxlength="6" style="width:160px" @update:value="(v) => patch({ postcode: v })" /></a-form-item>
+        <a-form-item v-if="withPostcode" label="邮政编码"><a-input :value="value.postcode" autocomplete="postal-code" inputmode="numeric" :maxlength="6" style="width:160px" @update:value="(v) => patch({ postcode: v })" /></a-form-item>
       </a-form>
     </fieldset>`,
 });
