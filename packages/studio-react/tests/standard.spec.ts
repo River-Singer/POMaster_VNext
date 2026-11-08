@@ -39,7 +39,7 @@ function tempRoot(prefix: string): string {
 }
 
 describe("Geist 规范 · 装载模型", () => {
-  it("目录取统一骨架：156 个领域，本体系写了基础 13 篇、按钮与组件批次一 33 篇、体验管理 8 篇、数据呈现 3 篇与工程规范 15 篇，共 389 条规则；其余标为待补", () => {
+  it("目录取统一骨架：156 个领域，本体系写了基础 13 篇、按钮与组件批次一 33 篇、设计模式 31 篇（全局规则 8、原则 10、模板文档 2、体验管理 8、数据呈现 3）与工程规范 15 篇，共 460 条规则；其余标为待补", () => {
     expect(model.meta).toMatchObject({ design_system: "geist", design_system_title_zh: "Vercel Geist", origin: "preset" });
     expect(model.areas.length).toBe(156);
     expect(covered.map((area: { key: string }) => area.key)).toEqual([
@@ -90,6 +90,26 @@ describe("Geist 规范 · 装载模型", () => {
       "popconfirm",
       "progress",
       "spin",
+      "feedback",
+      "navigation",
+      "data_entry",
+      "data_display",
+      "data_format",
+      "copywriting",
+      "buttons",
+      "data_list",
+      "proximity",
+      "alignment",
+      "contrast",
+      "repetition",
+      "direct",
+      "stay",
+      "lightweight",
+      "invitation",
+      "transition",
+      "reaction",
+      "visualization_page",
+      "detail_page",
       "ui_stills",
       "component_motion",
       "bento_grid",
@@ -118,7 +138,7 @@ describe("Geist 规范 · 装载模型", () => {
       "prototype_intake",
     ]);
     expect(covered.filter((area: { group: string }) => area.group === "foundations").length).toBe(13);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(389);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(460);
     for (const area of covered) expect(area.topics.every((topic: { covered: boolean }) => topic.covered)).toBe(true);
     const grid = areaOf("grid");
     expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview", playground_id: null, matrix_id: null });
@@ -248,7 +268,7 @@ describe("Geist 规范 · Storybook 页面", () => {
     const second = tempRoot("pages-b");
     try {
       const result = generateStandardPagesReact(first, model);
-      expect(result).toMatchObject({ count: 157, areas: 156, covered: 73, rules: 389 });
+      expect(result).toMatchObject({ count: 157, areas: 156, covered: 93, rules: 460 });
       generateStandardPagesReact(second, model);
       const files = readdirSync(first).sort();
       expect(files).toEqual(readdirSync(second).sort());
@@ -330,6 +350,6 @@ describe("Geist 规范 · AI 孪生", () => {
         expect(md).toContain(`?path=/story/${rule.storybook.id}`);
       }
     }
-    expect(md).toContain("## 待补的领域（83 个）");
+    expect(md).toContain("## 待补的领域（63 个）");
   });
 });

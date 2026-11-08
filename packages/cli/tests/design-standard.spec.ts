@@ -529,7 +529,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 73, rules: 389, gate_rules: 35, review_rules: 354, pending_params: 13 });
+    expect(result.summary).toEqual({ areas: 93, rules: 460, gate_rules: 40, review_rules: 420, pending_params: 13 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
