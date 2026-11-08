@@ -1697,6 +1697,228 @@ areas:
             jsx: |-
               <Button>确定</Button>
 
+  - key: split_button
+    title_zh: 分裂按钮
+    group: components.general
+    prefix: CMP.SPLIT_BUTTON
+    summary_zh: 主操作 + 一组相关操作：左边直接执行最常用的那个，右边箭头展开其余选项；箭头按钮有自己的名称。
+    rules:
+      - id: CMP.SPLIT_BUTTON.WHEN
+        title_zh: 什么时候用分裂按钮
+        statement_zh: 一个主操作有几种变体（立即派单 / 定时派单 / 批量派单、导出 Excel / CSV / PDF），而其中一种最常用时，用分裂按钮：左边执行最常用的，右边展开其余；几个操作同等重要时平铺成按钮，不藏进菜单。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 最常用的在左边
+            jsx: |-
+              <SplitButton menuLabel="更多派单方式" actions={[{ key: "schedule", label: "定时派单" }, { key: "batch", label: "批量派单" }]}>立即派单</SplitButton>
+
+      - id: CMP.SPLIT_BUTTON.MENU_LABEL
+        title_zh: 箭头按钮要有名称
+        statement_zh: 右边的箭头是独立的按钮，带 aria-label（「更多派单方式」）与 aria-haspopup，键盘能单独聚焦、回车展开（Radix DropdownMenu）；菜单项的文字是完整的动作，不只写名词。
+        enforcement: { kind: review }
+
+      - id: CMP.SPLIT_BUTTON.LIMIT
+        title_zh: 菜单项克制
+        statement_zh: 菜单里放 2 到 7 项；危险操作放最后并用分隔线隔开；不在菜单里再套子菜单；左边的主操作不能是危险操作。
+        enforcement: { kind: review }
+
+  - key: copy_button
+    title_zh: 复制按钮
+    group: components.general
+    prefix: CMP.COPY_BUTTON
+    summary_zh: 复制一段文本（编号、命令、链接、密钥）：结果即时可见、读屏可知，失败给出替代办法。
+    rules:
+      - id: CMP.COPY_BUTTON.WHEN
+        title_zh: 什么时候给复制按钮
+        statement_zh: 用户要把一段文本带去别处（订单号、车牌号、命令、邀请链接、API 密钥）时，在文本旁边放复制按钮；可复制的文本本身也保持可选中，复制按钮只是快捷方式。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 文本旁放复制按钮
+            jsx: |-
+              <div className="flex items-center gap-2"><span className="font-mono text-copy-14">ORD-20261107-0042</span><CopyButton value="ORD-20261107-0042" label="复制订单号" /></div>
+
+      - id: CMP.COPY_BUTTON.FEEDBACK
+        title_zh: 复制成功即时反馈
+        statement_zh: 点了之后图标立即变成对勾、约 2 秒后复原，同时用礼貌的 aria-live 播报「已复制」；不额外弹 Toast（一次复制不值得打断）。
+        params:
+          reset: { value: 2000, unit: ms, source: SRC.POMASTER.PRESET, label_zh: 对勾停留 }
+        enforcement: { kind: review }
+
+      - id: CMP.COPY_BUTTON.FAILURE
+        title_zh: 剪贴板不可用时
+        statement_zh: 浏览器不给剪贴板权限（非安全上下文、被策略禁止）时说明原因，并把文本选中方便用户手动复制；不静默失败。
+        enforcement: { kind: review }
+
+      - id: CMP.COPY_BUTTON.LABEL
+        title_zh: 纯图标按钮带名称
+        statement_zh: 复制按钮通常只有图标，必须带写明对象的名称（「复制订单号」，不是「复制」）；同一行有多个可复制内容时，名称能区分它们。
+        enforcement: { kind: review }
+
+  - key: float_button
+    title_zh: 悬浮按钮
+    group: components.general
+    prefix: CMP.FLOAT_BUTTON
+    summary_zh: 悬浮在页面角落的全局入口（联系客服、反馈、回到顶部）：一页最多一组，不遮挡内容，带名称。
+    rules:
+      - id: CMP.FLOAT_BUTTON.WHEN
+        title_zh: 只放全局辅助入口
+        statement_zh: 悬浮按钮只放和当前页面内容无关、随时可能用到的入口：联系客服、提交反馈、回到顶部；页面的主操作放在页头或工具栏，不做成悬浮按钮。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 全局辅助入口
+            jsx: |-
+              <div className="relative h-32 w-72 rounded-xl border border-dashed border-ds-gray-500"><div className="absolute bottom-4 right-4"><FloatButton position="static" label="联系调度员" badge={3}><HeadsetIcon /></FloatButton></div></div>
+
+      - id: CMP.FLOAT_BUTTON.PLACEMENT
+        title_zh: 位置与避让
+        statement_zh: 固定在右下角，距边缘 24px 起；不遮挡页脚、分页和表格最后一行（页面底部留出等高的内边距）；移动端避开安全区与底部导航。
+        params:
+          offset: { value: 24, unit: px, source: SRC.POMASTER.PRESET, label_zh: 距边缘 }
+        enforcement: { kind: review }
+
+      - id: CMP.FLOAT_BUTTON.LIMIT
+        title_zh: 一页最多一组
+        statement_zh: 一页最多一个悬浮按钮，或一组（展开后不超过 3 个）；组里的每一项都带名称与文字提示。
+        enforcement: { kind: review }
+
+      - id: CMP.FLOAT_BUTTON.BACK_TOP
+        title_zh: 回到顶部
+        statement_zh: 「回到顶部」在页面滚动超过一屏后才出现；点了之后平滑滚回顶部（减少动效时直接跳转），并把焦点交给页面标题。
+        enforcement: { kind: review }
+
+  - key: typography_text
+    title_zh: 排版文本
+    group: components.general
+    prefix: CMP.TEXT
+    summary_zh: 文字只取排版档位与语义色调；省略要能看到全文；行内代码、标记、键盘各用对应语义。
+    playground:
+      component: Text
+      text_zh: 车辆年检将在 7 天后到期
+      props:
+        variant: { options: [copy-14, copy-13, label-14, heading-16], default: copy-14 }
+        tone: { options: [default, secondary, success, warning, error], default: default }
+    rules:
+      - id: CMP.TEXT.SCALE
+        title_zh: 只用排版档位
+        statement_zh: 文字的字号只取 Geist 排版类（text-heading-* / text-label-* / text-copy-*），用 Text 组件或排版类，不写 text-[15px] 这类自造字号。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 标题、正文、次要文字
+            jsx: |-
+              <div className="flex flex-col gap-2"><Text variant="heading-20" asChild><h4>本周派单</h4></Text><Text>已完成 128 单，3 单超时未签收。</Text><Text variant="copy-13" tone="secondary">数据每 5 分钟刷新一次</Text></div>
+
+      - id: CMP.TEXT.TONE
+        title_zh: 语义色调
+        statement_zh: 文字颜色只用语义色调：默认、次要、成功、警告、危险；危险色只用于错误与危险操作的说明，不用来强调普通内容；状态不只靠颜色，文字本身要说清。
+        enforcement: { kind: review }
+
+      - id: CMP.TEXT.ELLIPSIS
+        title_zh: 省略要能看到全文
+        statement_zh: 单行省略、多行省略都要让用户看到全文（悬停提示、展开按钮或 title）；路径、编号这类结尾有区分度的内容用中间省略。
+        enforcement: { kind: review }
+
+      - id: CMP.TEXT.SEMANTICS
+        title_zh: 行内语义
+        statement_zh: 行内代码用 <code>（Geist Code），键盘按键用 Kbd，删除用 <del>、插入用 <ins>、标记用 <mark>，不只改样式。
+        enforcement: { kind: review }
+
+  - key: code_block
+    title_zh: 代码块
+    group: components.general
+    prefix: CMP.CODE_BLOCK
+    summary_zh: 多行代码与配置：文件名标题栏 + 复制；不折行、横向滚动；等宽字体；高亮只用于讲解。
+    rules:
+      - id: CMP.CODE_BLOCK.WHEN
+        title_zh: 什么时候用代码块
+        statement_zh: 多行代码、配置文件、接口返回示例用代码块；一两个词的代码写在行内（code）；要在终端执行的命令用命令片段（snippet），不用代码块。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 文件名 + 复制 + 等宽
+            jsx: |-
+              <CodeBlock className="w-full max-w-[440px]" filename="src/api/vehicle.ts" code={"export function useVehicleList(filters) {\n  return useQuery({ queryKey: [\"vehicle\", \"list\", filters], queryFn: () => vehicleApi.list(filters) })\n}"} />
+
+      - id: CMP.CODE_BLOCK.HEADER
+        title_zh: 标题栏
+        statement_zh: 标题栏写文件名或语言，右侧是带名称的复制按钮（「复制代码」）；复制的是代码原文，不带行号。
+        enforcement: { kind: review }
+
+      - id: CMP.CODE_BLOCK.WRAP
+        title_zh: 不折行，横向滚动
+        statement_zh: 代码不自动折行（折行会改变缩进的含义），超宽时代码区横向滚动，滚动区可用键盘聚焦；字体取等宽字体 token，字号比正文小一档。
+        enforcement: { kind: review }
+
+      - id: CMP.CODE_BLOCK.HIGHLIGHT
+        title_zh: 高亮只用于讲解
+        statement_zh: 需要指出某几行时用行高亮加文字说明，不只靠颜色；语法着色可选，颜色取主题 token，不引入整套高亮主题色。
+        enforcement: { kind: review }
+
+  - key: snippet
+    title_zh: 命令片段
+    group: components.general
+    prefix: CMP.SNIPPET
+    summary_zh: 要复制到终端执行的命令：行首提示符不进剪贴板；一行一个命令；整段可复制。
+    rules:
+      - id: CMP.SNIPPET.WHEN
+        title_zh: 什么时候用命令片段
+        statement_zh: 让用户在终端里执行的命令（安装、启动、迁移）用命令片段；配置文件、多行脚本用代码块。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 提示符不进剪贴板
+            jsx: |-
+              <Snippet text="corepack pnpm studio:react:dev" />
+
+      - id: CMP.SNIPPET.PROMPT
+        title_zh: 提示符与输出
+        statement_zh: 行首的「$」提示符只是标识，不选中、不进剪贴板；命令的输出不放在同一个片段里，需要展示输出时另起一个代码块。
+        enforcement: { kind: review }
+
+      - id: CMP.SNIPPET.MULTI_LINE
+        title_zh: 一行一个命令
+        statement_zh: 多个命令分行写，每行一个，按执行顺序排列；不用 && 把不相关的命令串成一行；需要逐条执行时每条单独可复制。
+        enforcement: { kind: review }
+
+      - id: CMP.SNIPPET.PLACEHOLDER
+        title_zh: 占位写法
+        statement_zh: 命令里需要用户替换的部分用大写占位（YOUR_API_TOKEN、<项目目录>）并在片段下方说明；不放真实密钥。
+        enforcement: { kind: review }
+
+  - key: kbd
+    title_zh: 键盘按键
+    group: components.general
+    prefix: CMP.KBD
+    summary_zh: 快捷键提示：用键盘按键的语义标注；按平台显示 ⌘ 或 Ctrl；快捷键只是加速，不是唯一入口。
+    rules:
+      - id: CMP.KBD.WHEN
+        title_zh: 什么时候显示快捷键
+        statement_zh: 常用操作的快捷键显示在菜单项右侧、按钮的文字提示里或帮助面板中；不在页面正文里大量罗列。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 菜单项右侧显示快捷键
+            jsx: |-
+              <div className="flex items-center gap-2 text-copy-14"><span>打开命令面板</span><KbdGroup><Kbd>⌘</Kbd><Kbd>K</Kbd></KbdGroup></div>
+
+      - id: CMP.KBD.PLATFORM
+        title_zh: 按平台显示
+        statement_zh: macOS 显示 ⌘ ⌥ ⇧，Windows / Linux 显示 Ctrl Alt Shift；按用户平台判断，不两套都写；非 QWERTY 键盘布局下按实际键位提示。
+        enforcement: { kind: review }
+
+      - id: CMP.KBD.COMBO
+        title_zh: 组合键的写法
+        statement_zh: 组合键每个键单独一个按键标注，键与键之间用不换行空格或「+」连接，整组不被折行拆开。
+        enforcement: { kind: review }
+
+      - id: CMP.KBD.NOT_ONLY
+        title_zh: 不是唯一入口
+        statement_zh: 每个快捷键对应的操作在界面上都有可点击的入口；快捷键不和浏览器、读屏软件的常用快捷键冲突。
+        enforcement: { kind: review }
+
   - key: divider
     title_zh: 分割线
     group: components.layout
@@ -1721,6 +1943,32 @@ areas:
       - id: CMP.DIVIDER.VERTICAL
         title_zh: 竖线分隔行内元素
         statement_zh: 竖向分隔线用于分隔同一行的文字链接或元信息（「编辑 | 复制」），高度与文字一致。
+        enforcement: { kind: review }
+
+  - key: flex
+    title_zh: 弹性布局
+    group: components.layout
+    prefix: CMP.FLEX
+    summary_zh: 一维排布：方向、对齐、换行与间距；间距只取档位，不用外边距拼。
+    rules:
+      - id: CMP.FLEX.USE
+        title_zh: 一维排布用弹性布局
+        statement_zh: 一行或一列里的元素排布用 Flex 组件或 flex 工具类（flex-col、justify-*、items-*、gap-*、flex-wrap），二维排布用 grid；不靠 float 或外边距。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 方向、对齐与间距
+            jsx: |-
+              <Flex justify="between" align="center" className="w-full max-w-[360px]"><span className="text-copy-14">沪A·D2391</span><Flex gap={2}><Button size="small" variant="secondary">编辑</Button><Button size="small">派单</Button></Flex></Flex>
+
+      - id: CMP.FLEX.GAP
+        title_zh: 间距只取档位
+        statement_zh: 元素之间的间距用 gap，取间距阶梯（小 8、中 16、大 24）；不在子元素上各自写外边距。
+        enforcement: { kind: review }
+
+      - id: CMP.FLEX.WRAP
+        title_zh: 换行
+        statement_zh: 可能放不下的行允许换行，换行后行间距与列间距一致；不让内容溢出产生横向滚动。
         enforcement: { kind: review }
 
   - key: space
@@ -1752,6 +2000,120 @@ areas:
       - id: CMP.SPACE.ALIGN
         title_zh: 对齐基线
         statement_zh: 不同高度的元素并排时按中线对齐（align=center），文字与输入框并排时按基线对齐。
+        enforcement: { kind: review }
+
+  - key: grid_component
+    title_zh: 栅格组件
+    group: components.layout
+    prefix: CMP.GRID
+    summary_zh: 二维排布：按栏数切分、栏间距取档位、随断点变化；内容区不靠固定像素宽度。
+    rules:
+      - id: CMP.GRID.COLUMNS
+        title_zh: 栏数
+        statement_zh: 用 12 栏栅格（Grid / GridCell 或 grid-cols-12），span 之和每行不超过 12；常用切分 12、6+6、4+4+4、3×4。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按栏数切分
+            jsx: |-
+              <Grid className="w-full max-w-[440px]" gutter={16}><GridCell span={8} className="rounded-md bg-ds-background-200 p-2 text-label-13">订单列表 · 8</GridCell><GridCell span={4} className="rounded-md bg-ds-background-200 p-2 text-label-13">筛选 · 4</GridCell></Grid>
+
+      - id: CMP.GRID.GUTTER
+        title_zh: 栏间距
+        statement_zh: 栏间距只取规范的档位（16 / 24），同一页面统一；横向与纵向间距一致时用同一个值。
+        enforcement: { kind: review }
+
+      - id: CMP.GRID.RESPONSIVE
+        title_zh: 随断点变化
+        statement_zh: 窄屏下多栏改为少栏或单栏（按断点 token 切换 span），不缩小字号硬塞；栅格只负责版面，组件内部的排布用弹性布局。
+        enforcement: { kind: review }
+
+  - key: page_layout
+    title_zh: 页面布局
+    group: components.layout
+    prefix: CMP.LAYOUT
+    summary_zh: 后台页面骨架：顶栏 + 可收起的侧栏 + 内容区；侧栏状态记住；固定的顶栏不遮挡焦点。
+    rules:
+      - id: CMP.LAYOUT.SHELL
+        title_zh: 页面骨架
+        statement_zh: 管理侧页面用顶栏（品牌、全局搜索、用户菜单）+ 左侧边栏（主导航，可收起为图标栏）+ 内容区；内容区背景用 ds-background-200，内容卡片用 ds-background-100。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 顶栏 + 侧栏 + 内容
+            jsx: |-
+              <div className="flex h-44 w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-ds-gray-400"><div className="flex h-10 items-center border-b border-ds-gray-400 bg-ds-background-100 px-4 text-label-14">车队调度</div><div className="flex flex-1"><nav aria-label="主导航" className="w-28 border-r border-ds-gray-400 bg-ds-background-100 p-2 text-copy-13">车辆 · 司机</nav><main className="flex-1 bg-ds-background-200 p-4 text-copy-14">内容区</main></div></div>
+
+      - id: CMP.LAYOUT.SIDER
+        title_zh: 侧栏收起与记忆
+        statement_zh: 侧栏可以收起为只有图标的窄栏（收起按钮带名称与 aria-expanded），收起状态按用户记住；窄屏下侧栏变成抽屉。
+        enforcement: { kind: review }
+
+      - id: CMP.LAYOUT.STICKY
+        title_zh: 固定的顶栏不遮挡焦点
+        statement_zh: 顶栏固定时，页面设置与顶栏等高的 scroll-padding-top，锚点跳转与键盘聚焦的元素不被顶栏盖住。
+        enforcement: { kind: review }
+
+      - id: CMP.LAYOUT.CONTENT
+        title_zh: 内容区宽度
+        statement_zh: 表单与详情类页面的内容区设最大宽度，避免超宽屏上一行过长；列表与看板类页面铺满可用宽度。
+        enforcement: { kind: review }
+
+  - key: scroller
+    title_zh: 滚动区
+    group: components.layout
+    prefix: CMP.SCROLLER
+    summary_zh: 局部滚动区：只在必要时用；能用键盘滚动、有名称；不嵌套滚动；滚动条可见。
+    rules:
+      - id: CMP.SCROLLER.WHEN
+        title_zh: 只在必要时局部滚动
+        statement_zh: 固定高度的面板（侧栏列表、下拉、对话框正文、日志）才用局部滚动；页面主体随页面滚动，不把整页内容塞进一个固定高度的滚动框。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 固定高度的列表
+            jsx: |-
+              <ScrollArea className="h-36 w-56 rounded-lg border border-ds-gray-400"><ul className="p-2">{Array.from({ length: 12 }, (_, i) => <li key={i} className="px-2 py-1 text-copy-14">沪A·D{2300 + i}</li>)}</ul></ScrollArea>
+
+      - id: CMP.SCROLLER.KEYBOARD
+        title_zh: 键盘可滚、有名称
+        statement_zh: 滚动区可以被键盘聚焦（tabindex=0）并有可读名称（role=region + aria-label），方向键与翻页键能滚动；聚焦时有焦点环。
+        enforcement: { kind: review }
+
+      - id: CMP.SCROLLER.NESTING
+        title_zh: 不嵌套滚动
+        statement_zh: "避免滚动区里再套滚动区；对话框、抽屉里的滚动设 overscroll-behavior: contain，滚到头不带动底下的页面。"
+        enforcement: { kind: review }
+
+      - id: CMP.SCROLLER.SCROLLBAR
+        title_zh: 滚动条可见
+        statement_zh: 有可滚动内容时保留可见的滚动条（可以变细），不隐藏滚动条只留拖拽手势；内容不足时不出现多余的滚动条。
+        enforcement: { kind: review }
+
+  - key: anchor
+    title_zh: 锚点
+    group: components.navigation
+    prefix: CMP.ANCHOR
+    summary_zh: 长页面的本页目录：链接到页内标题，当前段落高亮；不用它做跨页导航。
+    rules:
+      - id: CMP.ANCHOR.WHEN
+        title_zh: 什么时候用锚点
+        statement_zh: 超过三屏、分成多个段落的长页面（规范页、详情页、设置页）在右侧放本页目录；目录只链接本页的标题，跨页导航用侧栏或标签页。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 右侧本页目录
+            jsx: |-
+              <Anchor defaultActive="basic" items={[{ id: "basic", label: "基本信息" }, { id: "driver", label: "司机" }, { id: "repair", label: "保养记录" }]} />
+
+      - id: CMP.ANCHOR.ACTIVE
+        title_zh: 当前段落高亮
+        statement_zh: 滚动时高亮当前所在的段落（aria-current），点击后平滑滚动到标题（减少动效时直接跳转），并把焦点交给标题；标题设 scroll-margin-top，不被固定的顶栏盖住。
+        enforcement: { kind: review }
+
+      - id: CMP.ANCHOR.DEPTH
+        title_zh: 层级
+        statement_zh: 目录最多两级；标题文字与页面里的标题一致；段落少于 3 个时不放目录。
         enforcement: { kind: review }
 
   - key: breadcrumb
@@ -1806,6 +2168,58 @@ areas:
         statement_zh: 菜单项不超过 10 个，超过分组（带组标题）或改为对话框选择；嵌套子菜单最多一层。
         enforcement: { kind: review }
 
+  - key: context_menu
+    title_zh: 右键菜单
+    group: components.navigation
+    prefix: CMP.CONTEXT_MENU
+    summary_zh: 右键菜单只是快捷方式：里面的每个操作在界面别处也找得到；键盘能打开。
+    rules:
+      - id: CMP.CONTEXT_MENU.SHORTCUT_ONLY
+        title_zh: 只是快捷方式
+        statement_zh: 右键菜单里的操作（查看、复制、停用）都要在界面别处有入口（行内按钮、「更多」菜单）；不把某个操作只放在右键菜单里，很多人不知道可以右键。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 右键打开
+            jsx: |-
+              <ContextMenu><ContextMenuTrigger className="flex h-24 w-64 items-center justify-center rounded-xl border border-dashed border-ds-gray-500 text-copy-14 text-ds-gray-900">在这里点右键</ContextMenuTrigger><ContextMenuContent><ContextMenuItem>查看详情</ContextMenuItem><ContextMenuItem>复制车牌号</ContextMenuItem><ContextMenuSeparator /><ContextMenuItem variant="destructive">停用车辆</ContextMenuItem></ContextMenuContent></ContextMenu>
+
+      - id: CMP.CONTEXT_MENU.KEYBOARD
+        title_zh: 键盘能打开
+        statement_zh: 聚焦的元素上按菜单键或 Shift+F10 也能打开右键菜单；菜单里上下键移动、回车执行、Esc 关闭并把焦点还回去。
+        enforcement: { kind: review }
+
+      - id: CMP.CONTEXT_MENU.CONTENT
+        title_zh: 内容克制
+        statement_zh: 右键菜单放与被点对象直接相关的 3 到 8 项，按「查看 → 编辑 → 复制 → 危险操作」排列，危险操作在最后并用分隔线隔开。
+        enforcement: { kind: review }
+
+  - key: command_menu
+    title_zh: 命令面板
+    group: components.navigation
+    prefix: CMP.COMMAND_MENU
+    summary_zh: ⌘K 打开的全局命令面板：输入即筛选，键盘为主；命令名与界面上的叫法一致。
+    rules:
+      - id: CMP.COMMAND_MENU.WHEN
+        title_zh: 什么时候提供命令面板
+        statement_zh: 功能多、熟练用户多的工作台提供命令面板（⌘K / Ctrl+K），集中「跳转到某页」「执行某个操作」；它是加速，不替代导航与按钮。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 按分组列出命令
+            jsx: |-
+              <div><Button variant="secondary" onClick={() => set({ open: true })}>搜索命令 ⌘K</Button><CommandMenu open={Boolean(s.open)} onOpenChange={(open) => set({ open })} items={[{ id: "new", label: "新建订单", group: "操作", shortcut: "N" }, { id: "vehicles", label: "前往车辆列表", group: "跳转" }]} /></div>
+
+      - id: CMP.COMMAND_MENU.KEYBOARD
+        title_zh: 键盘为主
+        statement_zh: 打开后焦点在输入框，输入即筛选（名称与拼音、英文关键词都能搜），上下键移动、回车执行、Esc 关闭并把焦点还回去；结果列表是 listbox，当前项由 aria-activedescendant 指出。
+        enforcement: { kind: review }
+
+      - id: CMP.COMMAND_MENU.NAMING
+        title_zh: 命令的叫法
+        statement_zh: 命令名与界面上的按钮、菜单、页面标题一致（「新建订单」，不是「订单创建」）；有快捷键的在右侧显示；没有结果时说明并给出下一步（换个关键词、去帮助中心）。
+        enforcement: { kind: review }
+
   - key: nav_menu
     title_zh: 导航菜单
     group: components.navigation
@@ -1856,6 +2270,32 @@ areas:
       - id: CMP.PAGINATION.POSITION
         title_zh: 位置固定
         statement_zh: 表格分页放在表格右下方，与表格右边对齐；列表很长时可以在顶部也放一个简洁版。
+        enforcement: { kind: review }
+
+  - key: load_more
+    title_zh: 加载更多
+    group: components.navigation
+    prefix: CMP.LOAD_MORE
+    summary_zh: 追加式列表的「加载更多」：按钮而不是无限滚动；读屏知道加载了多少；到底了说清楚。
+    rules:
+      - id: CMP.LOAD_MORE.WHEN
+        title_zh: 按钮加载，不用无限滚动
+        statement_zh: 动态、评论、消息这类追加式列表用「加载更多」按钮（与接口的游标分页一致），不用滚到底自动加载：页脚要能到达、位置要能保持、键盘用户能控制节奏。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 加载更多按钮
+            jsx: |-
+              <div className="flex w-80 flex-col gap-3"><ul className="divide-y divide-ds-gray-400 text-copy-14"><li className="py-2">第 1 条动态</li><li className="py-2">第 2 条动态</li></ul><LoadMore loading={false} hasMore loadedCount={2} onLoadMore={() => undefined} /></div>
+
+      - id: CMP.LOAD_MORE.STATE
+        title_zh: 加载中与读屏
+        statement_zh: 加载中按钮保留文字并显示转圈、不能重复点；加载完成后用礼貌的 aria-live 播报「已加载 30 条」，焦点留在按钮上，新内容出现在按钮前面。
+        enforcement: { kind: review }
+
+      - id: CMP.LOAD_MORE.END
+        title_zh: 到底了
+        statement_zh: 没有更多时按钮换成「没有更多了」的说明（不是禁用的按钮）；加载失败时就地显示原因与「重试」。
         enforcement: { kind: review }
 
   - key: steps
@@ -1910,6 +2350,87 @@ areas:
         statement_zh: 标签名 2–6 个字，可以带计数（「维修记录（3）」）；不在标签名里放图标以外的装饰；禁用的标签说明原因。
         enforcement: { kind: review }
 
+  - key: auto_complete
+    title_zh: 自动完成
+    group: components.entry
+    prefix: CMP.AUTO_COMPLETE
+    summary_zh: 自由输入 + 建议：可以输入建议之外的值；建议随输入更新；键盘可选。
+    rules:
+      - id: CMP.AUTO_COMPLETE.WHEN
+        title_zh: 和可搜索选择的区别
+        statement_zh: 允许输入任意值、建议只是帮忙（地址、搜索词、邮箱后缀）时用自动完成；只能从给定选项里选时用可搜索选择（combobox）。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 输入时给建议
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="ac">目的地</Label><AutoComplete id="ac" value={s.q ?? ""} onValueChange={(q) => set({ q })} suggestions={[{ value: "浦东机场 T1", label: "浦东机场 T1" }, { value: "虹桥火车站", label: "虹桥火车站" }]} placeholder="输入地点" /></div>
+
+      - id: CMP.AUTO_COMPLETE.SUGGEST
+        title_zh: 建议怎么给
+        statement_zh: 输入时防抖后请求建议（约 300ms），取消过期请求；匹配的部分加粗；最多显示 8 条，没有建议时不弹空列表。
+        params:
+          debounce: { value: 300, unit: ms, source: SRC.POMASTER.PRESET, label_zh: 防抖 }
+          max: { value: 8, source: SRC.POMASTER.PRESET, label_zh: 最多条数 }
+        enforcement: { kind: review }
+
+      - id: CMP.AUTO_COMPLETE.KEYBOARD
+        title_zh: 键盘可选
+        statement_zh: 建议列表是 listbox，上下键移动（aria-activedescendant 指向当前项）、回车采用、Esc 收起并保留已输入的文字；采用建议不自动提交。
+        enforcement: { kind: review }
+
+  - key: combobox
+    title_zh: 可搜索选择
+    group: components.entry
+    prefix: CMP.COMBOBOX
+    summary_zh: 选项多时的可搜索单选：只能选列表里的值；按名称与拼音搜；无结果时说明。
+    rules:
+      - id: CMP.COMBOBOX.WHEN
+        title_zh: 什么时候用可搜索选择
+        statement_zh: 选项超过 10 个的单选用 Combobox（触发按钮 + 弹层里的搜索框与列表），选项少时用 Select；允许输入列表外的值时改用 AutoComplete。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 搜索并选择
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="cb">指派司机</Label><Combobox id="cb" options={[{ value: "zw", label: "张伟", keywords: ["zhangwei"] }, { value: "ln", label: "李娜", keywords: ["lina"] }, { value: "wf", label: "王芳", keywords: ["wangfang"] }, { value: "ly", label: "刘洋", keywords: ["liuyang"] }]} value={s.v ?? null} onValueChange={(v) => set({ v })} placeholder="选择司机" searchPlaceholder="搜索姓名或拼音" /></div>
+
+      - id: CMP.COMBOBOX.SEARCH
+        title_zh: 怎么搜
+        statement_zh: 按显示名称、拼音全拼与首字母、编号搜；匹配不区分大小写；选项来自接口时远程搜索并防抖，加载中在列表里显示加载态。
+        enforcement: { kind: review }
+
+      - id: CMP.COMBOBOX.EMPTY
+        title_zh: 无结果
+        statement_zh: 没有匹配时在列表里说明「没有找到」并给出下一步（换个关键词，或新建一个）；不显示空白弹层。
+        enforcement: { kind: review }
+
+  - key: cascader
+    title_zh: 级联选择
+    group: components.entry
+    prefix: CMP.CASCADER
+    summary_zh: 层级数据逐级选择（省市区、类目）：每级一列，选到叶子才算完；触发器显示完整路径。
+    rules:
+      - id: CMP.CASCADER.WHEN
+        title_zh: 什么时候用级联选择
+        statement_zh: 有明确层级、每级选项不多的数据（省 / 市 / 区、商品类目）用级联选择；层级不固定或需要看到整棵树时用树选择。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 逐级选择
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="cas">服务区域</Label><Cascader id="cas" options={[{ value: "sh", label: "上海市", children: [{ value: "pd", label: "浦东新区", children: [{ value: "zj", label: "张江镇" }, { value: "jq", label: "金桥镇" }] }] }]} value={s.path ?? ["sh", "pd", "zj"]} onValueChange={(path) => set({ path })} /></div>
+
+      - id: CMP.CASCADER.PATH
+        title_zh: 显示完整路径
+        statement_zh: 选完后触发器显示完整路径（上海市 / 浦东新区 / 张江镇），路径太长时中间省略并能看到全文；只能选叶子节点时，中间级点击只展开不选中。
+        enforcement: { kind: review }
+
+      - id: CMP.CASCADER.SEARCH
+        title_zh: 层级深时可搜
+        statement_zh: 超过三级或选项多时提供搜索，结果按完整路径显示；每一级都能用键盘左右键进出、上下键移动。
+        enforcement: { kind: review }
+
   - key: checkbox
     title_zh: 多选框
     group: components.entry
@@ -1936,6 +2457,32 @@ areas:
         statement_zh: 改了立即生效的设置用开关；需要随表单一起提交的选择用多选框；单个多选框只用于确认一句声明（「我已阅读并同意…」），并且声明文字完整可读。
         enforcement: { kind: review }
 
+  - key: choicebox
+    title_zh: 选择卡片
+    group: components.entry
+    prefix: CMP.CHOICEBOX
+    summary_zh: 带标题与说明的选项卡片：少量需要解释差别的选项；整张卡片可点；单选多选语义正确。
+    rules:
+      - id: CMP.CHOICEBOX.WHEN
+        title_zh: 什么时候用选择卡片
+        statement_zh: 2 到 4 个选项、每个都需要一句话解释差别（配送时效、套餐、部署区域）时用选择卡片；不需要解释的用单选或多选。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 单选卡片
+            jsx: |-
+              <ChoiceboxGroup aria-label="配送时效" value={s.plan ?? "standard"} onValueChange={(plan) => set({ plan })} options={[{ value: "standard", title: "标准配送", description: "次日送达" }, { value: "express", title: "加急配送", description: "当日 4 小时内" }]} />
+
+      - id: CMP.CHOICEBOX.SEMANTICS
+        title_zh: 语义与点击区
+        statement_zh: 单选是一组 radio、多选是一组 checkbox（读屏与键盘行为随之而来），整张卡片都是点击区；选中态除了边框颜色还有勾选标记，不只靠颜色。
+        enforcement: { kind: review }
+
+      - id: CMP.CHOICEBOX.CONTENT
+        title_zh: 卡片内容
+        statement_zh: 标题一行，说明一句话；卡片等宽、等高排成一行或两列；不可用的选项说明原因（「暂未开通」）。
+        enforcement: { kind: review }
+
   - key: date_picker
     title_zh: 日期选择
     group: components.entry
@@ -1960,6 +2507,32 @@ areas:
       - id: CMP.DATE_PICKER.DISABLED
         title_zh: 不可选的日期置灰
         statement_zh: 不可选的日期（过去、节假日、超出业务范围）置灰并在面板里说明原因；不在选完后才报错。
+        enforcement: { kind: review }
+
+  - key: time_picker
+    title_zh: 时间选择
+    group: components.entry
+    prefix: CMP.TIME_PICKER
+    summary_zh: 选时间：时、分（可选秒）分列选择；分钟按步长；值是 24 小时制字符串。
+    rules:
+      - id: CMP.TIME_PICKER.STEP
+        title_zh: 按业务给步长
+        statement_zh: 预约、排班类的时间按业务步长给分钟（5 / 15 / 30），不给用户 60 个分钟选项；需要精确到秒的才显示秒列。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 15 分钟步长
+            jsx: |-
+              <div className="flex w-60 flex-col gap-2"><Label htmlFor="tp">发车时间</Label><TimePicker id="tp" value={s.time ?? "08:30"} onValueChange={(time) => set({ time })} minuteStep={15} /></div>
+
+      - id: CMP.TIME_PICKER.FORMAT
+        title_zh: 24 小时制
+        statement_zh: 显示与取值都用 24 小时制 HH:mm（需要时 HH:mm:ss），跨天的时间段写明「次日」；值的格式由格式化注册表统一。
+        enforcement: { kind: review }
+
+      - id: CMP.TIME_PICKER.RANGE
+        title_zh: 时间段
+        statement_zh: 选时间段时开始与结束分两个字段并校验先后；常用的时间段（上午、下午、全天）给快捷选项。
         enforcement: { kind: review }
 
   - key: form
@@ -2033,6 +2606,34 @@ areas:
         statement_zh: 输入框宽度按预期内容长度选（短码、数量、手机号用窄档，名称、地址用宽档），同一表单里同类字段等宽；不要所有输入框都拉满整行。
         enforcement: { kind: review }
 
+  - key: search_input
+    title_zh: 搜索框
+    group: components.entry
+    prefix: CMP.SEARCH_INPUT
+    summary_zh: 搜索框：放大镜 + 清空；防抖后搜索、回车立即搜索；在 role=search 区域里；结果数可读。
+    rules:
+      - id: CMP.SEARCH_INPUT.BEHAVIOR
+        title_zh: 什么时候搜
+        statement_zh: 输入时防抖约 300ms 自动搜索，回车立即搜索；取消过期请求、丢弃过期响应；清空后恢复全部结果。
+        params:
+          debounce: { value: 300, unit: ms, source: SRC.POMASTER.PRESET, label_zh: 防抖 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 防抖搜索
+            jsx: |-
+              <SearchInput aria-label="搜索车辆" placeholder="车牌号、司机或订单号" className="w-full max-w-[300px]" />
+
+      - id: CMP.SEARCH_INPUT.SEMANTICS
+        title_zh: 语义
+        statement_zh: 搜索框是 type="search"，放在 role="search" 的区域里，有可读名称；不触发密码管理器（autocomplete="off" 或具体的 token）。
+        enforcement: { kind: review }
+
+      - id: CMP.SEARCH_INPUT.RESULT
+        title_zh: 结果可读
+        statement_zh: 搜索后用礼貌的 aria-live 播报结果数（「找到 12 辆车」）；没有结果时显示空状态与「清除搜索」。
+        enforcement: { kind: review }
+
   - key: textarea
     title_zh: 多行输入
     group: components.entry
@@ -2085,6 +2686,32 @@ areas:
         statement_zh: 步进按钮适合 0–20 这类小范围的调整（数量、优先级）；金额、长编号不显示步进按钮，避免误点改值；滚轮不改值。
         enforcement: { kind: review }
 
+  - key: mentions
+    title_zh: 提及
+    group: components.entry
+    prefix: CMP.MENTIONS
+    summary_zh: 在多行输入里 @ 提及成员：弹出建议、键盘选择；提及的人会收到通知要说清。
+    rules:
+      - id: CMP.MENTIONS.TRIGGER
+        title_zh: 触发与建议
+        statement_zh: 输入「@」后弹出成员建议，按姓名与拼音筛选，上下键移动、回车插入、Esc 关闭；插入后光标停在提及之后。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: "@ 提及"
+            jsx: |-
+              <Mentions aria-label="调度备注" value={s.text ?? "@张伟 明早 8 点前到浦东仓提货"} onValueChange={(text) => set({ text })} people={[{ value: "zw", label: "张伟", keywords: ["zhangwei"] }, { value: "ln", label: "李娜", keywords: ["lina"] }, { value: "wf", label: "王芳", keywords: ["wangfang"] }, { value: "ly", label: "刘洋", keywords: ["liuyang"] }]} className="w-full max-w-[360px]" />
+
+      - id: CMP.MENTIONS.NOTIFY
+        title_zh: 说清通知
+        statement_zh: 被提及的人会收到通知时，在输入框下方写明「被 @ 的人会收到通知」；提交后提及显示为可点的人名。
+        enforcement: { kind: review }
+
+      - id: CMP.MENTIONS.SCOPE
+        title_zh: 只提及有权限的人
+        statement_zh: 建议列表只列出能看到这条内容的成员；没有权限的人不出现在建议里。
+        enforcement: { kind: review }
+
   - key: radio
     title_zh: 单选框
     group: components.entry
@@ -2109,6 +2736,32 @@ areas:
       - id: CMP.RADIO.BUTTON_STYLE
         title_zh: 按钮样式只用于切换视图
         statement_zh: 分段样式的单选（Segmented / Tabs 外观）只用于切换视图、筛选范围这类立即生效的选择；表单里的取值用普通单选，竖排或横排保持一致。
+        enforcement: { kind: review }
+
+  - key: rate
+    title_zh: 评分
+    group: components.entry
+    prefix: CMP.RATE
+    summary_zh: 星级评分：一组 radio、每颗星有名称；能清空；只读时同时显示数字。
+    rules:
+      - id: CMP.RATE.SEMANTICS
+        title_zh: 语义与键盘
+        statement_zh: 评分是一组单选（radiogroup），左右键改分，每颗星有可读名称（「4 星：满意」）；再点当前分可以清空。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 带说明的评分
+            jsx: |-
+              <Rate aria-label="司机服务评分" value={s.score ?? 4} onValueChange={(score) => set({ score })} labels={["很差", "较差", "一般", "满意", "非常满意"]} />
+
+      - id: CMP.RATE.LABELS
+        title_zh: 每一档有文字
+        statement_zh: 每个分值有对应的文字说明，选中后显示在星的旁边；默认 5 档，不用半星做输入。
+        enforcement: { kind: review }
+
+      - id: CMP.RATE.READONLY
+        title_zh: 只读展示
+        statement_zh: 只读展示平均分时同时显示数字与评价人数（4.6 · 128 人评价），星只是辅助。
         enforcement: { kind: review }
 
   - key: select
@@ -2140,6 +2793,60 @@ areas:
       - id: CMP.SELECT.VALUE
         title_zh: 值与显示分开
         statement_zh: 选项的值用稳定的编码（code / id），显示用名称；回显时用值匹配，名称改了不影响已存数据；值不在选项里时显示原值并提示「已停用」，不显示成空。
+        enforcement: { kind: review }
+
+  - key: multi_select
+    title_zh: 多选选择器
+    group: components.entry
+    prefix: CMP.MULTI_SELECT
+    summary_zh: 多选选择器：选中项显示为可移除的标签，超过上限折叠；弹层里可搜、可勾选。
+    rules:
+      - id: CMP.MULTI_SELECT.TAGS
+        title_zh: 选中项显示为标签
+        statement_zh: 选中的项在触发器里显示为标签，每个标签可单独移除（移除按钮带名称）；超过 3 个时折叠成「+N」，悬停或展开能看到全部。
+        params:
+          max_tags: { value: 3, source: SRC.POMASTER.PRESET, label_zh: 折叠前最多显示 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 多选与折叠
+            jsx: |-
+              <MultiSelect aria-label="随车人员" options={[{ value: "zw", label: "张伟", keywords: ["zhangwei"] }, { value: "ln", label: "李娜", keywords: ["lina"] }, { value: "wf", label: "王芳", keywords: ["wangfang"] }, { value: "ly", label: "刘洋", keywords: ["liuyang"] }]} value={s.crew ?? ["zw", "ln", "wf"]} onValueChange={(crew) => set({ crew })} maxTags={2} className="w-full max-w-[300px]" />
+
+      - id: CMP.MULTI_SELECT.WHEN
+        title_zh: 多选选择器还是复选框
+        statement_zh: 选项少（5 个以内）且都要看见时用复选框组；选项多、选中的少时用多选选择器。
+        enforcement: { kind: review }
+
+      - id: CMP.MULTI_SELECT.LIMIT
+        title_zh: 数量限制
+        statement_zh: 有选择上限时在标签旁写明「最多选 5 个」，达到上限后其余选项不可选并说明原因。
+        enforcement: { kind: review }
+
+  - key: slider
+    title_zh: 滑块
+    group: components.entry
+    prefix: CMP.SLIDER
+    summary_zh: 滑块：连续值或区间的大致调节；需要精确值时旁边配数字输入；每个滑块有名称。
+    rules:
+      - id: CMP.SLIDER.WHEN
+        title_zh: 什么时候用滑块
+        statement_zh: 大致调节一个范围内的值（音量、半径、价格区间）用滑块；需要精确输入的数值用数字输入，或在滑块旁边并排一个数字输入。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 区间滑块
+            jsx: |-
+              <div className="flex w-full max-w-[300px] flex-col gap-2"><Label>运价区间（元）</Label><Slider defaultValue={[200, 800]} max={1000} step={50} thumbLabels={["最低运价", "最高运价"]} /></div>
+
+      - id: CMP.SLIDER.KEYBOARD
+        title_zh: 键盘与名称
+        statement_zh: 每个滑块手柄有可读名称（区间的两端分别是「最低运价」「最高运价」），方向键按步长调节、PageUp / PageDown 大步调节，当前值随时可读。
+        enforcement: { kind: review }
+
+      - id: CMP.SLIDER.MARKS
+        title_zh: 刻度与当前值
+        statement_zh: 关键的值用刻度标出并写数字；拖动时显示当前值；不用滑块表示只有两三个离散选项的设置（用分段控制器）。
         enforcement: { kind: review }
 
   - key: switch
@@ -2178,6 +2885,87 @@ areas:
         statement_zh: 关闭后会影响他人或不可撤回的开关（停用账号、关闭对外接口）先弹确认，说清后果；普通偏好不确认。
         enforcement: { kind: review }
 
+  - key: segmented
+    title_zh: 分段控制器
+    group: components.entry
+    prefix: CMP.SEGMENTED
+    summary_zh: 2 到 5 个互斥选项的即时切换：切换同一份内容的展示方式；切换不同内容区用标签页。
+    rules:
+      - id: CMP.SEGMENTED.WHEN
+        title_zh: 分段控制器还是标签页
+        statement_zh: 切换同一份内容的展示方式或范围（列表 / 地图、今日 / 本周 / 本月）用分段控制器；切换不同的内容区用标签页。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 切换统计范围
+            jsx: |-
+              <Segmented aria-label="统计范围" value={s.range ?? "week"} onValueChange={(range) => set({ range })} options={[{ value: "day", label: "今日" }, { value: "week", label: "本周" }, { value: "month", label: "本月" }]} />
+
+      - id: CMP.SEGMENTED.COUNT
+        title_zh: 选项数量
+        statement_zh: 放 2 到 5 个选项，每项文字不超过 4 个字；图标段要有可读名称。
+        params:
+          min: { value: 2, source: SRC.POMASTER.PRESET, label_zh: 最少选项 }
+          max: { value: 5, source: SRC.POMASTER.PRESET, label_zh: 最多选项 }
+        enforcement: { kind: review }
+
+      - id: CMP.SEGMENTED.IMMEDIATE
+        title_zh: 即时生效
+        statement_zh: 切换立即生效、不需要确认；当前选择写进地址，刷新后保持。
+        enforcement: { kind: review }
+
+  - key: transfer
+    title_zh: 穿梭框
+    group: components.entry
+    prefix: CMP.TRANSFER
+    summary_zh: 两栏之间移动条目（分配权限、编排线路）：可搜索、可全选；按钮写清方向；数量可见。
+    rules:
+      - id: CMP.TRANSFER.WHEN
+        title_zh: 什么时候用穿梭框
+        statement_zh: 从一批条目里挑一部分出来、并且要同时看到「已选」与「待选」两边时用穿梭框（分配车辆到线路、给角色分配权限）；只需要选、不关心另一边时用多选选择器。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 分配车辆
+            jsx: |-
+              <Transfer items={[{ key: "1", label: "沪A·D2390" }, { key: "2", label: "沪A·D2391" }, { key: "3", label: "沪A·D2392" }]} targetKeys={s.target ?? ["3"]} onChange={(target) => set({ target })} titles={["可用车辆", "本线路车辆"]} />
+
+      - id: CMP.TRANSFER.CONTROLS
+        title_zh: 搜索、全选与方向
+        statement_zh: 每一栏可搜索、可全选，栏头显示「已选 n / 共 m」；中间的按钮写清方向（「移到右侧」「移回左侧」），没有勾选时不可用。
+        enforcement: { kind: review }
+
+      - id: CMP.TRANSFER.LARGE
+        title_zh: 条目很多时
+        statement_zh: 条目超过几百条时分页或虚拟滚动，搜索走服务端；不一次把全部条目渲染出来。
+        enforcement: { kind: review }
+
+  - key: tree_select
+    title_zh: 树选择
+    group: components.entry
+    prefix: CMP.TREE_SELECT
+    summary_zh: 从树形数据里选节点（组织、车队）：弹层里是树；可搜索；显示路径。
+    rules:
+      - id: CMP.TREE_SELECT.WHEN
+        title_zh: 什么时候用树选择
+        statement_zh: 层级不固定、需要看到树形结构才能选的数据（组织架构、车队分组）用树选择；层级固定且浅的用级联选择。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 选择车队
+            jsx: |-
+              <div className="flex w-72 flex-col gap-2"><Label htmlFor="ts">所属车队</Label><TreeSelect id="ts" nodes={[{ key: "east", label: "华东区", children: [{ key: "pd", label: "浦东车队" }, { key: "xh", label: "徐汇车队" }] }]} value={s.team ?? "pd"} onValueChange={(team) => set({ team })} defaultExpanded={["east"]} /></div>
+
+      - id: CMP.TREE_SELECT.KEYBOARD
+        title_zh: 键盘
+        statement_zh: 弹层里的树用方向键移动、左右键收起展开、回车选择；选中后弹层收起、焦点回到触发器。
+        enforcement: { kind: review }
+
+      - id: CMP.TREE_SELECT.SEARCH
+        title_zh: 搜索与路径
+        statement_zh: 节点多时提供搜索，匹配的节点连同祖先一起显示；触发器上显示选中节点的名称，悬停可看完整路径。
+        enforcement: { kind: review }
+
   - key: upload
     title_zh: 上传
     group: components.entry
@@ -2202,6 +2990,162 @@ areas:
       - id: CMP.UPLOAD.SEPARATE
         title_zh: 上传与提交分开
         statement_zh: 文件先上传得到文件标识，表单提交只带标识；大文件分片上传、可断点续传；上传的文件名、类型在服务端重新校验与改名（SEC 规范）。
+        enforcement: { kind: review }
+
+  - key: address_input
+    title_zh: 地址输入
+    group: components.entry
+    prefix: CMP.ADDRESS_INPUT
+    summary_zh: 一组地址字段：省市区 + 详细地址 + 邮编；各自有标签与自动填充提示。
+    rules:
+      - id: CMP.ADDRESS_INPUT.STRUCTURE
+        title_zh: 按地址结构拆字段
+        statement_zh: 地址按国内结构拆成省市区（级联选择）、详细地址、可选的邮编，外面包一个 fieldset 写明是什么地址（「提货地址」）；不让用户在一个输入框里自由写整段地址再由程序拆分。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 省市区 + 详细地址
+            jsx: |-
+              <AddressInput legend="提货地址" regions={[{ value: "sh", label: "上海市", children: [{ value: "pd", label: "浦东新区", children: [{ value: "zj", label: "张江镇" }, { value: "jq", label: "金桥镇" }] }] }]} value={s.addr ?? { region: ["sh", "pd", "zj"], detail: "碧波路 690 号" }} onValueChange={(addr) => set({ addr })} className="w-full max-w-[360px]" />
+
+      - id: CMP.ADDRESS_INPUT.AUTOFILL
+        title_zh: 自动填充
+        statement_zh: 每个字段设置对应的 autocomplete（address-level1/2/3、street-address、postal-code）与 inputmode，让浏览器与密码管理器能自动填写。
+        enforcement: { kind: review }
+
+      - id: CMP.ADDRESS_INPUT.VALIDATION
+        title_zh: 校验
+        statement_zh: 省市区必须选到最后一级；详细地址校验长度；邮编 6 位数字；错误贴着对应字段，不在整组顶部笼统报错。
+        enforcement: { kind: review }
+
+  - key: destructive_input
+    title_zh: 破坏性确认输入
+    group: components.entry
+    prefix: CMP.DESTRUCTIVE_INPUT
+    summary_zh: 不可逆的大操作前输入对象名称确认：写出原文；输入一致后才能确认；不禁止粘贴。
+    rules:
+      - id: CMP.DESTRUCTIVE_INPUT.WHEN
+        title_zh: 什么时候要输入名称
+        statement_zh: 删除项目、解散车队、清空数据这类影响大且不可逆的操作，要求输入对象名称再确认；普通删除用气泡确认或撤销。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 输入名称确认
+            jsx: |-
+              <DestructiveInput expected="浦东车队" onMatchChange={(ok) => set({ ok })} className="w-full max-w-[320px]" />
+
+      - id: CMP.DESTRUCTIVE_INPUT.PROMPT
+        title_zh: 写出原文
+        statement_zh: 提示里写出要输入的原文（「输入 浦东车队 确认」），原文用等宽或标签样式突出；比较时去掉首尾空格、区分大小写。
+        enforcement: { kind: review }
+
+      - id: CMP.DESTRUCTIVE_INPUT.PASTE
+        title_zh: 不禁止粘贴
+        statement_zh: 允许粘贴（禁止粘贴只会为难密码管理器与读屏用户）；输入一致前危险按钮不可用，一致后可用。
+        enforcement: { kind: review }
+
+  - key: filter_bar
+    title_zh: 筛选条
+    group: components.entry
+    prefix: CMP.FILTER_BAR
+    summary_zh: 列表上方的筛选条：已生效的筛选是可移除的标签；添加筛选用下拉；一键清除；筛选写进地址。
+    rules:
+      - id: CMP.FILTER_BAR.CHIPS
+        title_zh: 已生效的筛选看得见
+        statement_zh: 每个已生效的筛选显示为「名称：值」的标签，可单独移除（移除按钮带名称）；没有筛选时只显示「添加筛选」。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 增删筛选
+            jsx: |-
+              <FilterBar filters={s.filters ?? [{ key: "status", label: "状态", value: "在途" }]} available={[{ key: "status", label: "状态" }, { key: "team", label: "车队" }]} onRemove={() => set({ filters: [] })} onClear={() => set({ filters: [] })} onAdd={() => undefined} />
+
+      - id: CMP.FILTER_BAR.URL
+        title_zh: 筛选写进地址
+        statement_zh: 筛选条件写进地址的查询参数，刷新、分享、浏览器后退都能恢复；改筛选后页码回到第一页。
+        enforcement: { kind: review }
+
+      - id: CMP.FILTER_BAR.CLEAR
+        title_zh: 一键清除
+        statement_zh: 有两个以上筛选时提供「清除全部」；清除后结果恢复为全部，并播报结果数。
+        enforcement: { kind: review }
+
+  - key: feedback_widget
+    title_zh: 反馈收集
+    group: components.entry
+    prefix: CMP.FEEDBACK_WIDGET
+    summary_zh: 页面上的「反馈」入口：选感受 + 写几句；提交后就地确认；不强制留联系方式。
+    rules:
+      - id: CMP.FEEDBACK_WIDGET.FORM
+        title_zh: 简短的反馈表单
+        statement_zh: 反馈入口打开一个小弹层：一组感受选项（表情或评分，每项有名称）+ 一个可选的文字框；感受与文字至少填一项才能提交。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 反馈入口
+            jsx: |-
+              <Feedback onSubmit={() => Promise.resolve()} />
+
+      - id: CMP.FEEDBACK_WIDGET.CONFIRM
+        title_zh: 就地确认
+        statement_zh: 提交中按钮忙碌；成功后在弹层里显示「已收到」，不跳转、不弹新的对话框；失败时保留已填内容并给出重试。
+        enforcement: { kind: review }
+
+      - id: CMP.FEEDBACK_WIDGET.PRIVACY
+        title_zh: 隐私
+        statement_zh: 不强制填写联系方式；随反馈一起提交的页面地址、浏览器信息要在表单里写明。
+        enforcement: { kind: review }
+
+  - key: theme_switcher
+    title_zh: 主题切换
+    group: components.entry
+    prefix: CMP.THEME_SWITCHER
+    summary_zh: 跟随系统 / 浅色 / 深色三段切换：默认跟随系统；切换即时生效；偏好要记住。
+    rules:
+      - id: CMP.THEME_SWITCHER.OPTIONS
+        title_zh: 三个选项
+        statement_zh: 提供「跟随系统」「浅色」「深色」三个选项，默认跟随系统；用分段控制器，图标段要有可读名称。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 三段切换
+            jsx: |-
+              <ThemeSwitcher value={s.theme ?? "system"} onValueChange={(theme) => set({ theme })} />
+
+      - id: CMP.THEME_SWITCHER.APPLY
+        title_zh: "{'antd': '怎么生效', 'geist': '怎么生效'}"
+        statement_zh: 切换即时生效：写到根元素的 data-theme 与 color-scheme，颜色由 --ds-* 变量切换；不刷新页面。
+        enforcement: { kind: review }
+
+      - id: CMP.THEME_SWITCHER.PERSIST
+        title_zh: 记住偏好
+        statement_zh: 偏好存在用户设置里（登录后跨设备）或本地，下次打开在首屏渲染前就应用，避免先闪一下浅色。
+        enforcement: { kind: review }
+
+  - key: avatar
+    title_zh: 头像
+    group: components.display
+    prefix: CMP.AVATAR
+    summary_zh: 代表人或团队的头像：没有图时显示姓名缩写；旁边已有姓名时作为装饰；多人叠放以「+N」收尾。
+    rules:
+      - id: CMP.AVATAR.FALLBACK
+        title_zh: 没有图时显示缩写
+        statement_zh: 没有头像或图片加载失败时显示姓名缩写（中文取最后一个字、英文取首字母），底色按姓名稳定取色；不显示破图标或统一的灰色人形。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 缩写与叠放
+            jsx: |-
+              <div className="flex items-center gap-4"><Avatar name="张伟" /><Avatar name="李娜" size={40} /><AvatarGroup names={["张伟", "李娜", "王芳", "刘洋", "陈杰"]} max={3} /></div>
+
+      - id: CMP.AVATAR.ALT
+        title_zh: 替代文字
+        statement_zh: 头像旁边已经写了姓名时，头像是装饰（alt 留空）；单独出现的头像（只有头像的成员列表）要有姓名作为可读名称。
+        enforcement: { kind: review }
+
+      - id: CMP.AVATAR.GROUP
+        title_zh: 多人叠放
+        statement_zh: 多人头像叠放时最多显示 3 到 5 个，其余折叠成「+N」，整组有可读名称（「5 人：张伟、李娜……」）；尺寸取 24 / 32 / 40 / 64 四档。
         enforcement: { kind: review }
 
   - key: badge
@@ -2266,6 +3210,58 @@ areas:
         statement_zh: 可关闭标签用于展示已选的筛选条件或已添加的关键词，关闭即移除该条件；标签不当按钮或链接用，需要点击跳转的用链接。
         enforcement: { kind: review }
 
+  - key: status_dot
+    title_zh: 状态点
+    group: components.display
+    prefix: CMP.STATUS_DOT
+    summary_zh: 对象状态的圆点 + 文字：颜色按语义；文字必须在；进行中可以呼吸闪烁。
+    rules:
+      - id: CMP.STATUS_DOT.TEXT
+        title_zh: 圆点加文字
+        statement_zh: 对象的状态用 StatusDot：圆点颜色按语义，后面跟文字；不只放一个彩色圆点。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 五种状态
+            jsx: |-
+              <div className="flex flex-col gap-2"><StatusDot state="ready" label="空闲" /><StatusDot state="building" label="在途" /><StatusDot state="error" label="故障" /><StatusDot state="queued" label="待派" /><StatusDot state="canceled" label="已停用" /></div>
+
+      - id: CMP.STATUS_DOT.MAPPING
+        title_zh: 状态与颜色对应
+        statement_zh: 同一个状态在全系统用同一种颜色与文字（领域规格里的状态枚举对应固定的语义色）；颜色只有五种语义，不按状态各配一种颜色。
+        enforcement: { kind: review }
+
+      - id: CMP.STATUS_DOT.MOTION
+        title_zh: 进行中的闪烁
+        statement_zh: 只有进行中的状态（处理中、部署中）用呼吸闪烁；用户开启减少动效时静止。
+        enforcement: { kind: review }
+
+  - key: calendar
+    title_zh: 日历
+    group: components.display
+    prefix: CMP.CALENDAR
+    summary_zh: 月历网格：选日期或在格子里看当天的数据；键盘按天、周、月移动；今天与选中日区分清楚。
+    rules:
+      - id: CMP.CALENDAR.WHEN
+        title_zh: 什么时候用日历
+        statement_zh: 需要按月看每天数据（排班、订单量、预约）时用日历面板，格子里放当天的摘要；只是选一个日期用日期选择器。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 卡片式日历
+            jsx: |-
+              <Calendar selected={s.day ?? "2026-11-07"} onSelect={(day) => set({ day })} today="2026-11-07" defaultMonth="2026-11-01" />
+
+      - id: CMP.CALENDAR.KEYBOARD
+        title_zh: 键盘
+        statement_zh: 日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。
+        enforcement: { kind: review }
+
+      - id: CMP.CALENDAR.MARKS
+        title_zh: 今天、选中与不可选
+        statement_zh: 今天、选中日、不可选的日期用不同的样式区分（不只靠颜色）；格子里的数据摘要简短，详细内容点开再看。
+        enforcement: { kind: review }
+
   - key: card
     title_zh: 卡片
     group: components.display
@@ -2290,6 +3286,58 @@ areas:
       - id: CMP.CARD.CLICKABLE
         title_zh: 整卡可点要说清
         statement_zh: 整张卡片可点时，整卡是一个链接或按钮（键盘可聚焦），悬停有反馈；卡片里同时还有其他按钮时，不把整卡做成可点，避免误触。
+        enforcement: { kind: review }
+
+  - key: carousel
+    title_zh: 走马灯
+    group: components.display
+    prefix: CMP.CAROUSEL
+    summary_zh: 轮播：同级内容 3 到 5 张；看得出总数与方向；不自动播放；管理侧工作页不用。
+    rules:
+      - id: CMP.CAROUSEL.WHEN
+        title_zh: 什么时候用轮播
+        statement_zh: 用户侧的图片、公告等同级内容才用轮播，3 到 5 张；管理侧的工作页面不用轮播（信息藏在后面的页里，很少有人去翻）。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 带指示与翻页
+            jsx: |-
+              <Carousel label="本周动态" className="w-full max-w-[360px]" slides={[<div key="a" className="flex h-28 items-center justify-center bg-ds-background-200 text-label-14">准点率 98.2%</div>, <div key="b" className="flex h-28 items-center justify-center bg-ds-background-200 text-label-14">新增 6 辆冷链车</div>]} />
+
+      - id: CMP.CAROUSEL.CONTROLS
+        title_zh: 看得出总数与方向
+        statement_zh: 有上一张 / 下一张按钮与页码指示（每个指示点是带名称的按钮），左右键翻页；读屏知道这是轮播（aria-roledescription）以及当前第几张。
+        enforcement: { kind: review }
+
+      - id: CMP.CAROUSEL.AUTOPLAY
+        title_zh: 不自动播放
+        statement_zh: 默认不自动播放；确需自动播放时提供暂停按钮，鼠标悬停与键盘聚焦时暂停，减少动效时不自动播放。
+        enforcement: { kind: review }
+
+  - key: collapse
+    title_zh: 折叠面板
+    group: components.display
+    prefix: CMP.COLLAPSE
+    summary_zh: 折叠面板：长而不规则的内容逐段展开；标题是按钮、报告展开状态；默认展开最常用的一段。
+    rules:
+      - id: CMP.COLLAPSE.WHEN
+        title_zh: 什么时候折叠
+        statement_zh: 内容长、各段相对独立、用户通常只看其中一两段时用折叠面板（常见问题、详情页的次要信息）；需要对比各段时平铺，不折叠。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 手风琴
+            jsx: |-
+              <Collapse type="single" collapsible defaultValue="insurance" className="w-full max-w-[360px]"><CollapseItem value="license"><CollapseTrigger>行驶证</CollapseTrigger><CollapseContent>有效期至 2028 年 3 月 14 日。</CollapseContent></CollapseItem><CollapseItem value="insurance"><CollapseTrigger>保险</CollapseTrigger><CollapseContent>交强险与商业险均在保。</CollapseContent></CollapseItem></Collapse>
+
+      - id: CMP.COLLAPSE.SEMANTICS
+        title_zh: 标题是按钮
+        statement_zh: 每段标题是按钮，用 aria-expanded 报告展开状态、aria-controls 指向内容；上下键在标题之间移动；展开箭头的方向与状态一致。
+        enforcement: { kind: review }
+
+      - id: CMP.COLLAPSE.MODE
+        title_zh: 一次一段还是多段
+        statement_zh: 各段之间互不相关、篇幅长时一次只展开一段（手风琴）；用户可能同时对照几段时允许多段展开；默认展开最常用的那一段。
         enforcement: { kind: review }
 
   - key: descriptions
@@ -2344,6 +3392,221 @@ areas:
         statement_zh: 表格、卡片里的空状态用简洁的小插图或不用插图；整页空状态可以用插图，但不喧宾夺主。
         enforcement: { kind: review }
 
+  - key: image
+    title_zh: 图片
+    group: components.display
+    prefix: CMP.IMAGE
+    summary_zh: 图片：固定宽高比占位不跳布局；懒加载；失败有说明；有替代文字；需要时可看大图。
+    rules:
+      - id: CMP.IMAGE.RATIO
+        title_zh: 固定宽高比
+        statement_zh: 图片容器先按宽高比占位（4:3、16:9、1:1），加载前后不跳布局；裁切用 cover，需要看全图的（证件、票据）用 contain。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 占位、懒加载、替代文字
+            code: |-
+              <Image src={vehicle.photoUrl} alt={`${vehicle.plate} 左侧照片`} ratio="4/3" preview className="w-80" />
+            lang: tsx
+
+      - id: CMP.IMAGE.ALT
+        title_zh: 替代文字
+        statement_zh: 每张图都有替代文字：内容图写图里有什么（「行驶证正面」），装饰图写空串；不写「图片」这类无信息的词。
+        enforcement: { kind: review }
+
+      - id: CMP.IMAGE.LOADING
+        title_zh: 懒加载与失败
+        statement_zh: 首屏以外的图片懒加载；加载失败显示占位与说明，不显示破图标；需要看细节的图片提供「查看大图」，大图在对话框里打开，可用 Esc 关闭。
+        enforcement: { kind: review }
+
+  - key: video
+    title_zh: 视频
+    group: components.display
+    prefix: CMP.VIDEO
+    summary_zh: 视频：原生控件；只预载元数据；有对白要有字幕；只有装饰视频能静音自动播放。
+    rules:
+      - id: CMP.VIDEO.CONTROLS
+        title_zh: 用原生控件
+        statement_zh: 视频用浏览器原生的 video 控件（键盘、全屏、倍速、画中画都有），外面套固定宽高比的框；不自己画一套播放控件。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 原生控件 + 字幕
+            code: |-
+              <Video src={clip.url} poster={clip.poster} label="装车流程讲解" captions={{ src: clip.vtt, label: "中文", lang: "zh" }} />
+            lang: tsx
+
+      - id: CMP.VIDEO.CAPTIONS
+        title_zh: 字幕
+        statement_zh: 有对白或讲解的视频必须带字幕轨（captions），重要内容同时提供文字稿；只有画面的演示视频写明「无对白」。
+        enforcement: { kind: review }
+
+      - id: CMP.VIDEO.AUTOPLAY
+        title_zh: 自动播放
+        statement_zh: 只有静音、循环的装饰视频可以自动播放，并且在用户开启减少动效时不播放；只预载元数据（preload=metadata），不在首屏下载整段视频。
+        enforcement: { kind: review }
+
+  - key: list
+    title_zh: 列表
+    group: components.display
+    prefix: CMP.LIST
+    summary_zh: 列表：一行一个对象；标题是链接；元信息与操作对齐；空间小时代替表格。
+    rules:
+      - id: CMP.LIST.STRUCTURE
+        title_zh: 一行一个对象
+        statement_zh: 每行是一个对象：图标或头像 + 标题 + 一行描述 + 元信息 + 操作；行的结构全列表一致；需要按列比较、排序时用表格。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 司机列表
+            jsx: |-
+              <List className="w-full max-w-[400px]"><ListItem href="#zw" leading={<Avatar name="张伟" decorative />} title="张伟" description="沪A·D2391" meta="128 单" /><ListItem href="#ln" leading={<Avatar name="李娜" decorative />} title="李娜" description="沪A·D2392" meta="96 单" /></List>
+
+      - id: CMP.LIST.LINK
+        title_zh: 标题是链接
+        statement_zh: 整行可点时只有标题是链接，点击区扩展到整行；行内的操作按钮仍可单独聚焦，不把整行包成一个按钮。
+        enforcement: { kind: review }
+
+      - id: CMP.LIST.STATES
+        title_zh: 加载、空与更多
+        statement_zh: 首次加载用骨架、没有数据用空状态、追加式列表用「加载更多」；列表项超过一屏时考虑分页。
+        enforcement: { kind: review }
+
+  - key: popover
+    title_zh: 气泡卡片
+    group: components.display
+    prefix: CMP.POPOVER
+    summary_zh: 气泡卡片：点击打开、可交互的小浮层；焦点进出有序；不放必须完成的长流程。
+    rules:
+      - id: CMP.POPOVER.WHEN
+        title_zh: 气泡卡片还是文字提示
+        statement_zh: 浮层里有可交互的内容（按钮、链接、表单）或内容较多时用气泡卡片，点击打开；只有一句说明、不可交互的用文字提示。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 点击打开、可交互
+            jsx: |-
+              <Popover><PopoverTrigger asChild><Button variant="secondary">车辆概况</Button></PopoverTrigger><PopoverContent className="flex w-64 flex-col gap-2"><span className="text-label-14">沪A·D2391</span><span className="text-copy-13 text-ds-gray-900">张伟 · 在途 · 预计 11:40 到达</span><Button size="small" className="self-start">查看轨迹</Button></PopoverContent></Popover>
+
+      - id: CMP.POPOVER.FOCUS
+        title_zh: 焦点与关闭
+        statement_zh: 打开后焦点进入浮层（或停在触发按钮、Tab 进入浮层），Esc 或点外面关闭并把焦点还给触发按钮；浮层不遮住触发按钮。
+        enforcement: { kind: review }
+
+      - id: CMP.POPOVER.SCOPE
+        title_zh: 内容克制
+        statement_zh: 气泡卡片放补充信息与简短操作；必须完成的多步流程用对话框或抽屉，不放进气泡卡片。
+        enforcement: { kind: review }
+
+  - key: relative_time
+    title_zh: 相对时间
+    group: components.display
+    prefix: CMP.RELATIVE_TIME
+    summary_zh: 相对时间：「3 分钟前」；带机器可读时间；悬停看绝对时间与时区；自动刷新。
+    rules:
+      - id: CMP.RELATIVE_TIME.FORMAT
+        title_zh: 分档
+        statement_zh: 1 分钟内「刚刚」，1 小时内「N 分钟前」，24 小时内「N 小时前」，7 天内「N 天前」，更早显示日期（见 FORMAT.RELATIVE_TIME）；经格式化注册表输出。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 相对时间 + 绝对时间
+            jsx: |-
+              <span className="text-copy-14">签收：<RelativeTime date="2026-11-07T11:42:03+08:00" /></span>
+
+      - id: CMP.RELATIVE_TIME.ABSOLUTE
+        title_zh: 绝对时间可见
+        statement_zh: 用 time 元素并带 datetime 属性；悬停或键盘聚焦时显示带时区的绝对时间；需要审计的场景（日志、审批）直接显示绝对时间。
+        enforcement: { kind: review }
+
+      - id: CMP.RELATIVE_TIME.REFRESH
+        title_zh: 自动刷新
+        statement_zh: 相对时间每分钟刷新一次，不让「刚刚」停留一小时；页面不可见时暂停刷新。
+        enforcement: { kind: review }
+
+  - key: qrcode
+    title_zh: 二维码
+    group: components.display
+    prefix: CMP.QRCODE
+    summary_zh: 二维码：留足静区、对比度够；附上原文；内容过长换短链；过期的码要说明。
+    rules:
+      - id: CMP.QRCODE.SCAN
+        title_zh: 能扫
+        statement_zh: 二维码四周留出至少 4 个模块的静区，深色在浅色底上，尺寸不小于 120px；纠错等级默认 M，码上叠图标时用 H。
+        params:
+          min_size: { value: 120, unit: px, source: SRC.POMASTER.PRESET, label_zh: 最小尺寸 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 附原文的二维码
+            jsx: |-
+              <QrCode value="https://example.com/o/0042" size={144} caption="example.com/o/0042" />
+
+      - id: CMP.QRCODE.TEXT
+        title_zh: 附上原文
+        statement_zh: 二维码下方附上原文或「复制链接」，扫不了的人（读屏用户、桌面用户）也拿得到内容；二维码本身有可读名称。
+        enforcement: { kind: review }
+
+      - id: CMP.QRCODE.STATUS
+        title_zh: 过期与刷新
+        statement_zh: 有时效的码（登录码、提货码）显示有效期，过期后盖上「已过期」并提供刷新；内容过长时换成短链，不生成密到扫不出的码。
+        enforcement: { kind: review }
+
+  - key: statistic
+    title_zh: 统计数值
+    group: components.display
+    prefix: CMP.STATISTIC
+    summary_zh: 指标数值：标签 + 等宽数字 + 单位；趋势用箭头加文字；涨跌好坏按指标定义。
+    rules:
+      - id: CMP.STATISTIC.FORMAT
+        title_zh: 数字格式
+        statement_zh: 数值用千分位、等宽数字，单位小一号写在数字后；精度按指标固定（金额 2 位、比例 1 位），经格式化注册表输出。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 指标与趋势
+            jsx: |-
+              <div className="flex gap-12"><Statistic label="本周订单" value={12846} unit="单" trend={{ delta: 12.4, period: "较上周" }} /><Statistic label="平均等待" value={7.5} precision={1} unit="分钟" trend={{ delta: -8, period: "较上周", goodWhen: "down" }} /></div>
+
+      - id: CMP.STATISTIC.TREND
+        title_zh: 趋势
+        statement_zh: 趋势用箭头加文字（「较上周 +12.4%」），写清比较的周期；涨是好是坏按指标定义（等待时长下降是好事），颜色只是辅助。
+        enforcement: { kind: review }
+
+      - id: CMP.STATISTIC.ANIMATION
+        title_zh: 数字变化
+        statement_zh: 数值更新时可以用数字滚动强调变化，只滚动变化的数位，停在最终值；减少动效时直接显示最终值。
+        enforcement: { kind: review }
+
+  - key: gauge
+    title_zh: 仪表
+    group: components.display
+    prefix: CMP.GAUGE
+    summary_zh: 仪表：表示一个比例（用量、满载率、得分）；阈值变色；中心写数字；不用来表示没有上限的值。
+    rules:
+      - id: CMP.GAUGE.WHEN
+        title_zh: 什么时候用仪表
+        statement_zh: 表示一个 0 到 100% 的比例（存储用量、车厢满载率、健康得分）用环形仪表；没有上限的数值用统计数值，进度用进度条。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 阈值变色
+            jsx: |-
+              <div className="flex gap-6"><Gauge value={42} label="一组满载率" /><Gauge value={95} label="三组满载率" /></div>
+
+      - id: CMP.GAUGE.THRESHOLD
+        title_zh: 阈值
+        statement_zh: 按业务阈值变色（例如 ≥70% 警告、≥90% 危险），阈值写在规格里而不是写死在组件里；中心同时写数字，颜色只是辅助。
+        params:
+          warning: { value: 70, source: SRC.POMASTER.PRESET, label_zh: 警告阈值（%） }
+          danger: { value: 90, source: SRC.POMASTER.PRESET, label_zh: 危险阈值（%） }
+        enforcement: { kind: review }
+
+      - id: CMP.GAUGE.SEMANTICS
+        title_zh: 可读
+        statement_zh: 仪表有 role=meter 与 aria-valuenow / valuemin / valuemax，以及写明含义的名称（「三组满载率 95%」）。
+        enforcement: { kind: review }
+
   - key: table
     title_zh: 表格
     group: components.display
@@ -2375,6 +3638,32 @@ areas:
         statement_zh: 默认每页 10 或 20 条，可选 10 / 20 / 50 / 100；页码、每页条数与排序写进 URL（STATE.URL）；翻页后回到表格顶部；数据量很大时用服务端分页，不在前端一次拉全量。
         enforcement: { kind: review }
 
+  - key: timeline
+    title_zh: 时间轴
+    group: components.display
+    prefix: CMP.TIMELINE
+    summary_zh: 时间轴：按时间排列事件；最新的在上；状态圆点加文字；进行中的下一步用待定项。
+    rules:
+      - id: CMP.TIMELINE.ORDER
+        title_zh: 顺序
+        statement_zh: 记录类的时间轴（操作日志、物流轨迹）最新的在最上面；计划类的（里程碑）按时间先后从上往下；同一页保持一种顺序。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 物流轨迹
+            jsx: |-
+              <Timeline items={[{ key: "b", title: "已提货", time: { iso: "2026-11-07T09:40:00+08:00", text: "09:40" }, tone: "success" }, { key: "a", title: "已派单给张伟", time: { iso: "2026-11-07T08:15:00+08:00", text: "08:15" }, tone: "info" }]} pending="等待签收" />
+
+      - id: CMP.TIMELINE.SEMANTICS
+        title_zh: 语义
+        statement_zh: 时间轴是有序列表；每项的时间用 time 元素；状态圆点只是辅助，标题里写清发生了什么。
+        enforcement: { kind: review }
+
+      - id: CMP.TIMELINE.LENGTH
+        title_zh: 条目多时
+        statement_zh: 条目超过 20 条时默认只显示最近的若干条，提供「查看全部」；不同类型的事件可以用图标区分，同样配文字。
+        enforcement: { kind: review }
+
   - key: tooltip
     title_zh: 文字提示
     group: components.display
@@ -2399,6 +3688,217 @@ areas:
       - id: CMP.TOOLTIP.NO_ACTIONS
         title_zh: 提示里不放可点内容
         statement_zh: 提示里不放按钮、链接；需要交互的用气泡卡片（Popover）；延迟出现（约 100ms）避免划过时闪烁。
+        enforcement: { kind: review }
+
+  - key: tour
+    title_zh: 漫游引导
+    group: components.display
+    prefix: CMP.TOUR
+    summary_zh: 新功能的分步引导：几步就够；可跳过、可重看；锚定到真实元素；只出现一次。
+    rules:
+      - id: CMP.TOUR.WHEN
+        title_zh: 什么时候引导
+        statement_zh: 只为新功能或改动较大的界面做引导，每次 3 到 5 步；引导不能弥补设计本身的问题，能靠界面说清的不靠引导。
+        params:
+          max_steps: { value: 5, source: SRC.POMASTER.PRESET, label_zh: 最多步数 }
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 锚定到真实元素
+            code: |-
+              <Tour open={open} onOpenChange={setOpen} steps={[{ target: () => createRef.current, title: "新建车辆", description: "录入车辆后就可以派单。" }]} />
+            lang: tsx
+
+      - id: CMP.TOUR.CONTROL
+        title_zh: 可跳过、可重看
+        statement_zh: 每一步都有「跳过」「上一步」「下一步」，显示「2 / 4」；Esc 随时退出；帮助菜单里可以重新打开引导。
+        enforcement: { kind: review }
+
+      - id: CMP.TOUR.ONCE
+        title_zh: 只出现一次
+        statement_zh: 引导完成或跳过后记住，不在每次进入时都弹；引导期间目标元素高亮，不挡住用户正常操作。
+        enforcement: { kind: review }
+
+  - key: tree
+    title_zh: 树形控件
+    group: components.display
+    prefix: CMP.TREE
+    summary_zh: 树：层级数据的浏览与选择；键盘按 WAI-ARIA 树模式；可勾选时父子联动显示半选。
+    rules:
+      - id: CMP.TREE.KEYBOARD
+        title_zh: 键盘
+        statement_zh: 树是 role=tree，节点是 treeitem；上下键移动、右键展开或进入子节点、左键收起或回到父节点、回车选择；当前节点用 aria-selected 标出。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 组织树
+            jsx: |-
+              <Tree aria-label="车队组织" nodes={[{ key: "east", label: "华东区", children: [{ key: "pd", label: "浦东车队" }, { key: "xh", label: "徐汇车队" }] }, { key: "south", label: "华南区", children: [{ key: "th", label: "天河车队" }] }]} checkable checked={s.checked ?? ["pd"]} onCheckedChange={(checked) => set({ checked })} defaultExpanded={["east", "south"]} />
+
+      - id: CMP.TREE.CHECK
+        title_zh: 勾选联动
+        statement_zh: 可勾选的树中，勾选父节点等于勾选全部子节点，部分子节点勾选时父节点显示半选（aria-checked=mixed）。
+        enforcement: { kind: review }
+
+      - id: CMP.TREE.LARGE
+        title_zh: 节点多时
+        statement_zh: 节点多时子节点按需加载（展开时请求），提供搜索并展开匹配节点的祖先；层级超过 4 级时考虑改用别的组织方式。
+        enforcement: { kind: review }
+
+  - key: json_view
+    title_zh: JSON 查看器
+    group: components.display
+    prefix: CMP.JSON_VIEW
+    summary_zh: 只读的 JSON 树：可折叠、默认展开两层；保留字面形式；整段可复制；不执行任何内容。
+    rules:
+      - id: CMP.JSON_VIEW.WHEN
+        title_zh: 什么时候用 JSON 查看器
+        statement_zh: 审计日志、Webhook 载荷、接口调试这类结构化数据用 JSON 查看器；给普通用户看的信息整理成描述列表，不直接给 JSON。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: Webhook 载荷
+            jsx: |-
+              <JsonView label="order.delivered" value={{ id: "evt_8f2c", data: { order_id: "ORD-0042", signed: true, weight_kg: 1830.5 } }} className="w-full max-w-[420px]" />
+
+      - id: CMP.JSON_VIEW.COLLAPSE
+        title_zh: 折叠
+        statement_zh: 对象与数组可以折叠（按钮带 aria-expanded），折叠后显示项数；默认展开两层，很大的数据默认更浅。
+        enforcement: { kind: review }
+
+      - id: CMP.JSON_VIEW.LITERAL
+        title_zh: 字面形式与安全
+        statement_zh: 字符串保留引号、null 与布尔值照原样显示，类型配色只是辅助；只读展示，不 eval、不把值当 HTML 渲染；整段可复制。
+        enforcement: { kind: review }
+
+  - key: middle_truncate
+    title_zh: 中间省略
+    group: components.display
+    prefix: CMP.MIDDLE_TRUNCATE
+    summary_zh: 中间省略：长路径、哈希、文件名保留首尾；全文可见可复制。
+    rules:
+      - id: CMP.MIDDLE_TRUNCATE.WHEN
+        title_zh: 什么时候中间省略
+        statement_zh: 结尾最有区分度的长文本（文件路径、哈希、带版本号的文件名、长编号）用中间省略；普通句子用结尾省略。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 保留首尾
+            jsx: |-
+              <MiddleTruncate className="font-mono text-copy-13" text="uploads/2026/11/07/vehicle/沪A·D2391/inspection-report-final-v3.pdf" max={36} tail={18} />
+
+      - id: CMP.MIDDLE_TRUNCATE.FULL_TEXT
+        title_zh: 全文可见
+        statement_zh: 全文放在 title 与读屏文字里，悬停能看到、读屏读得到；复制时拿到全文而不是带省略号的文本。
+        enforcement: { kind: review }
+
+      - id: CMP.MIDDLE_TRUNCATE.KEEP
+        title_zh: 保留多少
+        statement_zh: 结尾至少保留扩展名或版本号所在的部分（约一半），开头保留能识别出类别的部分。
+        enforcement: { kind: review }
+
+  - key: device_frame
+    title_zh: 设备外框
+    group: components.display
+    prefix: CMP.DEVICE_FRAME
+    summary_zh: 设备外框：说明截图或演示出现在哪个环境；外框是装饰；地址栏只是文字。
+    rules:
+      - id: CMP.DEVICE_FRAME.WHEN
+        title_zh: 什么时候套外框
+        statement_zh: 文档、发布说明、引导页里的截图或演示，需要说明它出现在浏览器还是手机上时套外框；产品界面本身不套外框。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 浏览器外框
+            jsx: |-
+              <BrowserFrame address="fleet.example.com/vehicles" className="w-full max-w-[360px]"><div className="p-4 text-label-14">车辆列表</div></BrowserFrame>
+
+      - id: CMP.DEVICE_FRAME.DECORATIVE
+        title_zh: 外框是装饰
+        statement_zh: 外框对读屏隐藏（aria-hidden），地址栏只是文字、不是可点的链接；框里的截图要有替代文字。
+        enforcement: { kind: review }
+
+      - id: CMP.DEVICE_FRAME.SCALE
+        title_zh: 比例
+        statement_zh: 手机外框按真实设备的宽高比，内容按实际尺寸缩放，不把桌面截图塞进手机框。
+        enforcement: { kind: review }
+
+  - key: book
+    title_zh: 书封
+    group: components.display
+    prefix: CMP.BOOK
+    summary_zh: 书封：文档、手册的封面卡片；整张是链接；颜色取品牌与功能色；悬停轻微翻开。
+    rules:
+      - id: CMP.BOOK.WHEN
+        title_zh: 什么时候用书封
+        statement_zh: 帮助中心、知识库首页展示几本手册或指南时用书封卡片，一行 3 到 5 本；普通的链接列表不用书封。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 手册书架
+            jsx: |-
+              <div className="flex gap-6"><Book title="司机上岗手册" href="#driver" /><Book title="冷链运输规范" href="#cold" tone="blue" /></div>
+
+      - id: CMP.BOOK.LINK
+        title_zh: 整张是链接
+        statement_zh: 整张书封是指向那份文档的链接，可读名称就是书名；不在书封里再放其他按钮。
+        enforcement: { kind: review }
+
+      - id: CMP.BOOK.MOTION
+        title_zh: 悬停效果
+        statement_zh: 悬停与键盘聚焦时轻微翻开，用户开启减少动效时不动；书名过长时换行，最多三行。
+        enforcement: { kind: review }
+
+  - key: comment
+    title_zh: 评论
+    group: components.display
+    prefix: CMP.COMMENT
+    summary_zh: 评论与回复：作者、时间、正文、操作；回复缩进嵌套最多两层；点赞报告状态。
+    rules:
+      - id: CMP.COMMENT.STRUCTURE
+        title_zh: 结构
+        statement_zh: 每条评论是一个 article：头像 + 作者 + 相对时间 + 正文 + 操作（回复、点赞）；回复缩进嵌套，最多两层，更深的平铺并 @ 被回复的人。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 评论与回复
+            jsx: |-
+              <Comment author="李娜" date="2026-11-07T10:00:00+08:00" content="浦东仓 3 号门今天下午封闭，提货改走 5 号门。" likes={3} className="w-full max-w-[420px]" />
+
+      - id: CMP.COMMENT.ACTIONS
+        title_zh: 操作
+        statement_zh: 点赞按钮报告状态（aria-pressed）与计数；回复在原处展开输入框，不跳页；自己的评论提供编辑与删除，删除后保留「该评论已删除」的占位以维持对话结构。
+        enforcement: { kind: review }
+
+      - id: CMP.COMMENT.TIME
+        title_zh: 时间
+        statement_zh: 时间用相对时间，悬停显示绝对时间；编辑过的评论标出「已编辑」。
+        enforcement: { kind: review }
+
+  - key: page_header
+    title_zh: 页头
+    group: components.display
+    prefix: CMP.PAGE_HEADER
+    summary_zh: 页头：面包屑 + 返回 + 页面唯一的 h1 + 描述 + 主操作；同类页面结构一致。
+    rules:
+      - id: CMP.PAGE_HEADER.STRUCTURE
+        title_zh: 结构
+        statement_zh: 页头从上到下：面包屑（可选）、返回 + 标题（页面唯一的 h1）、一句描述或元信息、右侧的主操作；同类页面的页头结构一致。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 详情页页头
+            jsx: |-
+              <PageHeader className="w-full max-w-[520px]" title="沪A·D2391" description="厢式冷链车，归属浦东车队一组。" backHref="#vehicles" actions={<><Button variant="secondary">编辑</Button><Button>派单</Button></>} />
+
+      - id: CMP.PAGE_HEADER.ACTIONS
+        title_zh: 主操作
+        statement_zh: 页头右侧最多一个主按钮，其余用次按钮，超过 3 个收进「更多」；操作针对整个页面的对象，行内对象的操作放在行内。
+        enforcement: { kind: review }
+
+      - id: CMP.PAGE_HEADER.TITLE
+        title_zh: 标题
+        statement_zh: 标题写当前对象或页面名称，与浏览器标签页的 title 对应；返回按钮带名称（「返回车辆列表」）。
         enforcement: { kind: review }
 
   - key: alert
@@ -2432,6 +3932,32 @@ areas:
         statement_zh: 错误和必须处理的警告不可关闭，问题解决后自动消失；可关闭的提示关闭后记住（按用户），不每次刷新都出现。
         enforcement: { kind: review }
 
+  - key: banner
+    title_zh: 横幅
+    group: components.feedback
+    prefix: CMP.BANNER
+    summary_zh: 贴着顶部导航的整宽系统消息：一次一条；要处理的给动作；区块内的提示用警告提示。
+    rules:
+      - id: CMP.BANNER.WHEN
+        title_zh: 什么时候用横幅
+        statement_zh: 影响整个系统的消息（计划维护、试用到期、服务降级）用横幅，贴在顶部导航下方、整宽；只和某个区块有关的提示用警告提示，放在区块里。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 整宽系统消息
+            jsx: |-
+              <Banner className="w-full max-w-[520px]" onDismiss={() => undefined} action={<a href="#notice">查看公告</a>}>11 月 9 日 02:00–04:00 系统维护，期间不能派单。</Banner>
+
+      - id: CMP.BANNER.ONE_AT_A_TIME
+        title_zh: 一次一条
+        statement_zh: 同一时间只显示一条横幅，按严重程度排队（出错 > 警告 > 信息）；关闭后不在本次会话里再出现，严重的问题解决前不允许关闭。
+        enforcement: { kind: review }
+
+      - id: CMP.BANNER.ACTION
+        title_zh: 要处理的给动作
+        statement_zh: 需要用户处理的横幅（续费、补充资料）带一个动作链接，文案写清不处理的后果与期限；纯通知类不放动作。
+        enforcement: { kind: review }
+
   - key: drawer
     title_zh: 侧边抽屉
     group: components.feedback
@@ -2456,6 +3982,34 @@ areas:
       - id: CMP.DRAWER.CLOSE
         title_zh: 未保存先确认
         statement_zh: 有未保存的修改时，点关闭、遮罩或 Esc 先确认是否放弃；保存成功后关闭抽屉并刷新受影响的列表行，不整页刷新。
+        enforcement: { kind: review }
+
+  - key: bottom_sheet
+    title_zh: 底部抽屉
+    group: components.feedback
+    prefix: CMP.BOTTOM_SHEET
+    summary_zh: 移动端的底部抽屉：操作菜单与短表单；有把手、可下滑关闭、最高 85% 视口。
+    rules:
+      - id: CMP.BOTTOM_SHEET.WHEN
+        title_zh: 什么时候用底部抽屉
+        statement_zh: 移动端的操作菜单（对一个对象的几种操作）和短表单用底部抽屉，拇指够得到；桌面端同样的内容用下拉菜单或侧边抽屉。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 操作菜单
+            jsx: |-
+              <Sheet><SheetTrigger asChild><Button variant="secondary">订单操作</Button></SheetTrigger><SheetContent side="bottom"><SheetHeader><SheetTitle>ORD-20261107-0042</SheetTitle><SheetDescription>选择要对这个订单做的操作。</SheetDescription></SheetHeader><div className="flex flex-col gap-2"><Button variant="secondary">联系收货人</Button><Button variant="secondary">上报异常</Button></div></SheetContent></Sheet>
+
+      - id: CMP.BOTTOM_SHEET.HEIGHT
+        title_zh: 高度与滚动
+        statement_zh: 高度随内容，最高 85% 视口，内容更多时抽屉内部滚动（滚到头不带动底下的页面）；顶部有拖拽把手，下滑或点遮罩关闭，同时保留可点的关闭按钮。
+        params:
+          max_height: { value: 85vh, source: SRC.POMASTER.PRESET, label_zh: 最大高度 }
+        enforcement: { kind: review }
+
+      - id: CMP.BOTTOM_SHEET.FOCUS
+        title_zh: 焦点与安全区
+        statement_zh: 打开后焦点进入抽屉、关闭后回到触发按钮；底部留出设备安全区，按钮不贴着屏幕边缘。
         enforcement: { kind: review }
 
   - key: message
@@ -2553,6 +4107,32 @@ areas:
         statement_zh: 点主按钮后按钮进入加载态并锁定，请求完成再关闭；失败时保持打开并显示错误，不丢失用户输入。
         enforcement: { kind: review }
 
+  - key: destructive_modal
+    title_zh: 危险操作确认
+    group: components.feedback
+    prefix: CMP.DESTRUCTIVE_MODAL
+    summary_zh: 不可逆操作的确认：写清后果；焦点先在取消；确认按钮写动作本身；影响大的要输入名称。
+    rules:
+      - id: CMP.DESTRUCTIVE_MODAL.CONSEQUENCE
+        title_zh: 写清后果
+        statement_zh: 标题是问句（「解散浦东车队？」），正文写清删什么、能否恢复、影响谁（「24 辆车会移到未分组，进行中的 3 个订单不受影响，解散后不能恢复」）；不写「确定要执行此操作吗」。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 后果 + 动作本身
+            jsx: |-
+              <div><Button variant="error" onClick={() => set({ open: true })}>解散车队</Button><DestructiveModal open={Boolean(s.open)} onOpenChange={(open) => set({ open })} title="解散浦东车队？" consequences="24 辆车会移到「未分组」，进行中的 3 个订单不受影响。解散后不能恢复。" confirmLabel="解散车队" confirmText="浦东车队" onConfirm={() => undefined} /></div>
+
+      - id: CMP.DESTRUCTIVE_MODAL.FOCUS
+        title_zh: 焦点与关闭
+        statement_zh: 打开后焦点在「取消」上，回车不会误删；点遮罩不关闭（必须明确选择），Esc 等同取消；确认进行中按钮忙碌、不能重复提交。
+        enforcement: { kind: review }
+
+      - id: CMP.DESTRUCTIVE_MODAL.TYPE_TO_CONFIRM
+        title_zh: 影响大的输入名称
+        statement_zh: 批量删除、清空、解散这类影响大且不可逆的操作，要求输入对象名称后确认按钮才可用；能撤销的删除不用确认，直接做并提供撤销。
+        enforcement: { kind: review }
+
   - key: popconfirm
     title_zh: 气泡确认
     group: components.feedback
@@ -2605,6 +4185,60 @@ areas:
         statement_zh: 超过 10 秒的任务允许离开页面继续，完成后用通知告知；任务可取消时提供取消。
         enforcement: { kind: review }
 
+  - key: result
+    title_zh: 结果与错误
+    group: components.feedback
+    prefix: CMP.RESULT
+    summary_zh: 操作结束或整页不可用的结果页：说清发生了什么、下一步做什么；错误页给可报告的编号。
+    rules:
+      - id: CMP.RESULT.WHEN
+        title_zh: 什么时候用结果页
+        statement_zh: 流程的终点（提交成功、处理失败）和整页不可用（403 无权限、404 不存在、500 出错）用结果页；局部的失败用警告提示，不跳结果页。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 无权限
+            jsx: |-
+              <Result status="403" title="没有查看这个车队的权限" description="请联系车队管理员开通。" actions={<Button variant="secondary">回到首页</Button>} />
+
+      - id: CMP.RESULT.NEXT_STEP
+        title_zh: 下一步
+        statement_zh: 每个结果页都有下一步：成功页给「返回列表」「继续添加」，失败页给「重试」「返回修改」，无权限页给「申请权限」或联系人；不让用户停在死胡同。
+        enforcement: { kind: review }
+
+      - id: CMP.RESULT.ERROR_DETAIL
+        title_zh: 错误页的细节
+        statement_zh: 500 这类错误页不暴露堆栈与内部信息，给出可报告的请求编号（可选中复制）；404 说明可能的原因（已删除、链接有误）。
+        enforcement: { kind: review }
+
+  - key: skeleton
+    title_zh: 骨架屏
+    group: components.feedback
+    prefix: CMP.SKELETON
+    summary_zh: 首次加载的占位：几何与最终内容一致；延迟出现；只用于首屏，局部刷新用加载态。
+    rules:
+      - id: CMP.SKELETON.SHAPE
+        title_zh: 几何与内容一致
+        statement_zh: 骨架的行数、宽度、头像与图片位置与最终内容一致，加载完成后页面不跳动；宽度逐行变化，不铺满一样长的灰条。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 和内容同形
+            jsx: |-
+              <div className="flex w-full max-w-[360px] gap-3"><Skeleton className="size-10 rounded-full" /><div className="flex flex-1 flex-col gap-2"><Skeleton className="h-4 w-1/2" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div></div>
+
+      - id: CMP.SKELETON.WHEN
+        title_zh: 只用于首屏
+        statement_zh: 骨架只用于页面或区块的首次加载；已有内容时的刷新、翻页用局部加载态，保留旧内容直到新内容到达。
+        enforcement: { kind: review }
+
+      - id: CMP.SKELETON.TIMING
+        title_zh: 延迟出现
+        statement_zh: 加载很快（约 300ms 内）时不显示骨架，避免一闪；出现后至少停留约 300–500ms；骨架的微光动画在减少动效时停止。
+        params:
+          delay: { value: 300, unit: ms, source: SRC.VERCEL.GUIDELINES, label_zh: 延迟出现 }
+        enforcement: { kind: review }
+
   - key: spin
     title_zh: 加载中
     group: components.feedback
@@ -2629,6 +4263,84 @@ areas:
       - id: CMP.SPIN.TEXT
         title_zh: 久了要说话
         statement_zh: 超过 2 秒的加载在指示旁写在做什么（「正在汇总 3 个月的数据」）；超过 10 秒提供取消或转后台。
+        enforcement: { kind: review }
+
+  - key: watermark
+    title_zh: 水印
+    group: components.feedback
+    prefix: CMP.WATERMARK
+    summary_zh: 敏感页面的截图追溯：倾斜重复的姓名与工号；是威慑不是安全措施；不挡操作、不影响阅读。
+    rules:
+      - id: CMP.WATERMARK.WHEN
+        title_zh: 什么时候加水印
+        statement_zh: 展示个人信息、财务数据的管理侧页面加水印，内容写当前用户的姓名、工号与日期，用于截图追溯；水印是威慑，敏感数据仍靠权限与脱敏保护。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 姓名 + 工号 + 日期
+            jsx: |-
+              <Watermark content={["张调度 · 10086", "2026-11-07"]} className="h-36 w-full max-w-[360px] rounded-xl border border-ds-gray-400 p-6 text-copy-14">司机：张伟　手机号：138****2391</Watermark>
+
+      - id: CMP.WATERMARK.READABILITY
+        title_zh: 不影响阅读与操作
+        statement_zh: 水印颜色取半透明的中性色，正文对比度不受影响；水印层不拦截点击与选中，读屏忽略它（aria-hidden）。
+        enforcement: { kind: review }
+
+      - id: CMP.WATERMARK.CONTENT
+        title_zh: 水印内容
+        statement_zh: 水印内容来自当前登录用户（服务端下发），不让用户自己填写；不写手机号、证件号这类本身就敏感的信息。
+        enforcement: { kind: review }
+
+  - key: affix
+    title_zh: 固钉
+    group: components.other
+    prefix: CMP.AFFIX
+    summary_zh: 滚动时钉住的工具栏与操作条：CSS sticky；钉住后加边线与投影；不遮挡焦点。
+    rules:
+      - id: CMP.AFFIX.WHEN
+        title_zh: 钉住什么
+        statement_zh: 长列表的批量操作条、长表单的提交栏、详情页的标签栏在滚动时钉在顶部或底部；一页最多钉一条，不把整块内容钉住。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 钉住的操作条
+            jsx: |-
+              <div className="h-40 w-80 overflow-y-auto rounded-xl border border-ds-gray-400"><Affix className="flex gap-2 px-4 py-2"><Button size="small">批量派单</Button><Button size="small" variant="secondary">导出</Button></Affix><ul>{Array.from({ length: 12 }, (_, i) => <li key={i} className="px-4 py-1 text-copy-14">沪A·D{2300 + i}</li>)}</ul></div>
+
+      - id: CMP.AFFIX.STICKY
+        title_zh: 用 sticky，不用滚动监听
+        statement_zh: "钉住用 position: sticky（相对最近的滚动容器），不监听滚动事件去改 top；钉住后加底边线与投影，表示它浮在内容上面。"
+        enforcement: { kind: review }
+
+      - id: CMP.AFFIX.FOCUS
+        title_zh: 不遮挡焦点
+        statement_zh: 钉在顶部时页面设置等高的 scroll-padding-top，钉在底部时设置 scroll-padding-bottom，键盘聚焦的元素不被钉住的条盖住。
+        enforcement: { kind: review }
+
+  - key: config_provider
+    title_zh: 全局配置
+    group: components.other
+    prefix: CMP.CONFIG_PROVIDER
+    summary_zh: 应用根部的全局配置：语言地区、主题、组件默认尺寸；只放一次，组件从这里读。
+    rules:
+      - id: CMP.CONFIG_PROVIDER.ROOT_ONCE
+        title_zh: 只在根部放一次
+        statement_zh: GeistProvider 放在应用根组件，统一设置 locale、主题偏好、组件默认尺寸与文字提示延迟；组件用 useGeistConfig() 读取，页面里不各自传语言与主题。
+        enforcement: { kind: review }
+        examples:
+          - kind: do
+            title_zh: 根部统一配置
+            jsx: |-
+              <GeistProvider locale="zh-CN" theme="light" size="medium"><div className="flex gap-2"><Button>派单</Button><Button variant="secondary">取消</Button></div></GeistProvider>
+
+      - id: CMP.CONFIG_PROVIDER.LOCALE
+        title_zh: 语言与地区
+        statement_zh: 日期、数字、货币的格式化读这里的地区设置（经格式化注册表），组件内置文案（「确定」「上一页」）跟随语言；语言从用户设置或浏览器语言判断，不按 IP。
+        enforcement: { kind: review }
+
+      - id: CMP.CONFIG_PROVIDER.THEME
+        title_zh: 主题
+        statement_zh: 主题偏好（跟随系统 / 浅色 / 深色）写到根元素的 data-theme 与 color-scheme，颜色由主题样式表的 --ds-* 变量切换；组件不按主题写两套类名。
         enforcement: { kind: review }
 
   - key: feedback

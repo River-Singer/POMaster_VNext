@@ -39,7 +39,7 @@ function tempRoot(prefix: string): string {
 }
 
 describe("Geist 规范 · 装载模型", () => {
-  it("目录取统一骨架：156 个领域，本体系写了基础 13 篇、按钮与组件批次一 33 篇、设计模式 31 篇（全局规则 8、原则 10、模板文档 2、体验管理 8、数据呈现 3）与工程规范 15 篇，共 460 条规则；其余标为待补", () => {
+  it("目录取统一骨架：156 个领域全部写完（基础 13、组件 97——组件类型取并集、设计模式 31、工程规范 15），共 657 条规则", () => {
     expect(model.meta).toMatchObject({ design_system: "geist", design_system_title_zh: "Vercel Geist", origin: "preset" });
     expect(model.areas.length).toBe(156);
     expect(covered.map((area: { key: string }) => area.key)).toEqual([
@@ -57,39 +57,102 @@ describe("Geist 规范 · 装载模型", () => {
       "press_feedback",
       "focus_ring",
       "button",
+      "split_button",
+      "copy_button",
+      "float_button",
+      "typography_text",
+      "code_block",
+      "snippet",
+      "kbd",
       "divider",
+      "flex",
       "space",
+      "grid_component",
+      "page_layout",
+      "scroller",
+      "anchor",
       "breadcrumb",
       "dropdown",
+      "context_menu",
+      "command_menu",
       "nav_menu",
       "pagination",
+      "load_more",
       "steps",
       "tabs",
+      "auto_complete",
+      "combobox",
+      "cascader",
       "checkbox",
+      "choicebox",
       "date_picker",
+      "time_picker",
       "form",
       "input",
+      "search_input",
       "textarea",
       "input_number",
+      "mentions",
       "radio",
+      "rate",
       "select",
+      "multi_select",
+      "slider",
       "switch",
+      "segmented",
+      "transfer",
+      "tree_select",
       "upload",
+      "address_input",
+      "destructive_input",
+      "filter_bar",
+      "feedback_widget",
+      "theme_switcher",
+      "avatar",
       "badge",
       "tag",
+      "status_dot",
+      "calendar",
       "card",
+      "carousel",
+      "collapse",
       "descriptions",
       "empty",
+      "image",
+      "video",
+      "list",
+      "popover",
+      "relative_time",
+      "qrcode",
+      "statistic",
+      "gauge",
       "table",
+      "timeline",
       "tooltip",
+      "tour",
+      "tree",
+      "json_view",
+      "middle_truncate",
+      "device_frame",
+      "book",
+      "comment",
+      "page_header",
       "alert",
+      "banner",
       "drawer",
+      "bottom_sheet",
       "message",
       "notification",
       "modal",
+      "destructive_modal",
       "popconfirm",
       "progress",
+      "result",
+      "skeleton",
       "spin",
+      "watermark",
+      "affix",
+      "config_provider",
       "feedback",
       "navigation",
       "data_entry",
@@ -138,7 +201,7 @@ describe("Geist 规范 · 装载模型", () => {
       "prototype_intake",
     ]);
     expect(covered.filter((area: { group: string }) => area.group === "foundations").length).toBe(13);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(460);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(657);
     for (const area of covered) expect(area.topics.every((topic: { covered: boolean }) => topic.covered)).toBe(true);
     const grid = areaOf("grid");
     expect(grid.storybook).toEqual({ title: "规范/基础/栅格", id: "standard-foundations-grid--overview", playground_id: null, matrix_id: null });
@@ -215,7 +278,7 @@ describe("Geist 规范 · 示例组件登记", () => {
   it("登记表里的每个组件都在 src/components/ui/<模块>.tsx 导出", () => {
     for (const [name, module] of Object.entries(UI_COMPONENTS)) {
       const source = readFileSync(join(STUDIO_REACT_ROOT, "src", "components", "ui", `${module}.tsx`), "utf8");
-      expect(source).toMatch(new RegExp(`export \\{[^}]*\\b${name}\\b`));
+      expect(source).toMatch(new RegExp(`export (\\{[^}]*\\b${name}\\b|(function|const) ${name}\\b)`));
     }
   });
 
@@ -223,7 +286,7 @@ describe("Geist 规范 · 示例组件登记", () => {
     const used = componentsOfJsx('<Button variant="outline"><SearchIcon />搜索</Button><Badge>Preview</Badge>');
     expect([...used.ui].sort()).toEqual(["Badge", "Button"]);
     expect([...used.icons]).toEqual(["SearchIcon"]);
-    expect(() => componentsOfJsx("<Carousel>轮播</Carousel>")).toThrow(/没登记的组件 <Carousel>/);
+    expect(() => componentsOfJsx("<Marquee>跑马灯</Marquee>")).toThrow(/没登记的组件 <Marquee>/);
   });
 
   it("cn() 把 Geist 排版类当字号：和颜色类并存，同组后者覆盖前者；geist.css 里的每个排版类都被认得", () => {
@@ -256,9 +319,9 @@ describe("Geist 规范 · 示例组件登记", () => {
     expect(story).toContain("...playgroundControls(AREA.playground!)");
     expect(story).toContain("export const Matrix: StoryObj");
     expect(story).toContain("<AreaPage area={AREA} ctx={CTX} live={LIVE} cell={CELL} />");
-    const placeholder = renderAreaStoryReact(areaOf("split_button"), model);
-    expect(placeholder).toContain('name: "分裂按钮"');
-    expect(placeholder.match(/^export const /gm)).toEqual(["export const "]);
+    const split = renderAreaStoryReact(areaOf("split_button"), model);
+    expect(split).toContain("import { SplitButton } from '../../src/components/ui/split-button';");
+    for (const rule of areaOf("split_button").rules) expect(split).toContain(`export const ${rule.storybook.export}: StoryObj`);
   });
 });
 
@@ -268,7 +331,7 @@ describe("Geist 规范 · Storybook 页面", () => {
     const second = tempRoot("pages-b");
     try {
       const result = generateStandardPagesReact(first, model);
-      expect(result).toMatchObject({ count: 157, areas: 156, covered: 93, rules: 460 });
+      expect(result).toMatchObject({ count: 157, areas: 156, covered: 156, rules: 657 });
       generateStandardPagesReact(second, model);
       const files = readdirSync(first).sort();
       expect(files).toEqual(readdirSync(second).sort());
@@ -350,6 +413,6 @@ describe("Geist 规范 · AI 孪生", () => {
         expect(md).toContain(`?path=/story/${rule.storybook.id}`);
       }
     }
-    expect(md).toContain("## 待补的领域（63 个）");
+    expect(md).not.toContain("## 待补的领域");
   });
 });
