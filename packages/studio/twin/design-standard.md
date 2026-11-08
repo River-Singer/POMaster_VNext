@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:4b628e844a2fa076b3743b7550c5ff62243726f7ae1cc44b7bf9646a64189f80`；状态 origin=preset。
+> 规范指纹 `sha256:06c37650a8480b5208bea232e3c8e8a4220d12b468739454a996bfa97b27958e`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -1016,6 +1016,255 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 示例（别这样做）：泛泛的「确定」
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-button--cmp-button-label
 
+## 组件/通用 / 分裂按钮（CMP.SPLIT_BUTTON）
+
+主操作 + 一组相关操作：左边直接执行最常用的那个，右边箭头展开其余选项；箭头按钮有自己的名称。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-split-button--overview
+对应组件：antd Dropdown.Button；geist Split Button
+实验场：`a-dropdown-button`，属性 type=default|primary，size=small|middle|large，disabled=布尔（https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-split-button--playground）
+
+### CMP.SPLIT_BUTTON.WHEN 什么时候用分裂按钮
+
+一个主操作有几种变体（立即派单 / 定时派单 / 批量派单、导出 Excel / CSV / PDF），而其中一种最常用时，用分裂按钮：左边执行最常用的，右边展开其余；几个操作同等重要时平铺成按钮，不藏进菜单。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：最常用的在左边
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-split-button--cmp-split-button-when
+
+### CMP.SPLIT_BUTTON.MENU_LABEL 箭头按钮要有名称
+
+右边的箭头是独立的按钮，要有可读名称（「更多派单方式」），键盘能单独聚焦、回车展开；菜单项的文字是完整的动作，不只写名词。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-split-button--cmp-split-button-menu-label
+
+### CMP.SPLIT_BUTTON.LIMIT 菜单项克制
+
+菜单里放 2 到 7 项；危险操作放最后并用分隔线隔开；不在菜单里再套子菜单；左边的主操作不能是危险操作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-split-button--cmp-split-button-limit
+
+## 组件/通用 / 复制按钮（CMP.COPY_BUTTON）
+
+复制一段文本（编号、命令、链接、密钥）：结果即时可见、读屏可知，失败给出替代办法。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-copy-button--overview
+对应组件：antd Typography.copyable；geist Copy Button、Text With Copy Button
+
+### CMP.COPY_BUTTON.WHEN 什么时候给复制按钮
+
+用户要把一段文本带去别处（订单号、车牌号、命令、邀请链接、API 密钥）时，在文本旁边放复制按钮；可复制的文本本身也保持可选中，复制按钮只是快捷方式。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：文本旁放复制按钮
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-copy-button--cmp-copy-button-when
+
+### CMP.COPY_BUTTON.FEEDBACK 复制成功即时反馈
+
+点了之后图标立即变成对勾、约 2 秒后复原，同时用礼貌的 aria-live 播报「已复制」；不额外弹 Toast（一次复制不值得打断）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：对勾停留 `p.reset` = 2000ms（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-copy-button--cmp-copy-button-feedback
+
+### CMP.COPY_BUTTON.FAILURE 剪贴板不可用时
+
+浏览器不给剪贴板权限（非安全上下文、被策略禁止）时说明原因，并把文本选中方便用户手动复制；不静默失败。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-copy-button--cmp-copy-button-failure
+
+### CMP.COPY_BUTTON.LABEL 纯图标按钮带名称
+
+复制按钮通常只有图标，必须带写明对象的名称（「复制订单号」，不是「复制」）；同一行有多个可复制内容时，名称能区分它们。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-copy-button--cmp-copy-button-label
+
+## 组件/通用 / 悬浮按钮（CMP.FLOAT_BUTTON）
+
+悬浮在页面角落的全局入口（联系客服、反馈、回到顶部）：一页最多一组，不遮挡内容，带名称。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-float-button--overview
+对应组件：antd FloatButton；geist （无）
+
+### CMP.FLOAT_BUTTON.WHEN 只放全局辅助入口
+
+悬浮按钮只放和当前页面内容无关、随时可能用到的入口：联系客服、提交反馈、回到顶部；页面的主操作放在页头或工具栏，不做成悬浮按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：全局辅助入口
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-float-button--cmp-float-button-when
+
+### CMP.FLOAT_BUTTON.PLACEMENT 位置与避让
+
+固定在右下角，距边缘 24px 起；不遮挡页脚、分页和表格最后一行（页面底部留出等高的内边距）；移动端避开安全区与底部导航。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：距边缘 `p.offset` = 24px（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-float-button--cmp-float-button-placement
+
+### CMP.FLOAT_BUTTON.LIMIT 一页最多一组
+
+一页最多一个悬浮按钮，或一组（展开后不超过 3 个）；组里的每一项都带名称与文字提示。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-float-button--cmp-float-button-limit
+
+### CMP.FLOAT_BUTTON.BACK_TOP 回到顶部
+
+「回到顶部」在页面滚动超过一屏后才出现；点了之后平滑滚回顶部（减少动效时直接跳转），并把焦点交给页面标题。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-float-button--cmp-float-button-back-top
+
+## 组件/通用 / 排版文本（CMP.TEXT）
+
+文字只取排版档位与语义色调；省略要能看到全文；行内代码、标记、键盘各用对应语义。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--overview
+对应组件：antd Typography；geist Text、Label
+实验场：`a-typography-text`，属性 type=secondary|success|warning|danger，strong=布尔，code=布尔（https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--playground）
+
+### CMP.TEXT.SCALE 只用排版档位
+
+文字的字号、字重、行高只取排版 token（正文 14、小号 12、标题档位），用 a-typography 的标题与文本组件，不在页面里写 font-size。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：标题、正文、次要文字
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--cmp-text-scale
+
+### CMP.TEXT.TONE 语义色调
+
+文字颜色只用语义色调：默认、次要、成功、警告、危险；危险色只用于错误与危险操作的说明，不用来强调普通内容；状态不只靠颜色，文字本身要说清。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--cmp-text-tone
+
+### CMP.TEXT.ELLIPSIS 省略要能看到全文
+
+单行省略、多行省略都要让用户看到全文（悬停提示、展开按钮或 title）；路径、编号这类结尾有区分度的内容用中间省略。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--cmp-text-ellipsis
+
+### CMP.TEXT.SEMANTICS 行内语义
+
+行内代码用 code，键盘按键用 keyboard，删除线、下划线、标记各用对应属性（delete / underline / mark），不只改样式；可复制、可编辑用 copyable / editable。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-typography-text--cmp-text-semantics
+
+## 组件/通用 / 代码块（CMP.CODE_BLOCK）
+
+多行代码与配置：文件名标题栏 + 复制；不折行、横向滚动；等宽字体；高亮只用于讲解。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-code-block--overview
+对应组件：antd （无）；geist Code Block、Code
+
+### CMP.CODE_BLOCK.WHEN 什么时候用代码块
+
+多行代码、配置文件、接口返回示例用代码块；一两个词的代码写在行内（code）；要在终端执行的命令用命令片段（snippet），不用代码块。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：文件名 + 复制 + 等宽
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-code-block--cmp-code-block-when
+
+### CMP.CODE_BLOCK.HEADER 标题栏
+
+标题栏写文件名或语言，右侧是带名称的复制按钮（「复制代码」）；复制的是代码原文，不带行号。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-code-block--cmp-code-block-header
+
+### CMP.CODE_BLOCK.WRAP 不折行，横向滚动
+
+代码不自动折行（折行会改变缩进的含义），超宽时代码区横向滚动，滚动区可用键盘聚焦；字体取等宽字体 token，字号比正文小一档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-code-block--cmp-code-block-wrap
+
+### CMP.CODE_BLOCK.HIGHLIGHT 高亮只用于讲解
+
+需要指出某几行时用行高亮加文字说明，不只靠颜色；语法着色可选，颜色取主题 token，不引入整套高亮主题色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-code-block--cmp-code-block-highlight
+
+## 组件/通用 / 命令片段（CMP.SNIPPET）
+
+要复制到终端执行的命令：行首提示符不进剪贴板；一行一个命令；整段可复制。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-snippet--overview
+对应组件：antd （无）；geist Snippet
+
+### CMP.SNIPPET.WHEN 什么时候用命令片段
+
+让用户在终端里执行的命令（安装、启动、迁移）用命令片段；配置文件、多行脚本用代码块。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：提示符不进剪贴板
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-snippet--cmp-snippet-when
+
+### CMP.SNIPPET.PROMPT 提示符与输出
+
+行首的「$」提示符只是标识，不选中、不进剪贴板；命令的输出不放在同一个片段里，需要展示输出时另起一个代码块。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-snippet--cmp-snippet-prompt
+
+### CMP.SNIPPET.MULTI_LINE 一行一个命令
+
+多个命令分行写，每行一个，按执行顺序排列；不用 && 把不相关的命令串成一行；需要逐条执行时每条单独可复制。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-snippet--cmp-snippet-multi-line
+
+### CMP.SNIPPET.PLACEHOLDER 占位写法
+
+命令里需要用户替换的部分用大写占位（YOUR_API_TOKEN、<项目目录>）并在片段下方说明；不放真实密钥。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-snippet--cmp-snippet-placeholder
+
+## 组件/通用 / 键盘按键（CMP.KBD）
+
+快捷键提示：用键盘按键的语义标注；按平台显示 ⌘ 或 Ctrl；快捷键只是加速，不是唯一入口。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-kbd--overview
+对应组件：antd Typography.keyboard；geist Keyboard Input
+
+### CMP.KBD.WHEN 什么时候显示快捷键
+
+常用操作的快捷键显示在菜单项右侧、按钮的文字提示里或帮助面板中；不在页面正文里大量罗列。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：菜单项右侧显示快捷键
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-kbd--cmp-kbd-when
+
+### CMP.KBD.PLATFORM 按平台显示
+
+macOS 显示 ⌘ ⌥ ⇧，Windows / Linux 显示 Ctrl Alt Shift；按用户平台判断，不两套都写；非 QWERTY 键盘布局下按实际键位提示。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-kbd--cmp-kbd-platform
+
+### CMP.KBD.COMBO 组合键的写法
+
+组合键每个键单独一个按键标注，键与键之间用不换行空格或「+」连接，整组不被折行拆开。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-kbd--cmp-kbd-combo
+
+### CMP.KBD.NOT_ONLY 不是唯一入口
+
+每个快捷键对应的操作在界面上都有可点击的入口；快捷键不和浏览器、读屏软件的常用快捷键冲突。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-general-kbd--cmp-kbd-not-only
+
 ## 组件/布局 / 分割线（CMP.DIVIDER）
 
 分隔两块内容：优先用间距分组，分隔线只在间距不够时用；带文字的分隔线用于长表单分段。
@@ -1044,6 +1293,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-divider--cmp-divider-vertical
+
+## 组件/布局 / 弹性布局（CMP.FLEX）
+
+一维排布：方向、对齐、换行与间距；间距只取档位，不用外边距拼。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-flex--overview
+对应组件：antd Flex；geist （无）
+
+### CMP.FLEX.USE 一维排布用弹性布局
+
+一行或一列里的元素排布用 a-flex（vertical、justify、align、gap、wrap），二维排布用栅格；不靠 float 或 inline-block 加外边距。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：方向、对齐与间距
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-flex--cmp-flex-use
+
+### CMP.FLEX.GAP 间距只取档位
+
+元素之间的间距用 gap，取间距阶梯（小 8、中 16、大 24）；不在子元素上各自写外边距。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-flex--cmp-flex-gap
+
+### CMP.FLEX.WRAP 换行
+
+可能放不下的行允许换行，换行后行间距与列间距一致；不让内容溢出产生横向滚动。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-flex--cmp-flex-wrap
 
 ## 组件/布局 / 间距组合（CMP.SPACE）
 
@@ -1074,6 +1352,136 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-space--cmp-space-align
+
+## 组件/布局 / 栅格组件（CMP.GRID）
+
+二维排布：按栏数切分、栏间距取档位、随断点变化；内容区不靠固定像素宽度。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-grid-component--overview
+对应组件：antd Row、Col；geist Grid
+
+### CMP.GRID.COLUMNS 栏数
+
+用 a-row / a-col 的 24 栏栅格，span 之和每行不超过 24；常用切分 24、12+12、8+8+8、6×4。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：按栏数切分
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-grid-component--cmp-grid-columns
+
+### CMP.GRID.GUTTER 栏间距
+
+栏间距只取规范的档位（16 / 24），同一页面统一；横向与纵向间距一致时用同一个值。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-grid-component--cmp-grid-gutter
+
+### CMP.GRID.RESPONSIVE 随断点变化
+
+窄屏下多栏改为少栏或单栏（按断点 token 切换 span），不缩小字号硬塞；栅格只负责版面，组件内部的排布用弹性布局。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-grid-component--cmp-grid-responsive
+
+## 组件/布局 / 页面布局（CMP.LAYOUT）
+
+后台页面骨架：顶栏 + 可收起的侧栏 + 内容区；侧栏状态记住；固定的顶栏不遮挡焦点。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-page-layout--overview
+对应组件：antd Layout；geist （无）
+
+### CMP.LAYOUT.SHELL 页面骨架
+
+管理侧页面用 a-layout：顶栏（品牌、全局搜索、用户菜单）+ 左侧 a-layout-sider（主导航）+ 内容区；内容区内边距取间距 token，背景用页面底色、内容卡片用容器底色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：顶栏 + 侧栏 + 内容
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-page-layout--cmp-layout-shell
+
+### CMP.LAYOUT.SIDER 侧栏收起与记忆
+
+侧栏可以收起为只有图标的窄栏（收起按钮带名称与 aria-expanded），收起状态按用户记住；窄屏下侧栏变成抽屉。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-page-layout--cmp-layout-sider
+
+### CMP.LAYOUT.STICKY 固定的顶栏不遮挡焦点
+
+顶栏固定时，页面设置与顶栏等高的 scroll-padding-top，锚点跳转与键盘聚焦的元素不被顶栏盖住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-page-layout--cmp-layout-sticky
+
+### CMP.LAYOUT.CONTENT 内容区宽度
+
+表单与详情类页面的内容区设最大宽度，避免超宽屏上一行过长；列表与看板类页面铺满可用宽度。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-page-layout--cmp-layout-content
+
+## 组件/布局 / 滚动区（CMP.SCROLLER）
+
+局部滚动区：只在必要时用；能用键盘滚动、有名称；不嵌套滚动；滚动条可见。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-scroller--overview
+对应组件：antd （无）；geist Scroller
+
+### CMP.SCROLLER.WHEN 只在必要时局部滚动
+
+固定高度的面板（侧栏列表、下拉、对话框正文、日志）才用局部滚动；页面主体随页面滚动，不把整页内容塞进一个固定高度的滚动框。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：固定高度的列表
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-scroller--cmp-scroller-when
+
+### CMP.SCROLLER.KEYBOARD 键盘可滚、有名称
+
+滚动区可以被键盘聚焦（tabindex=0）并有可读名称（role=region + aria-label），方向键与翻页键能滚动；聚焦时有焦点环。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-scroller--cmp-scroller-keyboard
+
+### CMP.SCROLLER.NESTING 不嵌套滚动
+
+避免滚动区里再套滚动区；对话框、抽屉里的滚动设 overscroll-behavior: contain，滚到头不带动底下的页面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-scroller--cmp-scroller-nesting
+
+### CMP.SCROLLER.SCROLLBAR 滚动条可见
+
+有可滚动内容时保留可见的滚动条（可以变细），不隐藏滚动条只留拖拽手势；内容不足时不出现多余的滚动条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-layout-scroller--cmp-scroller-scrollbar
+
+## 组件/导航 / 锚点（CMP.ANCHOR）
+
+长页面的本页目录：链接到页内标题，当前段落高亮；不用它做跨页导航。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-anchor--overview
+对应组件：antd Anchor；geist （无）
+
+### CMP.ANCHOR.WHEN 什么时候用锚点
+
+超过三屏、分成多个段落的长页面（规范页、详情页、设置页）在右侧放本页目录；目录只链接本页的标题，跨页导航用侧栏或标签页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：右侧本页目录
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-anchor--cmp-anchor-when
+
+### CMP.ANCHOR.ACTIVE 当前段落高亮
+
+滚动时高亮当前所在的段落（aria-current），点击后平滑滚动到标题（减少动效时直接跳转），并把焦点交给标题；标题设 scroll-margin-top，不被固定的顶栏盖住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-anchor--cmp-anchor-active
+
+### CMP.ANCHOR.DEPTH 层级
+
+目录最多两级；标题文字与页面里的标题一致；段落少于 3 个时不放目录。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-anchor--cmp-anchor-depth
 
 ## 组件/导航 / 面包屑（CMP.BREADCRUMB）
 
@@ -1133,6 +1541,64 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-dropdown--cmp-dropdown-size
 
+## 组件/导航 / 右键菜单（CMP.CONTEXT_MENU）
+
+右键菜单只是快捷方式：里面的每个操作在界面别处也找得到；键盘能打开。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-context-menu--overview
+对应组件：antd Dropdown.contextMenu；geist Context Menu
+
+### CMP.CONTEXT_MENU.SHORTCUT_ONLY 只是快捷方式
+
+右键菜单里的操作（查看、复制、停用）都要在界面别处有入口（行内按钮、「更多」菜单）；不把某个操作只放在右键菜单里，很多人不知道可以右键。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：右键打开
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-context-menu--cmp-context-menu-shortcut-only
+
+### CMP.CONTEXT_MENU.KEYBOARD 键盘能打开
+
+聚焦的元素上按菜单键或 Shift+F10 也能打开右键菜单；菜单里上下键移动、回车执行、Esc 关闭并把焦点还回去。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-context-menu--cmp-context-menu-keyboard
+
+### CMP.CONTEXT_MENU.CONTENT 内容克制
+
+右键菜单放与被点对象直接相关的 3 到 8 项，按「查看 → 编辑 → 复制 → 危险操作」排列，危险操作在最后并用分隔线隔开。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-context-menu--cmp-context-menu-content
+
+## 组件/导航 / 命令面板（CMP.COMMAND_MENU）
+
+⌘K 打开的全局命令面板：输入即筛选，键盘为主；命令名与界面上的叫法一致。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-command-menu--overview
+对应组件：antd （无）；geist Command Menu
+
+### CMP.COMMAND_MENU.WHEN 什么时候提供命令面板
+
+功能多、熟练用户多的工作台提供命令面板（⌘K / Ctrl+K），集中「跳转到某页」「执行某个操作」；它是加速，不替代导航与按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：按分组列出命令
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-command-menu--cmp-command-menu-when
+
+### CMP.COMMAND_MENU.KEYBOARD 键盘为主
+
+打开后焦点在输入框，输入即筛选（名称与拼音、英文关键词都能搜），上下键移动、回车执行、Esc 关闭并把焦点还回去；结果列表是 listbox，当前项由 aria-activedescendant 指出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-command-menu--cmp-command-menu-keyboard
+
+### CMP.COMMAND_MENU.NAMING 命令的叫法
+
+命令名与界面上的按钮、菜单、页面标题一致（「新建订单」，不是「订单创建」）；有快捷键的在右侧显示；没有结果时说明并给出下一步（换个关键词、去帮助中心）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-command-menu--cmp-command-menu-naming
+
 ## 组件/导航 / 导航菜单（CMP.NAV_MENU）
 
 应用的主导航：层级不超过两级、当前位置高亮；菜单项按权限出现；折叠后图标可辨认。
@@ -1190,6 +1656,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-pagination--cmp-pagination-position
+
+## 组件/导航 / 加载更多（CMP.LOAD_MORE）
+
+追加式列表的「加载更多」：按钮而不是无限滚动；读屏知道加载了多少；到底了说清楚。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-load-more--overview
+对应组件：antd List.loadMore；geist Load More Button、Show More
+
+### CMP.LOAD_MORE.WHEN 按钮加载，不用无限滚动
+
+动态、评论、消息这类追加式列表用「加载更多」按钮（与接口的游标分页一致），不用滚到底自动加载：页脚要能到达、位置要能保持、键盘用户能控制节奏。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：加载更多按钮
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-load-more--cmp-load-more-when
+
+### CMP.LOAD_MORE.STATE 加载中与读屏
+
+加载中按钮保留文字并显示转圈、不能重复点；加载完成后用礼貌的 aria-live 播报「已加载 30 条」，焦点留在按钮上，新内容出现在按钮前面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-load-more--cmp-load-more-state
+
+### CMP.LOAD_MORE.END 到底了
+
+没有更多时按钮换成「没有更多了」的说明（不是禁用的按钮）；加载失败时就地显示原因与「重试」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-load-more--cmp-load-more-end
 
 ## 组件/导航 / 步骤条（CMP.STEPS）
 
@@ -1249,6 +1744,95 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-navigation-tabs--cmp-tabs-label
 
+## 组件/数据录入 / 自动完成（CMP.AUTO_COMPLETE）
+
+自由输入 + 建议：可以输入建议之外的值；建议随输入更新；键盘可选。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-auto-complete--overview
+对应组件：antd AutoComplete；geist （无）
+
+### CMP.AUTO_COMPLETE.WHEN 和可搜索选择的区别
+
+允许输入任意值、建议只是帮忙（地址、搜索词、邮箱后缀）时用自动完成；只能从给定选项里选时用可搜索选择（combobox）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：输入时给建议
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-auto-complete--cmp-auto-complete-when
+
+### CMP.AUTO_COMPLETE.SUGGEST 建议怎么给
+
+输入时防抖后请求建议（约 300ms），取消过期请求；匹配的部分加粗；最多显示 8 条，没有建议时不弹空列表。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：防抖 `p.debounce` = 300ms（pomaster 预设约定）
+- 参数：最多条数 `p.max` = 8（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-auto-complete--cmp-auto-complete-suggest
+
+### CMP.AUTO_COMPLETE.KEYBOARD 键盘可选
+
+建议列表是 listbox，上下键移动（aria-activedescendant 指向当前项）、回车采用、Esc 收起并保留已输入的文字；采用建议不自动提交。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-auto-complete--cmp-auto-complete-keyboard
+
+## 组件/数据录入 / 可搜索选择（CMP.COMBOBOX）
+
+选项多时的可搜索单选：只能选列表里的值；按名称与拼音搜；无结果时说明。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-combobox--overview
+对应组件：antd Select.showSearch；geist Combobox
+
+### CMP.COMBOBOX.WHEN 什么时候用可搜索选择
+
+选项超过 10 个的单选用 a-select 加 show-search（按 label 过滤），选项少时用普通选择器；允许输入列表外的值时改用自动完成。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：搜索并选择
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-combobox--cmp-combobox-when
+
+### CMP.COMBOBOX.SEARCH 怎么搜
+
+按显示名称、拼音全拼与首字母、编号搜；匹配不区分大小写；选项来自接口时远程搜索并防抖，加载中在列表里显示加载态。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-combobox--cmp-combobox-search
+
+### CMP.COMBOBOX.EMPTY 无结果
+
+没有匹配时在列表里说明「没有找到」并给出下一步（换个关键词，或新建一个）；不显示空白弹层。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-combobox--cmp-combobox-empty
+
+## 组件/数据录入 / 级联选择（CMP.CASCADER）
+
+层级数据逐级选择（省市区、类目）：每级一列，选到叶子才算完；触发器显示完整路径。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-cascader--overview
+对应组件：antd Cascader；geist （无）
+
+### CMP.CASCADER.WHEN 什么时候用级联选择
+
+有明确层级、每级选项不多的数据（省 / 市 / 区、商品类目）用级联选择；层级不固定或需要看到整棵树时用树选择。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：逐级选择
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-cascader--cmp-cascader-when
+
+### CMP.CASCADER.PATH 显示完整路径
+
+选完后触发器显示完整路径（上海市 / 浦东新区 / 张江镇），路径太长时中间省略并能看到全文；只能选叶子节点时，中间级点击只展开不选中。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-cascader--cmp-cascader-path
+
+### CMP.CASCADER.SEARCH 层级深时可搜
+
+超过三级或选项多时提供搜索，结果按完整路径显示；每一级都能用键盘左右键进出、上下键移动。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-cascader--cmp-cascader-search
+
 ## 组件/数据录入 / 多选框（CMP.CHECKBOX）
 
 在一组选项里选多个，或确认一句声明：选项竖排、标签可点；全选给出半选态；单个多选框不代替开关。
@@ -1278,6 +1862,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-checkbox--cmp-checkbox-not-switch
 
+## 组件/数据录入 / 选择卡片（CMP.CHOICEBOX）
+
+带标题与说明的选项卡片：少量需要解释差别的选项；整张卡片可点；单选多选语义正确。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-choicebox--overview
+对应组件：antd （无）；geist Choicebox
+
+### CMP.CHOICEBOX.WHEN 什么时候用选择卡片
+
+2 到 4 个选项、每个都需要一句话解释差别（配送时效、套餐、部署区域）时用选择卡片；不需要解释的用单选或多选。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：单选卡片
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-choicebox--cmp-choicebox-when
+
+### CMP.CHOICEBOX.SEMANTICS 语义与点击区
+
+单选是一组 radio、多选是一组 checkbox（读屏与键盘行为随之而来），整张卡片都是点击区；选中态除了边框颜色还有勾选标记，不只靠颜色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-choicebox--cmp-choicebox-semantics
+
+### CMP.CHOICEBOX.CONTENT 卡片内容
+
+标题一行，说明一句话；卡片等宽、等高排成一行或两列；不可用的选项说明原因（「暂未开通」）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-choicebox--cmp-choicebox-content
+
 ## 组件/数据录入 / 日期选择（CMP.DATE_PICKER）
 
 选择日期或日期范围：显示格式统一、可键盘输入；范围选择给常用快捷项并限制跨度；不可选的日期置灰并说明。
@@ -1306,6 +1919,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-date-picker--cmp-date-picker-disabled
+
+## 组件/数据录入 / 时间选择（CMP.TIME_PICKER）
+
+选时间：时、分（可选秒）分列选择；分钟按步长；值是 24 小时制字符串。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-time-picker--overview
+对应组件：antd TimePicker；geist （无）
+
+### CMP.TIME_PICKER.STEP 按业务给步长
+
+预约、排班类的时间按业务步长给分钟（5 / 15 / 30），不给用户 60 个分钟选项；需要精确到秒的才显示秒列。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：15 分钟步长
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-time-picker--cmp-time-picker-step
+
+### CMP.TIME_PICKER.FORMAT 24 小时制
+
+显示与取值都用 24 小时制 HH:mm（需要时 HH:mm:ss），跨天的时间段写明「次日」；值的格式由格式化注册表统一。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-time-picker--cmp-time-picker-format
+
+### CMP.TIME_PICKER.RANGE 时间段
+
+选时间段时开始与结束分两个字段并校验先后；常用的时间段（上午、下午、全天）给快捷选项。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-time-picker--cmp-time-picker-range
 
 ## 组件/数据录入 / 表单（CMP.FORM）
 
@@ -1382,6 +2024,36 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-input--cmp-input-width
 
+## 组件/数据录入 / 搜索框（CMP.SEARCH_INPUT）
+
+搜索框：放大镜 + 清空；防抖后搜索、回车立即搜索；在 role=search 区域里；结果数可读。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-search-input--overview
+对应组件：antd Input.Search；geist Search Input
+
+### CMP.SEARCH_INPUT.BEHAVIOR 什么时候搜
+
+输入时防抖约 300ms 自动搜索，回车立即搜索；取消过期请求、丢弃过期响应；清空后恢复全部结果。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：防抖 `p.debounce` = 300ms（pomaster 预设约定）
+- 示例（这样做）：防抖搜索
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-search-input--cmp-search-input-behavior
+
+### CMP.SEARCH_INPUT.SEMANTICS 语义
+
+搜索框是 type="search"，放在 role="search" 的区域里，有可读名称；不触发密码管理器（autocomplete="off" 或具体的 token）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-search-input--cmp-search-input-semantics
+
+### CMP.SEARCH_INPUT.RESULT 结果可读
+
+搜索后用礼貌的 aria-live 播报结果数（「找到 12 辆车」）；没有结果时显示空状态与「清除搜索」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-search-input--cmp-search-input-result
+
 ## 组件/数据录入 / 多行输入（CMP.TEXTAREA）
 
 多行文字输入：给出行数与字数上限，自动增高有上限；长文本才用它，短备注用单行。
@@ -1440,6 +2112,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-input-number--cmp-input-number-step
 
+## 组件/数据录入 / 提及（CMP.MENTIONS）
+
+在多行输入里 @ 提及成员：弹出建议、键盘选择；提及的人会收到通知要说清。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-mentions--overview
+对应组件：antd Mentions；geist （无）
+
+### CMP.MENTIONS.TRIGGER 触发与建议
+
+输入「@」后弹出成员建议，按姓名与拼音筛选，上下键移动、回车插入、Esc 关闭；插入后光标停在提及之后。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：@ 提及
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-mentions--cmp-mentions-trigger
+
+### CMP.MENTIONS.NOTIFY 说清通知
+
+被提及的人会收到通知时，在输入框下方写明「被 @ 的人会收到通知」；提交后提及显示为可点的人名。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-mentions--cmp-mentions-notify
+
+### CMP.MENTIONS.SCOPE 只提及有权限的人
+
+建议列表只列出能看到这条内容的成员；没有权限的人不出现在建议里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-mentions--cmp-mentions-scope
+
 ## 组件/数据录入 / 单选框（CMP.RADIO）
 
 在几个互斥的选项里选一个：2–5 个选项且要一眼看全时用；有默认值；选项多了改选择器。
@@ -1468,6 +2169,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-radio--cmp-radio-button-style
+
+## 组件/数据录入 / 评分（CMP.RATE）
+
+星级评分：一组 radio、每颗星有名称；能清空；只读时同时显示数字。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-rate--overview
+对应组件：antd Rate；geist （无）
+
+### CMP.RATE.SEMANTICS 语义与键盘
+
+评分是一组单选（radiogroup），左右键改分，每颗星有可读名称（「4 星：满意」）；再点当前分可以清空。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：带说明的评分
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-rate--cmp-rate-semantics
+
+### CMP.RATE.LABELS 每一档有文字
+
+每个分值有对应的文字说明，选中后显示在星的旁边；默认 5 档，不用半星做输入。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-rate--cmp-rate-labels
+
+### CMP.RATE.READONLY 只读展示
+
+只读展示平均分时同时显示数字与评价人数（4.6 · 128 人评价），星只是辅助。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-rate--cmp-rate-readonly
 
 ## 组件/数据录入 / 选择器（CMP.SELECT）
 
@@ -1506,6 +2236,65 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-select--cmp-select-value
 
+## 组件/数据录入 / 多选选择器（CMP.MULTI_SELECT）
+
+多选选择器：选中项显示为可移除的标签，超过上限折叠；弹层里可搜、可勾选。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-multi-select--overview
+对应组件：antd Select.multiple；geist Multi Select
+
+### CMP.MULTI_SELECT.TAGS 选中项显示为标签
+
+选中的项在触发器里显示为标签，每个标签可单独移除（移除按钮带名称）；超过 3 个时折叠成「+N」，悬停或展开能看到全部。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：折叠前最多显示 `p.max_tags` = 3（pomaster 预设约定）
+- 示例（这样做）：多选与折叠
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-multi-select--cmp-multi-select-tags
+
+### CMP.MULTI_SELECT.WHEN 多选选择器还是复选框
+
+选项少（5 个以内）且都要看见时用复选框组；选项多、选中的少时用多选选择器。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-multi-select--cmp-multi-select-when
+
+### CMP.MULTI_SELECT.LIMIT 数量限制
+
+有选择上限时在标签旁写明「最多选 5 个」，达到上限后其余选项不可选并说明原因。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-multi-select--cmp-multi-select-limit
+
+## 组件/数据录入 / 滑块（CMP.SLIDER）
+
+滑块：连续值或区间的大致调节；需要精确值时旁边配数字输入；每个滑块有名称。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-slider--overview
+对应组件：antd Slider；geist Slider
+
+### CMP.SLIDER.WHEN 什么时候用滑块
+
+大致调节一个范围内的值（音量、半径、价格区间）用滑块；需要精确输入的数值用数字输入，或在滑块旁边并排一个数字输入。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：区间滑块
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-slider--cmp-slider-when
+
+### CMP.SLIDER.KEYBOARD 键盘与名称
+
+每个滑块手柄有可读名称（区间的两端分别是「最低运价」「最高运价」），方向键按步长调节、PageUp / PageDown 大步调节，当前值随时可读。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-slider--cmp-slider-keyboard
+
+### CMP.SLIDER.MARKS 刻度与当前值
+
+关键的值用刻度标出并写数字；拖动时显示当前值；不用滑块表示只有两三个离散选项的设置（用分段控制器）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-slider--cmp-slider-marks
+
 ## 组件/数据录入 / 开关（CMP.SWITCH）
 
 两个状态之间切换、并且立即生效：标签写它控制什么；有副作用的切换先确认；切换中显示加载并防重复。
@@ -1537,6 +2326,95 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-switch--cmp-switch-confirm
 
+## 组件/数据录入 / 分段控制器（CMP.SEGMENTED）
+
+2 到 5 个互斥选项的即时切换：切换同一份内容的展示方式；切换不同内容区用标签页。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-segmented--overview
+对应组件：antd Segmented；geist Switch
+
+### CMP.SEGMENTED.WHEN 分段控制器还是标签页
+
+切换同一份内容的展示方式或范围（列表 / 地图、今日 / 本周 / 本月）用分段控制器；切换不同的内容区用标签页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：切换统计范围
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-segmented--cmp-segmented-when
+
+### CMP.SEGMENTED.COUNT 选项数量
+
+放 2 到 5 个选项，每项文字不超过 4 个字；图标段要有可读名称。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最少选项 `p.min` = 2（pomaster 预设约定）
+- 参数：最多选项 `p.max` = 5（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-segmented--cmp-segmented-count
+
+### CMP.SEGMENTED.IMMEDIATE 即时生效
+
+切换立即生效、不需要确认；当前选择写进地址，刷新后保持。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-segmented--cmp-segmented-immediate
+
+## 组件/数据录入 / 穿梭框（CMP.TRANSFER）
+
+两栏之间移动条目（分配权限、编排线路）：可搜索、可全选；按钮写清方向；数量可见。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-transfer--overview
+对应组件：antd Transfer；geist （无）
+
+### CMP.TRANSFER.WHEN 什么时候用穿梭框
+
+从一批条目里挑一部分出来、并且要同时看到「已选」与「待选」两边时用穿梭框（分配车辆到线路、给角色分配权限）；只需要选、不关心另一边时用多选选择器。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：分配车辆
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-transfer--cmp-transfer-when
+
+### CMP.TRANSFER.CONTROLS 搜索、全选与方向
+
+每一栏可搜索、可全选，栏头显示「已选 n / 共 m」；中间的按钮写清方向（「移到右侧」「移回左侧」），没有勾选时不可用。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-transfer--cmp-transfer-controls
+
+### CMP.TRANSFER.LARGE 条目很多时
+
+条目超过几百条时分页或虚拟滚动，搜索走服务端；不一次把全部条目渲染出来。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-transfer--cmp-transfer-large
+
+## 组件/数据录入 / 树选择（CMP.TREE_SELECT）
+
+从树形数据里选节点（组织、车队）：弹层里是树；可搜索；显示路径。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-tree-select--overview
+对应组件：antd TreeSelect；geist （无）
+
+### CMP.TREE_SELECT.WHEN 什么时候用树选择
+
+层级不固定、需要看到树形结构才能选的数据（组织架构、车队分组）用树选择；层级固定且浅的用级联选择。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：选择车队
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-tree-select--cmp-tree-select-when
+
+### CMP.TREE_SELECT.KEYBOARD 键盘
+
+弹层里的树用方向键移动、左右键收起展开、回车选择；选中后弹层收起、焦点回到触发器。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-tree-select--cmp-tree-select-keyboard
+
+### CMP.TREE_SELECT.SEARCH 搜索与路径
+
+节点多时提供搜索，匹配的节点连同祖先一起显示；触发器上显示选中节点的名称，悬停可看完整路径。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-tree-select--cmp-tree-select-search
+
 ## 组件/数据录入 / 上传（CMP.UPLOAD）
 
 上传文件：说清格式、大小与数量；上传中显示进度、可取消；失败可重试；上传与提交分开。
@@ -1565,6 +2443,180 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-upload--cmp-upload-separate
+
+## 组件/数据录入 / 地址输入（CMP.ADDRESS_INPUT）
+
+一组地址字段：省市区 + 详细地址 + 邮编；各自有标签与自动填充提示。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-address-input--overview
+对应组件：antd （无）；geist Address Input
+
+### CMP.ADDRESS_INPUT.STRUCTURE 按地址结构拆字段
+
+地址按国内结构拆成省市区（级联选择）、详细地址、可选的邮编，外面包一个 fieldset 写明是什么地址（「提货地址」）；不让用户在一个输入框里自由写整段地址再由程序拆分。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：省市区 + 详细地址
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-address-input--cmp-address-input-structure
+
+### CMP.ADDRESS_INPUT.AUTOFILL 自动填充
+
+每个字段设置对应的 autocomplete（address-level1/2/3、street-address、postal-code）与 inputmode，让浏览器与密码管理器能自动填写。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-address-input--cmp-address-input-autofill
+
+### CMP.ADDRESS_INPUT.VALIDATION 校验
+
+省市区必须选到最后一级；详细地址校验长度；邮编 6 位数字；错误贴着对应字段，不在整组顶部笼统报错。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-address-input--cmp-address-input-validation
+
+## 组件/数据录入 / 破坏性确认输入（CMP.DESTRUCTIVE_INPUT）
+
+不可逆的大操作前输入对象名称确认：写出原文；输入一致后才能确认；不禁止粘贴。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-destructive-input--overview
+对应组件：antd （无）；geist Destructive Confirmation Input
+
+### CMP.DESTRUCTIVE_INPUT.WHEN 什么时候要输入名称
+
+删除项目、解散车队、清空数据这类影响大且不可逆的操作，要求输入对象名称再确认；普通删除用气泡确认或撤销。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：输入名称确认
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-destructive-input--cmp-destructive-input-when
+
+### CMP.DESTRUCTIVE_INPUT.PROMPT 写出原文
+
+提示里写出要输入的原文（「输入 浦东车队 确认」），原文用等宽或标签样式突出；比较时去掉首尾空格、区分大小写。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-destructive-input--cmp-destructive-input-prompt
+
+### CMP.DESTRUCTIVE_INPUT.PASTE 不禁止粘贴
+
+允许粘贴（禁止粘贴只会为难密码管理器与读屏用户）；输入一致前危险按钮不可用，一致后可用。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-destructive-input--cmp-destructive-input-paste
+
+## 组件/数据录入 / 筛选条（CMP.FILTER_BAR）
+
+列表上方的筛选条：已生效的筛选是可移除的标签；添加筛选用下拉；一键清除；筛选写进地址。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-filter-bar--overview
+对应组件：antd （无）；geist Filter Params
+
+### CMP.FILTER_BAR.CHIPS 已生效的筛选看得见
+
+每个已生效的筛选显示为「名称：值」的标签，可单独移除（移除按钮带名称）；没有筛选时只显示「添加筛选」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：增删筛选
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-filter-bar--cmp-filter-bar-chips
+
+### CMP.FILTER_BAR.URL 筛选写进地址
+
+筛选条件写进地址的查询参数，刷新、分享、浏览器后退都能恢复；改筛选后页码回到第一页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-filter-bar--cmp-filter-bar-url
+
+### CMP.FILTER_BAR.CLEAR 一键清除
+
+有两个以上筛选时提供「清除全部」；清除后结果恢复为全部，并播报结果数。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-filter-bar--cmp-filter-bar-clear
+
+## 组件/数据录入 / 反馈收集（CMP.FEEDBACK_WIDGET）
+
+页面上的「反馈」入口：选感受 + 写几句；提交后就地确认；不强制留联系方式。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-feedback-widget--overview
+对应组件：antd （无）；geist Feedback
+
+### CMP.FEEDBACK_WIDGET.FORM 简短的反馈表单
+
+反馈入口打开一个小弹层：一组感受选项（表情或评分，每项有名称）+ 一个可选的文字框；感受与文字至少填一项才能提交。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：反馈入口
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-feedback-widget--cmp-feedback-widget-form
+
+### CMP.FEEDBACK_WIDGET.CONFIRM 就地确认
+
+提交中按钮忙碌；成功后在弹层里显示「已收到」，不跳转、不弹新的对话框；失败时保留已填内容并给出重试。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-feedback-widget--cmp-feedback-widget-confirm
+
+### CMP.FEEDBACK_WIDGET.PRIVACY 隐私
+
+不强制填写联系方式；随反馈一起提交的页面地址、浏览器信息要在表单里写明。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-feedback-widget--cmp-feedback-widget-privacy
+
+## 组件/数据录入 / 主题切换（CMP.THEME_SWITCHER）
+
+跟随系统 / 浅色 / 深色三段切换：默认跟随系统；切换即时生效；偏好要记住。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-theme-switcher--overview
+对应组件：antd （无）；geist Theme Switcher
+
+### CMP.THEME_SWITCHER.OPTIONS 三个选项
+
+提供「跟随系统」「浅色」「深色」三个选项，默认跟随系统；用分段控制器，图标段要有可读名称。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：三段切换
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-theme-switcher--cmp-theme-switcher-options
+
+### CMP.THEME_SWITCHER.APPLY {'antd': '怎么生效', 'geist': '怎么生效'}
+
+切换即时生效：交给 a-config-provider 的 theme.algorithm（defaultAlgorithm / darkAlgorithm），同时设置页面的 color-scheme；不刷新页面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-theme-switcher--cmp-theme-switcher-apply
+
+### CMP.THEME_SWITCHER.PERSIST 记住偏好
+
+偏好存在用户设置里（登录后跨设备）或本地，下次打开在首屏渲染前就应用，避免先闪一下浅色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-entry-theme-switcher--cmp-theme-switcher-persist
+
+## 组件/数据展示 / 头像（CMP.AVATAR）
+
+代表人或团队的头像：没有图时显示姓名缩写；旁边已有姓名时作为装饰；多人叠放以「+N」收尾。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-avatar--overview
+对应组件：antd Avatar；geist Avatar
+
+### CMP.AVATAR.FALLBACK 没有图时显示缩写
+
+没有头像或图片加载失败时显示姓名缩写（中文取最后一个字、英文取首字母），底色按姓名稳定取色；不显示破图标或统一的灰色人形。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：缩写与叠放
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-avatar--cmp-avatar-fallback
+
+### CMP.AVATAR.ALT 替代文字
+
+头像旁边已经写了姓名时，头像是装饰（alt 留空）；单独出现的头像（只有头像的成员列表）要有姓名作为可读名称。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-avatar--cmp-avatar-alt
+
+### CMP.AVATAR.GROUP 多人叠放
+
+多人头像叠放时最多显示 3 到 5 个，其余折叠成「+N」，整组有可读名称（「5 人：张伟、李娜……」）；尺寸取 24 / 32 / 40 / 64 四档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-avatar--cmp-avatar-group
 
 ## 组件/数据展示 / 徽标数（CMP.BADGE）
 
@@ -1626,6 +2678,64 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tag--cmp-tag-closable
 
+## 组件/数据展示 / 状态点（CMP.STATUS_DOT）
+
+对象状态的圆点 + 文字：颜色按语义；文字必须在；进行中可以呼吸闪烁。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-status-dot--overview
+对应组件：antd Badge.status；geist Status Dot
+
+### CMP.STATUS_DOT.TEXT 圆点加文字
+
+对象的状态（在途、空闲、故障）用 a-badge 的 status + text：圆点颜色按语义（success / processing / warning / error / default），文字写清状态；不只放一个彩色圆点。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：五种状态
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-status-dot--cmp-status-dot-text
+
+### CMP.STATUS_DOT.MAPPING 状态与颜色对应
+
+同一个状态在全系统用同一种颜色与文字（领域规格里的状态枚举对应固定的语义色）；颜色只有五种语义，不按状态各配一种颜色。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-status-dot--cmp-status-dot-mapping
+
+### CMP.STATUS_DOT.MOTION 进行中的闪烁
+
+只有进行中的状态（处理中、部署中）用呼吸闪烁；用户开启减少动效时静止。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-status-dot--cmp-status-dot-motion
+
+## 组件/数据展示 / 日历（CMP.CALENDAR）
+
+月历网格：选日期或在格子里看当天的数据；键盘按天、周、月移动；今天与选中日区分清楚。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-calendar--overview
+对应组件：antd Calendar；geist （无）
+
+### CMP.CALENDAR.WHEN 什么时候用日历
+
+需要按月看每天数据（排班、订单量、预约）时用日历面板，格子里放当天的摘要；只是选一个日期用日期选择器。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：卡片式日历
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-calendar--cmp-calendar-when
+
+### CMP.CALENDAR.KEYBOARD 键盘
+
+日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-calendar--cmp-calendar-keyboard
+
+### CMP.CALENDAR.MARKS 今天、选中与不可选
+
+今天、选中日、不可选的日期用不同的样式区分（不只靠颜色）；格子里的数据摘要简短，详细内容点开再看。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-calendar--cmp-calendar-marks
+
 ## 组件/数据展示 / 卡片（CMP.CARD）
 
 把一组相关信息装进一个容器：标题说清是什么，操作在右上；卡片之间等距；可点的整张卡片有悬停反馈（见卡片悬停）。
@@ -1654,6 +2764,64 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-card--cmp-card-clickable
+
+## 组件/数据展示 / 走马灯（CMP.CAROUSEL）
+
+轮播：同级内容 3 到 5 张；看得出总数与方向；不自动播放；管理侧工作页不用。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-carousel--overview
+对应组件：antd Carousel；geist （无）
+
+### CMP.CAROUSEL.WHEN 什么时候用轮播
+
+用户侧的图片、公告等同级内容才用轮播，3 到 5 张；管理侧的工作页面不用轮播（信息藏在后面的页里，很少有人去翻）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：带指示与翻页
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-carousel--cmp-carousel-when
+
+### CMP.CAROUSEL.CONTROLS 看得出总数与方向
+
+有上一张 / 下一张按钮与页码指示（每个指示点是带名称的按钮），左右键翻页；读屏知道这是轮播（aria-roledescription）以及当前第几张。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-carousel--cmp-carousel-controls
+
+### CMP.CAROUSEL.AUTOPLAY 不自动播放
+
+默认不自动播放；确需自动播放时提供暂停按钮，鼠标悬停与键盘聚焦时暂停，减少动效时不自动播放。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-carousel--cmp-carousel-autoplay
+
+## 组件/数据展示 / 折叠面板（CMP.COLLAPSE）
+
+折叠面板：长而不规则的内容逐段展开；标题是按钮、报告展开状态；默认展开最常用的一段。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-collapse--overview
+对应组件：antd Collapse；geist Collapse
+
+### CMP.COLLAPSE.WHEN 什么时候折叠
+
+内容长、各段相对独立、用户通常只看其中一两段时用折叠面板（常见问题、详情页的次要信息）；需要对比各段时平铺，不折叠。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：手风琴
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-collapse--cmp-collapse-when
+
+### CMP.COLLAPSE.SEMANTICS 标题是按钮
+
+每段标题是按钮，用 aria-expanded 报告展开状态、aria-controls 指向内容；上下键在标题之间移动；展开箭头的方向与状态一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-collapse--cmp-collapse-semantics
+
+### CMP.COLLAPSE.MODE 一次一段还是多段
+
+各段之间互不相关、篇幅长时一次只展开一段（手风琴）；用户可能同时对照几段时允许多段展开；默认展开最常用的那一段。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-collapse--cmp-collapse-mode
 
 ## 组件/数据展示 / 描述列表（CMP.DESCRIPTIONS）
 
@@ -1713,6 +2881,241 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-empty--cmp-empty-quiet
 
+## 组件/数据展示 / 图片（CMP.IMAGE）
+
+图片：固定宽高比占位不跳布局；懒加载；失败有说明；有替代文字；需要时可看大图。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-image--overview
+对应组件：antd Image；geist （无）
+
+### CMP.IMAGE.RATIO 固定宽高比
+
+图片容器先按宽高比占位（4:3、16:9、1:1），加载前后不跳布局；裁切用 cover，需要看全图的（证件、票据）用 contain。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：占位、懒加载、替代文字
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-image--cmp-image-ratio
+
+### CMP.IMAGE.ALT 替代文字
+
+每张图都有替代文字：内容图写图里有什么（「行驶证正面」），装饰图写空串；不写「图片」这类无信息的词。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-image--cmp-image-alt
+
+### CMP.IMAGE.LOADING 懒加载与失败
+
+首屏以外的图片懒加载；加载失败显示占位与说明，不显示破图标；需要看细节的图片提供「查看大图」，大图在对话框里打开，可用 Esc 关闭。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-image--cmp-image-loading
+
+## 组件/数据展示 / 视频（CMP.VIDEO）
+
+视频：原生控件；只预载元数据；有对白要有字幕；只有装饰视频能静音自动播放。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-video--overview
+对应组件：antd （无）；geist Video
+
+### CMP.VIDEO.CONTROLS 用原生控件
+
+视频用浏览器原生的 video 控件（键盘、全屏、倍速、画中画都有），外面套固定宽高比的框；不自己画一套播放控件。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：原生控件 + 字幕
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-video--cmp-video-controls
+
+### CMP.VIDEO.CAPTIONS 字幕
+
+有对白或讲解的视频必须带字幕轨（captions），重要内容同时提供文字稿；只有画面的演示视频写明「无对白」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-video--cmp-video-captions
+
+### CMP.VIDEO.AUTOPLAY 自动播放
+
+只有静音、循环的装饰视频可以自动播放，并且在用户开启减少动效时不播放；只预载元数据（preload=metadata），不在首屏下载整段视频。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-video--cmp-video-autoplay
+
+## 组件/数据展示 / 列表（CMP.LIST）
+
+列表：一行一个对象；标题是链接；元信息与操作对齐；空间小时代替表格。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-list--overview
+对应组件：antd List；geist Entity
+
+### CMP.LIST.STRUCTURE 一行一个对象
+
+每行是一个对象：图标或头像 + 标题 + 一行描述 + 元信息 + 操作；行的结构全列表一致；需要按列比较、排序时用表格。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：司机列表
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-list--cmp-list-structure
+
+### CMP.LIST.LINK 标题是链接
+
+整行可点时只有标题是链接，点击区扩展到整行；行内的操作按钮仍可单独聚焦，不把整行包成一个按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-list--cmp-list-link
+
+### CMP.LIST.STATES 加载、空与更多
+
+首次加载用骨架、没有数据用空状态、追加式列表用「加载更多」；列表项超过一屏时考虑分页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-list--cmp-list-states
+
+## 组件/数据展示 / 气泡卡片（CMP.POPOVER）
+
+气泡卡片：点击打开、可交互的小浮层；焦点进出有序；不放必须完成的长流程。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-popover--overview
+对应组件：antd Popover；geist Context Card
+
+### CMP.POPOVER.WHEN 气泡卡片还是文字提示
+
+浮层里有可交互的内容（按钮、链接、表单）或内容较多时用气泡卡片，点击打开；只有一句说明、不可交互的用文字提示。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：点击打开、可交互
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-popover--cmp-popover-when
+
+### CMP.POPOVER.FOCUS 焦点与关闭
+
+打开后焦点进入浮层（或停在触发按钮、Tab 进入浮层），Esc 或点外面关闭并把焦点还给触发按钮；浮层不遮住触发按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-popover--cmp-popover-focus
+
+### CMP.POPOVER.SCOPE 内容克制
+
+气泡卡片放补充信息与简短操作；必须完成的多步流程用对话框或抽屉，不放进气泡卡片。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-popover--cmp-popover-scope
+
+## 组件/数据展示 / 相对时间（CMP.RELATIVE_TIME）
+
+相对时间：「3 分钟前」；带机器可读时间；悬停看绝对时间与时区；自动刷新。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-relative-time--overview
+对应组件：antd （无）；geist Relative Time Card
+
+### CMP.RELATIVE_TIME.FORMAT 分档
+
+1 分钟内「刚刚」，1 小时内「N 分钟前」，24 小时内「N 小时前」，7 天内「N 天前」，更早显示日期（见 FORMAT.RELATIVE_TIME）；经格式化注册表输出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：相对时间 + 绝对时间
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-relative-time--cmp-relative-time-format
+
+### CMP.RELATIVE_TIME.ABSOLUTE 绝对时间可见
+
+用 time 元素并带 datetime 属性；悬停或键盘聚焦时显示带时区的绝对时间；需要审计的场景（日志、审批）直接显示绝对时间。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-relative-time--cmp-relative-time-absolute
+
+### CMP.RELATIVE_TIME.REFRESH 自动刷新
+
+相对时间每分钟刷新一次，不让「刚刚」停留一小时；页面不可见时暂停刷新。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-relative-time--cmp-relative-time-refresh
+
+## 组件/数据展示 / 二维码（CMP.QRCODE）
+
+二维码：留足静区、对比度够；附上原文；内容过长换短链；过期的码要说明。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-qrcode--overview
+对应组件：antd QRCode；geist （无）
+
+### CMP.QRCODE.SCAN 能扫
+
+二维码四周留出至少 4 个模块的静区，深色在浅色底上，尺寸不小于 120px；纠错等级默认 M，码上叠图标时用 H。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最小尺寸 `p.min_size` = 120px（pomaster 预设约定）
+- 示例（这样做）：附原文的二维码
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-qrcode--cmp-qrcode-scan
+
+### CMP.QRCODE.TEXT 附上原文
+
+二维码下方附上原文或「复制链接」，扫不了的人（读屏用户、桌面用户）也拿得到内容；二维码本身有可读名称。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-qrcode--cmp-qrcode-text
+
+### CMP.QRCODE.STATUS 过期与刷新
+
+有时效的码（登录码、提货码）显示有效期，过期后盖上「已过期」并提供刷新；内容过长时换成短链，不生成密到扫不出的码。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-qrcode--cmp-qrcode-status
+
+## 组件/数据展示 / 统计数值（CMP.STATISTIC）
+
+指标数值：标签 + 等宽数字 + 单位；趋势用箭头加文字；涨跌好坏按指标定义。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-statistic--overview
+对应组件：antd Statistic；geist （无）
+
+### CMP.STATISTIC.FORMAT 数字格式
+
+数值用千分位、等宽数字，单位小一号写在数字后；精度按指标固定（金额 2 位、比例 1 位），经格式化注册表输出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：指标与趋势
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-statistic--cmp-statistic-format
+
+### CMP.STATISTIC.TREND 趋势
+
+趋势用箭头加文字（「较上周 +12.4%」），写清比较的周期；涨是好是坏按指标定义（等待时长下降是好事），颜色只是辅助。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-statistic--cmp-statistic-trend
+
+### CMP.STATISTIC.ANIMATION 数字变化
+
+数值更新时可以用数字滚动强调变化，只滚动变化的数位，停在最终值；减少动效时直接显示最终值。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-statistic--cmp-statistic-animation
+
+## 组件/数据展示 / 仪表（CMP.GAUGE）
+
+仪表：表示一个比例（用量、满载率、得分）；阈值变色；中心写数字；不用来表示没有上限的值。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-gauge--overview
+对应组件：antd Progress.dashboard；geist Gauge、Pie Gauge
+
+### CMP.GAUGE.WHEN 什么时候用仪表
+
+表示一个 0 到 100% 的比例（存储用量、车厢满载率、健康得分）用环形仪表；没有上限的数值用统计数值，进度用进度条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：阈值变色
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-gauge--cmp-gauge-when
+
+### CMP.GAUGE.THRESHOLD 阈值
+
+按业务阈值变色（例如 ≥70% 警告、≥90% 危险），阈值写在规格里而不是写死在组件里；中心同时写数字，颜色只是辅助。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：警告阈值（%） `p.warning` = 70（pomaster 预设约定）
+- 参数：危险阈值（%） `p.danger` = 90（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-gauge--cmp-gauge-threshold
+
+### CMP.GAUGE.SEMANTICS 可读
+
+仪表有 role=meter 与 aria-valuenow / valuemin / valuemax，以及写明含义的名称（「三组满载率 95%」）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-gauge--cmp-gauge-semantics
+
 ## 组件/数据展示 / 表格（CMP.TABLE）
 
 成行成列的数据：表头清楚、数字右对齐、操作列在最右；空、加载、错误三态保持表头；分页或虚拟滚动二选一。大数据与复杂交互见「数据网格」。
@@ -1749,6 +3152,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-table--cmp-table-paging
 
+## 组件/数据展示 / 时间轴（CMP.TIMELINE）
+
+时间轴：按时间排列事件；最新的在上；状态圆点加文字；进行中的下一步用待定项。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-timeline--overview
+对应组件：antd Timeline；geist （无）
+
+### CMP.TIMELINE.ORDER 顺序
+
+记录类的时间轴（操作日志、物流轨迹）最新的在最上面；计划类的（里程碑）按时间先后从上往下；同一页保持一种顺序。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：物流轨迹
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-timeline--cmp-timeline-order
+
+### CMP.TIMELINE.SEMANTICS 语义
+
+时间轴是有序列表；每项的时间用 time 元素；状态圆点只是辅助，标题里写清发生了什么。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-timeline--cmp-timeline-semantics
+
+### CMP.TIMELINE.LENGTH 条目多时
+
+条目超过 20 条时默认只显示最近的若干条，提供「查看全部」；不同类型的事件可以用图标区分，同样配文字。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-timeline--cmp-timeline-length
+
 ## 组件/数据展示 / 文字提示（CMP.TOOLTIP）
 
 悬停或聚焦时显示的简短说明：只补充、不承载必需信息；键盘可触达；不放可点内容。
@@ -1777,6 +3209,239 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tooltip--cmp-tooltip-no-actions
+
+## 组件/数据展示 / 漫游引导（CMP.TOUR）
+
+新功能的分步引导：几步就够；可跳过、可重看；锚定到真实元素；只出现一次。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tour--overview
+对应组件：antd Tour；geist （无）
+
+### CMP.TOUR.WHEN 什么时候引导
+
+只为新功能或改动较大的界面做引导，每次 3 到 5 步；引导不能弥补设计本身的问题，能靠界面说清的不靠引导。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最多步数 `p.max_steps` = 5（pomaster 预设约定）
+- 示例（这样做）：锚定到真实元素
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tour--cmp-tour-when
+
+### CMP.TOUR.CONTROL 可跳过、可重看
+
+每一步都有「跳过」「上一步」「下一步」，显示「2 / 4」；Esc 随时退出；帮助菜单里可以重新打开引导。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tour--cmp-tour-control
+
+### CMP.TOUR.ONCE 只出现一次
+
+引导完成或跳过后记住，不在每次进入时都弹；引导期间目标元素高亮，不挡住用户正常操作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tour--cmp-tour-once
+
+## 组件/数据展示 / 树形控件（CMP.TREE）
+
+树：层级数据的浏览与选择；键盘按 WAI-ARIA 树模式；可勾选时父子联动显示半选。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tree--overview
+对应组件：antd Tree；geist File Tree
+
+### CMP.TREE.KEYBOARD 键盘
+
+树是 role=tree，节点是 treeitem；上下键移动、右键展开或进入子节点、左键收起或回到父节点、回车选择；当前节点用 aria-selected 标出。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：组织树
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tree--cmp-tree-keyboard
+
+### CMP.TREE.CHECK 勾选联动
+
+可勾选的树中，勾选父节点等于勾选全部子节点，部分子节点勾选时父节点显示半选（aria-checked=mixed）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tree--cmp-tree-check
+
+### CMP.TREE.LARGE 节点多时
+
+节点多时子节点按需加载（展开时请求），提供搜索并展开匹配节点的祖先；层级超过 4 级时考虑改用别的组织方式。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-tree--cmp-tree-large
+
+## 组件/数据展示 / JSON 查看器（CMP.JSON_VIEW）
+
+只读的 JSON 树：可折叠、默认展开两层；保留字面形式；整段可复制；不执行任何内容。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-json-view--overview
+对应组件：antd （无）；geist JSON View
+
+### CMP.JSON_VIEW.WHEN 什么时候用 JSON 查看器
+
+审计日志、Webhook 载荷、接口调试这类结构化数据用 JSON 查看器；给普通用户看的信息整理成描述列表，不直接给 JSON。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：Webhook 载荷
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-json-view--cmp-json-view-when
+
+### CMP.JSON_VIEW.COLLAPSE 折叠
+
+对象与数组可以折叠（按钮带 aria-expanded），折叠后显示项数；默认展开两层，很大的数据默认更浅。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-json-view--cmp-json-view-collapse
+
+### CMP.JSON_VIEW.LITERAL 字面形式与安全
+
+字符串保留引号、null 与布尔值照原样显示，类型配色只是辅助；只读展示，不 eval、不把值当 HTML 渲染；整段可复制。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-json-view--cmp-json-view-literal
+
+## 组件/数据展示 / 中间省略（CMP.MIDDLE_TRUNCATE）
+
+中间省略：长路径、哈希、文件名保留首尾；全文可见可复制。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-middle-truncate--overview
+对应组件：antd Typography.ellipsis；geist MiddleTruncate
+
+### CMP.MIDDLE_TRUNCATE.WHEN 什么时候中间省略
+
+结尾最有区分度的长文本（文件路径、哈希、带版本号的文件名、长编号）用中间省略；普通句子用结尾省略。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：保留首尾
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-middle-truncate--cmp-middle-truncate-when
+
+### CMP.MIDDLE_TRUNCATE.FULL_TEXT 全文可见
+
+全文放在 title 与读屏文字里，悬停能看到、读屏读得到；复制时拿到全文而不是带省略号的文本。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-middle-truncate--cmp-middle-truncate-full-text
+
+### CMP.MIDDLE_TRUNCATE.KEEP 保留多少
+
+结尾至少保留扩展名或版本号所在的部分（约一半），开头保留能识别出类别的部分。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-middle-truncate--cmp-middle-truncate-keep
+
+## 组件/数据展示 / 设备外框（CMP.DEVICE_FRAME）
+
+设备外框：说明截图或演示出现在哪个环境；外框是装饰；地址栏只是文字。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-device-frame--overview
+对应组件：antd （无）；geist Browser、Phone
+
+### CMP.DEVICE_FRAME.WHEN 什么时候套外框
+
+文档、发布说明、引导页里的截图或演示，需要说明它出现在浏览器还是手机上时套外框；产品界面本身不套外框。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：浏览器外框
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-device-frame--cmp-device-frame-when
+
+### CMP.DEVICE_FRAME.DECORATIVE 外框是装饰
+
+外框对读屏隐藏（aria-hidden），地址栏只是文字、不是可点的链接；框里的截图要有替代文字。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-device-frame--cmp-device-frame-decorative
+
+### CMP.DEVICE_FRAME.SCALE 比例
+
+手机外框按真实设备的宽高比，内容按实际尺寸缩放，不把桌面截图塞进手机框。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-device-frame--cmp-device-frame-scale
+
+## 组件/数据展示 / 书封（CMP.BOOK）
+
+书封：文档、手册的封面卡片；整张是链接；颜色取品牌与功能色；悬停轻微翻开。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-book--overview
+对应组件：antd （无）；geist Book
+
+### CMP.BOOK.WHEN 什么时候用书封
+
+帮助中心、知识库首页展示几本手册或指南时用书封卡片，一行 3 到 5 本；普通的链接列表不用书封。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：手册书架
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-book--cmp-book-when
+
+### CMP.BOOK.LINK 整张是链接
+
+整张书封是指向那份文档的链接，可读名称就是书名；不在书封里再放其他按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-book--cmp-book-link
+
+### CMP.BOOK.MOTION 悬停效果
+
+悬停与键盘聚焦时轻微翻开，用户开启减少动效时不动；书名过长时换行，最多三行。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-book--cmp-book-motion
+
+## 组件/数据展示 / 评论（CMP.COMMENT）
+
+评论与回复：作者、时间、正文、操作；回复缩进嵌套最多两层；点赞报告状态。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-comment--overview
+对应组件：antd Comment；geist （无）
+
+### CMP.COMMENT.STRUCTURE 结构
+
+每条评论是一个 article：头像 + 作者 + 相对时间 + 正文 + 操作（回复、点赞）；回复缩进嵌套，最多两层，更深的平铺并 @ 被回复的人。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：评论与回复
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-comment--cmp-comment-structure
+
+### CMP.COMMENT.ACTIONS 操作
+
+点赞按钮报告状态（aria-pressed）与计数；回复在原处展开输入框，不跳页；自己的评论提供编辑与删除，删除后保留「该评论已删除」的占位以维持对话结构。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-comment--cmp-comment-actions
+
+### CMP.COMMENT.TIME 时间
+
+时间用相对时间，悬停显示绝对时间；编辑过的评论标出「已编辑」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-comment--cmp-comment-time
+
+## 组件/数据展示 / 页头（CMP.PAGE_HEADER）
+
+页头：面包屑 + 返回 + 页面唯一的 h1 + 描述 + 主操作；同类页面结构一致。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-page-header--overview
+对应组件：antd PageHeader；geist （无）
+
+### CMP.PAGE_HEADER.STRUCTURE 结构
+
+页头从上到下：面包屑（可选）、返回 + 标题（页面唯一的 h1）、一句描述或元信息、右侧的主操作；同类页面的页头结构一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：详情页页头
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-page-header--cmp-page-header-structure
+
+### CMP.PAGE_HEADER.ACTIONS 主操作
+
+页头右侧最多一个主按钮，其余用次按钮，超过 3 个收进「更多」；操作针对整个页面的对象，行内对象的操作放在行内。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-page-header--cmp-page-header-actions
+
+### CMP.PAGE_HEADER.TITLE 标题
+
+标题写当前对象或页面名称，与浏览器标签页的 title 对应；返回按钮带名称（「返回车辆列表」）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-display-page-header--cmp-page-header-title
 
 ## 组件/反馈 / 警告提示（CMP.ALERT）
 
@@ -1808,6 +3473,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-alert--cmp-alert-dismiss
 
+## 组件/反馈 / 横幅（CMP.BANNER）
+
+贴着顶部导航的整宽系统消息：一次一条；要处理的给动作；区块内的提示用警告提示。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-banner--overview
+对应组件：antd Alert.banner；geist Banner、Project Banner
+
+### CMP.BANNER.WHEN 什么时候用横幅
+
+影响整个系统的消息（计划维护、试用到期、服务降级）用横幅，贴在顶部导航下方、整宽；只和某个区块有关的提示用警告提示，放在区块里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：整宽系统消息
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-banner--cmp-banner-when
+
+### CMP.BANNER.ONE_AT_A_TIME 一次一条
+
+同一时间只显示一条横幅，按严重程度排队（出错 > 警告 > 信息）；关闭后不在本次会话里再出现，严重的问题解决前不允许关闭。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-banner--cmp-banner-one-at-a-time
+
+### CMP.BANNER.ACTION 要处理的给动作
+
+需要用户处理的横幅（续费、补充资料）带一个动作链接，文案写清不处理的后果与期限；纯通知类不放动作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-banner--cmp-banner-action
+
 ## 组件/反馈 / 侧边抽屉（CMP.DRAWER）
 
 从侧边滑出的面板：用于需要对照页面内容的录入与详情；宽度取档位；有未保存内容时关闭先确认。
@@ -1836,6 +3530,36 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-drawer--cmp-drawer-close
+
+## 组件/反馈 / 底部抽屉（CMP.BOTTOM_SHEET）
+
+移动端的底部抽屉：操作菜单与短表单；有把手、可下滑关闭、最高 85% 视口。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-bottom-sheet--overview
+对应组件：antd Drawer.bottom；geist Drawer
+
+### CMP.BOTTOM_SHEET.WHEN 什么时候用底部抽屉
+
+移动端的操作菜单（对一个对象的几种操作）和短表单用底部抽屉，拇指够得到；桌面端同样的内容用下拉菜单或侧边抽屉。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：操作菜单
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-bottom-sheet--cmp-bottom-sheet-when
+
+### CMP.BOTTOM_SHEET.HEIGHT 高度与滚动
+
+高度随内容，最高 85% 视口，内容更多时抽屉内部滚动（滚到头不带动底下的页面）；顶部有拖拽把手，下滑或点遮罩关闭，同时保留可点的关闭按钮。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：最大高度 `p.max_height` = 85vh（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-bottom-sheet--cmp-bottom-sheet-height
+
+### CMP.BOTTOM_SHEET.FOCUS 焦点与安全区
+
+打开后焦点进入抽屉、关闭后回到触发按钮；底部留出设备安全区，按钮不贴着屏幕边缘。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-bottom-sheet--cmp-bottom-sheet-focus
 
 ## 组件/反馈 / 全局提示（CMP.MESSAGE）
 
@@ -1932,6 +3656,35 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-modal--cmp-modal-async
 
+## 组件/反馈 / 危险操作确认（CMP.DESTRUCTIVE_MODAL）
+
+不可逆操作的确认：写清后果；焦点先在取消；确认按钮写动作本身；影响大的要输入名称。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-destructive-modal--overview
+对应组件：antd Modal.confirm；geist Destructive Action Modal
+
+### CMP.DESTRUCTIVE_MODAL.CONSEQUENCE 写清后果
+
+标题是问句（「解散浦东车队？」），正文写清删什么、能否恢复、影响谁（「24 辆车会移到未分组，进行中的 3 个订单不受影响，解散后不能恢复」）；不写「确定要执行此操作吗」。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：后果 + 动作本身
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-destructive-modal--cmp-destructive-modal-consequence
+
+### CMP.DESTRUCTIVE_MODAL.FOCUS 焦点与关闭
+
+打开后焦点在「取消」上，回车不会误删；点遮罩不关闭（必须明确选择），Esc 等同取消；确认进行中按钮忙碌、不能重复提交。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-destructive-modal--cmp-destructive-modal-focus
+
+### CMP.DESTRUCTIVE_MODAL.TYPE_TO_CONFIRM 影响大的输入名称
+
+批量删除、清空、解散这类影响大且不可逆的操作，要求输入对象名称后确认按钮才可用；能撤销的删除不用确认，直接做并提供撤销。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-destructive-modal--cmp-destructive-modal-type-to-confirm
+
 ## 组件/反馈 / 气泡确认（CMP.POPCONFIRM）
 
 就地的轻量确认：只问一句、可撤回的操作才用；不可撤回或影响大的用对话框。
@@ -1990,6 +3743,65 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-progress--cmp-progress-background
 
+## 组件/反馈 / 结果与错误（CMP.RESULT）
+
+操作结束或整页不可用的结果页：说清发生了什么、下一步做什么；错误页给可报告的编号。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-result--overview
+对应组件：antd Result；geist Error、Error Card
+
+### CMP.RESULT.WHEN 什么时候用结果页
+
+流程的终点（提交成功、处理失败）和整页不可用（403 无权限、404 不存在、500 出错）用结果页；局部的失败用警告提示，不跳结果页。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：无权限
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-result--cmp-result-when
+
+### CMP.RESULT.NEXT_STEP 下一步
+
+每个结果页都有下一步：成功页给「返回列表」「继续添加」，失败页给「重试」「返回修改」，无权限页给「申请权限」或联系人；不让用户停在死胡同。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-result--cmp-result-next-step
+
+### CMP.RESULT.ERROR_DETAIL 错误页的细节
+
+500 这类错误页不暴露堆栈与内部信息，给出可报告的请求编号（可选中复制）；404 说明可能的原因（已删除、链接有误）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-result--cmp-result-error-detail
+
+## 组件/反馈 / 骨架屏（CMP.SKELETON）
+
+首次加载的占位：几何与最终内容一致；延迟出现；只用于首屏，局部刷新用加载态。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-skeleton--overview
+对应组件：antd Skeleton；geist Skeleton
+
+### CMP.SKELETON.SHAPE 几何与内容一致
+
+骨架的行数、宽度、头像与图片位置与最终内容一致，加载完成后页面不跳动；宽度逐行变化，不铺满一样长的灰条。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：和内容同形
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-skeleton--cmp-skeleton-shape
+
+### CMP.SKELETON.WHEN 只用于首屏
+
+骨架只用于页面或区块的首次加载；已有内容时的刷新、翻页用局部加载态，保留旧内容直到新内容到达。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-skeleton--cmp-skeleton-when
+
+### CMP.SKELETON.TIMING 延迟出现
+
+加载很快（约 300ms 内）时不显示骨架，避免一闪；出现后至少停留约 300–500ms；骨架的微光动画在减少动效时停止。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 参数：延迟出现 `p.delay` = 300ms（pomaster 预设约定）
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-skeleton--cmp-skeleton-timing
+
 ## 组件/反馈 / 加载中（CMP.SPIN）
 
 局部加载：只盖住正在加载的区域，延迟出现避免闪烁；整页加载用骨架或加载条。
@@ -2018,6 +3830,93 @@ Tab 顺序与视觉顺序一致，不用正数 tabindex；弹层、抽屉、对�
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-spin--cmp-spin-text
+
+## 组件/反馈 / 水印（CMP.WATERMARK）
+
+敏感页面的截图追溯：倾斜重复的姓名与工号；是威慑不是安全措施；不挡操作、不影响阅读。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-watermark--overview
+对应组件：antd Watermark；geist （无）
+
+### CMP.WATERMARK.WHEN 什么时候加水印
+
+展示个人信息、财务数据的管理侧页面加水印，内容写当前用户的姓名、工号与日期，用于截图追溯；水印是威慑，敏感数据仍靠权限与脱敏保护。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：姓名 + 工号 + 日期
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-watermark--cmp-watermark-when
+
+### CMP.WATERMARK.READABILITY 不影响阅读与操作
+
+水印颜色取半透明的中性色，正文对比度不受影响；水印层不拦截点击与选中，读屏忽略它（aria-hidden）。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-watermark--cmp-watermark-readability
+
+### CMP.WATERMARK.CONTENT 水印内容
+
+水印内容来自当前登录用户（服务端下发），不让用户自己填写；不写手机号、证件号这类本身就敏感的信息。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-feedback-watermark--cmp-watermark-content
+
+## 组件/其他 / 固钉（CMP.AFFIX）
+
+滚动时钉住的工具栏与操作条：CSS sticky；钉住后加边线与投影；不遮挡焦点。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-affix--overview
+对应组件：antd Affix；geist （无）
+
+### CMP.AFFIX.WHEN 钉住什么
+
+长列表的批量操作条、长表单的提交栏、详情页的标签栏在滚动时钉在顶部或底部；一页最多钉一条，不把整块内容钉住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：钉住的操作条
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-affix--cmp-affix-when
+
+### CMP.AFFIX.STICKY 用 sticky，不用滚动监听
+
+钉住用 position: sticky（相对最近的滚动容器），不监听滚动事件去改 top；钉住后加底边线与投影，表示它浮在内容上面。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-affix--cmp-affix-sticky
+
+### CMP.AFFIX.FOCUS 不遮挡焦点
+
+钉在顶部时页面设置等高的 scroll-padding-top，钉在底部时设置 scroll-padding-bottom，键盘聚焦的元素不被钉住的条盖住。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-affix--cmp-affix-focus
+
+## 组件/其他 / 全局配置（CMP.CONFIG_PROVIDER）
+
+应用根部的全局配置：语言地区、主题、组件默认尺寸；只放一次，组件从这里读。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-config-provider--overview
+对应组件：antd ConfigProvider、App、LocaleProvider；geist GeistProvider
+
+### CMP.CONFIG_PROVIDER.ROOT_ONCE 只在根部放一次
+
+a-config-provider 放在应用根组件，统一设置 locale（zh_CN）、theme（token 与 algorithm）、componentSize；页面里不再各自包一层改主题，局部例外用嵌套的 ConfigProvider 并写明原因。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 示例（这样做）：根部统一配置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-config-provider--cmp-config-provider-root-once
+
+### CMP.CONFIG_PROVIDER.LOCALE 语言与地区
+
+日期、数字、货币的格式化读这里的地区设置（经格式化注册表），组件内置文案（「确定」「上一页」）跟随语言；语言从用户设置或浏览器语言判断，不按 IP。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-config-provider--cmp-config-provider-locale
+
+### CMP.CONFIG_PROVIDER.THEME 主题
+
+主题只通过 ConfigProvider 的 theme 设置（token 覆盖与 darkAlgorithm），不覆盖组件的类名样式；深色模式切换 algorithm，并设置页面的 color-scheme。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-components-other-config-provider--cmp-config-provider-theme
 
 ## 设计模式/全局规则 / 反馈（FEEDBACK）
 
@@ -4583,72 +6482,6 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-prototype-intake--proto-verify
-
-## 待补的领域（63 个）
-
-- 组件/通用 / 分裂按钮（`split_button`，前缀 CMP.SPLIT_BUTTON）：一个默认动作加一组相近的动作。；对应组件 antd Dropdown.Button，geist Split Button
-- 组件/通用 / 复制按钮（`copy_button`，前缀 CMP.COPY_BUTTON）：把一段文字复制到剪贴板并给出反馈。；对应组件 antd Typography.copyable，geist Copy Button、Text With Copy Button
-- 组件/通用 / 悬浮按钮（`float_button`，前缀 CMP.FLOAT_BUTTON）：悬浮在页面上的全局功能入口。；对应组件 antd FloatButton，geist （无）
-- 组件/通用 / 排版文本（`typography_text`，前缀 CMP.TEXT）：标题、正文、强调、删除线、可复制与可编辑文本。；对应组件 antd Typography，geist Text、Label
-- 组件/通用 / 代码块（`code_block`，前缀 CMP.CODE_BLOCK）：多行、带高亮的源代码。；对应组件 antd （无），geist Code Block、Code
-- 组件/通用 / 命令片段（`snippet`，前缀 CMP.SNIPPET）：可一键复制的命令行。；对应组件 antd （无），geist Snippet
-- 组件/通用 / 键盘按键（`kbd`，前缀 CMP.KBD）：展示触发动作的快捷键。；对应组件 antd Typography.keyboard，geist Keyboard Input
-- 组件/布局 / 弹性布局（`flex`，前缀 CMP.FLEX）：一维排布与对齐。；对应组件 antd Flex，geist （无）
-- 组件/布局 / 栅格组件（`grid_component`，前缀 CMP.GRID）：按栅格排布内容。；对应组件 antd Row、Col，geist Grid
-- 组件/布局 / 页面布局（`page_layout`，前缀 CMP.LAYOUT）：顶栏、侧栏、内容区与页脚组成的页面框架。；对应组件 antd Layout，geist （无）
-- 组件/布局 / 滚动区（`scroller`，前缀 CMP.SCROLLER）：沿一个方向滚动的一组同类条目。；对应组件 antd （无），geist Scroller
-- 组件/导航 / 锚点（`anchor`，前缀 CMP.ANCHOR）：在长页面内跳到指定区块。；对应组件 antd Anchor，geist （无）
-- 组件/导航 / 右键菜单（`context_menu`，前缀 CMP.CONTEXT_MENU）：右击或长按时出现的上下文动作。；对应组件 antd Dropdown.contextMenu，geist Context Menu
-- 组件/导航 / 命令面板（`command_menu`，前缀 CMP.COMMAND_MENU）：全局的键盘优先命令入口。；对应组件 antd （无），geist Command Menu
-- 组件/导航 / 加载更多（`load_more`，前缀 CMP.LOAD_MORE）：在列表末尾追加下一批数据，或展开收起的内容。；对应组件 antd List.loadMore，geist Load More Button、Show More
-- 组件/数据录入 / 自动完成（`auto_complete`，前缀 CMP.AUTO_COMPLETE）：输入时给出补全建议。；对应组件 antd AutoComplete，geist （无）
-- 组件/数据录入 / 可搜索选择（`combobox`，前缀 CMP.COMBOBOX）：输入关键字过滤一个已知列表并选中一项。；对应组件 antd Select.showSearch，geist Combobox
-- 组件/数据录入 / 级联选择（`cascader`，前缀 CMP.CASCADER）：从有层级的选项里逐级选择。；对应组件 antd Cascader，geist （无）
-- 组件/数据录入 / 选择卡片（`choicebox`，前缀 CMP.CHOICEBOX）：带说明的大号单选或多选。；对应组件 antd （无），geist Choicebox
-- 组件/数据录入 / 时间选择（`time_picker`，前缀 CMP.TIME_PICKER）：选择时间。；对应组件 antd TimePicker，geist （无）
-- 组件/数据录入 / 搜索框（`search_input`，前缀 CMP.SEARCH_INPUT）：带搜索图标与清除按钮的输入框。；对应组件 antd Input.Search，geist Search Input
-- 组件/数据录入 / 提及（`mentions`，前缀 CMP.MENTIONS）：在输入中提及某人或某物。；对应组件 antd Mentions，geist （无）
-- 组件/数据录入 / 评分（`rate`，前缀 CMP.RATE）：打分。；对应组件 antd Rate，geist （无）
-- 组件/数据录入 / 多选选择器（`multi_select`，前缀 CMP.MULTI_SELECT）：从下拉列表里选多项。；对应组件 antd Select.multiple，geist Multi Select
-- 组件/数据录入 / 滑块（`slider`，前缀 CMP.SLIDER）：在一个范围内拖动取值。；对应组件 antd Slider，geist Slider
-- 组件/数据录入 / 分段控制器（`segmented`，前缀 CMP.SEGMENTED）：在两三个互斥视图之间切换。；对应组件 antd Segmented，geist Switch
-- 组件/数据录入 / 穿梭框（`transfer`，前缀 CMP.TRANSFER）：在两个列表之间移动条目。；对应组件 antd Transfer，geist （无）
-- 组件/数据录入 / 树选择（`tree_select`，前缀 CMP.TREE_SELECT）：从树形结构里选择。；对应组件 antd TreeSelect，geist （无）
-- 组件/数据录入 / 地址输入（`address_input`，前缀 CMP.ADDRESS_INPUT）：搜索地址或按国家填写地址字段。；对应组件 antd （无），geist Address Input
-- 组件/数据录入 / 破坏性确认输入（`destructive_input`，前缀 CMP.DESTRUCTIVE_INPUT）：输入资源名确认破坏性操作。；对应组件 antd （无），geist Destructive Confirmation Input
-- 组件/数据录入 / 筛选条（`filter_bar`，前缀 CMP.FILTER_BAR）：与 URL 同步的筛选条件栏。；对应组件 antd （无），geist Filter Params
-- 组件/数据录入 / 反馈收集（`feedback_widget`，前缀 CMP.FEEDBACK_WIDGET）：收集带情绪的文字反馈。；对应组件 antd （无），geist Feedback
-- 组件/数据录入 / 主题切换（`theme_switcher`，前缀 CMP.THEME_SWITCHER）：在浅色、跟随系统、深色之间切换。；对应组件 antd （无），geist Theme Switcher
-- 组件/数据展示 / 头像（`avatar`，前缀 CMP.AVATAR）：代表一个人、团队或组织。；对应组件 antd Avatar，geist Avatar
-- 组件/数据展示 / 状态点（`status_dot`，前缀 CMP.STATUS_DOT）：用一个点表示对象的状态。；对应组件 antd Badge.status，geist Status Dot
-- 组件/数据展示 / 日历（`calendar`，前缀 CMP.CALENDAR）：按日历展示日期相关的数据。；对应组件 antd Calendar，geist （无）
-- 组件/数据展示 / 走马灯（`carousel`，前缀 CMP.CAROUSEL）：轮流展示一组平级内容。；对应组件 antd Carousel，geist （无）
-- 组件/数据展示 / 折叠面板（`collapse`，前缀 CMP.COLLAPSE）：可展开收起的内容区块。；对应组件 antd Collapse，geist Collapse
-- 组件/数据展示 / 图片（`image`，前缀 CMP.IMAGE）：可预览的图片。；对应组件 antd Image，geist （无）
-- 组件/数据展示 / 视频（`video`，前缀 CMP.VIDEO）：带播放控制与懒加载的视频。；对应组件 antd （无），geist Video
-- 组件/数据展示 / 列表（`list`，前缀 CMP.LIST）：一组结构相同的条目。；对应组件 antd List，geist Entity
-- 组件/数据展示 / 气泡卡片（`popover`，前缀 CMP.POPOVER）：悬停或聚焦时出现的富内容浮层。；对应组件 antd Popover，geist Context Card
-- 组件/数据展示 / 相对时间（`relative_time`，前缀 CMP.RELATIVE_TIME）：以相对时间显示，悬停看本地与 UTC 时间。；对应组件 antd （无），geist Relative Time Card
-- 组件/数据展示 / 二维码（`qrcode`，前缀 CMP.QRCODE）：把链接或文字生成二维码。；对应组件 antd QRCode，geist （无）
-- 组件/数据展示 / 统计数值（`statistic`，前缀 CMP.STATISTIC）：突出显示一个统计数字。；对应组件 antd Statistic，geist （无）
-- 组件/数据展示 / 仪表（`gauge`，前缀 CMP.GAUGE）：用圆环表示占比。；对应组件 antd Progress.dashboard，geist Gauge、Pie Gauge
-- 组件/数据展示 / 时间轴（`timeline`，前缀 CMP.TIMELINE）：按时间先后排列的事件。；对应组件 antd Timeline，geist （无）
-- 组件/数据展示 / 漫游引导（`tour`，前缀 CMP.TOUR）：分步介绍界面功能。；对应组件 antd Tour，geist （无）
-- 组件/数据展示 / 树形控件（`tree`，前缀 CMP.TREE）：可展开的层级结构。；对应组件 antd Tree，geist File Tree
-- 组件/数据展示 / JSON 查看器（`json_view`，前缀 CMP.JSON_VIEW）：以可折叠的树展示 JSON。；对应组件 antd （无），geist JSON View
-- 组件/数据展示 / 中间省略（`middle_truncate`，前缀 CMP.MIDDLE_TRUNCATE）：保留首尾、省略中间的长字符串。；对应组件 antd Typography.ellipsis，geist MiddleTruncate
-- 组件/数据展示 / 设备外框（`device_frame`，前缀 CMP.DEVICE_FRAME）：把截图放进浏览器或手机外框里展示。；对应组件 antd （无），geist Browser、Phone
-- 组件/数据展示 / 书封（`book`，前缀 CMP.BOOK）：营销页里用书本外形展示一组内容。；对应组件 antd （无），geist Book
-- 组件/数据展示 / 评论（`comment`，前缀 CMP.COMMENT）：带作者与时间的评论条目。；对应组件 antd Comment，geist （无）
-- 组件/数据展示 / 页头（`page_header`，前缀 CMP.PAGE_HEADER）：页面标题、返回、操作区。；对应组件 antd PageHeader，geist （无）
-- 组件/反馈 / 横幅（`banner`，前缀 CMP.BANNER）：页面或项目级、需要处理的通知。；对应组件 antd Alert.banner，geist Banner、Project Banner
-- 组件/反馈 / 底部抽屉（`bottom_sheet`，前缀 CMP.BOTTOM_SHEET）：小屏上从底部弹出的面板。；对应组件 antd Drawer.bottom，geist Drawer
-- 组件/反馈 / 危险操作确认（`destructive_modal`，前缀 CMP.DESTRUCTIVE_MODAL）：删除、吊销等操作的确认弹窗。；对应组件 antd Modal.confirm，geist Destructive Action Modal
-- 组件/反馈 / 结果与错误（`result`，前缀 CMP.RESULT）：操作结果页，以及区块加载失败时的错误信息。；对应组件 antd Result，geist Error、Error Card
-- 组件/反馈 / 骨架屏（`skeleton`，前缀 CMP.SKELETON）：数据加载时按最终布局占位。；对应组件 antd Skeleton，geist Skeleton
-- 组件/反馈 / 水印（`watermark`，前缀 CMP.WATERMARK）：给页面加文字或图片水印。；对应组件 antd Watermark，geist （无）
-- 组件/其他 / 固钉（`affix`，前缀 CMP.AFFIX）：滚动时把元素固定在视口内。；对应组件 antd Affix，geist （无）
-- 组件/其他 / 全局配置（`config_provider`，前缀 CMP.CONFIG_PROVIDER）：主题、语言与组件默认值的统一配置。；对应组件 antd ConfigProvider、App、LocaleProvider，geist GeistProvider
 
 ## 出处
 

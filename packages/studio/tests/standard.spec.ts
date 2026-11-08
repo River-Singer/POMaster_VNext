@@ -45,11 +45,11 @@ function areaOf(key: string): any {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("目录取统一骨架：156 个领域按骨架顺序，本体系写了 93 个、460 条规则，其余标为待补", () => {
+  it("目录取统一骨架：156 个领域按骨架顺序，本体系全部写完（组件类型取并集，657 条规则）", () => {
     expect(model.areas.length).toBe(156);
     expect(model.areas.map((area: { key: string }) => area.key)).toEqual(skeleton.areas.map((area) => area.key));
-    expect(covered.length).toBe(93);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(460);
+    expect(covered.length).toBe(156);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(657);
     for (const area of model.areas) {
       const skeletonArea = skeleton.areas.find((item) => item.key === area.key)!;
       expect([area.title_zh, area.group, area.prefix, area.counterparts]).toEqual([skeletonArea.title_zh, skeletonArea.group, skeletonArea.prefix, skeletonArea.counterparts]);
@@ -153,7 +153,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 157, areas: 156, covered: 93, rules: 460 });
+      expect(result).toMatchObject({ count: 157, areas: 156, covered: 156, rules: 657 });
       const overview = readFileSync(join(out, "000-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);
@@ -174,8 +174,9 @@ describe("规范分区 · Storybook 页面", () => {
       expect(button).toContain("export const Matrix: StoryObj");
       const splitIndex = model.areas.findIndex((area: { key: string }) => area.key === "split_button");
       const split = readFileSync(join(out, `${String(splitIndex + 1).padStart(3, "0")}-split_button.stories.ts`), "utf8");
-      expect(split).toContain('name: "分裂按钮"');
-      expect(split.match(/^export const /gm)).toEqual(["export const "]);
+      expect(split).toContain('title: "规范/组件/通用/分裂按钮"');
+      expect(split).toContain("export const Playground: StoryObj");
+      for (const rule of areaOf("split_button").rules) expect(split).toContain(`export const ${rule.storybook.export}: StoryObj`);
       expect(grid).not.toContain("NON-AUTHORITATIVE");
     } finally {
       rmSync(out, { recursive: true, force: true });
@@ -201,11 +202,11 @@ describe("规范分区 · Storybook 页面", () => {
     }
   });
 
-  it("骨架也是事实源：改骨架里待补领域的标题，页面与指纹随之变化", () => {
+  it("骨架也是事实源：改骨架里领域的标题，页面与指纹随之变化", () => {
     const dir = tempRoot("skeleton");
     try {
       const original = readFileSync(SKELETON_PATH, "utf8");
-      const mutated = original.replace("title_zh: 分裂按钮,", "title_zh: 分裂按钮（探针）,");
+      const mutated = original.replace("    title_zh: 分裂按钮\n", "    title_zh: 分裂按钮（探针）\n");
       expect(mutated).not.toBe(original);
       const path = join(dir, "skeleton.yaml");
       writeFileSync(path, mutated);
@@ -241,7 +242,7 @@ describe("规范分区 · AI 孪生", () => {
       "packages/cli/seeds/design-standards/skeleton.yaml",
     ]);
     expect(twin.areas.length).toBe(156);
-    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(93);
+    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(156);
     const grid = twin.areas.find((area: { key: string }) => area.key === "grid");
     const gutter = grid.rules[1];
     expect(gutter.id).toBe("GRID.GUTTER");
@@ -253,7 +254,7 @@ describe("规范分区 · AI 孪生", () => {
     expect(JSON.stringify(twin)).not.toMatch(/generated_at|timestamp/);
   });
 
-  it("孪生 Markdown 覆盖每条规则（编号、条文、执行方式、页面地址），并列出待补的领域", () => {
+  it("孪生 Markdown 覆盖每条规则（编号、条文、执行方式、页面地址）；全部写完时不再列待补的领域", () => {
     const md = renderTwinMarkdown(model);
     for (const area of covered) {
       for (const rule of area.rules) {
@@ -262,8 +263,8 @@ describe("规范分区 · AI 孪生", () => {
         expect(md).toContain(`?path=/story/${rule.storybook.id}`);
       }
     }
-    expect(md).toContain("## 待补的领域（63 个）");
-    expect(md).toContain("分裂按钮（`split_button`，前缀 CMP.SPLIT_BUTTON）");
+    expect(md).not.toContain("## 待补的领域");
+    expect(md).toContain("### CMP.SPLIT_BUTTON.WHEN 什么时候用分裂按钮");
     expect(md).toContain("待项目决定——用户侧（H5）的图标库用哪一套？");
     expect(md).toContain("SRC.POMASTER.DEFAULTS");
     expect(md).toContain(model.fingerprint);

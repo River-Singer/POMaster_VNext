@@ -15,7 +15,10 @@ export function DestructiveInput({ expected, onMatchChange, className }: Destruc
   const id = React.useId();
   const [text, setText] = React.useState("");
   const matched = text.trim() === expected;
-  React.useEffect(() => onMatchChange(matched), [matched, onMatchChange]);
+  // 只在「是否一致」变化时通知；回调存进 ref，调用处传内联函数也不会每次渲染都触发。
+  const notify = React.useRef(onMatchChange);
+  notify.current = onMatchChange;
+  React.useEffect(() => notify.current(matched), [matched]);
   return (
     <div data-slot="destructive-input" className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={id} className="block text-copy-14 font-normal">
