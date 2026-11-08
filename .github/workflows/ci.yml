@@ -115,6 +115,61 @@ jobs:
           done
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # 脚手架后端实证（S1-6）：按两份样例规格（fleet、shop）各生成一个完整项目，用真实 Maven 编译，
+  # 再在 MySQL 8.4 上用迁移账号跑 Flyway、按 grants.sql 给两个应用账号授权、起管理侧与用户侧两个
+  # 应用，按规格走一遍接口（权限码 / 访问档、校验、乐观锁、唯一值、KEYSET 翻页、可见性、属主、
+  # 脱敏、字段加密、ETag）。生成器的单元测试只钉文本，这里钉「生成出来的东西真能跑」。
+  scaffold-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build
+        run: corepack pnpm build
+
+      - name: Generate sample projects
+        run: |
+          node scripts/scaffold-java/generate.mjs packages/cli/scaffold/examples/fleet.domain-spec.yaml "$RUNNER_TEMP/fleet"
+          node scripts/scaffold-java/generate.mjs packages/cli/scaffold/examples/shop.domain-spec.yaml "$RUNNER_TEMP/shop"
+
+      - name: Maven package
+        run: |
+          mvn -B -ntp -f "$RUNNER_TEMP/fleet/backend/pom.xml" -DskipTests package
+          mvn -B -ntp -f "$RUNNER_TEMP/shop/backend/pom.xml" -DskipTests package
+
+      - name: Migrate, run both apps, exercise the API
+        run: |
+          node scripts/scaffold-java/smoke.mjs "$RUNNER_TEMP/fleet"
+          node scripts/scaffold-java/smoke.mjs "$RUNNER_TEMP/shop"
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # L6-2 自主半边（P35）：clean HOME × fresh clone bootstrap 演练。
   #
   # 语义：模拟「一台什么都没有的新机器」——HOME 指向全新空临时目录（runner 默认

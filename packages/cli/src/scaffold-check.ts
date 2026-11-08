@@ -6,8 +6,9 @@
  * 2. ledger_integrity：生成清单 ↔ 受管文件（被手改 / 被删即失败；清单坏了、模板集版本变了即失败）；
  * 3. generation_fresh：清单记录的规格摘要 = 已确认摘要（改了规格、确认了、却没重新生成 → 失败）；
  * 4. keybindings_registered：每个受管文件都有 KEYBINDING 行且锚对得上（写入约束的前提）；
- * 5. contract_conformance（S1-5）：每个面的 OpenAPI 文档与规格独立对照——接口一一对应、
- *    用户侧不出现未暴露字段、操作都标了授权结构（不依赖生成器自证）；
+ * 5. contract_conformance（S1-5 / S1-6）：每个面的 OpenAPI 文档与规格独立对照——接口一一对应、
+ *    用户侧不出现未暴露字段、操作都标了授权结构；生成了后端时，每个控制器的接口数、权限码 / 访问档
+ *    与规格对照，用户侧视图不出现未暴露字段（不依赖生成器自证）；
  * 6. unmanaged_migrations：迁移目录里不在清单的手工迁移逐个列出（允许，警告呈现）。
  *
  * 三个消费面同一判卷：`pomaster scaffold check`（命令面）、closeout（阻断）、
@@ -27,6 +28,7 @@ import { keybindingFileName, readGenerationManifest, templateSetChanges } from "
 import { assessScaffoldSpec, scaffoldGateErrors, type ScaffoldGovernanceDeps, type ScaffoldSpecState } from "./scaffold-governance.js";
 import { dbLayout } from "./scaffold-mysql.js";
 import { checkOpenApiConformance, openApiPath } from "./scaffold-openapi.js";
+import { backendControllerPath, backendViewPath, checkBackendConformance } from "./scaffold-backend.js";
 import { SCAFFOLD_GENERATION_MANIFEST_RELATIVE } from "./store-layout.js";
 
 export const SCAFFOLD_CHECK_IDS = [
@@ -231,15 +233,40 @@ export async function assessScaffoldConsistency(
     if (text === null) continue;
     for (const problem of checkOpenApiConformance(snapshot, surface, text)) contractFindings.push(`${path}：${problem}`);
   }
+  // 后端控制器 ↔ 规格（只在生成过后端时对照；后端模板集没选中的项目不适用）
+  const managedPaths = new Set(manifest.files.map((file) => file.path));
+  if (manifest.files.some((file) => file.template.startsWith("java."))) {
+    for (const surface of ["admin", "public"] as const) {
+      if (snapshot.surfaces[surface] === undefined) continue;
+      for (const entity of snapshot.entities) {
+        if (entity.exposure[surface] === undefined) continue;
+        const controllerPath = backendControllerPath(snapshot, entity, surface);
+        if (!managedPaths.has(controllerPath)) {
+          contractFindings.push(`缺少${surface === "admin" ? "管理侧" : "用户侧"}控制器 ${controllerPath}（重新 scaffold generate）`);
+          continue;
+        }
+        let controller: string | null = null;
+        let view: string | null = null;
+        try {
+          controller = await readFile(join(rootDir, ...controllerPath.split("/")), "utf8");
+          view = await readFile(join(rootDir, ...backendViewPath(snapshot, entity, surface).split("/")), "utf8");
+        } catch {
+          // 被删已由 ② 报
+        }
+        if (controller === null) continue;
+        for (const problem of checkBackendConformance(entity, surface, controller, view)) contractFindings.push(`${controllerPath}：${problem}`);
+      }
+    }
+  }
   if (contractFindings.length > 0) {
     errors.push({
       code: "SCAFFOLD_CONTRACT_DRIFT",
-      message: `接口文档与规格不符：${contractFindings.join("；")}`,
-      hint: "接口文档由规格生成，不手改：pomaster scaffold generate 重新生成；要改接口就改规格并走 --change 确认。",
+      message: `接口与规格不符：${contractFindings.join("；")}`,
+      hint: "接口文档与后端接口由规格生成，不手改：pomaster scaffold generate 重新生成；要改接口就改规格并走 --change 确认。",
     });
-    checks.push(item("contract_conformance", "fail", "接口文档与规格不符", contractFindings));
+    checks.push(item("contract_conformance", "fail", "接口与规格不符", contractFindings));
   } else {
-    checks.push(item("contract_conformance", "pass", "接口文档与规格一一对应"));
+    checks.push(item("contract_conformance", "pass", "接口文档（与生成的后端接口）与规格一一对应"));
   }
 
   // ⑥ 不受管的迁移（手工迁移允许，逐个呈现）

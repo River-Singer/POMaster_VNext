@@ -948,6 +948,10 @@
       "packages/cli/tests/scaffold-frontend-react.spec.ts": {
         "layer": "L1",
         "note": "管理侧前端 React 模板集（react-geist-admin@1）：文件与模板编号、Geist 预设 design check 零违规、React 栈写法（hooks 取数 / 懒加载路由 handle / react-hook-form + zod / URL 枚举校验）、只读与仅用户侧；按技术栈选模板集。无域（脚手架生成面）。"
+      },
+      "packages/cli/tests/scaffold-backend.spec.ts": {
+        "layer": "L1",
+        "note": "脚手架 S1-6 后端模板集（spring-mybatis-plus@1）：按技术基线选模板集；Maven 多模块与种子；两个面的差异落到代码（权限码 / 访问档、分页、缓存、审计、可见性与属主过滤、暴露字段）；字段分级（脱敏、AES-GCM 加密）；请求校验与错误体同源接口文档；无拼接 SQL；控制器与规格独立对照。无域（脚手架生成面）。"
       }
     },
     "notes": {

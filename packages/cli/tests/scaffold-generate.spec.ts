@@ -256,6 +256,18 @@ describe("generate：生成记账与写入约束", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  /** 后端技术基线（scaffold 按它选后端模板集；null = 不写 stack.yaml）。 */
+  function writeBackendStack(persistence: string | null, extra: Record<string, string> = {}): void {
+    const path = join(dir, ".pomaster", "baseline", "backend", "stack.yaml");
+    if (persistence === null) {
+      rmSync(path, { force: true });
+      return;
+    }
+    mkdirSync(join(dir, ".pomaster", "baseline", "backend"), { recursive: true });
+    const values = { language: "java", framework: "spring", persistence, database: "mysql", cache: "none", ...extra };
+    writeFileSync(path, Object.entries(values).map(([key, value]) => `${key}: ${value}`).join("\n") + "\n");
+  }
+
   /** 前端技术基线（scaffold 按它选前端模板集；null = 不写 stack.yaml）。 */
   function writeFrontendStack(framework: string | null, ui = "UNKNOWN"): void {
     const path = join(dir, ".pomaster", "baseline", "frontend", "stack.yaml");
@@ -358,7 +370,7 @@ describe("generate：生成记账与写入约束", () => {
     expect(snapshot()).toEqual(before);
     const plan = await runScaffoldPlan(dir);
     expect(plan.ok).toBe(true);
-    expect(plan.warnings.map((warning) => warning.code)).toEqual(["SCAFFOLD_SPEC_NOT_CONFIRMED"]);
+    expect(plan.warnings.map((warning) => warning.code)).toEqual(["SCAFFOLD_SPEC_NOT_CONFIRMED", "SCAFFOLD_BACKEND_SKIPPED"]);
     expect(plan.result.files.map((file) => `${file.action} ${file.path}`)).toEqual([
       `create ${ADMIN_OAS}`,
       `create ${PUBLIC_OAS}`,
@@ -670,6 +682,77 @@ describe("generate：生成记账与写入约束", () => {
     expect(existsSync(join(dir, "frontend", "admin", "src", "views", "vehicle-model", "VehicleModelList.vue"))).toBe(false);
     expect(existsSync(join(dir, "frontend", "admin", "src", "routes", "vehicle-model", "list.tsx"))).toBe(true);
     expect(read(`${MIGRATION_DIR}/V1__create_vehicle_model.sql`)).toBe(v1);
+  });
+
+  it("后端技术栈是 MyBatis-Plus → 生成 spring-mybatis-plus 后端：受管文件登记清单与 KEYBINDING，种子只写一次且不受管", async () => {
+    await confirmed();
+    writeBackendStack("mybatis-plus");
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.warnings.map((warning) => warning.code)).not.toContain("SCAFFOLD_BACKEND_SKIPPED");
+    const CORE = "backend/fleet-core/src/main/java/com/example/fleet/core";
+    const ADMIN_WEB = "backend/fleet-admin-api/src/main/java/com/example/fleet/adminapi/web";
+    for (const path of ["backend/pom.xml", `${CORE}/service/VehicleModelService.java`, `${ADMIN_WEB}/VehicleModelAdminController.java`, `${ADMIN_WEB}/ProblemHandler.java`]) {
+      expect(outcome.result.written).toContain(path);
+    }
+    expect(outcome.result.seeded).toEqual([
+      "backend/fleet-support/pom.xml",
+      "backend/fleet-support/src/main/java/com/example/fleet/support/package-info.java",
+      "backend/fleet-support/src/main/resources/support-admin.yml",
+      "backend/fleet-support/src/main/resources/support-public.yml",
+    ]);
+    const manifestRead = await readGenerationManifest(dir);
+    if (manifestRead.kind !== "ok") throw new Error("manifest");
+    const manifest = manifestRead.manifest;
+    expect(manifest.template_sets.map((set) => set.id)).toEqual(["mysql-flyway", "openapi-3.1", "spring-mybatis-plus", "vue-antd-admin"]);
+    const canonical = (path: string): string | undefined => manifest.files.find((file) => file.path === path)?.canonical_id;
+    expect(canonical("backend/pom.xml")).toBe("CAPABILITY.SCAFFOLD.FLEET.BACKEND.BUILD");
+    expect(canonical(`${CORE}/security/Actors.java`)).toBe("CAPABILITY.SCAFFOLD.FLEET.BACKEND.CORE");
+    expect(canonical(`${ADMIN_WEB}/ProblemHandler.java`)).toBe("CAPABILITY.SCAFFOLD.FLEET.BACKEND.ADMIN");
+    expect(canonical(`${ADMIN_WEB}/VehicleModelAdminController.java`)).toBe(scaffoldEntityCanonicalId("fleet", "vehicle_model"));
+    expect(manifest.files.some((file) => file.path.includes("fleet-support"))).toBe(false);
+    for (const file of manifest.files) {
+      expect(existsSync(join(dir, ".pomaster", "truth", "keybindings", `${file.keybinding_id.toLowerCase()}.json`)), file.path).toBe(true);
+    }
+
+    // 种子归项目：改了不算手改、再生成零写入；删了会补回，仍不进清单。
+    writeFileSync(join(dir, "backend", "fleet-support", "pom.xml"), "<!-- 项目自己的依赖 -->\n");
+    const again = await runScaffoldGenerate(dir);
+    expect(again.ok, again.errors[0]?.message).toBe(true);
+    expect(again.result.no_change).toBe(true);
+    expect(again.result.seeded).toEqual([]);
+    expect(read("backend/fleet-support/pom.xml")).toBe("<!-- 项目自己的依赖 -->\n");
+    rmSync(join(dir, "backend", "fleet-support", "src", "main", "resources", "support-public.yml"));
+    const reseed = await runScaffoldGenerate(dir);
+    expect(reseed.result.no_change).toBe(true);
+    expect(reseed.result.seeded).toEqual(["backend/fleet-support/src/main/resources/support-public.yml"]);
+  });
+
+  it("后端技术栈是 JPA / 还没定 → 不生成后端文件，警告 SCAFFOLD_BACKEND_SKIPPED 并说明原因", async () => {
+    await confirmed();
+    writeBackendStack("jpa");
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
+    expect(outcome.result.written.filter((path) => path.endsWith(".java") || path.endsWith("pom.xml"))).toEqual([]);
+    expect(outcome.result.seeded).toEqual([]);
+    const warning = outcome.warnings.find((item) => item.code === "SCAFFOLD_BACKEND_SKIPPED");
+    expect(warning?.message).toContain("jpa");
+    writeBackendStack(null);
+    const plan = await runScaffoldPlan(dir);
+    expect(plan.warnings.find((item) => item.code === "SCAFFOLD_BACKEND_SKIPPED")?.hint).toContain("pomaster baseline set backend persistence");
+  });
+
+  it("后端控制器被手改 → 拒绝生成且零写入", async () => {
+    await confirmed();
+    writeBackendStack("mybatis-plus");
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    const controller = "backend/fleet-admin-api/src/main/java/com/example/fleet/adminapi/web/VehicleModelAdminController.java";
+    writeFileSync(join(dir, ...controller.split("/")), read(controller).replace('@RequirePermission("fleet:vehicle_model:delete")', ""));
+    const before = snapshot();
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_GENERATED_FILE_MODIFIED"]);
+    expect(outcome.errors[0]?.message).toContain(controller);
+    expect(snapshot()).toEqual(before);
   });
 
   it("CLI：scaffold plan / generate --json 信封与退出码", async () => {

@@ -4,7 +4,7 @@
  * 与 Vue 模板集（scaffold-frontend.ts，`vue-antd-admin@1`）生成同一组能力，按 React 栈的前端架构写（规范 ARCH.*）：
  * - api/<实体>.ts：接口客户端（与 OpenAPI 同源）+ TanStack Query 的查询与变更 hooks，写后按 key 失效；
  * - routes/<实体>/list.tsx：列表页（筛选区 + 表格 + 分页，筛选与页码进地址栏的搜索参数）；
- * - features/<实体>/：编辑对话框（react-hook-form + zod，校验取字段约束，带 version 乐观锁，422 字段错误挂回字段）与模块公开入口；
+ * - features/<实体>/：编辑对话框（react-hook-form + zod，校验取字段约束，带 version 乐观锁，接口回的字段错误挂回字段）与模块公开入口；
  * - routes/<实体>/route.ts 与 routes/scaffold.ts：与路由库无关的路由描述（懒加载 + handle 声明登录、权限码、布局），
  *   项目按基线选定的路由库接入（React Router 的 lazy / TanStack Router 的 lazyRouteComponent）；
  * - 公共文件：请求封装（与 Vue 模板同一份）、格式化注册表、权限判断、文案取值、搜索参数状态。
@@ -632,7 +632,7 @@ function renderForm(entity: NormalizedEntity): string {
       : has(entity, "update")
         ? "{ id: record?.id, version: record?.version, body }"
         : "{ body }";
-  return `${HEADER(`${entity.name_zh}编辑对话框`)}// 表单用 react-hook-form + zod，规则取字段约束（ARCH.FORMS）；带 version 乐观锁，409 提示刷新，422 的字段错误挂回字段。
+  return `${HEADER(`${entity.name_zh}编辑对话框`)}// 表单用 react-hook-form + zod，规则取字段约束（ARCH.FORMS）；带 version 乐观锁，409 提示刷新，接口回的字段错误（field_errors 的 pointer）挂回字段。
 // 对话框关闭时内容卸载，下次打开按当前记录重新初始化表单（不靠 effect 同步）。
 import { ${usesController ? "Controller, " : ""}useForm, type DefaultValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -694,13 +694,16 @@ function ${n.pascal}Form({ record, onDone }: { readonly record: ${n.pascal} | nu
       toast.success(t("${n.camel}.messages.saved"));
       onDone();
     } catch (error) {
-      if (error instanceof ApiError && error.problem.status === 409) {
+      const fieldErrors = error instanceof ApiError ? (error.problem.field_errors ?? []) : [];
+      if (fieldErrors.length > 0) {
+        // 400 校验失败、409 唯一值冲突：pointer（如 /businessCode）指回字段，挂到表单上。
+        for (const item of fieldErrors) {
+          const field = item.pointer.replace(/^\\//, "");
+          if (field in EMPTY) setError(field as keyof Values, { message: item.detail });
+        }
+      } else if (error instanceof ApiError && error.problem.status === 409) {
         toast.warning(t("${n.camel}.messages.conflict"));
         onDone();
-      } else if (error instanceof ApiError && error.problem.status === 422 && (error.problem.field_errors ?? []).length > 0) {
-        for (const item of error.problem.field_errors ?? []) {
-          if (item.field in EMPTY) setError(item.field as keyof Values, { message: item.message });
-        }
       } else if (error instanceof ApiError) {
         toast.error(error.problem.detail ?? t("${n.camel}.messages.saveFailed"));
       } else {

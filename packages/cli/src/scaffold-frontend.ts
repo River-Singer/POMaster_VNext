@@ -86,9 +86,10 @@ export function renderHttp(basePath: string, header: (what: string) => string = 
 // 会话走服务端下发的 HttpOnly Cookie（credentials: include），这里不读写任何浏览器存储（SESSION.STORAGE）。
 // 失败统一成 RFC 9457 problem（code / trace_id / field_errors），由页面按状态码分类呈现（ERRH）。
 
+/** 字段级错误：pointer 是 JSON Pointer（如 /businessCode），与接口文档的 Problem.field_errors 同形。 */
 export interface FieldError {
-  readonly field: string;
-  readonly message: string;
+  readonly detail: string;
+  readonly pointer: string;
 }
 
 export interface Problem {
@@ -705,7 +706,10 @@ async function submit(): Promise<void> {
     emit("saved");
     close();
   } catch (error) {
-    if (error instanceof ApiError && error.problem.status === 409) {
+    const fieldErrors = error instanceof ApiError ? (error.problem.field_errors ?? []) : [];
+    if (fieldErrors.length > 0) {
+      message.error(fieldErrors[0]?.detail ?? t("${n.camel}.messages.saveFailed"));
+    } else if (error instanceof ApiError && error.problem.status === 409) {
       message.warning(t("${n.camel}.messages.conflict"));
       emit("saved");
     } else if (error instanceof ApiError) {

@@ -7,7 +7,7 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）、S1-5（接口层：每个面一份 OpenAPI 3.1）与 S1-7（管理侧前端）。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）、S1-5（接口层：每个面一份 OpenAPI 3.1）、S1-6（后端层）与 S1-7（管理侧前端）。
 
 ## 规格进治理
 
@@ -35,9 +35,17 @@ pomaster scaffold generate   # 只按已确认、无漂移的规格生成
 * **只认已确认规格**：未确认 / 漂移 / 不通过一律拒绝（`SCAFFOLD_SPEC_NOT_CONFIRMED` / `SCAFFOLD_SPEC_DRIFT` / `SCAFFOLD_SPEC_INVALID`）。
 * **数据库层（模板集 `mysql-flyway@1`）**：迁移写到 `backend/<app>-core/src/main/resources/db/migration/`，账号授权脚本写到 `backend/db/grants.sql`（不进 Flyway，DBA 按环境执行；口令与来源主机是占位符）。标识符一律反引号引用；敏感个人信息存密文列。
 * **接口层（模板集 `openapi-3.1@1`）**：每个部署面一份文档，`api/openapi/admin.openapi.json` 与 `api/openapi/public.openapi.json`（JSON，确定性键序）。形态取自原型卡：管理侧 OFFSET（`page` / `size`，实体开 `count_total` 时带 `total`）、每个操作标权限码 `x-pomaster-permission`、响应 `Cache-Control: no-store`；用户侧 KEYSET（`after` / `limit`，不返回总数）、每个操作标访问档 `x-pomaster-access`、匿名读带 `Cache-Control` 与 `ETag`、只出现对用户侧暴露的字段。两侧错误都是 RFC 9457 `application/problem+json`（扩展成员 `code` / `trace_id` / `field_errors`），都有 429。修改带 `version` 做乐观锁（冲突 409）。DTO 属性 camelCase；decimal 用带精度 pattern 的字符串；可空字段用 3.1 的 type 数组。认证方式是项目决策位，文档不声明 `securitySchemes`。去掉某个面的全部暴露后，该面文档在下次生成时退役（未被手改时删除文件与 KEYBINDING 行）。
+* **后端按技术基线选模板集（`spring-mybatis-plus@1`）**：读 `.pomaster/baseline/backend/stack.yaml`。`persistence` 是 MyBatis / MyBatis-Plus 才生成；`language`、`framework`、`database` 已定且不是 Java / Spring / MySQL，或 `persistence` 没定、是 JPA 等 → 不生成后端文件并警告 `SCAFFOLD_BACKEND_SKIPPED`（提示先 `pomaster baseline set backend persistence mybatis-plus`）。生成 Maven 多模块（Java 21、Spring Boot 4.1、MyBatis-Plus 3.5，版本随模板集锁定）：
+  * `backend/pom.xml` 父工程；`<app>-core` 领域核心——实体（业务列反引号引用，修改时可空字段能清空）、Mapper（只用参数化的条件构造器，没有拼接的 SQL）、用例服务（一次写一个库事务；修改、删除带 version，不一致 409；唯一值先查再写，并发撞上唯一键同样转成字段级 409；写操作按面审计）、分页（OFFSET 多取一条判断下一页；KEYSET 游标不透明，可空排序键按 MySQL 空值顺序接续）、扩展点接口；
+  * `<app>-admin-api` 管理侧应用：每个接口声明规格里的权限码，没声明的一律 403；页长 ≤ 200；响应 `no-store`；写操作严格审计（前后值，个人信息脱敏，敏感个人信息不记值）；数据范围交给项目的 `DataScopePolicy`；
+  * `<app>-public-api` 用户侧应用：每个接口声明访问档，没声明的一律拒绝；可见性条件与属主过滤写进每条查询（不满足按 404）；只出现对用户侧暴露的字段；匿名读 `Cache-Control: public, max-age` 加 ETag（`If-None-Match` 命中 304），其余 `private, no-store`；
+  * 两侧错误都是 `application/problem+json`，成员与接口文档的 Problem 同形（`field_errors[{detail, pointer}]`），意外异常只回 trace_id 不回内部细节；先限流（429 带 `Retry-After`）再鉴权；管理端点独立端口（管理侧绑内网地址、用户侧只绑本机）；
+  * 字段分级落到代码：个人信息管理侧脱敏回显（修改时提交脱敏值视为没改）；敏感个人信息 AES-256-GCM 加密存储（与密文列同一格式），密钥从 `pomaster.field-encryption.key` 注入，没配启动即失败。日期、数字型个人信息管理侧不脱敏（保持类型），日志与审计照样按分级处理；
+  * 应用账号只有 `grants.sql` 授的数据权限，应用不跑迁移；迁移用迁移账号 `mvn -pl <app>-core flyway:migrate`。表级授权要在迁移建表之后执行。
+* **项目自有模块是种子**：`<app>-support`（pom、扩展点说明、两份配置覆盖文件 `support-admin.yml` / `support-public.yml`）只在目标位置没有文件时写一次，不进生成清单、不登记 KEYBINDING，之后归项目所有——认证（`ActorProvider`，没有实现时需要登录的接口一律 401）、数据范围、共享限流、审计落点在这里实现，项目选的依赖加在这里。被删了下次生成会补回。
 * **管理侧前端按技术基线选模板集**：读 `.pomaster/baseline/frontend/stack.yaml` 的 `framework`（与 `ui`）。Vue → `vue-antd-admin@1`；React → `react-geist-admin@1`；`ui` 已选但不配套（如 React + Ant Design）、别的框架、或技术栈还没定 → 不生成前端文件并警告 `SCAFFOLD_FRONTEND_SKIPPED`（提示先 `pomaster baseline set frontend framework …`）。框架不替项目选技术栈。生成清单只记这次用到的模板集；技术栈从 Vue 改成 React 后再生成，Vue 文件退役、React 文件新建，迁移与接口文档不动。
 * **Vue 3 + ant-design-vue（`vue-antd-admin@1`）**：写到 `frontend/admin/src/`。每个管理侧实体一份接口客户端（`api/<实体>.ts`，类型与管理侧 OpenAPI 同源，decimal 是字符串）、列表页（`views/<实体>/<类名>List.vue`：可检索的字符串与枚举字段进查询区，表格数字右对齐、操作列在最右，筛选、页码与每页条数进 URL，切换时取消上一次请求，删除走气泡确认并带 version）、编辑抽屉（`<类名>Form.vue`：有新建或修改时生成，宽 378，校验规则取必填 / 长度 / 范围，带 version 提交，409 提示刷新）、路由（`router/<实体>.ts`：按需加载，meta 声明登录与权限码，权限码与接口文档的 `x-pomaster-permission` 同源）与 zh-CN 文案（`locales/zh-CN/<实体>.ts`）。公共文件：请求封装 `api/http.ts`（会话走 HttpOnly Cookie，不碰浏览器存储；失败归一成 RFC 9457 problem）、格式化注册表 `utils/format.ts`、权限判断 `auth/permission.ts`，以及文案与路由的汇总入口。生成物照设计规范写——界面文字只在文案字典、日期数字只经格式化注册表、组件不直接发请求——项目采用 Ant Design 规范后 `pomaster design check` 零违规。用户侧（Vant）前端在后续切片。
-* **React + shadcn/ui（`react-geist-admin@1`）**：同样写到 `frontend/admin/src/`，按 React 栈的前端架构分目录（规范 ARCH.*）。`api/<实体>.ts` 是接口客户端加 TanStack Query 的查询与变更 hooks（翻页保留上一页数据，写后按 key 失效）；`routes/<实体>/list.tsx` 是列表页（筛选、页码、每页条数进地址栏，枚举筛选只认规格里的取值，删除走气泡确认并带 version）；`features/<实体>/<类名>EditDialog.tsx` 是编辑对话框（react-hook-form + zod，规则取必填 / 长度 / 范围 / decimal 精度，带 version 提交，409 提示刷新，422 的字段错误挂回字段），`features/<实体>/index.ts` 是模块公开入口；`routes/<实体>/route.ts` 与 `routes/scaffold.ts` 是与路由库无关的路由描述（懒加载 + `handle` 声明登录、权限码、标题、布局），按基线选定的路由库接入。公共文件：请求封装 `api/http.ts`（与 Vue 模板同一份）、`lib/format.ts`、`lib/permission.ts`、`lib/i18n.ts`（文案取值）、`lib/url-state.ts`（地址栏搜索参数）与文案、路由汇总。组件从项目的 `components/ui` 引入（shadcn/ui 源码进项目），依赖 @tanstack/react-query、react-hook-form、zod、@hookform/resolvers、sonner、lucide-react。项目采用 Geist 规范后 `pomaster design check` 零违规。
+* **React + shadcn/ui（`react-geist-admin@1`）**：同样写到 `frontend/admin/src/`，按 React 栈的前端架构分目录（规范 ARCH.*）。`api/<实体>.ts` 是接口客户端加 TanStack Query 的查询与变更 hooks（翻页保留上一页数据，写后按 key 失效）；`routes/<实体>/list.tsx` 是列表页（筛选、页码、每页条数进地址栏，枚举筛选只认规格里的取值，删除走气泡确认并带 version）；`features/<实体>/<类名>EditDialog.tsx` 是编辑对话框（react-hook-form + zod，规则取必填 / 长度 / 范围 / decimal 精度，带 version 提交，409 提示刷新，接口回的字段错误按 `field_errors` 的 pointer 挂回字段），`features/<实体>/index.ts` 是模块公开入口；`routes/<实体>/route.ts` 与 `routes/scaffold.ts` 是与路由库无关的路由描述（懒加载 + `handle` 声明登录、权限码、标题、布局），按基线选定的路由库接入。公共文件：请求封装 `api/http.ts`（与 Vue 模板同一份）、`lib/format.ts`、`lib/permission.ts`、`lib/i18n.ts`（文案取值）、`lib/url-state.ts`（地址栏搜索参数）与文案、路由汇总。组件从项目的 `components/ui` 引入（shadcn/ui 源码进项目），依赖 @tanstack/react-query、react-hook-form、zod、@hookform/resolvers、sonner、lucide-react。项目采用 Geist 规范后 `pomaster design check` 零违规。
 * **迁移只追加**：生成过的迁移永不重写（Flyway 校验和）。规格变化时按「上次生成时的规格快照 → 现规格」求差，追加新迁移；版本号从盘上已有迁移（含手工迁移）的最大值往上加。只自动生成加法变化（新实体、新可空字段、加长、放宽必填、decimal 只加整数位、加唯一 / 检索索引、枚举加值、用户侧列表索引重建）。删实体、删字段、改类型、收窄、新增必填字段、去唯一、枚举去值、属主增删等需要数据迁移的变化拒绝（`SCAFFOLD_MIGRATION_NOT_ADDITIVE`），逐条列出。
 * **生成清单** `.pomaster/scaffold/generation-manifest.json`：每个受管文件的路径、sha256、模板、覆盖实体、是否不可变、对应 KEYBINDING 与治理 id；上次生成的规格快照；模板集版本；history 只追加。journal 追加 `SCAFFOLD_GENERATED`。已最新 → `NO_CHANGE` 零写入。
 * **不覆盖手改**：受管文件被手改或删除、或目标位置已有内容不同的不受管文件 → 拒绝生成且零写入（`SCAFFOLD_GENERATED_FILE_MODIFIED`）。内容相同的同名文件直接纳管（中断后恢复）。
@@ -58,7 +66,7 @@ pomaster check --gates           # 其中 GATE.SCAFFOLD.CONSISTENCY 同一判卷
 | 清单 ↔ 文件 | `SCAFFOLD_GENERATED_FILE_MODIFIED` / `SCAFFOLD_MANIFEST_MALFORMED` / `SCAFFOLD_TEMPLATE_SET_CHANGED` | 受管文件现盘 sha256 与清单一致，没被手改或删除 |
 | 生成新鲜度 | `SCAFFOLD_GENERATION_STALE` | 规格改了、确认了，就要重新生成（与已确认摘要比；现盘漂移由规格治理那一项报，不重复） |
 | KEYBINDING 在册 | `SCAFFOLD_KEYBINDING_MISSING` | 每个受管文件都有绑定行且锚对得上——写入约束的前提；`scaffold generate` 会补回 |
-| 接口文档 ↔ 规格 | `SCAFFOLD_CONTRACT_DRIFT` | 不依赖生成器自证，从规格独立推出约束逐条对照：接口与规格暴露的操作一一对应、用户侧不出现未暴露的字段、每个操作都标了授权结构；缺某个面的文档也算 |
+| 接口 ↔ 规格 | `SCAFFOLD_CONTRACT_DRIFT` | 不依赖生成器自证，从规格独立推出约束逐条对照：接口文档与规格暴露的操作一一对应、用户侧不出现未暴露的字段、每个操作都标了授权结构；缺某个面的文档也算。生成了后端时，每个控制器的接口数、权限码 / 访问档与规格对照，用户侧视图不出现未暴露字段 |
 | 手工迁移 | （警告 `SCAFFOLD_UNMANAGED_MIGRATION`） | 迁移目录里不在清单的迁移逐个列出，不阻断 |
 
 规格缺席 = 项目没用脚手架，门不适用（`check --gates` 记 `not_configured`，closeout 不阻断）。规格已确认但从未生成只警告（`SCAFFOLD_NOT_GENERATED`）。closeout 对上表的失败码阻断。

@@ -15,7 +15,8 @@
  *
  * 受管文件被手改（sha 与清单不符）或被删 → 拒绝生成并列出冲突，不静默覆盖手改；
  * 清单之外已存在且内容不同的同名文件同样拒绝（内容相同则直接纳管，用于中断后恢复）。
- * 生成区粒度：S1-3 只有整文件受管（迁移、授权脚本）。
+ * 生成区粒度：整文件受管（迁移、授权脚本、接口文档、前端、后端）。另有少量种子文件（后端的项目自有模块）：
+ * 只在目标位置没有文件时写一次，不进生成清单、不登记 KEYBINDING，之后归项目所有。
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
@@ -40,6 +41,15 @@ import { OPENAPI_TEMPLATE_SET, openApiPath, renderOpenApi } from "./scaffold-ope
 import { FRONTEND_TEMPLATE_SET, renderAdminFrontend, type FrontendFile, type FrontendTemplateId } from "./scaffold-frontend.js";
 import { REACT_FRONTEND_TEMPLATE_SET, renderAdminFrontendReact, type ReactFrontendTemplateId } from "./scaffold-frontend-react.js";
 import { chooseFrontendTemplate, type FrontendTemplateChoice } from "./scaffold-frontend-stack.js";
+import {
+  BACKEND_TEMPLATE_SET,
+  chooseBackendTemplate,
+  renderBackend,
+  type BackendPart,
+  type BackendTemplateChoice,
+  type BackendTemplateId,
+  type SeedFile,
+} from "./scaffold-backend.js";
 import type { NormalizedDomainSpec } from "./scaffold-spec.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE, SCAFFOLD_GENERATION_MANIFEST_RELATIVE, journalFilePath } from "./store-layout.js";
 
@@ -48,7 +58,14 @@ export const SCAFFOLD_GENERATED_EVENT = "SCAFFOLD_GENERATED";
 /** 脚手架受管文件在 KEYBINDING 上的治理 id 前缀（hook 据此给出「改规格再生成」的指路）。 */
 export const SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD.";
 
-export type ScaffoldTemplateId = "mysql.migration" | "mysql.grants" | "openapi.admin" | "openapi.public" | FrontendTemplateId | ReactFrontendTemplateId;
+export type ScaffoldTemplateId =
+  | "mysql.migration"
+  | "mysql.grants"
+  | "openapi.admin"
+  | "openapi.public"
+  | FrontendTemplateId
+  | ReactFrontendTemplateId
+  | BackendTemplateId;
 
 /** 当前生效的模板集（清单逐个记录版本；版本变了要单独评估升级）。 */
 export const SCAFFOLD_TEMPLATE_SETS: readonly { readonly id: string; readonly version: string }[] = [
@@ -56,6 +73,7 @@ export const SCAFFOLD_TEMPLATE_SETS: readonly { readonly id: string; readonly ve
   OPENAPI_TEMPLATE_SET,
   FRONTEND_TEMPLATE_SET,
   REACT_FRONTEND_TEMPLATE_SET,
+  BACKEND_TEMPLATE_SET,
 ];
 
 export interface ScaffoldManagedFile {
@@ -161,6 +179,11 @@ export function scaffoldUiCanonicalId(appKey: string, surface: "admin" | "public
   return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.UI.${idSegment(surface)}`;
 }
 
+/** 后端不属于单个实体的文件：构建（BUILD）、领域核心公共件（CORE）、两个应用的公共件（ADMIN / PUBLIC）。 */
+export function scaffoldBackendCanonicalId(appKey: string, part: BackendPart): string {
+  return `${SCAFFOLD_CANONICAL_PREFIX}${idSegment(appKey)}.BACKEND.${part}`;
+}
+
 function keybindingId(appKey: string, fileSegment: string): string {
   return `KEYBINDING.SCAFFOLD.${idSegment(appKey)}.${idSegment(fileSegment)}`;
 }
@@ -216,13 +239,16 @@ export interface ScaffoldPlanResult {
   readonly statements: readonly SchemaChangeStatement[];
   readonly blocked: readonly BlockedSchemaChange[];
   readonly conflicts: readonly GenerationConflict[];
-  /** 现规格与上次生成一致、且没有文件要写。 */
+  /** 这次会写的种子文件（目标位置还没有文件；写一次、不受管、之后归项目）。 */
+  readonly seeds: readonly string[];
+  /** 现规格与上次生成一致、且没有受管文件要写（种子不算）。 */
   readonly up_to_date: boolean;
 }
 
 interface InternalPlan {
   readonly result: ScaffoldPlanResult;
   readonly contents: ReadonlyMap<string, string>;
+  readonly seedContents: ReadonlyMap<string, string>;
   readonly spec: NormalizedDomainSpec;
   readonly manifest: ScaffoldGenerationManifest | null;
 }
@@ -254,13 +280,18 @@ function emptyPlan(state: ScaffoldSpecState | null): ScaffoldPlanResult {
     statements: [],
     blocked: [],
     conflicts: [],
+    seeds: [],
     up_to_date: false,
   };
 }
 
-/** 这次生成用到的模板集：数据库、接口文档，加上按基线技术栈选中的前端模板集（没选中就不记）。 */
-export function activeTemplateSets(frontend: FrontendTemplateChoice): { readonly id: string; readonly version: string }[] {
+/** 这次生成用到的模板集：数据库、接口文档，加上按基线技术栈选中的后端与前端模板集（没选中就不记）。 */
+export function activeTemplateSets(
+  frontend: FrontendTemplateChoice,
+  backend: BackendTemplateChoice = { kind: "none", reason_zh: "", hint: "" },
+): { readonly id: string; readonly version: string }[] {
   const sets: { readonly id: string; readonly version: string }[] = [MYSQL_TEMPLATE_SET, OPENAPI_TEMPLATE_SET];
+  if (backend.kind === "spring-mybatis-plus") sets.push(BACKEND_TEMPLATE_SET);
   if (frontend.kind === "vue-antd") sets.push(FRONTEND_TEMPLATE_SET);
   if (frontend.kind === "react-geist") sets.push(REACT_FRONTEND_TEMPLATE_SET);
   return sets.map((set) => ({ ...set }));
@@ -280,6 +311,7 @@ async function buildPlan(
   state: ScaffoldSpecState,
   manifest: ScaffoldGenerationManifest | null,
   frontend: FrontendTemplateChoice,
+  backend: BackendTemplateChoice,
 ): Promise<InternalPlan> {
   const layout = dbLayout(spec);
   const contents = new Map<string, string>();
@@ -368,6 +400,20 @@ async function buildPlan(
       canonicalId: scaffoldApiCanonicalId(spec.app.key, surface),
     });
   }
+  // 后端（S1-6）：按基线技术栈选模板集（spring-mybatis-plus@1）——Maven 父工程、领域核心、管理侧与用户侧两个应用。
+  const backendRender = backend.kind === "spring-mybatis-plus" ? renderBackend(spec) : { files: [], seeds: [] as SeedFile[] };
+  for (const file of backendRender.files) {
+    regenerable.push({
+      path: file.path,
+      content: file.content,
+      template: file.template,
+      entities: file.entities,
+      keybindingSegment: file.keybindingSegment,
+      canonicalId: file.perEntity
+        ? scaffoldEntityCanonicalId(spec.app.key, file.entities[0] as string)
+        : scaffoldBackendCanonicalId(spec.app.key, file.part),
+    });
+  }
   // 管理侧前端（S1-7）：按基线技术栈选模板集（vue-antd-admin@1 / react-geist-admin@1）——接口客户端、列表页、
   // 编辑抽屉或对话框、路由、文案字典与公共文件。
   for (const file of renderAdminFrontendFor(spec, frontend)) {
@@ -434,19 +480,27 @@ async function buildPlan(
     }
   }
 
+  // 种子：目标位置没有文件才写（有了就归项目，不比较内容、不受管）。
+  const seedContents = new Map<string, string>();
+  for (const seed of backendRender.seeds) {
+    if (managedByPath.has(seed.path) || existsSync(join(rootDir, ...seed.path.split("/")))) continue;
+    seedContents.set(seed.path, seed.content);
+  }
+
   const writes = files.filter((file) => file.action !== "unchanged");
   const result: ScaffoldPlanResult = {
     spec_state: state,
     spec_semantic_sha256: specDigest,
-    template_sets: activeTemplateSets(frontend),
+    template_sets: activeTemplateSets(frontend, backend),
     previous_spec_semantic_sha256: manifest?.spec_semantic_sha256 ?? null,
     files: [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
     statements: diff.statements,
     blocked: diff.blocked,
     conflicts,
+    seeds: [...seedContents.keys()].sort(),
     up_to_date: writes.length === 0 && manifest?.spec_semantic_sha256 === specDigest,
   };
-  return { result, contents, spec, manifest };
+  return { result, contents, seedContents, spec, manifest };
 }
 
 interface PlanInputs {
@@ -503,12 +557,16 @@ async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undef
   if (assessment.normalized === null || assessment.semantic_sha256 === null) {
     return { plan: null, errors: [stateError ?? specStateError("invalid", null)!], warnings, state: assessment.state };
   }
+  const backend = await chooseBackendTemplate(rootDir);
+  if (backend.kind === "none") {
+    warnings.push({ code: "SCAFFOLD_BACKEND_SKIPPED", message: `没有生成后端文件：${backend.reason_zh}`, hint: backend.hint });
+  }
   const frontend = await chooseFrontendTemplate(rootDir);
   const wantsFrontend = assessment.normalized.entities.some((entity) => entity.exposure.admin?.operations.includes("list") === true) && assessment.normalized.surfaces.admin !== undefined;
   if (frontend.kind === "none" && wantsFrontend) {
     warnings.push({ code: "SCAFFOLD_FRONTEND_SKIPPED", message: `没有生成管理侧前端文件：${frontend.reason_zh}`, hint: frontend.hint });
   }
-  const plan = await buildPlan(rootDir, assessment.normalized, assessment.semantic_sha256, assessment.state, manifest, frontend);
+  const plan = await buildPlan(rootDir, assessment.normalized, assessment.semantic_sha256, assessment.state, manifest, frontend, backend);
   return { plan, errors: [], warnings, state: assessment.state };
 }
 
@@ -585,6 +643,7 @@ function planHuman(result: ScaffoldPlanResult): string[] {
   }
   const unchanged = result.files.filter((file) => file.action === "unchanged").length;
   if (unchanged > 0) lines.push(`  不变 ${unchanged} 个受管文件`);
+  for (const seed of result.seeds) lines.push(`  种子 ${seed}（只写这一次，之后归项目所有，不受管）`);
   for (const item of result.blocked) {
     lines.push(`  [拒绝] ${item.entity}${item.field === null ? "" : `.${item.field}`}：${item.reason_zh}`);
   }
@@ -637,6 +696,8 @@ export interface ScaffoldGenerateInput {
 export interface ScaffoldGenerateResult extends ScaffoldPlanResult {
   readonly at_seq: number | null;
   readonly written: readonly string[];
+  /** 这次写下的种子文件（不受管）。 */
+  readonly seeded: readonly string[];
   readonly keybindings_written: readonly string[];
   readonly retired: readonly string[];
   readonly no_change: boolean;
@@ -660,7 +721,7 @@ export async function runScaffoldGenerate(
   ): CommandOutcome<ScaffoldGenerateResult> =>
     failOutcome(
       "scaffold generate",
-      { ...plan, at_seq: null, written: [], keybindings_written: [], retired: [], no_change: false },
+      { ...plan, at_seq: null, written: [], seeded: [], keybindings_written: [], retired: [], no_change: false },
       errors,
       [...planHuman(plan), ...errors.map((error) => `${error.code}: ${error.message}\n  → ${error.hint}`)],
       warnings,
@@ -671,9 +732,28 @@ export async function runScaffoldGenerate(
   const deps = input.catalogRoot !== undefined ? { catalogRoot: input.catalogRoot } : undefined;
   const prepared = await preparePlan(rootDir, deps, true);
   if (prepared.plan === null) return failed(emptyPlan(prepared.state), prepared.errors, prepared.warnings);
-  const { result: plan, contents, spec, manifest } = prepared.plan;
+  const { result: plan, contents, seedContents, spec, manifest } = prepared.plan;
   if (plan.conflicts.length > 0) return failed(plan, [conflictError(plan.conflicts)]);
   if (plan.blocked.length > 0) return failed(plan, [blockedError(plan.blocked)]);
+
+  // 种子先写：与受管文件无关，写过即归项目（下次计划看到文件已在就跳过）。
+  const seeded: string[] = [];
+  try {
+    for (const [path, content] of seedContents) {
+      const target = join(rootDir, ...path.split("/"));
+      if (existsSync(target)) continue;
+      await writeAtomic(target, content);
+      seeded.push(path);
+    }
+  } catch (error) {
+    return failed(plan, [
+      {
+        code: "INVALID_STATE",
+        message: `种子文件写入失败：${(error as Error).message}（已写 ${seeded.length} 个）`,
+        hint: "检查目录写权限后重跑 pomaster scaffold generate。",
+      },
+    ]);
+  }
 
   // 受管文件在、KEYBINDING 行也都在 → 零写入。
   const keybindingDir = join(rootDir, ...KEYBINDINGS_DIR_RELATIVE.split("/"));
@@ -683,8 +763,12 @@ export async function runScaffoldGenerate(
   if (plan.up_to_date && missingRows.length === 0) {
     return okOutcome(
       "scaffold generate",
-      { ...plan, at_seq: manifest?.at_seq ?? null, written: [], keybindings_written: [], retired: [], no_change: true },
-      ["NO_CHANGE：现规格与上次生成一致，受管文件与 KEYBINDING 都在册，零写入。"],
+      { ...plan, at_seq: manifest?.at_seq ?? null, written: [], seeded, keybindings_written: [], retired: [], no_change: true },
+      [
+        seeded.length === 0
+          ? "NO_CHANGE：现规格与上次生成一致，受管文件与 KEYBINDING 都在册，零写入。"
+          : `NO_CHANGE：受管文件与 KEYBINDING 都在册；补写了 ${seeded.length} 个缺失的种子文件（不受管）。`,
+      ],
       prepared.warnings,
     );
   }
@@ -787,12 +871,12 @@ export async function runScaffoldGenerate(
 
   const human = [
     ...planHuman(plan),
-    `已生成：写 ${written.length} 个文件${retired.length > 0 ? `，退役 ${retired.length} 个` : ""}，登记 ${keybindingsWritten.length} 行 KEYBINDING，清单 ${SCAFFOLD_GENERATION_MANIFEST_RELATIVE}（at_seq=${seq}）。`,
+    `已生成：写 ${written.length} 个文件${seeded.length > 0 ? `、${seeded.length} 个种子文件` : ""}${retired.length > 0 ? `，退役 ${retired.length} 个` : ""}，登记 ${keybindingsWritten.length} 行 KEYBINDING，清单 ${SCAFFOLD_GENERATION_MANIFEST_RELATIVE}（at_seq=${seq}）。`,
     "生成文件受管：活跃执行期内手改会被 exec-guard 拦下；要改就改规格 → scaffold confirm --change → scaffold generate。",
   ];
   return okOutcome(
     "scaffold generate",
-    { ...plan, at_seq: seq, written, keybindings_written: keybindingsWritten, retired, no_change: false },
+    { ...plan, at_seq: seq, written, seeded, keybindings_written: keybindingsWritten, retired, no_change: false },
     human,
     prepared.warnings,
   );
