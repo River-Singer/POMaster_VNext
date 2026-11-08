@@ -17,14 +17,19 @@ Vue 栈对应的是另一个抽屉「Vue · Ant Design」。两个抽屉的规�
   人工评审）和实时渲染的「这样做 / 别这样做」。页面由 `packages/cli/seeds/design-standards/geist.yaml` 生成，
   AI 读同源的孪生 `packages/studio-react/twin/design-standard.geist.json`（或
   `pomaster design show --system geist --json`）。
-- **Geist 组件**：项目里每个 shadcn 组件一页（`src/components/ui/` 下的源码），展示变体、尺寸和状态，
-  带实验场的可以直接调属性。组件源码进项目、由项目维护，这是 shadcn/ui 的用法：不装组件包，组件文件就是项目代码。
+- **Geist 组件**：组件类型取两套设计系统的并集——统一骨架里的 97 个组件领域每个一页，按骨架分组（通用、布局、导航、
+  数据录入、数据展示、反馈、其他）排，和「规范/组件」的目录一一对应。Geist / shadcn/ui / Radix 有的直接用；Geist 没有、
+  只有 Ant Design 有的（级联选择、穿梭框、树选择、评分、水印、固钉、二维码……）按 antd 的能力、用 Geist 的 token
+  （色阶、排版类、圆角、投影）自己做。每页展示变体、尺寸和状态，带实验场的可以直接调属性。组件源码都在
+  `src/components/ui/`，进项目、由项目维护，这是 shadcn/ui 的用法：不装组件包，组件文件就是项目代码。
 - **Foundations / Geist（说明）**：组件和主题从哪来、哪些是近似。
 
 ## 组件与 Radix
 
-选择器、多选、单选、标签页、下拉菜单、对话框、气泡卡片、文字提示、进度条、开关、分隔线建在 Radix
-（`radix-ui`）之上：焦点管理、键盘操作、读屏语义由 Radix 负责，组件只管样子。按钮在 Radix 的 `asChild`
+选择器、多选、单选、标签页、下拉菜单、右键菜单、对话框、危险确认、抽屉、气泡卡片、文字提示、折叠面板、头像、
+滑块、分段控制器、滚动区、进度条、开关、分隔线建在 Radix（`radix-ui`）之上：焦点管理、键盘操作、读屏语义由 Radix
+负责，组件只管样子。Radix 没有的交互（可搜索选择、级联、树、日历、穿梭框、提及、评分、通知仓库）在组件里按 WAI-ARIA
+的模式自己实现，二维码的编码器在 `src/lib/qrcode.ts`（不为它引依赖）。按钮在 Radix 的 `asChild`
 里当触发元素时会收到 ref，所以 `Button` 用 `forwardRef` 写（项目用 React 18）。
 
 ## 改规范、看效果
@@ -33,5 +38,6 @@ Vue 栈对应的是另一个抽屉「Vue · Ant Design」。两个抽屉的规�
   重新生成规范页和 AI 孪生。项目里落地后的规范用 `pomaster design adopt` / `design set` / `update spec` 维护，
   设置 `POMASTER_STUDIO_PROJECT=<项目目录>` 后规范页从项目规范生成。
 - 组件页是手写的 `src/gallery/*.stories.tsx`：新增或改动 `src/components/ui/` 下的组件时同步改对应的页，
-  `packages/studio-react/tests/gallery.spec.ts` 会检查每个组件都有页。
+  页的 `describe(说明, 骨架领域 key)` 写明它对应哪个组件领域。`packages/studio-react/tests/gallery.spec.ts`
+  检查每个组件都有页、骨架里的每个组件领域都有且只有一页；`gallery-mount.spec.ts` 逐页挂载。
 - 只看这个抽屉：`corepack pnpm studio:react:dev`（端口 6007）；两个抽屉一起看：`corepack pnpm studio:dev`。

@@ -5,9 +5,9 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Table> = {
-  title: "Geist 组件/Table 表格",
+  title: "Geist 组件/数据展示/Table 表格",
   component: Table,
-  parameters: describe("表格骨架（原生 table 语义）：数字列右对齐并用等宽数字，状态用标签，行操作放最后一列。分页、排序、虚拟滚动由数据层负责（见「规范/设计模式/数据呈现/数据网格」）。源码 src/components/ui/table.tsx。"),
+  parameters: describe("表格骨架（原生 table 语义）：数字列右对齐并用等宽数字，状态用标签，行操作放最后一列。分页、排序、虚拟滚动由数据层负责（见「规范/设计模式/数据呈现/数据网格」）。源码 src/components/ui/table.tsx。", "table"),
 };
 export default meta;
 type Story = StoryObj<typeof Table>;

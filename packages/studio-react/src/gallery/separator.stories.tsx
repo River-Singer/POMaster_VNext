@@ -3,9 +3,9 @@ import { Separator } from "../components/ui/separator";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Separator> = {
-  title: "Geist 组件/Separator 分隔线",
+  title: "Geist 组件/布局/Separator 分隔线",
   component: Separator,
-  parameters: describe("Radix Separator：默认是装饰（读屏忽略）；真正分隔两组内容时设 decorative={false}。规则见「规范/组件/通用/分割线」。源码 src/components/ui/separator.tsx。"),
+  parameters: describe("Radix Separator：默认是装饰（读屏忽略）；真正分隔两组内容时设 decorative={false}。规则见「规范/组件/通用/分割线」。源码 src/components/ui/separator.tsx。", "divider"),
 };
 export default meta;
 type Story = StoryObj<typeof Separator>;

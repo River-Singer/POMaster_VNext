@@ -4,9 +4,9 @@ import { Button, ButtonLink } from "../components/ui/button";
 import { Caption, Column, Frame, describe } from "./frame";
 
 const meta: Meta<typeof Button> = {
-  title: "Geist 组件/Button 按钮",
+  title: "Geist 组件/通用/Button 按钮",
   component: Button,
-  parameters: describe("Geist 的按钮：五种变体、四档尺寸；纯图标按钮设 svgOnly 并带 aria-label；loading 时保持可聚焦并报告忙碌。规则见「规范/组件/通用/按钮」。源码 src/components/ui/button.tsx。"),
+  parameters: describe("Geist 的按钮：五种变体、四档尺寸；纯图标按钮设 svgOnly 并带 aria-label；loading 时保持可聚焦并报告忙碌。规则见「规范/组件/通用/按钮」。源码 src/components/ui/button.tsx。", "button"),
   argTypes: {
     variant: { control: "select", options: ["default", "secondary", "tertiary", "error", "warning"] },
     size: { control: "select", options: ["tiny", "small", "medium", "large"] },

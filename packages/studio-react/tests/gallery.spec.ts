@@ -1,5 +1,6 @@
 // React · Geist 抽屉的「Geist 组件」分区：src/components/ui/ 下的每个组件都有组件页（被某个 src/gallery/*.stories.tsx
-// 引用），每页挂在「Geist 组件/」下；本包不再引用 antd（Geist 抽屉只放 React 栈自己的组件与规范）。
+// 引用），每页挂在「Geist 组件/<骨架分组>/」下；组件类型取两套设计系统的并集——统一骨架里的每个组件领域都有且只有一页
+// （Geist / shadcn 没有的，用 Geist 的 token 自己做）；本包不再引用 antd（Geist 抽屉只放 React 栈自己的组件与规范）。
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,6 +27,27 @@ describe("Geist 组件分区", () => {
     expect(modules.length).toBeGreaterThanOrEqual(20);
     const missing = modules.filter((module) => ![...storyText.values()].some((text) => text.includes(`"../components/ui/${module}"`)));
     expect(missing).toEqual([]);
+  });
+
+  it("组件类型取并集：骨架里的每个组件领域（components.*）都有且只有一页，页挂在对应的骨架分组下", () => {
+    const twin = JSON.parse(readFileSync(join(ROOT, "twin", "design-standard.geist.json"), "utf8")) as { areas: Array<{ key: string; group: string; group_title_zh: string }> };
+    const areas = twin.areas.filter((area) => area.group.startsWith("components."));
+    expect(areas.length).toBe(97);
+    const pages = new Map<string, string[]>();
+    for (const [name, text] of storyText) {
+      const area = /parameters: describe\("(?:[^"\\]|\\.)*", "([a-z_]+)"\)/.exec(text)?.[1];
+      if (area === undefined) continue;
+      pages.set(area, [...(pages.get(area) ?? []), name]);
+    }
+    const missing = areas.filter((area) => !pages.has(area.key)).map((area) => area.key);
+    expect(missing).toEqual([]);
+    expect([...pages].filter(([, names]) => names.length > 1)).toEqual([]);
+    expect([...pages.keys()].filter((key) => !areas.some((area) => area.key === key))).toEqual([]);
+    for (const area of areas) {
+      const text = storyText.get(pages.get(area.key)![0]!)!;
+      const group = area.group_title_zh.replace(/^组件\//, "");
+      expect(text, area.key).toContain(`title: "Geist 组件/${group}/`);
+    }
   });
 
   it("每个组件页挂在「Geist 组件/」下，标题不重复，并写明源码位置", () => {

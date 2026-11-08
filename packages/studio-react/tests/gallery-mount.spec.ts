@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { dismissToast } from "../src/components/ui/toast";
 
 type Story = { name?: string; render?: (args: Record<string, unknown>) => ReactElement; args?: Record<string, unknown> };
 type StoryModule = { default: { title: string; args?: Record<string, unknown> } } & Record<string, Story | unknown>;
@@ -26,6 +27,7 @@ afterEach(() => {
     root.unmount();
     container.remove();
   }
+  dismissToast();
   document.body.innerHTML = "";
   vi.restoreAllMocks();
 });
@@ -56,8 +58,8 @@ function moduleTitled(title: string): StoryModule {
 }
 
 describe("Geist 组件分区 · 挂载", () => {
-  it("组件页齐全", () => {
-    expect(Object.keys(modules).length).toBeGreaterThanOrEqual(19);
+  it("组件页齐全（骨架的 97 个组件领域 + 数字滚动）", () => {
+    expect(Object.keys(modules).length).toBeGreaterThanOrEqual(98);
   });
 
   for (const [path, module] of Object.entries(modules)) {
@@ -73,7 +75,7 @@ describe("Geist 组件分区 · 挂载", () => {
   }
 
   it("对话框：点触发按钮后标题与说明出现在 Portal 里，取消按钮关闭它", () => {
-    const module = moduleTitled("Geist 组件/Dialog 对话框");
+    const module = moduleTitled("Geist 组件/反馈/Dialog 对话框");
     const root = mount(module, module.Confirm as Story);
     clickButton(root, "删除选中车辆");
     const dialog = document.body.querySelector('[role="dialog"]');
@@ -86,7 +88,7 @@ describe("Geist 组件分区 · 挂载", () => {
   });
 
   it("气泡卡片：点「移除司机」后确认内容出现", () => {
-    const module = moduleTitled("Geist 组件/Popover 气泡卡片");
+    const module = moduleTitled("Geist 组件/数据展示/Popover 气泡卡片");
     const root = mount(module, module.Confirm as Story);
     clickButton(root, "移除司机");
     expect(document.body.textContent).toContain("移除这名司机？");
@@ -94,7 +96,7 @@ describe("Geist 组件分区 · 挂载", () => {
   });
 
   it("多选框：全选在部分选中时是半选态，点它全部选中", () => {
-    const module = moduleTitled("Geist 组件/Checkbox 多选框");
+    const module = moduleTitled("Geist 组件/数据录入/Checkbox 多选框");
     const root = mount(module, module.SelectAll as Story);
     const all = root.querySelector("#notify-all") as HTMLElement;
     expect(all.getAttribute("aria-checked")).toBe("mixed");
@@ -103,6 +105,39 @@ describe("Geist 组件分区 · 挂载", () => {
     for (const id of ["notify-maint", "notify-ins", "notify-check"]) {
       expect(root.querySelector(`#${id}`)!.getAttribute("aria-checked")).toBe("true");
     }
+    expect(errors).toEqual([]);
+  });
+
+  it("全局提示：点「保存」后提示出现在消息区（role=status），点关闭后消失", () => {
+    const module = moduleTitled("Geist 组件/反馈/Toast 全局提示");
+    const root = mount(module, module.Default as Story);
+    clickButton(root, "保存");
+    const status = [...root.querySelectorAll('[role="status"]')].find((node) => node.textContent?.includes("车辆已保存"));
+    expect(status).toBeTruthy();
+    const close = status!.querySelector('button[aria-label="关闭通知"]') as HTMLElement;
+    flushSync(() => close.click());
+    expect(root.textContent).not.toContain("车辆已保存");
+    expect(errors).toEqual([]);
+  });
+
+  it("JSON 查看器：折叠按钮报告 aria-expanded，折叠后显示项数", () => {
+    const module = moduleTitled("Geist 组件/数据展示/JsonView JSON 查看器");
+    const root = mount(module, module.Default as Story);
+    const toggle = root.querySelector('button[aria-label="折叠 data"]') as HTMLElement;
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    flushSync(() => toggle.click());
+    expect(root.querySelector('button[aria-label="展开 data"]')!.getAttribute("aria-expanded")).toBe("false");
+    expect(root.textContent).toContain("6 项");
+    expect(errors).toEqual([]);
+  });
+
+  it("二维码：渲染成带可读名称的 SVG，内容过长时显示错误态", () => {
+    const module = moduleTitled("Geist 组件/数据展示/QrCode 二维码");
+    const root = mount(module, module.Levels as Story);
+    const codes = root.querySelectorAll('svg[role="img"]');
+    expect(codes.length).toBe(2);
+    expect(codes[0]!.getAttribute("aria-label")).toBe("二维码：ORD-20261107-0042");
+    expect(root.textContent).toContain("内容过长");
     expect(errors).toEqual([]);
   });
 });

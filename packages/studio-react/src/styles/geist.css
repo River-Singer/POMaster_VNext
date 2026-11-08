@@ -158,42 +158,69 @@
   --color-ds-red-1000: var(--ds-red-1000);
 }
 
-/* 只在 .geist-root 里生效的 preflight（Tailwind 4 preflight 的要点）。对话框、气泡卡片、下拉菜单、选择器、文字提示的
+/* 只在 .geist-root 里生效的 preflight（Tailwind 4 preflight 的要点）。对话框、抽屉、危险确认、气泡卡片、下拉菜单、右键菜单、选择器、文字提示、通知的
  * 内容经 Radix Portal 挂到 body 下、不在 .geist-root 里，按它们的 data-slot 一并纳入（:is() 的权重与单个类相同）。 */
 @layer base {
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]),
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) *,
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) ::before,
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) ::after {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]),
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) *,
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) ::before,
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) ::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     border: 0 solid;
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) {
     font-family: var(--font-sans);
     color: var(--foreground);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(h1, h2, h3, h4) {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(h1, h2, h3, h4) {
     font-size: inherit;
     font-weight: inherit;
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(code, kbd, pre) {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(code, kbd, pre) {
     font-family: var(--font-mono);
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) :is(button, input, textarea, select) {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(button, input, textarea, select) {
     font: inherit;
     color: inherit;
     background-color: transparent;
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) button {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) button {
     cursor: pointer;
   }
-  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"]) svg {
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) svg {
     display: block;
     vertical-align: middle;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(ol, ul, menu) {
+    list-style: none;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(img, video) {
+    max-width: 100%;
+    height: auto;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) :is(img, video, canvas, audio, iframe) {
+    display: block;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) table {
+    border-collapse: collapse;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) textarea {
+    resize: vertical;
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) ::placeholder {
+    opacity: 1;
+    color: var(--ds-gray-700);
+  }
+  :is(.geist-root, [data-slot="dialog-overlay"], [data-slot="dialog-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="select-content"], [data-slot="tooltip-content"], [data-slot="context-menu-content"], [data-slot="sheet-overlay"], [data-slot="sheet-content"], [data-slot="alert-dialog-overlay"], [data-slot="alert-dialog-content"], [data-slot="toaster"]) [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
   }
 }
 

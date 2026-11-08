@@ -3,9 +3,9 @@ import { Badge } from "../components/ui/badge";
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Badge> = {
-  title: "Geist 组件/Badge 标签",
+  title: "Geist 组件/数据展示/Badge 标签",
   component: Badge,
-  parameters: describe("状态与分类标签：四种变体，颜色只取主题变量，不写自定义色值。规则见「规范/组件/数据展示/标签」。源码 src/components/ui/badge.tsx。"),
+  parameters: describe("状态与分类标签：四种变体，颜色只取主题变量，不写自定义色值。规则见「规范/组件/数据展示/标签」。源码 src/components/ui/badge.tsx。", "tag"),
   argTypes: { variant: { control: "select", options: ["default", "secondary", "outline", "destructive"] } },
   args: { variant: "secondary", children: "在用" },
 };

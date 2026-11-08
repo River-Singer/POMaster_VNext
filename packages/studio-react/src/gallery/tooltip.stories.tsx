@@ -5,9 +5,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../components/ui/toolti
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Tooltip> = {
-  title: "Geist 组件/Tooltip 文字提示",
+  title: "Geist 组件/数据展示/Tooltip 文字提示",
   component: Tooltip,
-  parameters: describe("Radix Tooltip：悬停和聚焦都会出现，内容经 aria-describedby 关联触发元素。关键说明不要只放在提示里（移动端没有悬停）。禁用的按钮收不到事件，外面包一层可聚焦的 span。规则见「规范/组件/数据展示/文字提示」。源码 src/components/ui/tooltip.tsx。"),
+  parameters: describe("Radix Tooltip：悬停和聚焦都会出现，内容经 aria-describedby 关联触发元素。关键说明不要只放在提示里（移动端没有悬停）。禁用的按钮收不到事件，外面包一层可聚焦的 span。规则见「规范/组件/数据展示/文字提示」。源码 src/components/ui/tooltip.tsx。", "tooltip"),
 };
 export default meta;
 type Story = StoryObj<typeof Tooltip>;

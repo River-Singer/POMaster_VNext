@@ -4,9 +4,9 @@ import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "../compon
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Popover> = {
-  title: "Geist 组件/Popover 气泡卡片",
+  title: "Geist 组件/数据展示/Popover 气泡卡片",
   component: Popover,
-  parameters: describe("Radix Popover：点击打开，Esc 或点外面关闭，焦点回到触发按钮。用作轻量确认（Geist 没有 Popconfirm，按规范用 Popover 拼）或放一小段补充信息。规则见「规范/组件/反馈/气泡确认」。源码 src/components/ui/popover.tsx。"),
+  parameters: describe("Radix Popover：点击打开，Esc 或点外面关闭，焦点回到触发按钮。用作轻量确认（Geist 没有 Popconfirm，按规范用 Popover 拼）或放一小段补充信息。规则见「规范/组件/反馈/气泡确认」。源码 src/components/ui/popover.tsx。", "popover"),
 };
 export default meta;
 type Story = StoryObj<typeof Popover>;

@@ -5,9 +5,9 @@ import { Label } from "../components/ui/label";
 import { Column, Frame, describe } from "./frame";
 
 const meta: Meta<typeof Checkbox> = {
-  title: "Geist 组件/Checkbox 多选框",
+  title: "Geist 组件/数据录入/Checkbox 多选框",
   component: Checkbox,
-  parameters: describe("Radix Checkbox：支持半选态（checked=\"indeterminate\"），标签用 Label 关联后整行可点。规则见「规范/组件/数据录入/多选框」。源码 src/components/ui/checkbox.tsx。"),
+  parameters: describe("Radix Checkbox：支持半选态（checked=\"indeterminate\"），标签用 Label 关联后整行可点。规则见「规范/组件/数据录入/多选框」。源码 src/components/ui/checkbox.tsx。", "checkbox"),
 };
 export default meta;
 type Story = StoryObj<typeof Checkbox>;

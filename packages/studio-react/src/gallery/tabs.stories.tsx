@@ -3,9 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Frame, describe } from "./frame";
 
 const meta: Meta<typeof Tabs> = {
-  title: "Geist 组件/Tabs 标签页",
+  title: "Geist 组件/导航/Tabs 标签页",
   component: Tabs,
-  parameters: describe("Radix Tabs（Geist 的下划线样式）：方向键切换，内容区与标签互相关联。只用于同一对象的平级视图。规则见「规范/组件/导航/标签页」。源码 src/components/ui/tabs.tsx。"),
+  parameters: describe("Radix Tabs（Geist 的下划线样式）：方向键切换，内容区与标签互相关联。只用于同一对象的平级视图。规则见「规范/组件/导航/标签页」。源码 src/components/ui/tabs.tsx。", "tabs"),
 };
 export default meta;
 type Story = StoryObj<typeof Tabs>;

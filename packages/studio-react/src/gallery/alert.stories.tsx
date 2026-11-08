@@ -4,9 +4,9 @@ import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Column, describe } from "./frame";
 
 const meta: Meta<typeof Alert> = {
-  title: "Geist 组件/Alert 警告提示",
+  title: "Geist 组件/反馈/Alert 警告提示",
   component: Alert,
-  parameters: describe("页面内的常驻提示：标题说清发生了什么，描述给出下一步。规则见「规范/组件/反馈/警告提示」。源码 src/components/ui/alert.tsx。"),
+  parameters: describe("页面内的常驻提示：标题说清发生了什么，描述给出下一步。规则见「规范/组件/反馈/警告提示」。源码 src/components/ui/alert.tsx。", "alert"),
 };
 export default meta;
 type Story = StoryObj<typeof Alert>;

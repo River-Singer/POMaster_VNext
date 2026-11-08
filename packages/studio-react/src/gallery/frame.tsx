@@ -16,7 +16,10 @@ export function Caption({ children }: { readonly children: React.ReactNode }) {
   return <span className="w-24 shrink-0 text-label-13 text-ds-gray-900">{children}</span>;
 }
 
-/** 组件页的说明（写在 Storybook 文档页的组件描述里）。 */
-export function describe(text: string) {
-  return { docs: { description: { component: text } } };
+/**
+ * 组件页的说明（写在 Storybook 文档页的组件描述里）与它对应的骨架组件领域（skeleton.yaml 里 components.* 的 key）。
+ * 两个画廊的组件类型取两套设计系统的并集：骨架里的每个组件领域都要有一页（tests/gallery.spec.ts 核对）。
+ */
+export function describe(text: string, area?: string) {
+  return { docs: { description: { component: text } }, ...(area === undefined ? {} : { area }) };
 }
