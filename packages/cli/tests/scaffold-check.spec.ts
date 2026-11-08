@@ -280,6 +280,21 @@ describe("五项检查", () => {
     ]);
   });
 
+  it("生成了后端：在用户侧应用里手加管理侧接口（不受管的新文件）→ SCAFFOLD_CONTRACT_DRIFT", async () => {
+    await initStore();
+    mkdirSync(join(dir, ".pomaster", "baseline", "backend"), { recursive: true });
+    writeFileSync(join(dir, ".pomaster", "baseline", "backend", "stack.yaml"), "language: java\nframework: spring\npersistence: mybatis-plus\ndatabase: mysql\ncache: none\n");
+    writeSpec();
+    expect((await runScaffoldConfirm(dir, { by: OWNER })).ok).toBe(true);
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    const sneaky = "backend/fleet-public-api/src/main/java/com/example/fleet/publicapi/web/OpsController.java";
+    writeFileSync(join(dir, ...sneaky.split("/")), 'package com.example.fleet.publicapi.web;\n\n@RestController\npublic class OpsController {\n    @PostMapping("/ops/reset")\n    @RequirePermission("fleet:ops:reset")\n    public void reset() {\n    }\n}\n');
+    const result = await report();
+    expect(statuses(result)["ledger_integrity"]).toBe("pass");
+    expect(codes(result)).toEqual(["SCAFFOLD_CONTRACT_DRIFT"]);
+    expect(result.checks.find((check) => check.id === "contract_conformance")?.findings).toEqual([`${sneaky}：用户侧应用里出现管理侧接口（权限码注解）`]);
+  });
+
   it("S1-3 时代的清单（没有接口文档）→ SCAFFOLD_CONTRACT_DRIFT 指路重新生成；生成后恢复", async () => {
     await confirmedAndGenerated();
     const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");

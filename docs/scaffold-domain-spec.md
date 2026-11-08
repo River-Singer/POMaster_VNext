@@ -66,7 +66,7 @@ pomaster check --gates           # 其中 GATE.SCAFFOLD.CONSISTENCY 同一判卷
 | 清单 ↔ 文件 | `SCAFFOLD_GENERATED_FILE_MODIFIED` / `SCAFFOLD_MANIFEST_MALFORMED` / `SCAFFOLD_TEMPLATE_SET_CHANGED` | 受管文件现盘 sha256 与清单一致，没被手改或删除 |
 | 生成新鲜度 | `SCAFFOLD_GENERATION_STALE` | 规格改了、确认了，就要重新生成（与已确认摘要比；现盘漂移由规格治理那一项报，不重复） |
 | KEYBINDING 在册 | `SCAFFOLD_KEYBINDING_MISSING` | 每个受管文件都有绑定行且锚对得上——写入约束的前提；`scaffold generate` 会补回 |
-| 接口 ↔ 规格 | `SCAFFOLD_CONTRACT_DRIFT` | 不依赖生成器自证，从规格独立推出约束逐条对照：接口文档与规格暴露的操作一一对应、用户侧不出现未暴露的字段、每个操作都标了授权结构；缺某个面的文档也算。生成了后端时，每个控制器的接口数、权限码 / 访问档与规格对照，用户侧视图不出现未暴露字段 |
+| 接口 ↔ 规格 | `SCAFFOLD_CONTRACT_DRIFT` | 不依赖生成器自证，从规格独立推出约束逐条对照：接口文档与规格暴露的操作一一对应、用户侧不出现未暴露的字段、每个操作都标了授权结构；缺某个面的文档也算。生成了后端时，每个控制器的接口数、权限码 / 访问档与规格对照，用户侧控制器的可见性条件与属主过滤在场，用户侧视图不出现未暴露字段，整个用户侧应用（含手加的文件）里不出现管理侧的权限码注解 |
 | 手工迁移 | （警告 `SCAFFOLD_UNMANAGED_MIGRATION`） | 迁移目录里不在清单的迁移逐个列出，不阻断 |
 
 规格缺席 = 项目没用脚手架，门不适用（`check --gates` 记 `not_configured`，closeout 不阻断）。规格已确认但从未生成只警告（`SCAFFOLD_NOT_GENERATED`）。closeout 对上表的失败码阻断。

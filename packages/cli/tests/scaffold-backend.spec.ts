@@ -218,6 +218,9 @@ describe("渲染：属主实体与字段分级", () => {
 
   it("属主档：用户侧增删改查都按 owner_id 过滤，新建时属主取操作者；写操作基础审计", () => {
     const controller = out.get(`${pub}/web/CustomerAddressPublicController.java`)!;
+    const entity = spec.entities.find((candidate) => candidate.key === "customer_address")!;
+    expect(checkBackendConformance(entity, "public", controller, out.get(`${pub}/dto/PublicCustomerAddressView.java`)!)).toEqual([]);
+    expect(checkBackendConformance(entity, "public", controller.replace("query.eq(CustomerAddress::getOwnerId, actor.userId());", ""), null)).toEqual(["属主过滤不在场（owner_id = 操作者）"]);
     expect([...controller.matchAll(/@Access\(AccessLevel\.([A-Z]+)\)/g)].map((match) => match[1])).toEqual(["OWNER", "OWNER", "OWNER", "OWNER", "OWNER"]);
     expect(controller).toContain("query.eq(CustomerAddress::getOwnerId, actor.userId());");
     expect(controller).toContain("draft.setOwnerId(actor.userId());");
@@ -265,6 +268,20 @@ describe("渲染：属主实体与字段分级", () => {
   });
 });
 
+describe("金样：样例规格的关键生成物逐字节钉住", () => {
+  const out = files(normalize(FLEET));
+  const GOLDEN = fileURLToPath(new URL("./golden/scaffold/backend/", import.meta.url));
+  it.each([
+    ["VehicleModelService.java", `${JAVA}/core/service/VehicleModelService.java`],
+    ["VehicleModelAdminController.java", `${ADMIN}/web/VehicleModelAdminController.java`],
+    ["VehicleModelPublicController.java", `${PUBLIC}/web/VehicleModelPublicController.java`],
+    ["PublicVehicleModelView.java", `${PUBLIC}/dto/PublicVehicleModelView.java`],
+    ["admin-application.yml", "backend/fleet-admin-api/src/main/resources/application.yml"],
+  ])("%s", (golden, path) => {
+    expect(out.get(path)).toBe(readFileSync(`${GOLDEN}${golden}`, "utf8"));
+  });
+});
+
 describe("判卷：控制器与规格独立对照", () => {
   const spec = normalize(FLEET);
   const out = files(spec);
@@ -284,6 +301,12 @@ describe("判卷：控制器与规格独立对照", () => {
     expect(checkBackendConformance(entity, "admin", dropped, null)).toEqual(["缺少权限码声明 fleet:vehicle_model:get", "有接口没有声明权限码"]);
     const publicView = out.get(backendViewPath(spec, entity, "public"))!.replace("String businessCode,", "String businessCode,\n        String costPrice,");
     expect(checkBackendConformance(entity, "public", out.get(publicPath)!, publicView)).toEqual(["用户侧视图出现未对用户侧暴露的字段 costPrice（vehicle_model.cost_price）"]);
+    const unfiltered = out.get(publicPath)!.replace("query.in(VehicleModel::getStatus, List.of(VehicleModelStatus.ENABLED));", "");
+    expect(checkBackendConformance(entity, "public", unfiltered, null)).toEqual(["可见性条件不在场或与规格不符（status ∈ {ENABLED}）"]);
+    const widened = out.get(publicPath)!.replace("List.of(VehicleModelStatus.ENABLED)", "List.of(VehicleModelStatus.ENABLED, VehicleModelStatus.DISABLED)");
+    expect(checkBackendConformance(entity, "public", widened, null)).toEqual(["可见性条件不在场或与规格不符（status ∈ {ENABLED}）"]);
+    const adminOnPublic = out.get(publicPath)!.replace('    @Access(AccessLevel.ANONYMOUS)\n    public ResponseEntity<PublicVehicleModelView> get', '    @Access(AccessLevel.ANONYMOUS)\n    @RequirePermission("fleet:vehicle_model:get")\n    public ResponseEntity<PublicVehicleModelView> get');
+    expect(checkBackendConformance(entity, "public", adminOnPublic, null)).toEqual(["用户侧控制器出现管理侧的权限码注解"]);
     const extra = out.get(publicPath)!.replace("    @GetMapping(\"/{id}\")", "    @DeleteMapping(\"/{id}\")\n    @Access(AccessLevel.OWNER)\n    public void sneaky() {\n    }\n\n    @GetMapping(\"/{id}\")");
     expect(checkBackendConformance(entity, "public", extra, null)).toEqual(["接口数 3 与规格暴露的操作数 2 不符", "访问档 OWNER 与规格 ANONYMOUS 不符"]);
   });

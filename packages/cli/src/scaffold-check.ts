@@ -18,7 +18,7 @@
  */
 import { existsSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { absenceRecord, type GateResultRecord } from "@pomaster/gauntlet-lite";
 import { sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -58,6 +58,21 @@ export interface ScaffoldConsistencyReport {
   readonly checks: readonly ScaffoldCheckItem[];
   readonly errors: readonly CliError[];
   readonly warnings: readonly CliWarning[];
+}
+
+/** 目录下全部 .java 文件（不存在 → 空；按路径排序，判卷结果确定）。 */
+function javaFilesUnder(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  const out: string[] = [];
+  const walk = (current: string): void => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.name.endsWith(".java")) out.push(path);
+    }
+  };
+  walk(dir);
+  return out.sort();
 }
 
 function item(id: ScaffoldCheckId, status: ScaffoldCheckStatus, detail: string, findings: readonly string[] = []): ScaffoldCheckItem {
@@ -255,6 +270,19 @@ export async function assessScaffoldConsistency(
         }
         if (controller === null) continue;
         for (const problem of checkBackendConformance(entity, surface, controller, view)) contractFindings.push(`${controllerPath}：${problem}`);
+      }
+    }
+    // 用户侧应用里不允许有管理侧接口：整个模块扫一遍，手加的控制器也算。
+    const publicSources = join(rootDir, "backend", `${snapshot.app.key}-public-api`, "src", "main", "java");
+    for (const file of javaFilesUnder(publicSources)) {
+      let text = "";
+      try {
+        text = await readFile(file, "utf8");
+      } catch {
+        continue;
+      }
+      if (/@RequirePermission\b/.test(text)) {
+        contractFindings.push(`${relative(rootDir, file).split(sep).join("/")}：用户侧应用里出现管理侧接口（权限码注解）`);
       }
     }
   }

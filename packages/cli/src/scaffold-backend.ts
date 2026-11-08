@@ -2974,8 +2974,10 @@ export function backendViewPath(spec: NormalizedDomainSpec, entity: NormalizedEn
 
 /**
  * 对照规格检查某个面某个实体的控制器（与视图）源码，返回问题清单（空 = 一致）：
+ * - 两侧：接口数与规格暴露的操作数一致（多出来的就是规格外接口）；
  * - 管理侧：每个暴露的操作都声明了规格里的权限码，没有规格外的权限码；
- * - 用户侧：每个操作都声明了规格里的访问档；视图只含对用户侧暴露的字段（OWASP API3）。
+ * - 用户侧：每个操作都声明了规格里的访问档，没有管理侧的权限码注解；可见性条件与属主过滤在场
+ *   （OWASP API1）；视图只含对用户侧暴露的字段（OWASP API3）。
  */
 export function checkBackendConformance(
   entity: NormalizedEntity,
@@ -2998,6 +3000,19 @@ export function checkBackendConformance(
     const declared = [...controller.matchAll(/@Access\(AccessLevel\.([A-Z_]+)\)/g)].map((match) => match[1] as string);
     if (declared.length !== mappings) problems.push("有接口没有声明访问档");
     for (const level of declared) if (level !== access) problems.push(`访问档 ${level} 与规格 ${access} 不符`);
+    if (/@RequirePermission\b/.test(controller)) problems.push("用户侧控制器出现管理侧的权限码注解");
+    const C = entity.class_name;
+    if (access === "OWNER" && !controller.includes(`${C}::getOwnerId, actor.userId())`)) problems.push("属主过滤不在场（owner_id = 操作者）");
+    const visible = entity.exposure.public?.visible_when ?? null;
+    if (visible !== null) {
+      const field = entity.fields.find((candidate) => candidate.key === visible.field);
+      const getterName = field === undefined ? "" : `get${cap(field.property)}`;
+      const values = new RegExp(`query\\.in\\(${C}::${getterName}, List\\.of\\(([^)]*)\\)\\)`).exec(controller)?.[1] ?? null;
+      const listed = values === null ? [] : values.split(",").map((item) => item.trim().split(".").pop());
+      if (values === null || listed.length !== visible.in.length || visible.in.some((value) => !listed.includes(value))) {
+        problems.push(`可见性条件不在场或与规格不符（${visible.field} ∈ {${visible.in.join(", ")}}）`);
+      }
+    }
     if (view !== null) {
       const exposed = new Set(entity.exposure.public?.fields ?? []);
       for (const field of entity.fields) {
