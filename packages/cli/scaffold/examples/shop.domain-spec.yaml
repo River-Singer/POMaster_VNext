@@ -1,0 +1,73 @@
+# 样例领域规格（S1-6）：商城运营。覆盖后端模板的另一半形态——
+# 属主实体（用户侧本人增删改查）、个人信息与敏感个人信息（管理侧脱敏、加密存储）、
+# 可空排序键的 KEYSET 分页（升序与降序）、登录档与匿名档的用户侧只读。
+# 校验：pomaster scaffold validate packages/cli/scaffold/examples/shop.domain-spec.yaml
+schema: pomaster.domain-spec/v1
+app:
+  key: shop-ops
+  name_zh: 商城运营
+  java_package: com.example.shop
+surfaces:
+  admin: {}
+  public: {}
+entities:
+  - key: customer_address
+    name_zh: 收货地址
+    ownership: user
+    archetypes:
+      data: DATA_ARCHETYPE.MASTER_DATA
+      backend: ARCHETYPE.BACKEND.CRUD_RESOURCE
+    default_sort: { field: label, direction: desc }
+    fields:
+      - { key: label, name_zh: 标签, type: string, length: 20, searchable: true, classification: public }
+      - { key: receiver, name_zh: 收件人, type: string, length: 32, required: true, classification: pii }
+      - { key: phone, name_zh: 手机号, type: string, length: 20, required: true, classification: sensitive_pii }
+      - { key: birthday, name_zh: 生日, type: date, classification: sensitive_pii }
+      - { key: is_default, name_zh: 默认地址, type: bool, searchable: true, classification: public }
+      - key: kind
+        name_zh: 类型
+        type: enum
+        values:
+          - { key: HOME, name_zh: 家 }
+          - { key: OFFICE, name_zh: 公司 }
+        searchable: true
+        classification: public
+      - { key: visits, name_zh: 使用次数, type: long, range: { min: 0, max: 9999999999 }, classification: public }
+      - { key: last_used_at, name_zh: 最近使用, type: datetime, searchable: true, classification: public }
+    exposure:
+      admin:
+        operations: [create, get, list, update, delete]
+      public:
+        operations: [create, get, list, update, delete]
+        access: owner
+        fields: [label, receiver, phone, birthday, is_default, kind, visits, last_used_at]
+  - key: notice
+    name_zh: 公告
+    archetypes:
+      data: DATA_ARCHETYPE.MASTER_DATA
+      backend: ARCHETYPE.BACKEND.CRUD_RESOURCE
+    default_sort: { field: published_on, direction: asc }
+    fields:
+      - { key: title, name_zh: 标题, type: string, length: 80, required: true, classification: public }
+      - { key: published_on, name_zh: 发布日期, type: date, searchable: true, classification: public }
+      - { key: body, name_zh: 正文, type: text, classification: public }
+      - { key: weight, name_zh: 权重, type: int, searchable: true, classification: public }
+    exposure:
+      admin:
+        operations: [create, list]
+      public:
+        operations: [list, get]
+        access: authenticated
+        fields: [title, published_on, body]
+  - key: tag
+    name_zh: 标签
+    archetypes:
+      data: DATA_ARCHETYPE.MASTER_DATA
+      backend: ARCHETYPE.BACKEND.CRUD_RESOURCE
+    fields:
+      - { key: code, name_zh: 编码, type: string, length: 16, required: true, unique: true, classification: public }
+    exposure:
+      public:
+        operations: [list]
+        access: anonymous
+        fields: [code]

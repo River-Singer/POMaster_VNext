@@ -253,6 +253,48 @@ describe("五项检查", () => {
     ]);
   });
 
+  it("生成了后端：控制器连同清单 sha 一起被改 → contract_conformance 按规格独立检出权限码缺失", async () => {
+    await initStore();
+    mkdirSync(join(dir, ".pomaster", "baseline", "backend"), { recursive: true });
+    writeFileSync(join(dir, ".pomaster", "baseline", "backend", "stack.yaml"), "language: java\nframework: spring\npersistence: mybatis-plus\ndatabase: mysql\ncache: none\n");
+    writeSpec();
+    expect((await runScaffoldConfirm(dir, { by: OWNER })).ok).toBe(true);
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    expect(codes(await report())).toEqual([]);
+    const controller = "backend/fleet-admin-api/src/main/java/com/example/fleet/adminapi/web/VehicleModelAdminController.java";
+    const path = join(dir, ...controller.split("/"));
+    const forged = readFileSync(path, "utf8").replace('    @RequirePermission("fleet:vehicle_model:delete")\n', "");
+    writeFileSync(path, forged);
+    const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { files: { path: string; sha256: string }[] };
+    const entry = manifest.files.find((file) => file.path === controller);
+    if (entry === undefined) throw new Error("manifest entry");
+    entry.sha256 = sha256OfUtf8(forged);
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    const result = await report();
+    expect(statuses(result)["ledger_integrity"]).toBe("pass");
+    expect(codes(result)).toEqual(["SCAFFOLD_CONTRACT_DRIFT"]);
+    expect(result.checks.find((check) => check.id === "contract_conformance")?.findings).toEqual([
+      `${controller}：缺少权限码声明 fleet:vehicle_model:delete`,
+      `${controller}：有接口没有声明权限码`,
+    ]);
+  });
+
+  it("生成了后端：在用户侧应用里手加管理侧接口（不受管的新文件）→ SCAFFOLD_CONTRACT_DRIFT", async () => {
+    await initStore();
+    mkdirSync(join(dir, ".pomaster", "baseline", "backend"), { recursive: true });
+    writeFileSync(join(dir, ".pomaster", "baseline", "backend", "stack.yaml"), "language: java\nframework: spring\npersistence: mybatis-plus\ndatabase: mysql\ncache: none\n");
+    writeSpec();
+    expect((await runScaffoldConfirm(dir, { by: OWNER })).ok).toBe(true);
+    expect((await runScaffoldGenerate(dir)).ok).toBe(true);
+    const sneaky = "backend/fleet-public-api/src/main/java/com/example/fleet/publicapi/web/OpsController.java";
+    writeFileSync(join(dir, ...sneaky.split("/")), 'package com.example.fleet.publicapi.web;\n\n@RestController\npublic class OpsController {\n    @PostMapping("/ops/reset")\n    @RequirePermission("fleet:ops:reset")\n    public void reset() {\n    }\n}\n');
+    const result = await report();
+    expect(statuses(result)["ledger_integrity"]).toBe("pass");
+    expect(codes(result)).toEqual(["SCAFFOLD_CONTRACT_DRIFT"]);
+    expect(result.checks.find((check) => check.id === "contract_conformance")?.findings).toEqual([`${sneaky}：用户侧应用里出现管理侧接口（权限码注解）`]);
+  });
+
   it("S1-3 时代的清单（没有接口文档）→ SCAFFOLD_CONTRACT_DRIFT 指路重新生成；生成后恢复", async () => {
     await confirmedAndGenerated();
     const manifestPath = join(dir, ".pomaster", "scaffold", "generation-manifest.json");

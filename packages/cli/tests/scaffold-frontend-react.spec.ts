@@ -114,7 +114,8 @@ describe("React 管理侧前端生成（react-geist-admin@1）", () => {
     expect(route).toContain('handle: { auth: true, permission: "fleet:vehicle_model:list"');
     const form = files.get(`${ROOT}/features/vehicle-model/VehicleModelEditDialog.tsx`)!;
     expect(form).toContain("zodResolver(schema)");
-    expect(form).toContain("setError(item.field as keyof Values");
+    expect(form).toContain('const field = item.pointer.replace(/^\\//, "");');
+    expect(form).toContain("setError(field as keyof Values, { message: item.detail })");
     expect(form).toContain("version: record.version");
     expect(form).toMatch(/listPrice: z\.string\(\)\.regex\(\/\^-\?\\d\{1,10\}\(\\\.\\d\{1,2\}\)\?\$\//);
     const locale = files.get(`${ROOT}/locales/zh-CN/vehicle-model.ts`)!;
