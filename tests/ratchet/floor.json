@@ -778,6 +778,10 @@
       "packages/cli/tests/tools-commands.spec.ts": {
         "layer": "L1"
       },
+      "packages/cli/tests/tools-init.spec.ts": {
+        "layer": "L1",
+        "note": "tools init 起步工具注册面：按声明登记 vitest / vue-tsc / tsc / eslint（Vue 项目只登 vue-tsc），命令按锁文件选包管理器，生成的绑定在 tools list 全部 available；既有绑定原样保留只补缺、重跑 unchanged；没探测到不写文件、版本锚取不到不登记、无受信 adapter 的工具只列出、--dry-run 不写、坏注册面拒绝不覆盖。无域（工具注册面）。"
+      },
       "packages/cli/tests/toolbinding-closed-loop.spec.ts": {
         "layer": "L1"
       },

@@ -965,10 +965,8 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     expect(handedOff.ok).toBe(true);
     const afterHandoff = await runStatus(dir);
     expect(afterHandoff.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
-    // 新项目还没有工具注册面：先 plan compile 声明变更面、登记工具，plan run 才跑得起来。
-    expect(afterHandoff.result.next_action.command).toBe(
-      "pomaster plan compile --task TASK.T1 --face <kind>=present|absent:<依据>",
-    );
+    // 新项目还没有工具注册面：先 tools init 写起步注册面，plan run 才跑得起来。
+    expect(afterHandoff.result.next_action.command).toBe("pomaster tools init");
     mkdirSync(join(dir, ".pomaster", "tools"), { recursive: true });
     writeFileSync(join(dir, ".pomaster", "tools", "bindings.json"), JSON.stringify({ version: 1, bindings: [] }), "utf8");
     const withRegistry = await runStatus(dir);
@@ -1497,11 +1495,12 @@ describe("⑤拍：首次验证缺工具注册面时先指向登记工具", () =
       ...(registry === undefined ? {} : { tool_registry_present: registry }),
     }));
 
-  it("注册面缺席 → plan compile --face，理由说清登记工具与 qa 身份；在座或未知 → plan run", () => {
+  it("注册面缺席 → tools init，理由说清 plan compile --face、补登与 qa 身份；在座或未知 → plan run", () => {
     const absent = verifying(false);
     expect(absent.route_id).toBe("R_VERIFY_ENTRY");
-    expect(absent.command).toBe("pomaster plan compile --task TASK.T1 --face <kind>=present|absent:<依据>");
+    expect(absent.command).toBe("pomaster tools init");
     expect(absent.reason).toContain(".pomaster/tools/bindings.json");
+    expect(absent.reason).toContain("plan compile --task TASK.T1 --face");
     expect(absent.reason).toContain("--role qa");
     expect(verifying(true).command).toBe("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");
     expect(verifying(undefined).command).toBe("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");

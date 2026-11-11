@@ -185,7 +185,7 @@ pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 �
 pomaster plan compile/run                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待
-pomaster tools list/validate                    # 工具绑定
+pomaster tools init/list/validate               # 工具绑定：init 按已声明的 vitest / vue-tsc / tsc / eslint 写起步注册面
 pomaster check --fast/--gates                   # 局部自检 / 全部门禁定义派发并入账
 pomaster record gate-run/claim/verification/requalify   # 收据、验收、复核、证据过期后的重绑
 pomaster task reassess-baseline TASK.*          # 基线合法变更后重算任务的基线依赖

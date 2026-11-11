@@ -361,6 +361,7 @@ import { runPlanCompile } from "./plan.js";
 import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
+import { runToolsInit } from "./tools-init.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -1378,6 +1379,8 @@ export {
   runToolsList,
   runToolsValidate,
 } from "./tools.js";
+export { packageRunner, runToolsInit } from "./tools-init.js";
+export type { ToolsInitInput, ToolsInitResult } from "./tools-init.js";
 export type {
   BindingStateRow,
   BindingStatesDeps,
@@ -3877,6 +3880,20 @@ export function createProgram(
     .description(
       "ToolBinding 统一注册面命令（W1-R1-4）：list = 全量绑定六分态派生（detect/registered/validated/available/selected/executed，分态不可跃迁、缺口逐条显式）；validate = 单绑定全判据呈现（纯读零写入；探测不扩大 permit——executed 唯一事实源 = GRN 真实回执）",
     );
+  tools
+    .command("init")
+    .description(
+      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、maven…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
+    )
+    .option("--dry-run", "只列出将登记的绑定，不写文件")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "tools init",
+        outcome: runToolsInit(resolveDir(command), { dryRun: opts.dryRun === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
   tools
     .command("list")
     .description(

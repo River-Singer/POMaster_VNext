@@ -1292,11 +1292,11 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       if (s.tool_registry_present === false) {
         return {
           beat: "⑤",
-          command: `pomaster plan compile --task ${task} --face <kind>=present|absent:<依据>`,
+          command: "pomaster tools init",
           reason:
             `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY；本项目还没有工具注册面 ${toPosix(TOOLS_BINDINGS_RELATIVE_FOR_ROUTE)}，plan run 只执行登记过的工具、缺席时直接拒绝。` +
-            "先 plan compile 按变更面逐个声明（ui / behavior / api / data_read_write …）看清哪些证明义务 REQUIRED；" +
-            "再为每个 REQUIRED 能力在注册面登记 ToolBinding（命令、gate、报告格式；pomaster tools validate <id> 逐项列缺口）；" +
+            "先 tools init 按 package.json 已声明的工具写出起步注册面（vitest / vue-tsc / tsc / eslint；没有受信 adapter 的工具只列出不登记）；" +
+            `再 plan compile --task ${task} --face <kind>=present|absent:<依据> 按变更面看清哪些证明义务 REQUIRED，缺的工具在注册面补登（pomaster tools validate <id> 逐项列缺口）；` +
             "然后用独立的 qa 身份（execution begin --role qa）跑 plan run。没有工具的义务保持 REQUIRED 并记 tool_gap，不算通过",
         };
       }
