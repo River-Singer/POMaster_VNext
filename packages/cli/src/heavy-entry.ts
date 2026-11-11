@@ -736,18 +736,51 @@ function commandBlock(lines: readonly string[]): string[] {
   return ["## 命令", "", "```text", ...lines, "```", ""];
 }
 
-/**
- * Skill 库清单（14 条目；prd.md「Skill 库」表逐行对应：router + 八拍九段 +
- * 横切四面；D-1/D-5 裁决 18：pomaster-triage 卡删除，八拍① 卡=pomaster-discovery）。
- * description 写用户会自然说出的触发词（harness 自动选路由面），
- * 首句自含完整触发语义（防 listing 截断后失效）。
- */
 /** 规范写入契约（spec-writing.ts）在卡片上的说法：写规范的人和 AI 读到的是同一套规则。 */
 const SPEC_WRITING_CARD_LINES: readonly string[] = [
   "- 写规范按写入契约：每条规则七个字段齐全——规则、级别（--level，缺省按措辞判）、适用范围（--scope）、理由（--why）、检查方式（--check-by）、正例（--do）、反例（--dont）；缺字段写入口直接拒绝。",
   "- 条文自足、长期成立：不带链接与「参见 / 详见」类引用、文档路径与章节编号、PR / issue / 任务编号，不带版本号（版本只记在技术基线），不带日期、时刻与一次性措辞，不带记录人与会话标记；改了已有条文后跑 `pomaster spec-lint`，零问题才算写完。",
 ];
 
+/**
+ * 端到端链路（总路由卡）：从读取用户信息到维护，每一段由哪张卡负责、用什么命令、什么时候算完。
+ * 一段没到出口条件就不进下一段；每段的产物都落在治理面上，不只留在对话里。
+ */
+const WORKFLOW_CHAIN_LINES: readonly string[] = [
+  "## 端到端链路（每段到出口条件再进下一段）",
+  "",
+  "| 段 | 卡 | 做什么 | 出口条件 |",
+  "|---|---|---|---|",
+  "| 1 读取用户信息与文件 | pomaster-discovery | 先读用户给的附件、原型、已有文档和仓库，再开口；`brainstorm start --prompt` 登记原文，`--known/--unknown/--conflict/--assumption` 分拣；HTML 原型走 `prototype ingest` | 意图四分拣已登记；文件和仓库能回答的问题一个不问人 |",
+  "| 2 Brainstorm 推理 | pomaster-discovery | question-gate 先过闸再开口；`decide --set/--answer` 按 frontier 一次一问 | 当前 decision_scope 里没有未决的 Authority / Preference 问题 |",
+  "| 3 调研与联网搜索 | pomaster-discovery | `research <topic>` 建报告骨架；外部专有名词、版本、价格、现行规则一律联网核实并记来源；`research request/handoff` 把结论挂回决策 | `research inspect` 通过；缺失事实全部消解或显式延后 |",
+  "| 4 报告与 PRD | pomaster-discovery | 调研报告 = research 四件（index.yaml 的 findings 与 handoff、现状、外部方案、风险）；PRD = `decide --ready --goal --scope --acceptance` 判卷通过后 `promote --apply` 建出的 TASK，用 `view task` 审阅 | READY_TO_PROMOTE 且 TASK 已建；验收条目都挂到决策或假设 |",
+  "| 5 多 Agent 并行实现 | pomaster-runtime + pomaster-execute | 按互不重叠的写范围拆单元，每个单元一把锁、一个 AGX、一份 `agents dispatch-pack` 派发包；写入受 exec-guard 判卷 | 每个单元都有 `execution handoff`，锁已释放 |",
+  "| 6 测试 | pomaster-verify | `plan compile/run` 按任务编译验证计划并真跑：冒烟、回归、白盒（覆盖率、CRAP、变异）、黑盒 E2E、契约、安全渗透 | 计划里每条证据都有真实结果；没跑的记 NOT_RUN，不算通过 |",
+  "| 7 检查 | pomaster-verify | 独立于实现者的 AGX 判读证据、对照验收条目；`view task` 走 Review View | finalize 到真实阶段；独立验证与 Owner 验收缺席时显式 pending |",
+  "| 8 维护 | pomaster-reconcile / compact / closeout | 新定的长期规范用 `update spec` 写入（按写入契约，写后 `spec-lint`）；漂移对账、折叠、收口 | reconcile 无未处理漂移；closeout 通过 |",
+  "",
+];
+
+/** 多 Agent 并行实现的剧本（runtime 卡）。托管编排命令显式 deferred，派发由当前 harness 的子代理能力承担。 */
+const PARALLEL_IMPLEMENT_LINES: readonly string[] = [
+  "## 多 Agent 并行实现（剧本）",
+  "",
+  "1. 拆单元：按写范围拆成互不重叠的单元（一个单元 = 一个 TASK，或一个 TASK 里的一组 object key）；写范围有交集的单元不并行，排成先后。",
+  "2. 主 Agent 为每个单元准备：`session attach` 一个会话键 → `lock acquire`（TASK 级或 `--kind unit --object-key`）→ `execution begin --role implementer --task-id <TASK>` 拿 AGX → `agents dispatch-pack <TASK> --out <file>` 生成派发包。",
+  "3. 派发：用当前 harness 的子代理能力（Claude Code 的 Agent / Task 工具、Codex 的子代理）派出，把派发包、AGX、锁编号和写范围原样交给子代理；`pomaster run` / `handoff` 目前是 COMMAND_DEFERRED，不能当派发成功。",
+  "4. 子代理照 pomaster-execute 实现：每次写入经 exec-guard 判卷（越出 permit 的写被 hook 拦下）；完成后 `execution handoff` 写清改动路径、检查、已知缺口。",
+  "5. 收拢：主 Agent 逐个确认 handoff，`lock release`、`execution end`；`LOCK_BLOCKED` 时等待或协调，不抢锁（只有 Owner 明确同意才 `lock steal`）。",
+  "6. 验证另起身份：verify 用新的 AGX（role 不是 implementer），不让实现者给自己判卷。",
+  "",
+];
+
+/**
+ * Skill 库清单（15 条目；prd.md「Skill 库」表逐行对应：router + 八拍九段 +
+ * 横切四面 + ub-mode 纪律卡；D-1/D-5 裁决 18：pomaster-triage 卡删除，八拍① 卡=pomaster-discovery）。
+ * description 写用户会自然说出的触发词（harness 自动选路由面），
+ * 首句自含完整触发语义（防 listing 截断后失效）。
+ */
 export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster",
@@ -774,6 +807,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 会话开场速览：`pomaster session`（无子命令形态，SessionStart 注入源，尾部带首答确认协议）；每轮可行动项：`pomaster alerts`（UserPromptSubmit 源，可行动项过滤器 + workflow 路由段，恒 exit 0）。",
       "- 产物与退出：保存本阶段真实命令结果、任务/AGX/证据引用和阻断；公告“正在使用某 skill”只作说明，不是正文已加载或阶段已完成的证据。",
       "",
+      ...WORKFLOW_CHAIN_LINES,
     ],
     browserEyes: true,
   },
@@ -1066,6 +1100,20 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 讨论中定下的长期规范（「以后表格都…」「接口一律…」）：`pomaster update spec \"<一句规范>\" --scope … --why … --check-by … --do … --dont … --by <actor>` 落位到设计规范或硬规范主题文档，`--dry-run` 先看识别结果。",
       ...SPEC_WRITING_CARD_LINES,
       "",
+      "## 读取用户信息与文件（开口之前）",
+      "",
+      "- 先读用户给的一切：对话里的说明、附件（文档、表格、截图、原型）、链接指向的材料、已有的 PRD 或需求单，以及仓库本身（代码、配置、OpenAPI、已有规范）。读完再判断哪些是已知、哪些未知、哪些互相冲突。",
+      "- 原文登记：`brainstorm start --prompt \"<用户原话>\"`；读到的事实与疑点按 `--known` / `--unknown` / `--conflict` / `--assumption` 分拣，可重复。",
+      "- HTML 原型与 BA spec：`prototype ingest` 去掉表现、留下业务事实，事实清单就是后续验收的对账基准。",
+      "- 已有项目第一次接入：`pomaster init` 的已有项目路径会跑 recon（依赖图、迁移、SBOM），产物进证据面，先读它再讨论改动。",
+      "- 文件或仓库能回答的问题不问人；读不懂、读不到的标成缺失事实，进调研。",
+      "",
+      "## 调研报告与 PRD（讨论的两份产物）",
+      "",
+      "- 调研报告就是 research 产物：`research <topic>` 建四件骨架——index.yaml（findings 与 handoff 摘要）、current-implementation.md（现状）、external-options.md（外部方案）、risks-and-caveats.md（风险与注意）。外部专有名词、版本、价格、现行规则一律联网核实，来源与核实日期记在报告里；`research inspect` 判读通过才算报告完成。",
+      "- PRD 就是任务契约：`decide --ready --goal --scope --acceptance` 判卷全绿后 `promote --apply` 建出 TASK——目标、范围、验收条目、合法残留都在 TASK 上，不另写一份会漂移的 prd 文档。审阅用 `pomaster view task <TASK>`，派给子代理用 `pomaster agents dispatch-pack <TASK>`。",
+      "- 报告与规范分开：调研报告记来源、版本与日期；写进项目规范的条文按写入契约，不带引用、版本号与日期。",
+      "",
       "## 第一层 · 方法论主轴：Grill Strategy（先 Ground 后 Grill）",
       "",
       "### Grill 的输入不是 User Prompt",
@@ -1172,6 +1220,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster research handoff <id> --file <handoff.json>",
         "pomaster brainstorm decide <id> --ready [--decision-root <DECISION.*>] [--lanes <frontend,backend,data,platform>] --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*> [--residual <分类>:<陈述>]",
         "pomaster brainstorm promote <id> --to TASK|CHANGE --basis msd_reached --apply",
+        "pomaster research <topic> [--host <dir>]",
+        "pomaster view task <TASK.*>",
       ]),
       "",
       "### 链上各闸做什么",
@@ -1273,10 +1323,12 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "3. `execution begin` 登记 AGX 后执行；执行中需要新许可时 `execution attach-permit <AGX> --permit <PERMIT.*>`（交接前、许可在用）；结束时 `execution end <AGX>`。需要追溯时用 list/audit/trace，审计越界只呈报，不自动修复或扩权。",
       "4. `agents status` 是观测面；当前 `run`/`handoff` 返回 `COMMAND_DEFERRED`，不能当作真实派发成功。由现有 harness 直接执行或形成可恢复交接记录。",
       "",
+      ...PARALLEL_IMPLEMENT_LINES,
       "失败恢复以 error/hint 为准：SESSION_NOT_FOUND 先 attach，LOCK_BLOCKED 不重试抢占，身份不存在先 begin。交付 session_key、AGX、持锁/释放状态、审计或 trace 引用；verify 前保持 AGX 可追溯，完成后显式 end/release。",
       "",
       ...commandBlock([
         "pomaster agents status",
+        "pomaster agents dispatch-pack <TASK.*> [--out <path>]",
         "pomaster session attach --session-key <key> --harness <id> [--task <TASK.*>] [--reconcile <PERMIT.*>]",
         "pomaster session refresh --session-key <key>",
         "pomaster session list",

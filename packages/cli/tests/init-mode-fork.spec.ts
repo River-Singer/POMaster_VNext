@@ -178,7 +178,7 @@ describe("init 模式检测矩阵（F-M3 R1 三态）", () => {
     expect(executionArchives(dir)).toEqual([]);
   });
 
-  it("worktree 非空且无 .pomaster → brownfield_candidate：检测摘要逐值对账（源文件 2 / prisma 1 词形面 / SBOM 缺席）；.git-only 目录也判候选（git 在座信号）", () => {
+  it("worktree 有项目内容且无 .pomaster → brownfield_candidate：检测摘要逐值对账（源文件 2 / prisma 1 词形面 / SBOM 缺席）", () => {
     seedBrownfieldHost(dir);
     const detection = detectInitMode(dir, { sbomProbe: () => null });
     expect(detection.kind).toBe("brownfield_candidate");
@@ -187,19 +187,23 @@ describe("init 模式检测矩阵（F-M3 R1 三态）", () => {
       migration_stacks: ["prisma"],
       sbom_tool: "absent",
     });
-    // git 在座信号：只有 .git 目录（零源文件）——worktree 非空即候选（R1 检测口径）。
-    const gitOnly = mkdtempSync(join(tmpdir(), "pomaster-cli-init-fork-git-"));
+  });
+
+  it("只有版本库 / 编辑器元数据 / harness 目录 / README 与 LICENSE → greenfield（刚 git init 的新仓库不弹已有项目确认）；多一个项目文件就是候选", () => {
+    const host = mkdtempSync(join(tmpdir(), "pomaster-cli-init-fork-meta-"));
     try {
-      mkdirSync(join(gitOnly, ".git"));
-      const gitDetection = detectInitMode(gitOnly, { sbomProbe: () => null });
-      expect(gitDetection.kind).toBe("brownfield_candidate");
-      expect(
-        gitDetection.kind === "brownfield_candidate" ? gitDetection.summary.source_files : null,
-      ).toBe(0);
+      for (const name of [".git", ".vscode", ".idea", ".claude", ".codex"]) mkdirSync(join(host, name));
+      for (const name of [".gitignore", ".gitattributes", ".editorconfig", ".DS_Store", "README.md", "LICENSE", "CHANGELOG.md"]) {
+        writeFileSync(join(host, name), "x\n", "utf8");
+      }
+      expect(detectInitMode(host, { sbomProbe: () => null })).toEqual({ kind: "greenfield" });
+      writeFileSync(join(host, "package.json"), "{}\n", "utf8");
+      expect(detectInitMode(host, { sbomProbe: () => null }).kind).toBe("brownfield_candidate");
     } finally {
-      rmSync(gitOnly, { recursive: true, force: true });
+      rmSync(host, { recursive: true, force: true });
     }
   });
+
 
   it("已初始化 → initialized：init 后重检测 initialized（宿主文件在场也不分支）；二次 runInit NO_CHANGE + 重入口行为不变", async () => {
     seedBrownfieldHost(dir);

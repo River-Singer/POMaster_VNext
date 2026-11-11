@@ -105,6 +105,17 @@ export type InitModeDetection =
  * - 其余（worktree 非空且无 .pomaster）→ brownfield_candidate + 检测摘要
  *   （源文件计数 / migration 词形面 / SBOM 工具在位性——呈现给 Owner 的检测结果）。
  */
+/**
+ * 不算「已有项目内容」的目录项：版本库与编辑器 / 系统元数据、Agent harness 配置目录、
+ * 以及新仓库自带的说明与许可文件。只有这些的目录（例如刚 `git init`、只放了 README 与
+ * LICENSE）按干净目录走 Greenfield，不弹已有项目确认。
+ */
+const NON_PROJECT_ENTRY = /^(?:\.git|\.gitignore|\.gitattributes|\.gitkeep|\.gitmodules|\.DS_Store|Thumbs\.db|desktop\.ini|\.idea|\.vscode|\.fleet|\.editorconfig|\.claude|\.codex|\.agents|\.cursor|\.qoder|\.windsurf|(?:README|LICENSE|LICENCE|COPYING|NOTICE|CHANGELOG)(?:\.[A-Za-z]+)?)$/i;
+
+export function isProjectContentEntry(name: string): boolean {
+  return !NON_PROJECT_ENTRY.test(name);
+}
+
 export function detectInitMode(
   rootDir: string,
   inject: { readonly sbomProbe?: ExecutableProbeFn } = {},
@@ -116,7 +127,7 @@ export function detectInitMode(
   } catch {
     entries = []; // 根不可读：按干净目录处理（后续步骤各自显式报错，检测不裁决）
   }
-  if (entries.length === 0) return { kind: "greenfield" };
+  if (!entries.some(isProjectContentEntry)) return { kind: "greenfield" };
   const migrationStacks = reconMigrationStackReports(rootDir)
     .filter((row) => row.detected)
     .map((row) => row.stack);
