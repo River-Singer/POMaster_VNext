@@ -634,6 +634,11 @@ const SKELETON_GRID = {
 const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
 
 describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
+  it("领域标题不含「/」：Storybook 侧栏路径用「/」分层，标题里的斜杠会被拆成假的子目录", () => {
+    const skeleton = loadYaml(readFileSync(SKELETON_PATH, "utf8")) as { areas: { key: string; title_zh: string }[] };
+    expect(skeleton.areas.filter((area) => area.title_zh.includes("/")).map((area) => `${area.key}: ${area.title_zh}`)).toEqual([]);
+  });
+
   it("骨架通过校验：174 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
     const read = readDesignSkeleton(SKELETON_PATH)!;
     expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);

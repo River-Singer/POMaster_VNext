@@ -1174,7 +1174,7 @@
         },
         {
           "id": "unit-integration",
-          "title_zh": "单元 / 组件 / 集成测试",
+          "title_zh": "单元、组件与集成测试",
           "proves_zh": "单个函数、组件与模块组合按约定工作。",
           "evidence": [
             "unit-component-integration"

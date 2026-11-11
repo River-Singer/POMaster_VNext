@@ -14,6 +14,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { load as loadYaml } from "js-yaml";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -316,6 +317,43 @@ export function lintRuleLines(file: string, lines: ReadonlyArray<[number, string
 export interface SpecLintResult {
   readonly files: number;
   readonly issues: readonly SpecWritingIssue[];
+  /**
+   * 包内预设原样带进项目的条文里命中的处数——不计入 issues。预设里的主题文档与技术栈 overlay
+   * 逐行跟随上游来源，由包自己的棘轮管；spec-lint 只判项目写进去的条文（改过的预设行也算项目写的）。
+   */
+  readonly preset_issues_skipped: number;
+}
+
+const SEEDS_ROOT = fileURLToPath(new URL("../seeds", import.meta.url));
+
+/** 包内种子里同一份规范文档的条文行文本（.pomaster/specs/<rest> ↔ seeds/specs/<rest>）。 */
+function seedMarkdownRuleTexts(relative: string): ReadonlySet<string> {
+  const rest = relative.replace(/^\.pomaster\/specs\//, "");
+  const seedPath = join(SEEDS_ROOT, "specs", rest);
+  if (rest === relative || !existsSync(seedPath)) return new Set();
+  return new Set(markdownRuleLines(readFileSync(seedPath, "utf8")).map(([, text]) => text));
+}
+
+/** 设计规范预设（全部体系）的条文文本——项目的设计规范从其中一套落地。 */
+function seedDesignStandardRuleTexts(): ReadonlySet<string> {
+  const dir = join(SEEDS_ROOT, "design-standards");
+  if (!existsSync(dir)) return new Set();
+  const texts = new Set<string>();
+  for (const name of readdirSync(dir).filter((file) => file.endsWith(".yaml") && file !== "skeleton.yaml")) {
+    for (const [, text] of designStandardRuleLines(readFileSync(join(dir, name), "utf8"))) texts.add(text);
+  }
+  return texts;
+}
+
+/** 只留项目写进去的条文行；预设原样带来的行里的命中计数返回。 */
+function projectAuthoredIssues(
+  file: string,
+  lines: ReadonlyArray<[number, string]>,
+  preset: ReadonlySet<string>,
+): { issues: SpecWritingIssue[]; skipped: number } {
+  const authored = lines.filter(([, text]) => !preset.has(text));
+  const presetLines = lines.filter(([, text]) => preset.has(text));
+  return { issues: lintRuleLines(file, authored), skipped: lintRuleLines(file, presetLines).length };
 }
 
 function listMarkdown(root: string, base: string): string[] {
@@ -334,19 +372,27 @@ function listMarkdown(root: string, base: string): string[] {
 export function lintProjectSpecs(dir: string): SpecLintResult {
   const pomaster = join(dir, ".pomaster");
   const issues: SpecWritingIssue[] = [];
-  // index.md 是目录页（路由表按路径组织），不算条文。
-  const docs = listMarkdown(join(pomaster, "specs"), ".pomaster/specs").filter((file) => !file.endsWith("/index.md"));
+  let skipped = 0;
+  // index.md 是目录页（路由表按路径组织）、README.md 是 init 生成的目录说明页，都不算条文。
+  const docs = listMarkdown(join(pomaster, "specs"), ".pomaster/specs").filter(
+    (file) => !file.endsWith("/index.md") && !file.endsWith("/README.md"),
+  );
   for (const relative of docs) {
     const text = readFileSync(join(dir, relative), "utf8");
-    issues.push(...lintRuleLines(relative, markdownRuleLines(text)));
+    const judged = projectAuthoredIssues(relative, markdownRuleLines(text), seedMarkdownRuleTexts(relative));
+    issues.push(...judged.issues);
+    skipped += judged.skipped;
   }
   let files = docs.length;
   const standardRelative = ".pomaster/baseline/frontend/design-standard.yaml";
   if (existsSync(join(dir, standardRelative))) {
     files += 1;
-    issues.push(...lintRuleLines(standardRelative, designStandardRuleLines(readFileSync(join(dir, standardRelative), "utf8"))));
+    const lines = designStandardRuleLines(readFileSync(join(dir, standardRelative), "utf8"));
+    const judged = projectAuthoredIssues(standardRelative, lines, seedDesignStandardRuleTexts());
+    issues.push(...judged.issues);
+    skipped += judged.skipped;
   }
-  return { files, issues };
+  return { files, issues, preset_issues_skipped: skipped };
 }
 
 export function runSpecLint(dir: string): CommandOutcome<SpecLintResult | null> {
@@ -355,13 +401,20 @@ export function runSpecLint(dir: string): CommandOutcome<SpecLintResult | null> 
   }
   const result = lintProjectSpecs(dir);
   const lines = result.issues.map((issue) => `  ${issue.file}:${issue.line} 「${issue.match}」${issue.label_zh}——${issue.hint_zh}`);
+  const presetNote =
+    result.preset_issues_skipped > 0
+      ? `  包内预设原样带来的条文里有 ${result.preset_issues_skipped} 处不计入（预设跟随上游来源，由包自己的棘轮管；改过的预设行按项目条文判）`
+      : null;
   if (result.issues.length === 0) {
-    return okOutcome("spec-lint", result, [`spec-lint: ${result.files} 份规范，条文全部合写入契约`]);
+    return okOutcome("spec-lint", result, [
+      `spec-lint: ${result.files} 份规范，项目写入的条文全部合写入契约`,
+      ...(presetNote === null ? [] : [presetNote]),
+    ]);
   }
   return failOutcome(
     "spec-lint",
     result,
     [{ code: "SPEC_LINT_ISSUES", message: `${result.files} 份规范里有 ${result.issues.length} 处不合写入契约`, hint: "逐处改写：条文不带引用、版本号、时间戳、记录人；版本只记在技术基线" }],
-    [`spec-lint: ${result.issues.length} 处不合写入契约（${result.files} 份规范）`, ...lines],
+    [`spec-lint: ${result.issues.length} 处不合写入契约（${result.files} 份规范）`, ...lines, ...(presetNote === null ? [] : [presetNote])],
   );
 }

@@ -361,6 +361,7 @@ import { runPlanCompile } from "./plan.js";
 import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
+import { runToolsInit } from "./tools-init.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -1378,6 +1379,8 @@ export {
   runToolsList,
   runToolsValidate,
 } from "./tools.js";
+export { packageRunner, runToolsInit } from "./tools-init.js";
+export type { ToolsInitInput, ToolsInitResult } from "./tools-init.js";
 export type {
   BindingStateRow,
   BindingStatesDeps,
@@ -1672,6 +1675,26 @@ export function emitCommand(run: CommandRun, io: CliIo = defaultIo): void {
   }
   const target = run.outcome.ok ? io.stdout : io.stderr;
   for (const line of run.outcome.human) target(line);
+  if (!run.outcome.ok) {
+    // 失败时人读输出也要能照着修：human 行没写到的错误说明与 hint 补在后面（--json 信封本来就有）。
+    const shown = run.outcome.human.join("\n");
+    for (const error of run.outcome.errors) {
+      if (error.message.length > 0 && !shown.includes(error.message)) target(`  ${error.code}: ${error.message}`);
+      if (error.hint.length > 0 && !shown.includes(error.hint)) target(`  hint: ${error.hint}`);
+    }
+  }
+}
+
+/**
+ * session attach / refresh 的 --session-key。父命令 session（裸速览形态）也声明了 --session-key，
+ * commander 会让父命令先行消费子命令后面的同名选项——两处合读，缺了按必填项报错。
+ */
+function sessionSubcommandKey(command: Command): string {
+  const value: unknown = command.optsWithGlobals().sessionKey;
+  if (typeof value !== "string" || value.length === 0) {
+    command.error("error: required option '--session-key <key>' not specified", { code: "commander.missingMandatoryOptionValue" });
+  }
+  return value as string;
 }
 
 /** 解析 --dir（程序级全局选项；沿父链上溯，兼容任意参数位置）。 */
@@ -3858,6 +3881,20 @@ export function createProgram(
       "ToolBinding 统一注册面命令（W1-R1-4）：list = 全量绑定六分态派生（detect/registered/validated/available/selected/executed，分态不可跃迁、缺口逐条显式）；validate = 单绑定全判据呈现（纯读零写入；探测不扩大 permit——executed 唯一事实源 = GRN 真实回执）",
     );
   tools
+    .command("init")
+    .description(
+      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、maven…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
+    )
+    .option("--dry-run", "只列出将登记的绑定，不写文件")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "tools init",
+        outcome: runToolsInit(resolveDir(command), { dryRun: opts.dryRun === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  tools
     .command("list")
     .description(
       "列出 .pomaster/tools/bindings.json 全部绑定并派生六分态（registry 缺席 = TOOLBINDING_REGISTRY_ABSENT 显式拒绝禁静默空表；--plan 可回喂 plan compile --json 输出以对账 selected）",
@@ -4646,7 +4683,7 @@ export function createProgram(
     .description(
       "注册/刷新会话（CREATED / REFRESHED / REPLACED；resumed_task 回带既有任务指针）；--reconcile <permit> 恢复前对账：dirty/缺基线允许 attach 并告警，clean=false 保留；判卷失败和活会话所有权冲突仍拒绝。attach 不建立只读会话，不扩大 Permit；既有范围内写入仍可能获准，权限通过不等于漂移处置",
     )
-    .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
+    .option("--session-key <key>", "会话键（必填；harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
     .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
     .option("--task <governed-id>", "绑定/改绑当前任务指针（缺省 = 保留既有指针）")
     .option("--ttl <seconds>", "会话 TTL（正整数秒；缺省 900——D 线例文逐字）")
@@ -4663,7 +4700,7 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runSessionAttach(resolveDir(command), {
-        sessionKey: opts.sessionKey as string,
+        sessionKey: sessionSubcommandKey(command),
         harness: opts.harness as string,
         task: opts.task as string | undefined,
         ttl: opts.ttl as string | undefined,
@@ -4683,10 +4720,10 @@ export function createProgram(
   session
     .command("refresh")
     .description("心跳顺手刷新 last_seen_at（未注册会话 SESSION_NOT_FOUND 显式拒绝——禁静默重建）")
-    .requiredOption("--session-key <key>", "已注册会话键")
+    .option("--session-key <key>", "已注册会话键（必填）")
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (opts, command) => {
-      const outcome = await runSessionRefresh(resolveDir(command), opts.sessionKey as string);
+    .action(async (_opts, command) => {
+      const outcome = await runSessionRefresh(resolveDir(command), sessionSubcommandKey(command));
       record({
         command: "session refresh",
         outcome,

@@ -121,6 +121,8 @@ interface ChainRecords {
   readonly routeAfterExecution: StepRecord;
   readonly implementationHandoff: StepRecord;
   readonly routeAfterHandoff: StepRecord;
+  /** 工具注册面缺席时 ⑤ 先指 tools init；--dry-run 证明这一步可走（不写注册面，GP-8 证据链口径不变）。 */
+  readonly toolsInitDryRun: StepRecord;
   readonly gates: StepRecord;
   readonly claimRecord: StepRecord;
   /** record claim 分配的 CLM（GP-8 断言用；promote 自动生成 CLM-0001 后自适应编号）。 */
@@ -422,6 +424,7 @@ beforeAll(async () => {
     "--known-gap", "Dependencies are intentionally not installed in this fixture",
   ]);
   const routeAfterHandoff = await runJsonStep(root, ["status"]);
+  const toolsInitDryRun = await runJsonStep(root, ["tools", "init", "--dry-run"]);
 
   // —— 证据链（GP-8）：check --gates GRN 入账 → record claim → record verification。 ——
   const gates = await runJsonStep(root, ["check", "--gates"]);
@@ -484,6 +487,7 @@ beforeAll(async () => {
     routeAfterExecution,
     implementationHandoff,
     routeAfterHandoff,
+    toolsInitDryRun,
     gates,
     claimRecord,
     claimRef,
@@ -783,8 +787,16 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_EXECUTE_ENTRY");
       expect(records_.implementationHandoff.code, records_.implementationHandoff.stdout).toBe(0);
       expect(nextActionOf(records_.routeAfterHandoff)["route_id"]).toBe("R_VERIFY_ENTRY");
-      expect(nextActionOf(records_.routeAfterHandoff)["command"]).toContain(`pomaster plan run --task ${TASK_ID}`);
-      expect(nextActionOf(records_.routeAfterHandoff)["command"]).not.toContain(String(beginResult["execution_id"]));
+      // fixture 没有工具注册面：⑤ 先 tools init 写起步注册面，理由里接着 plan compile 与 qa 身份的 plan run。
+      expect(nextActionOf(records_.routeAfterHandoff)["command"]).toBe("pomaster tools init");
+      expect(String(nextActionOf(records_.routeAfterHandoff)["reason"])).toContain(`plan compile --task ${TASK_ID}`);
+      expect(String(nextActionOf(records_.routeAfterHandoff)["reason"])).toContain("plan run");
+      expect(String(nextActionOf(records_.routeAfterHandoff)["reason"])).not.toContain(String(beginResult["execution_id"]));
+      // fixture 声明了 typescript 与 vitest：tools init 会登记这两样（--dry-run 不写文件）。
+      expect(records_.toolsInitDryRun.code, records_.toolsInitDryRun.stdout).toBe(0);
+      const dry = (envelopeOf(records_.toolsInitDryRun).result ?? {}) as { added?: { id: string }[]; dry_run?: boolean };
+      expect(dry.dry_run).toBe(true);
+      expect((dry.added ?? []).map((row) => row.id)).toEqual(["project.test.vitest", "project.type.tsc"]);
     },
   );
 

@@ -1737,7 +1737,7 @@ areas:
       - { id: TEST.SMOKE.PROVES, title_zh: 证明什么 }
       - { id: TEST.SMOKE.EVIDENCE, title_zh: 证据怎么入账 }
   - key: test_unit_integration
-    title_zh: 单元 / 组件 / 集成测试
+    title_zh: 单元、组件与集成测试
     group: testing
     prefix: TEST.UNIT_INTEGRATION
     summary_zh: 单个函数、组件与模块组合按约定工作。

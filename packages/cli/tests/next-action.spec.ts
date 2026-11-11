@@ -965,7 +965,12 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     expect(handedOff.ok).toBe(true);
     const afterHandoff = await runStatus(dir);
     expect(afterHandoff.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
-    expect(afterHandoff.result.next_action.command).toBe(
+    // 新项目还没有工具注册面：先 tools init 写起步注册面，plan run 才跑得起来。
+    expect(afterHandoff.result.next_action.command).toBe("pomaster tools init");
+    mkdirSync(join(dir, ".pomaster", "tools"), { recursive: true });
+    writeFileSync(join(dir, ".pomaster", "tools", "bindings.json"), JSON.stringify({ version: 1, bindings: [] }), "utf8");
+    const withRegistry = await runStatus(dir);
+    expect(withRegistry.result.next_action.command).toBe(
       "pomaster plan run --task TASK.T1 --execution-id <verification-AGX>",
     );
   });
@@ -1442,4 +1447,62 @@ describe("P-C1 阻塞集路由适配（T13：豁免工作区照常给 confirm �
       expect(routed.result.baseline_confirmation?.unknowns_remaining).toBe(1);
     },
   );
+});
+
+// ---------------------------------------------------------------------------
+// 端到端链路演练暴露的断点：在途讨论、首次验证缺工具注册面
+// ---------------------------------------------------------------------------
+
+describe("①拍：在途讨论指向它的下一步，不再循环到 brainstorm start", () => {
+  it("快照：建图前 → decide --set；图已建 → --answer；全部决议 → --ready；READY_TO_PROMOTE → promote --to TASK --basis", () => {
+    const at = (rows: NonNullable<NextActionSnapshot["open_discoveries"]>) => evaluateNextAction(snap({ open_discoveries: rows }));
+    expect(at([]).command).toBe("pomaster brainstorm start");
+    expect(at([{ id: "orders", state: "DISCOVERY", graph: false }]).command).toBe("pomaster brainstorm decide orders --set <decision-graph.json>");
+    expect(at([{ id: "orders", state: "DISCOVERY", graph: true, all_resolved: false }]).command).toBe("pomaster brainstorm decide orders --answer <DECISION.*>");
+    const ready = at([{ id: "orders", state: "DISCOVERY", graph: true, all_resolved: true }]);
+    expect(ready.command).toContain("pomaster brainstorm decide orders --ready --goal <text> --scope <text> --acceptance");
+    expect(ready.reason).toContain("baseline confirm");
+    expect(at([{ id: "a", state: "DISCOVERY", graph: false }, { id: "b", state: "READY_TO_PROMOTE", graph: true, promotion_basis: "msd_reached" }]).command)
+      .toBe("pomaster brainstorm promote b --to TASK --basis msd_reached --apply");
+    expect(at([{ id: "a", state: "DISCOVERY", graph: false }, { id: "c", state: "IDEA", graph: false }]).reason).toContain("另有 1 个讨论在途（c）");
+  });
+
+  it("真实 store：brainstorm start 之后 next-action 读到 scratchpad，指向建图；已提升的讨论不在列", async () => {
+    await runInit(dir);
+    const pad = join(dir, ".pomaster", "discovery", "scratchpads", "orders");
+    mkdirSync(pad, { recursive: true });
+    writeFileSync(join(pad, "state.json"), JSON.stringify({ state: "DISCOVERY", scratchpad_ref: ".pomaster/discovery/scratchpads/orders/" }));
+    const done = join(dir, ".pomaster", "discovery", "scratchpads", "old");
+    mkdirSync(done, { recursive: true });
+    writeFileSync(join(done, "state.json"), JSON.stringify({ state: "TASK", scratchpad_ref: ".pomaster/discovery/scratchpads/old/" }));
+    const snapshot = await collectNextActionSnapshot(dir);
+    expect(snapshot.open_discoveries).toEqual([{ id: "orders", state: "DISCOVERY", graph: false, all_resolved: false, promotion_basis: null }]);
+    expect(evaluateNextAction(snapshot).command).toBe("pomaster brainstorm decide orders --set <decision-graph.json>");
+  });
+});
+
+describe("⑤拍：首次验证缺工具注册面时先指向登记工具", () => {
+  const verifying = (registry: boolean | undefined) =>
+    evaluateNextAction(snap({
+      active_tasks: [TASK],
+      bound_refs: ["PERMIT.T1.1"],
+      active_bound_refs: ["PERMIT.T1.1"],
+      task_manifest_present: true,
+      task_manifest_freshness: "fresh",
+      task_execution_active: true,
+      implementation_handoff_state: "fresh",
+      implementation_handoff_id: "sha256:abc",
+      ...(registry === undefined ? {} : { tool_registry_present: registry }),
+    }));
+
+  it("注册面缺席 → tools init，理由说清 plan compile --face、补登与 qa 身份；在座或未知 → plan run", () => {
+    const absent = verifying(false);
+    expect(absent.route_id).toBe("R_VERIFY_ENTRY");
+    expect(absent.command).toBe("pomaster tools init");
+    expect(absent.reason).toContain(".pomaster/tools/bindings.json");
+    expect(absent.reason).toContain("plan compile --task TASK.T1 --face");
+    expect(absent.reason).toContain("--role qa");
+    expect(verifying(true).command).toBe("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");
+    expect(verifying(undefined).command).toBe("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");
+  });
 });
