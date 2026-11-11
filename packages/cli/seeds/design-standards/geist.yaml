@@ -3254,7 +3254,7 @@ areas:
 
       - id: CMP.CALENDAR.KEYBOARD
         title_zh: 键盘
-        statement_zh: 日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。
+        statement_zh: 日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（年、月、日与星期都读得出来）。
         enforcement: { kind: review }
 
       - id: CMP.CALENDAR.MARKS

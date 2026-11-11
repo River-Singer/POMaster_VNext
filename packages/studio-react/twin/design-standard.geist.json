@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio-react/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:35248ac55010eda8185a4052f680a8dc091193c319fddfe39e44c64a15817889",
+  "fingerprint": "sha256:b276e549bb7c634c23d9779b69b0d049ad3c80d676e1227b31bde59a8110bcca",
   "generator": {
     "path": "packages/studio-react/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/geist.yaml",
-      "sha256": "a5dc42e683b9d8a4b124d307d9d7382588bc42982ab3aaac422bf4307bd2997a"
+      "sha256": "5d67171f5bcbd3b5acc06d50a6f9a0f21355cacafeb041f13fb8542c7cb78c61"
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
@@ -14012,7 +14012,7 @@
         {
           "id": "CMP.CALENDAR.KEYBOARD",
           "title_zh": "键盘",
-          "statement_zh": "日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。",
+          "statement_zh": "日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（年、月、日与星期都读得出来）。",
           "rationale_zh": null,
           "level": null,
           "scope_zh": null,

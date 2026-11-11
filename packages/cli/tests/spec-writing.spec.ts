@@ -123,6 +123,7 @@ describe("lintSpecContent：禁止内容", () => {
     "日期选择器默认选中今天",
     "删除前提示这次操作不可撤销",
     "执行锚:execution_id 与 store seq",
+    "变更走 change-governance 流程，任务按 task-workflow 拆分",
   ];
   for (const text of clean) {
     it(`不误报：${text}`, () => {
@@ -226,7 +227,7 @@ function walk(dirPath: string): string[] {
 }
 
 /** 预设种子里现存的违规上限：清理只能让它变小；改小时同步改这里。 */
-const SEED_ISSUE_CEILING = 306;
+const SEED_ISSUE_CEILING = 137;
 
 describe("预设种子与写入契约", () => {
   it(`种子条文违规数不超过 ${SEED_ISSUE_CEILING}（只降不升）`, () => {

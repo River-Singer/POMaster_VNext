@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:35248ac55010eda8185a4052f680a8dc091193c319fddfe39e44c64a15817889`；状态 origin=preset。
+> 规范指纹 `sha256:b276e549bb7c634c23d9779b69b0d049ad3c80d676e1227b31bde59a8110bcca`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -2683,7 +2683,7 @@ macOS 显示 ⌘ ⌥ ⇧，Windows / Linux 显示 Ctrl Alt Shift；按用户平�
 
 ### CMP.CALENDAR.KEYBOARD 键盘
 
-日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。
+日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（年、月、日与星期都读得出来）。
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-components-display-calendar--cmp-calendar-keyboard

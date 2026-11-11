@@ -78,7 +78,7 @@ export const SPEC_FORBIDDEN_CONTENT: readonly SpecContentRule[] = [
   {
     code: "SPEC_REFERENCE",
     label_zh: "引用（PR / issue / 任务编号）",
-    pattern: /\b(?:PR|MR|issue)\s*#?\d+|\bAGX-\d+\b|\b(?:TASK|CHANGE)[-.][A-Z0-9][A-Z0-9_.-]*/gi,
+    pattern: /\b(?:[Pp][Rr]|MR|[Ii]ssue)\s*#?\d+|\bAGX-\d+\b|\b(?:TASK|CHANGE)[-.][A-Z0-9][A-Z0-9_.-]*/g,
     hint_zh: "规则不随某个变更存在：删掉编号，只留规则本身",
   },
   {
