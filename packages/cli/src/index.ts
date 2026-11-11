@@ -329,6 +329,7 @@ import { runDesignShow, runDesignValidate } from "./design.js";
 import { runDesignCheck } from "./design-check.js";
 import { runDesignAdopt, runDesignSet } from "./design-adopt.js";
 import { runSpecUpdate } from "./spec-update.js";
+import { runSpecLint } from "./spec-writing.js";
 import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
@@ -1054,6 +1055,19 @@ export {
 export { runDesignAdopt, runDesignSet, detectDesignSystem, PROJECT_DECISION_SOURCE } from "./design-adopt.js";
 export type { DesignAdoptResult, DesignSetResult } from "./design-adopt.js";
 export { runSpecUpdate, recognizeSpec, readSpecRoutes, modalityOf } from "./spec-update.js";
+export {
+  SPEC_ENTRY_FIELDS,
+  SPEC_FORBIDDEN_CONTENT,
+  designStandardRuleLines,
+  lintProjectSpecs,
+  lintRuleLines,
+  lintSpecContent,
+  markdownRuleLines,
+  renderSpecEntryMarkdown,
+  runSpecLint,
+  validateSpecEntry,
+} from "./spec-writing.js";
+export type { SpecEntry, SpecEntryField, SpecLintResult, SpecWritingIssue } from "./spec-writing.js";
 export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-update.js";
 export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
 export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
@@ -1951,7 +1965,7 @@ export function createProgram(
   update
     .command("spec")
     .description(
-      "把开发中定下的新规范写到该在的地方：识别（路由表关键词 + 设计规范领域与条目标题计分；带具体视觉量偏向设计规范）→ 界面呈现类写进项目设计规范所属领域的新规则（review），其余写进硬规范主题文档的 MUST / MUST NOT / SHOULD 章节「项目补充」块；语气按措辞判（禁止/不得 → MUST NOT，建议/尽量 → SHOULD）；已有同句不重复写；--dry-run 只看识别结果。错误码：SPEC_UPDATE_TEXT / SPEC_UPDATE_ACTOR / SPEC_UPDATE_UNRECOGNIZED / SPEC_UPDATE_TARGET / DESIGN_NOT_ADOPTED / DESIGN_STANDARD_INVALID / NOT_INITIALIZED",
+      "把开发中定下的新规范写到该在的地方：写前按规范写入契约校验——七个字段（规则、级别、适用范围 --scope、理由 --why、检查方式 --check-by、正例 --do、反例 --dont）必须齐全，条文不带引用、版本号、时间戳、记录人；识别（路由表关键词 + 设计规范领域与条目标题计分；带具体视觉量偏向设计规范）→ 界面呈现类写进项目设计规范所属领域的新规则，其余写进硬规范主题文档的 MUST / MUST NOT / SHOULD 章节「项目补充」块；级别缺省按措辞判（禁止/不得 → MUST NOT，建议/尽量 → SHOULD）；已有同句不重复写；--dry-run 只看识别结果。错误码：SPEC_UPDATE_TEXT / SPEC_UPDATE_ACTOR / SPEC_UPDATE_FIELDS / SPEC_UPDATE_CONTENT / SPEC_UPDATE_UNRECOGNIZED / SPEC_UPDATE_TARGET / DESIGN_NOT_ADOPTED / DESIGN_STANDARD_INVALID / NOT_INITIALIZED",
     )
     .argument("<text>", "规范原文（一句完整的规则）")
     .requiredOption("--by <actor>", "记录人：human:<名字> 或 agent:<名字>")
@@ -1960,6 +1974,12 @@ export function createProgram(
     .option("--theme <theme>", "写进这个硬规范主题文档（如 security）")
     .option("--id <suffix>", "设计规范新规则编号的后半段（缺省 PROJECT_<n>）")
     .option("--title <title>", "设计规范新规则的标题（缺省取原文第一句）")
+    .option("--level <level>", "级别 MUST / MUST NOT / SHOULD（缺省按措辞判）")
+    .option("--scope <scope>", "适用范围：哪个空间、哪类对象或哪些路径（必填）")
+    .option("--why <why>", "理由：为什么要这样（必填）")
+    .option("--check-by <check>", "检查方式：门禁检查编号，或评审时看什么（必填；update 自身的 --check 是检查 CLI 更新）")
+    .option("--do <example>", "正例：一个合规的具体写法（必填）")
+    .option("--dont <example>", "反例：一个违规的具体写法（必填）")
     .option("--dry-run", "只输出识别结果与要写的内容，不写")
     .option("--json", "machine-readable JSON output (§45)")
     .action((text: string, opts, command) => {
@@ -1971,9 +1991,26 @@ export function createProgram(
         ...(opts.theme !== undefined ? { theme: opts.theme as string } : {}),
         ...(opts.id !== undefined ? { id: opts.id as string } : {}),
         ...(opts.title !== undefined ? { title: opts.title as string } : {}),
+        ...(opts.level !== undefined ? { level: opts.level as string } : {}),
+        ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
+        ...(opts.why !== undefined ? { why: opts.why as string } : {}),
+        ...(opts.checkBy !== undefined ? { check: opts.checkBy as string } : {}),
+        ...(opts.do !== undefined ? { do: opts.do as string } : {}),
+        ...(opts.dont !== undefined ? { dont: opts.dont as string } : {}),
         dryRun: opts.dryRun === true,
       });
       record({ command: "update spec", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+
+  program
+    .command("spec-lint")
+    .description(
+      "按规范写入契约复核项目里已有的规范条文（.pomaster/specs 下的硬规范与证据规范文档、项目设计规范；index.md 目录页除外）：逐处报出引用（链接、参见 / 详见、文档路径、PR / issue 编号）、版本号、时间戳与一次性措辞、记录人与会话标记；frontmatter 与设计规范 sources 出处表是溯源元数据，不在检查范围。有问题 exit 1。错误码：SPEC_LINT_ISSUES / NOT_INITIALIZED",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((_opts, command) => {
+      const outcome = runSpecLint(resolveDir(command));
+      record({ command: "spec-lint", outcome, asJson: command.optsWithGlobals().json === true });
     });
 
   program
