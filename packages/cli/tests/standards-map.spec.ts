@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { STANDARDS_SPACES, allDrawers, resolveStandards, runCli, runInit, runSpecUpdate, runStandards } from "@pomaster/cli";
+import { standardsSpaces, allDrawers, resolveStandards, runCli, runInit, runSpecUpdate, runStandards } from "@pomaster/cli";
 import {
   STANDARDS_AREA_FILES,
   SPACES_PATH,
@@ -33,7 +33,7 @@ const FIELDS = {
 
 describe("空间与抽屉清单", () => {
   it("九个空间，前端服务器显式在列；抽屉编号全局唯一", () => {
-    expect(STANDARDS_SPACES.map((space) => space.key)).toEqual([
+    expect(standardsSpaces().map((space) => space.key)).toEqual([
       "frontend",
       "frontend_server",
       "backend",
@@ -52,7 +52,7 @@ describe("空间与抽屉清单", () => {
     for (const drawer of allDrawers()) {
       if (drawer.doc !== null) expect(existsSync(join(seeds, "specs", "hard", drawer.doc)), drawer.id).toBe(true);
     }
-    for (const space of STANDARDS_SPACES) {
+    for (const space of standardsSpaces()) {
       for (const theme of space.themes) expect(existsSync(join(seeds, "specs", "hard", "themes", `${theme}.md`)), theme).toBe(true);
       for (const test of space.tests ?? []) {
         for (const slug of test.evidence) expect(existsSync(join(seeds, "specs", "evidence", `${slug}.md`)), slug).toBe(true);
@@ -61,7 +61,7 @@ describe("空间与抽屉清单", () => {
   });
 
   it("后端抽屉覆盖架构形态、语言、框架与持久层，常见语言和框架都有预留位", () => {
-    const backend = STANDARDS_SPACES.find((space) => space.key === "backend")!;
+    const backend = standardsSpaces().find((space) => space.key === "backend")!;
     const byKind = (kind: string) => backend.drawers.filter((drawer) => drawer.kind === kind).map((drawer) => drawer.id);
     expect(byKind("architecture")).toEqual(["modular-monolith", "microservices", "serverless"]);
     expect(byKind("language")).toEqual(expect.arrayContaining(["java", "php", "python", "go", "nodejs", "csharp"]));
@@ -70,7 +70,7 @@ describe("空间与抽屉清单", () => {
   });
 
   it("测试空间列出冒烟、白盒、黑盒、渗透等测试类型并对到证据规范", () => {
-    const testing = STANDARDS_SPACES.find((space) => space.key === "testing")!;
+    const testing = standardsSpaces().find((space) => space.key === "testing")!;
     expect(testing.tests?.map((test) => test.id)).toEqual(["smoke", "unit-integration", "regression", "white-box", "black-box", "penetration", "performance", "release"]);
     expect(testing.tests?.find((test) => test.id === "white-box")?.evidence).toEqual(expect.arrayContaining(["mutation", "complexity-crap", "coverage"]));
     expect(testing.tests?.find((test) => test.id === "penetration")?.evidence).toEqual(["security", "dependency-supply-chain"]);
@@ -171,7 +171,7 @@ describe("Storybook「规范空间」与「测试」领域（生成区与 spaces
   it("每个空间一页、每类测试一页；测试页把冒烟、白盒、黑盒、渗透都显式列出，白盒带写测试的纪律", () => {
     const areas = standardsAreas(data);
     const spaces = areas.filter((area) => area.group === "standards").map((area) => area.title_zh);
-    expect(spaces).toEqual(STANDARDS_SPACES.map((space) => space.title_zh));
+    expect(spaces).toEqual(standardsSpaces().map((space) => space.title_zh));
     expect(spaces).toContain("前端服务器");
     const tests = areas.filter((area) => area.group === "testing").map((area) => area.title_zh);
     for (const title of ["冒烟测试", "回归测试", "白盒测试", "黑盒测试", "渗透与安全测试"]) expect(tests).toContain(title);
