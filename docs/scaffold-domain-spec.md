@@ -7,7 +7,7 @@ pomaster scaffold validate packages/cli/scaffold/examples/fleet.domain-spec.yaml
 pomaster scaffold validate spec.yaml --json   # 机读信封；通过时 result.normalized 是生成器输入
 ```
 
-本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）、S1-5（接口层：每个面一份 OpenAPI 3.1）、S1-6（后端层）与 S1-7（管理侧前端）。
+本页对应切片 S1-1（规格、校验、归一化）、S1-2（规格进治理）、S1-3（生成记账与写入约束，第一块砖是数据库层）、S1-4（一致性门禁）、S1-5（接口层：每个面一份 OpenAPI 3.1）、S1-6（后端层）、S1-7（管理侧前端）与 S1-8（New Entity 接入与 CI 实证）。
 
 ## 规格进治理
 
@@ -43,6 +43,9 @@ pomaster scaffold generate   # 只按已确认、无漂移的规格生成
   * 字段分级落到代码：个人信息管理侧脱敏回显（修改时提交脱敏值视为没改）；敏感个人信息 AES-256-GCM 加密存储（与密文列同一格式），密钥从 `pomaster.field-encryption.key` 注入，没配启动即失败。日期、数字型个人信息管理侧不脱敏（保持类型），日志与审计照样按分级处理；
   * 应用账号只有 `grants.sql` 授的数据权限，应用不跑迁移；迁移用迁移账号 `mvn -pl <app>-core flyway:migrate`。表级授权要在迁移建表之后执行。
 * **项目自有模块是种子**：`<app>-support`（pom、扩展点说明、两份配置覆盖文件 `support-admin.yml` / `support-public.yml`）只在目标位置没有文件时写一次，不进生成清单、不登记 KEYBINDING，之后归项目所有——认证（`ActorProvider`，没有实现时需要登录的接口一律 401）、数据范围、共享限流、审计落点在这里实现，项目选的依赖加在这里。被删了下次生成会补回。
+* **管理侧前端外壳是种子**：`frontend/admin` 下的 `package.json`、Vite / TypeScript 配置、`index.html`、入口与布局（左侧菜单取生成的路由，右侧放页面）只在缺席时写一次，之后归项目所有——换路由库、接登录、加依赖在这里改。Vue 外壳按需注册模板集可能用到的 Ant Design Vue 组件（不整包注册）；React 外壳另带生成页面引用的 Geist 组件源码（shadcn/ui 源码进项目）与主题样式，组件与 React 画廊同一份实现，由 `node scripts/sync-geist-shell.mjs` 同步。`npm install && npm run build` 先类型检查再构建。
+* **超出模板覆盖就拒绝，转 New Entity 判定**：规格引用了不在 catalog 里的原型 → `scaffold validate` 报 `SPEC_ARCHETYPE_UNKNOWN`，提示 `pomaster new-entity check <原型 ID>`；原型在册但模板集还不覆盖 → `scaffold plan` / `generate` 拒绝（`SCAFFOLD_ARCHETYPE_UNCOVERED`，零写入），结果里的 `uncovered` 逐个给出这个实体的 `pomaster new-entity check CAPABILITY.SCAFFOLD.<APP>.ENTITY.<KEY> --need "…"`：被拒就按匹配到的在册原型改规格，放行就把实体从规格里拿出来手写。不硬套模板。
+* **CI 实证**：`scaffold-java` 按两份样例规格（`fleet`、`shop`）生成项目，用真实 Maven 编译，在 MySQL 8.4 上用迁移账号跑迁移、按授权脚本给应用账号授权、起两个应用按规格走一遍接口；`scaffold-web` 在三个系统上把 Vue 与 React 两套管理侧前端装依赖并构建。
 * **管理侧前端按技术基线选模板集**：读 `.pomaster/baseline/frontend/stack.yaml` 的 `framework`（与 `ui`）。Vue → `vue-antd-admin@1`；React → `react-geist-admin@1`；`ui` 已选但不配套（如 React + Ant Design）、别的框架、或技术栈还没定 → 不生成前端文件并警告 `SCAFFOLD_FRONTEND_SKIPPED`（提示先 `pomaster baseline set frontend framework …`）。框架不替项目选技术栈。生成清单只记这次用到的模板集；技术栈从 Vue 改成 React 后再生成，Vue 文件退役、React 文件新建，迁移与接口文档不动。
 * **Vue 3 + ant-design-vue（`vue-antd-admin@1`）**：写到 `frontend/admin/src/`。每个管理侧实体一份接口客户端（`api/<实体>.ts`，类型与管理侧 OpenAPI 同源，decimal 是字符串）、列表页（`views/<实体>/<类名>List.vue`：可检索的字符串与枚举字段进查询区，表格数字右对齐、操作列在最右，筛选、页码与每页条数进 URL，切换时取消上一次请求，删除走气泡确认并带 version）、编辑抽屉（`<类名>Form.vue`：有新建或修改时生成，宽 378，校验规则取必填 / 长度 / 范围，带 version 提交，409 提示刷新）、路由（`router/<实体>.ts`：按需加载，meta 声明登录与权限码，权限码与接口文档的 `x-pomaster-permission` 同源）与 zh-CN 文案（`locales/zh-CN/<实体>.ts`）。公共文件：请求封装 `api/http.ts`（会话走 HttpOnly Cookie，不碰浏览器存储；失败归一成 RFC 9457 problem）、格式化注册表 `utils/format.ts`、权限判断 `auth/permission.ts`，以及文案与路由的汇总入口。生成物照设计规范写——界面文字只在文案字典、日期数字只经格式化注册表、组件不直接发请求——项目采用 Ant Design 规范后 `pomaster design check` 零违规。用户侧（Vant）前端在后续切片。
 * **React + shadcn/ui（`react-geist-admin@1`）**：同样写到 `frontend/admin/src/`，按 React 栈的前端架构分目录（规范 ARCH.*）。`api/<实体>.ts` 是接口客户端加 TanStack Query 的查询与变更 hooks（翻页保留上一页数据，写后按 key 失效）；`routes/<实体>/list.tsx` 是列表页（筛选、页码、每页条数进地址栏，枚举筛选只认规格里的取值，删除走气泡确认并带 version）；`features/<实体>/<类名>EditDialog.tsx` 是编辑对话框（react-hook-form + zod，规则取必填 / 长度 / 范围 / decimal 精度，带 version 提交，409 提示刷新，接口回的字段错误按 `field_errors` 的 pointer 挂回字段），`features/<实体>/index.ts` 是模块公开入口；`routes/<实体>/route.ts` 与 `routes/scaffold.ts` 是与路由库无关的路由描述（懒加载 + `handle` 声明登录、权限码、标题、布局），按基线选定的路由库接入。公共文件：请求封装 `api/http.ts`（与 Vue 模板同一份）、`lib/format.ts`、`lib/permission.ts`、`lib/i18n.ts`（文案取值）、`lib/url-state.ts`（地址栏搜索参数）与文案、路由汇总。组件从项目的 `components/ui` 引入（shadcn/ui 源码进项目），依赖 @tanstack/react-query、react-hook-form、zod、@hookform/resolvers、sonner、lucide-react。项目采用 Geist 规范后 `pomaster design check` 零违规。

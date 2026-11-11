@@ -652,6 +652,10 @@ describe("generate：生成记账与写入约束", () => {
     expect(written).toContain("frontend/admin/src/routes/vehicle-model/list.tsx");
     expect(written).toContain("frontend/admin/src/features/vehicle-model/VehicleModelEditDialog.tsx");
     expect(written).toContain("frontend/admin/src/routes/scaffold.ts");
+    // 外壳是种子：入口、布局、Vite / TS 配置，加上生成页面引用的 Geist 组件源码与主题样式。
+    for (const path of ["frontend/admin/package.json", "frontend/admin/src/main.tsx", "frontend/admin/src/App.tsx", "frontend/admin/src/styles/globals.css", "frontend/admin/src/components/ui/dialog.tsx", "frontend/admin/src/lib/utils.ts"]) {
+      expect(outcome.result.seeded).toContain(path);
+    }
     const manifestRead = await readGenerationManifest(dir);
     if (manifestRead.kind !== "ok") throw new Error("manifest");
     expect(manifestRead.manifest.template_sets.map((set) => set.id)).toEqual(["mysql-flyway", "openapi-3.1", "react-geist-admin"]);
@@ -669,6 +673,15 @@ describe("generate：生成记账与写入约束", () => {
     const again = await runScaffoldGenerate(dir);
     expect(again.ok, again.errors[0]?.message).toBe(true);
     expect(again.result.written).toEqual(ADMIN_UI_PATHS);
+    expect(again.result.seeded).toEqual([
+      "frontend/admin/index.html",
+      "frontend/admin/package.json",
+      "frontend/admin/src/App.vue",
+      "frontend/admin/src/env.d.ts",
+      "frontend/admin/src/main.ts",
+      "frontend/admin/tsconfig.json",
+      "frontend/admin/vite.config.ts",
+    ]);
   });
 
   it("从 Vue 切到 React：Vue 前端文件退役，React 文件新建，迁移不动", async () => {
@@ -695,7 +708,7 @@ describe("generate：生成记账与写入约束", () => {
     for (const path of ["backend/pom.xml", `${CORE}/service/VehicleModelService.java`, `${ADMIN_WEB}/VehicleModelAdminController.java`, `${ADMIN_WEB}/ProblemHandler.java`]) {
       expect(outcome.result.written).toContain(path);
     }
-    expect(outcome.result.seeded).toEqual([
+    expect(outcome.result.seeded.filter((path) => path.startsWith("backend/"))).toEqual([
       "backend/fleet-support/pom.xml",
       "backend/fleet-support/src/main/java/com/example/fleet/support/package-info.java",
       "backend/fleet-support/src/main/resources/support-admin.yml",
@@ -734,7 +747,7 @@ describe("generate：生成记账与写入约束", () => {
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.ok, outcome.errors[0]?.message).toBe(true);
     expect(outcome.result.written.filter((path) => path.endsWith(".java") || path.endsWith("pom.xml"))).toEqual([]);
-    expect(outcome.result.seeded).toEqual([]);
+    expect(outcome.result.seeded.filter((path) => path.startsWith("backend/"))).toEqual([]);
     const warning = outcome.warnings.find((item) => item.code === "SCAFFOLD_BACKEND_SKIPPED");
     expect(warning?.message).toContain("jpa");
     writeBackendStack(null);
@@ -752,6 +765,28 @@ describe("generate：生成记账与写入约束", () => {
     const outcome = await runScaffoldGenerate(dir);
     expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_GENERATED_FILE_MODIFIED"]);
     expect(outcome.errors[0]?.message).toContain(controller);
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("规格引用了在册、但模板集不覆盖的原型 → plan / generate 拒绝且零写入，逐个给出 New Entity 判定命令", async () => {
+    await initStore();
+    writeSpec(readFileSync(SAMPLE_PATH, "utf8").replace("data: DATA_ARCHETYPE.MASTER_DATA", "data: DATA_ARCHETYPE.LEDGER"));
+    expect((await runScaffoldConfirm(dir, { by: OWNER })).ok).toBe(true);
+    const plan = await runScaffoldPlan(dir);
+    expect(plan.ok).toBe(false);
+    expect(plan.errors.map((error) => error.code)).toEqual(["SCAFFOLD_ARCHETYPE_UNCOVERED"]);
+    expect(plan.result.uncovered).toEqual([
+      {
+        entity: "vehicle_model",
+        slot: "data",
+        archetype: "DATA_ARCHETYPE.LEDGER",
+        next_command: 'pomaster new-entity check CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL --need "车型 DATA_ARCHETYPE.LEDGER"',
+      },
+    ]);
+    expect(plan.errors[0]?.hint).toContain("pomaster new-entity check CAPABILITY.SCAFFOLD.FLEET.ENTITY.VEHICLE_MODEL");
+    const before = snapshot();
+    const outcome = await runScaffoldGenerate(dir);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["SCAFFOLD_ARCHETYPE_UNCOVERED"]);
     expect(snapshot()).toEqual(before);
   });
 

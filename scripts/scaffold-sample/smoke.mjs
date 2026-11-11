@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 脚手架后端实证（CI 的 scaffold-java 任务）第二步：在真实 MySQL 上跑迁移、起两个应用、按规格走一遍接口。
 //
-// 用法：node scripts/scaffold-java/smoke.mjs <项目目录>
+// 用法：node scripts/scaffold-sample/smoke.mjs <项目目录>
 // 前提：MySQL 8 在 127.0.0.1:3306（root / root）；后端已 mvn package；项目由 generate.mjs 生成。
 //
 // 账号与生产同一口径：迁移账号只做结构变更（Flyway），两个应用账号只有 grants.sql 授的数据权限。

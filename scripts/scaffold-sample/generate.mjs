@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// 脚手架后端实证（CI 的 scaffold-java 任务）第一步：按一份领域规格生成一个完整项目。
+// 脚手架实证（CI 的 scaffold-java / scaffold-web 任务）第一步：按一份领域规格生成一个完整项目。
 //
-// 用法：node scripts/scaffold-java/generate.mjs <spec.yaml> <目标目录>
+// 用法：node scripts/scaffold-sample/generate.mjs <spec.yaml> <目标目录> [vue|react]
 //
-// 走真实命令面：建仓 → 写后端技术基线（Java + Spring + MyBatis-Plus + MySQL）→ 规格确认 → 生成。
+// 走真实命令面：建仓 → 写技术基线（后端 Java + Spring + MyBatis-Plus + MySQL；前端 Vue 3 + Ant Design Vue，
+// 或 React + Geist）→ 规格确认 → 生成。
 // 生成后在项目自有模块（种子，之后归项目）里放一个冒烟专用的认证实现：从请求头 X-Test-Actor
 // 取操作者（id|userId|权限码,权限码）。真实项目按规格里的认证决策位实现 ActorProvider。
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -14,9 +15,10 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const { createStore } = await import(pathToFileURL(join(repo, "packages", "kernel", "dist", "index.js")).href);
 const { runScaffoldConfirm, runScaffoldGenerate } = await import(pathToFileURL(join(repo, "packages", "cli", "dist", "index.js")).href);
 
-const [specPath, targetArg] = process.argv.slice(2);
-if (specPath === undefined || targetArg === undefined) {
-  console.error("用法：node scripts/scaffold-java/generate.mjs <spec.yaml> <目标目录>");
+const [specPath, targetArg, frontendArg = "vue"] = process.argv.slice(2);
+const FRONTEND = { vue: { framework: "vue3", ui: "antdesign" }, react: { framework: "react", ui: "geist" } };
+if (specPath === undefined || targetArg === undefined || FRONTEND[frontendArg] === undefined) {
+  console.error("用法：node scripts/scaffold-sample/generate.mjs <spec.yaml> <目标目录> [vue|react]");
   process.exit(2);
 }
 const target = resolve(targetArg);
@@ -32,6 +34,12 @@ mkdirSync(join(target, ".pomaster", "baseline", "backend"), { recursive: true })
 writeFileSync(
   join(target, ".pomaster", "baseline", "backend", "stack.yaml"),
   "language: java\nframework: spring\npersistence: mybatis-plus\ndatabase: mysql\ncache: none\n",
+);
+mkdirSync(join(target, ".pomaster", "baseline", "frontend"), { recursive: true });
+const { framework, ui } = FRONTEND[frontendArg];
+writeFileSync(
+  join(target, ".pomaster", "baseline", "frontend", "stack.yaml"),
+  `framework: ${framework}\nlanguage: typescript\nbuild: vite\nrouter: UNKNOWN\nstate: UNKNOWN\ngrid: UNKNOWN\nui: ${ui}\ncss: UNKNOWN\ntesting: UNKNOWN\n`,
 );
 mkdirSync(join(target, ".pomaster", "scaffold"), { recursive: true });
 writeFileSync(join(target, ".pomaster", "scaffold", "domain-spec.yaml"), readFileSync(resolve(specPath), "utf8"));
