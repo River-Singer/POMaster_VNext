@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:292c4dfae3707408313085a0db145f5b82ed060c4531b40cfcab8411a760eae4",
+  "fingerprint": "sha256:62c7774018cab6725c50bfda1ba280a67a99ebb607b858b916bc265b36384024",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/antd.yaml",
-      "sha256": "e2c5999981a9949825276fd1e42cd9cfcb22ed70be98315106ef67112869fb0c"
+      "sha256": "dfb90b41207006534e53d4335e17585991aec194eacb64d7779dd0134542b4e7"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -17,7 +17,7 @@
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
-      "sha256": "61df8b6ad10a783fd527735a8df0349a7bed7b67ed69d2c986fde14c0ed915cf"
+      "sha256": "7ad75135b5c95f3ffb4f3c44094afc0422537a8c6dc21486b006d34a8de8df19"
     }
   ],
   "edit": {
@@ -34926,7 +34926,7 @@
         {
           "id": "SPACE.TESTING.TYPES",
           "title_zh": "测试类型",
-          "statement_zh": "测试按要证明的事情分类：冒烟测试、单元 / 组件 / 集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。",
+          "statement_zh": "测试按要证明的事情分类：冒烟测试、单元、组件与集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。",
           "rationale_zh": "按证明的事情分类，缺哪一类一眼可见；同一种工具可以服务多类测试。",
           "level": null,
           "scope_zh": "所有空间的验证工作",
@@ -34955,7 +34955,7 @@
                   "jsx": null
                 },
                 {
-                  "name": "单元 / 组件 / 集成测试",
+                  "name": "单元、组件与集成测试",
                   "usage_zh": "单个函数、组件与模块组合按约定工作。",
                   "sample_zh": "单元/组件/集成测试",
                   "template": null,
@@ -35096,7 +35096,7 @@
     },
     {
       "key": "test_unit_integration",
-      "title_zh": "单元 / 组件 / 集成测试",
+      "title_zh": "单元、组件与集成测试",
       "group": "testing",
       "group_title_zh": "测试",
       "prefix": "TEST.UNIT_INTEGRATION",
@@ -35117,7 +35117,7 @@
         }
       ],
       "storybook": {
-        "title": "规范/测试/单元 / 组件 / 集成测试",
+        "title": "规范/测试/单元、组件与集成测试",
         "id": "standard-testing-test-unit-integration--overview",
         "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--overview",
         "playground": null,

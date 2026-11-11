@@ -8111,7 +8111,7 @@ areas:
 
       - id: SPACE.TESTING.TYPES
         title_zh: 测试类型
-        statement_zh: 测试按要证明的事情分类：冒烟测试、单元 / 组件 / 集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。
+        statement_zh: 测试按要证明的事情分类：冒烟测试、单元、组件与集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。
         rationale_zh: 按证明的事情分类，缺哪一类一眼可见；同一种工具可以服务多类测试。
         scope_zh: 所有空间的验证工作
         check_zh: pomaster plan run 与 record gate-run 的结果；没跑的记 NOT_RUN
@@ -8125,7 +8125,7 @@ areas:
               - name: 冒烟测试
                 usage_zh: 构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
                 sample_zh: 构建成功、浏览器端到端
-              - name: 单元 / 组件 / 集成测试
+              - name: 单元、组件与集成测试
                 usage_zh: 单个函数、组件与模块组合按约定工作。
                 sample_zh: 单元/组件/集成测试
               - name: 回归测试
@@ -8168,7 +8168,7 @@ areas:
         check_zh: pomaster plan run 与 record gate-run 的入账结果
         enforcement: { kind: review }
   - key: test_unit_integration
-    title_zh: 单元 / 组件 / 集成测试
+    title_zh: 单元、组件与集成测试
     group: testing
     prefix: TEST.UNIT_INTEGRATION
     summary_zh: 单个函数、组件与模块组合按约定工作。

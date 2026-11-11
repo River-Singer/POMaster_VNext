@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:292c4dfae3707408313085a0db145f5b82ed060c4531b40cfcab8411a760eae4`；状态 origin=preset。
+> 规范指纹 `sha256:62c7774018cab6725c50bfda1ba280a67a99ebb607b858b916bc265b36384024`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -6939,14 +6939,14 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 
 ### SPACE.TESTING.TYPES 测试类型
 
-测试按要证明的事情分类：冒烟测试、单元 / 组件 / 集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。
+测试按要证明的事情分类：冒烟测试、单元、组件与集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 适用范围：所有空间的验证工作
 - 检查方式：pomaster plan run 与 record gate-run 的结果；没跑的记 NOT_RUN
 - 对照表「测试类型与证据」（测试类型 → 用途）：
   - `冒烟测试`：构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
-  - `单元 / 组件 / 集成测试`：单个函数、组件与模块组合按约定工作。
+  - `单元、组件与集成测试`：单个函数、组件与模块组合按约定工作。
   - `回归测试`：改动之后，原有行为与界面没有被改坏。
   - `白盒测试`：看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。
   - `黑盒测试`：只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。
@@ -6979,7 +6979,7 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - 检查方式：pomaster plan run 与 record gate-run 的入账结果
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--test-smoke-evidence
 
-## 测试 / 单元 / 组件 / 集成测试（TEST.UNIT_INTEGRATION）
+## 测试 / 单元、组件与集成测试（TEST.UNIT_INTEGRATION）
 
 单个函数、组件与模块组合按约定工作。
 
