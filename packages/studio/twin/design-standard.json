@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:fc65f20eacddf7f21cae80e7519ebf2679d564d209a29d7b58edbc84e93473d8",
+  "fingerprint": "sha256:e174356ffac9fd3fb632a68a7ed6de77894e5c68325be846d1780cbab0a7b2dc",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/antd.yaml",
-      "sha256": "4757104642042c6083abee5f4018678ad835558059c310477476e6fd725d102d"
+      "sha256": "8cb7cee9ecbb62e83bbd8fa798f4f231f7393fe53cf7e9340c49d9966d58c834"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -309,7 +309,7 @@
             {
               "kind": "palette",
               "title_zh": "品牌色与功能色",
-              "description_zh": "由主题种子色派生，与 ant-design-vue 4.2.6 运行时一致；第 6 档就是种子色本身。",
+              "description_zh": "由主题种子色派生，与组件库运行时一致；第 6 档就是种子色本身。",
               "source": "SRC.ANTD.COLORS_GENERATE",
               "scales": [
                 {
@@ -15154,7 +15154,7 @@
         {
           "id": "CMP.CALENDAR.KEYBOARD",
           "title_zh": "键盘",
-          "statement_zh": "日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（「2026 年 11 月 7 日 星期六」）。",
+          "statement_zh": "日历是网格（role=grid），方向键按天、上下按周移动，PageUp / PageDown 换月，Home / End 到周首尾；每个日期格有完整的可读名称（年、月、日与星期都读得出来）。",
           "rationale_zh": null,
           "level": null,
           "scope_zh": null,
