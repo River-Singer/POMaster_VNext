@@ -46,6 +46,8 @@ import {
   runSessionAttach,
   runSessionList,
   runSessionRefresh,
+  runCli,
+  emitCommand,
 } from "@pomaster/cli";
 import { makeStore } from "../../../packages/kernel/tests/helpers.js";
 
@@ -604,5 +606,61 @@ describe("execution attach-permit（V2-2；VX-WRITE-07）", () => {
     expect(badActor.errors[0]?.code).toBe("SCHEMA_INVALID");
     const noReason = await runExecutionAttachPermit(root, "AGX-2026-00001", { permit: "PERMIT.X.1", actor: "human:owner", reason: "" });
     expect(noReason.errors[0]?.code).toBe("SCHEMA_INVALID");
+  });
+});
+
+describe("session attach / refresh 经 CLI 调用（父命令 session 也有 --session-key）", () => {
+  const cli = async (args: string[]) => {
+    const out: string[] = [];
+    const code = await runCli(["--dir", root, ...args], { stdout: (line) => out.push(line), stderr: (line) => out.push(line) });
+    return { code, text: out.join("\n") };
+  };
+
+  it("attach 与 refresh 的 --session-key 写在子命令后面也能认到；裸 session --session-key 仍是速览", async () => {
+    const attach = await cli(["session", "attach", "--session-key", "claude_cli01", "--harness", "claude-code", "--json"]);
+    expect(attach.code, attach.text).toBe(0);
+    expect(JSON.parse(attach.text).result.session_key).toBe("claude_cli01");
+    const refresh = await cli(["session", "refresh", "--session-key", "claude_cli01"]);
+    expect(refresh.code, refresh.text).toBe(0);
+    expect(refresh.text).toContain("claude_cli01");
+    const overview = await cli(["session", "--session-key", "claude_cli01"]);
+    expect(overview.code).toBe(0);
+  });
+
+  it("缺 --session-key 仍按必填项拒绝", async () => {
+    const missing = await cli(["session", "attach", "--harness", "claude-code"]);
+    expect(missing.code).not.toBe(0);
+    expect(missing.text).toContain("--session-key");
+  });
+});
+
+describe("失败的人读输出带上错误说明与 hint", () => {
+  it("human 行没写到的 message / hint 补在后面；已写到的不重复；成功不加", () => {
+    const lines: string[] = [];
+    const io = { stdout: (line: string) => lines.push(`out:${line}`), stderr: (line: string) => lines.push(`err:${line}`) };
+    emitCommand({
+      command: "demo",
+      asJson: false,
+      outcome: {
+        ok: false,
+        result: null,
+        human: ["demo: FAILED — X_CODE", "  hint: 已经写过的 hint"],
+        errors: [
+          { code: "X_CODE", message: "项目没有稳定的基线", hint: "先完成 baseline confirm" },
+          { code: "Y_CODE", message: "第二个错误", hint: "已经写过的 hint" },
+        ],
+        warnings: [],
+      } as never,
+    }, io);
+    expect(lines).toEqual([
+      "err:demo: FAILED — X_CODE",
+      "err:  hint: 已经写过的 hint",
+      "err:  X_CODE: 项目没有稳定的基线",
+      "err:  hint: 先完成 baseline confirm",
+      "err:  Y_CODE: 第二个错误",
+    ]);
+    lines.length = 0;
+    emitCommand({ command: "demo", asJson: false, outcome: { ok: true, result: null, human: ["demo: ok"], errors: [], warnings: [] } as never }, io);
+    expect(lines).toEqual(["out:demo: ok"]);
   });
 });

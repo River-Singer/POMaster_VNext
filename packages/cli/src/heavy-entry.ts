@@ -763,7 +763,7 @@ const WORKFLOW_CHAIN_LINES: readonly string[] = [
   "| 3 调研与联网搜索 | pomaster-discovery | `research <topic>` 建报告骨架；外部专有名词、版本、价格、现行规则一律联网核实并记来源；`research request/handoff` 把结论挂回决策 | `research inspect` 通过；缺失事实全部消解或显式延后 |",
   "| 4 报告与 PRD | pomaster-discovery | 调研报告 = research 四件（index.yaml 的 findings 与 handoff、现状、外部方案、风险）；PRD = `decide --ready --goal --scope --acceptance` 判卷通过后 `promote --apply` 建出的 TASK，用 `view task` 审阅 | READY_TO_PROMOTE 且 TASK 已建；验收条目都挂到决策或假设 |",
   "| 5 多 Agent 并行实现 | pomaster-runtime + pomaster-execute | 按互不重叠的写范围拆单元，每个单元一把锁、一个 AGX、一份 `agents dispatch-pack` 派发包；写入受 exec-guard 判卷 | 每个单元都有 `execution handoff`，锁已释放 |",
-  "| 6 测试 | pomaster-verify | `plan compile/run` 按任务编译验证计划并真跑：冒烟、回归、白盒（覆盖率、CRAP、变异）、黑盒 E2E、契约、安全渗透 | 计划里每条证据都有真实结果；没跑的记 NOT_RUN，不算通过 |",
+  "| 6 测试 | pomaster-verify | `plan compile --face` 声明变更面、看清 REQUIRED 义务；工具登记在 `.pomaster/tools/bindings.json`（`tools list / validate` 看六分态）；qa 身份 `plan run` 真跑：冒烟、回归、白盒（覆盖率、CRAP、变异）、黑盒 E2E、契约、安全渗透 | 计划里每条证据都有真实结果；没工具的义务记 tool_gap、没跑的记 NOT_RUN，都不算通过 |",
   "| 7 检查 | pomaster-verify | 独立于实现者的 AGX 判读证据、对照验收条目；`view task` 走 Review View | finalize 到真实阶段；独立验证与 Owner 验收缺席时显式 pending |",
   "| 8 维护 | pomaster-reconcile / compact / closeout | 新定的长期规范用 `update spec` 写入（按写入契约，写后 `spec-lint`）；漂移对账、折叠、收口 | reconcile 无未处理漂移；closeout 通过 |",
   "",
@@ -774,11 +774,11 @@ const PARALLEL_IMPLEMENT_LINES: readonly string[] = [
   "## 多 Agent 并行实现（剧本）",
   "",
   "1. 拆单元：按写范围拆成互不重叠的单元（一个单元 = 一个 TASK，或一个 TASK 里的一组 object key）；写范围有交集的单元不并行，排成先后。",
-  "2. 主 Agent 为每个单元准备：`session attach` 一个会话键 → `lock acquire`（TASK 级或 `--kind unit --object-key`）→ `execution begin --role implementer --task-id <TASK>` 拿 AGX → `agents dispatch-pack <TASK> --out <file>` 生成派发包。",
+  "2. 主 Agent 为每个单元准备：`session attach --session-key <key> --harness <claude-code|codex> --task <TASK>` → `execution begin --role implementer --runtime <claude-code|codex> --identity-kind subagent --task-id <TASK> --session-key <key> --harness <同上>` 拿 AGX → `lock acquire --kind task --ref <TASK>`（或 `--kind unit --object-key <key>`）`--session-key <key> --execution-id <AGX>` → `agents dispatch-pack <TASK> --out <file>` 生成派发包。",
   "3. 派发：用当前 harness 的子代理能力（Claude Code 的 Agent / Task 工具、Codex 的子代理）派出，把派发包、AGX、锁编号和写范围原样交给子代理；`pomaster run` / `handoff` 目前是 COMMAND_DEFERRED，不能当派发成功。",
   "4. 子代理照 pomaster-execute 实现：每次写入经 exec-guard 判卷（越出 permit 的写被 hook 拦下）；完成后 `execution handoff` 写清改动路径、检查、已知缺口。",
-  "5. 收拢：主 Agent 逐个确认 handoff，`lock release`、`execution end`；`LOCK_BLOCKED` 时等待或协调，不抢锁（只有 Owner 明确同意才 `lock steal`）。",
-  "6. 验证另起身份：verify 用新的 AGX（role 不是 implementer），不让实现者给自己判卷。",
+  "5. 收拢：主 Agent 逐个确认 handoff，`lock release --lock <lock-id> --session-key <key>`、`execution end <AGX>`；`LOCK_BLOCKED` 时等待或协调，不抢锁（只有 Owner 明确同意才 `lock steal`）。",
+  "6. 验证另起身份：`execution begin --role qa --runtime <…> --identity-kind <…> --task-id <TASK>` 拿新的 AGX 跑 `plan run`，不让实现者给自己判卷。",
   "",
 ];
 

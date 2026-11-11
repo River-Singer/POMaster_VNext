@@ -18,6 +18,7 @@ import {
   markdownRuleLines,
   renderSpecEntryMarkdown,
   runCli,
+  runInit,
   runSpecLint,
   validateSpecEntry,
 } from "@pomaster/cli";
@@ -205,6 +206,29 @@ describe("pomaster spec-lint", () => {
     const code = await runCli(["--dir", dir, "spec-lint", "--json"], { stdout: (line) => out.push(line), stderr: (line) => out.push(line) });
     expect(code).toBe(1);
     expect((JSON.parse(out.join("\n")) as { result: { issues: unknown[] } }).result.issues).toHaveLength(2);
+  });
+
+  it("README.md 是生成的目录说明页，不算条文", () => {
+    writeFileSync(join(dir, ".pomaster", "specs", "hard", "themes", "README.md"), "# themes\n\n- 宪法来源：PRD §8.2\n", "utf8");
+    expect(runSpecLint(dir).ok).toBe(true);
+  });
+
+  it("新 init 的项目零问题：包内预设原样带来的条文不计入（另报处数），项目写进去的条文照判", async () => {
+    const fresh = mkdtempSync(join(tmpdir(), "pomaster-spec-lint-init-"));
+    try {
+      expect((await runInit(fresh)).ok).toBe(true);
+      const clean = runSpecLint(fresh);
+      expect(clean.ok, clean.human.join("\n")).toBe(true);
+      expect(clean.result?.preset_issues_skipped).toBeGreaterThan(0);
+      expect(clean.human.join("\n")).toContain("不计入");
+      const security = join(fresh, ".pomaster", "specs", "hard", "themes", "security.md");
+      writeFileSync(security, `${readFileSync(security, "utf8")}\n- 列表分页参见 PR #12。\n`, "utf8");
+      const dirty = runSpecLint(fresh);
+      expect(dirty.ok).toBe(false);
+      expect(dirty.result?.issues.map((issue) => issue.match)).toEqual(["参见", "PR #12"]);
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+    }
   });
 
   it("没有 .pomaster/specs → NOT_INITIALIZED", () => {

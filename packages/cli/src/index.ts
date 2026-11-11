@@ -1672,6 +1672,26 @@ export function emitCommand(run: CommandRun, io: CliIo = defaultIo): void {
   }
   const target = run.outcome.ok ? io.stdout : io.stderr;
   for (const line of run.outcome.human) target(line);
+  if (!run.outcome.ok) {
+    // 失败时人读输出也要能照着修：human 行没写到的错误说明与 hint 补在后面（--json 信封本来就有）。
+    const shown = run.outcome.human.join("\n");
+    for (const error of run.outcome.errors) {
+      if (error.message.length > 0 && !shown.includes(error.message)) target(`  ${error.code}: ${error.message}`);
+      if (error.hint.length > 0 && !shown.includes(error.hint)) target(`  hint: ${error.hint}`);
+    }
+  }
+}
+
+/**
+ * session attach / refresh 的 --session-key。父命令 session（裸速览形态）也声明了 --session-key，
+ * commander 会让父命令先行消费子命令后面的同名选项——两处合读，缺了按必填项报错。
+ */
+function sessionSubcommandKey(command: Command): string {
+  const value: unknown = command.optsWithGlobals().sessionKey;
+  if (typeof value !== "string" || value.length === 0) {
+    command.error("error: required option '--session-key <key>' not specified", { code: "commander.missingMandatoryOptionValue" });
+  }
+  return value as string;
 }
 
 /** 解析 --dir（程序级全局选项；沿父链上溯，兼容任意参数位置）。 */
@@ -4646,7 +4666,7 @@ export function createProgram(
     .description(
       "注册/刷新会话（CREATED / REFRESHED / REPLACED；resumed_task 回带既有任务指针）；--reconcile <permit> 恢复前对账：dirty/缺基线允许 attach 并告警，clean=false 保留；判卷失败和活会话所有权冲突仍拒绝。attach 不建立只读会话，不扩大 Permit；既有范围内写入仍可能获准，权限通过不等于漂移处置",
     )
-    .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
+    .option("--session-key <key>", "会话键（必填；harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
     .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
     .option("--task <governed-id>", "绑定/改绑当前任务指针（缺省 = 保留既有指针）")
     .option("--ttl <seconds>", "会话 TTL（正整数秒；缺省 900——D 线例文逐字）")
@@ -4663,7 +4683,7 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runSessionAttach(resolveDir(command), {
-        sessionKey: opts.sessionKey as string,
+        sessionKey: sessionSubcommandKey(command),
         harness: opts.harness as string,
         task: opts.task as string | undefined,
         ttl: opts.ttl as string | undefined,
@@ -4683,10 +4703,10 @@ export function createProgram(
   session
     .command("refresh")
     .description("心跳顺手刷新 last_seen_at（未注册会话 SESSION_NOT_FOUND 显式拒绝——禁静默重建）")
-    .requiredOption("--session-key <key>", "已注册会话键")
+    .option("--session-key <key>", "已注册会话键（必填）")
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (opts, command) => {
-      const outcome = await runSessionRefresh(resolveDir(command), opts.sessionKey as string);
+    .action(async (_opts, command) => {
+      const outcome = await runSessionRefresh(resolveDir(command), sessionSubcommandKey(command));
       record({
         command: "session refresh",
         outcome,

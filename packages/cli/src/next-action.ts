@@ -56,7 +56,9 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   contextsDirPath,
+  discoveryScratchpadsDirPath,
   executionsDirPath,
+  toolsBindingsPath,
   TRUTH_INDEX_RELATIVE,
   toPosix,
 } from "./store-layout.js";
@@ -251,6 +253,97 @@ export interface NextActionSnapshot {
    */
   readonly baseline_blocking_remaining: number | null;
   readonly baseline_pending_change_ref: string | null;
+  /**
+   * 在途讨论（scratchpad 状态 IDEA / DISCOVERY / READY_TO_PROMOTE；已提升的不在列）。
+   * 无活跃任务时据此指向讨论的下一步，而不是再开一个讨论。缺省 = 无在途讨论。
+   */
+  readonly open_discoveries?: readonly NextActionDiscoveryRow[];
+  /** 工具注册面 .pomaster/tools/bindings.json 是否在座（缺席时 plan run 直接拒绝，⑤拍先指向登记工具）。缺省 = 在座。 */
+  readonly tool_registry_present?: boolean;
+}
+
+/** 一个在途讨论：编号、状态链位置、候选决策图是否已建、图里的决策是否都已决议。 */
+export interface NextActionDiscoveryRow {
+  readonly id: string;
+  readonly state: string;
+  readonly graph: boolean;
+  readonly all_resolved?: boolean;
+  /** READY_TO_PROMOTE 时 state.json 记的晋升依据（promote --basis 的值）。 */
+  readonly promotion_basis?: string | null;
+}
+
+const TOOLS_BINDINGS_RELATIVE_FOR_ROUTE = ".pomaster/tools/bindings.json";
+
+const OPEN_DISCOVERY_STATES: readonly string[] = ["IDEA", "DISCOVERY", "READY_TO_PROMOTE"];
+
+/** 只读扫描 discovery scratchpads（坏形 state.json 跳过——brainstorm status 负责报出）。 */
+function scanOpenDiscoveries(rootDir: string): NextActionDiscoveryRow[] {
+  const padsDir = discoveryScratchpadsDirPath(rootDir);
+  if (!existsSync(padsDir)) return [];
+  const rows: NextActionDiscoveryRow[] = [];
+  for (const entry of readdirSync(padsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()) {
+    try {
+      const file = JSON.parse(readFileSync(join(padsDir, entry, "state.json"), "utf8")) as { state?: unknown; promotion_basis?: unknown };
+      const state = file.state;
+      const basis = typeof file.promotion_basis === "string" ? file.promotion_basis : null;
+      if (typeof state === "string" && OPEN_DISCOVERY_STATES.includes(state)) {
+        const graphPath = join(padsDir, entry, "decision-graph.json");
+        const graph = existsSync(graphPath);
+        let allResolved = false;
+        if (graph) {
+          const decisions = (JSON.parse(readFileSync(graphPath, "utf8")) as { decisions?: unknown }).decisions;
+          allResolved = Array.isArray(decisions) && decisions.length > 0 &&
+            decisions.every((node) => isRecord(node) && isRecord(node.resolution));
+        }
+        rows.push({ id: entry, state, graph, all_resolved: allResolved, promotion_basis: basis });
+      }
+    } catch {
+      // 坏形不路由
+    }
+  }
+  return rows;
+}
+
+/** 无活跃任务时的①拍指向：在途讨论的下一步；没有在途讨论才开新讨论。 */
+function discoveryRoute(open: readonly NextActionDiscoveryRow[]): { command: string; reason: string } {
+  const others = (id: string): string =>
+    open.length > 1 ? `；另有 ${open.length - 1} 个讨论在途（${open.filter((d) => d.id !== id).map((d) => d.id).join(", ")}），全部见 pomaster brainstorm status` : "";
+  const ready = open.find((d) => d.state === "READY_TO_PROMOTE");
+  if (ready !== undefined) {
+    return {
+      command: `pomaster brainstorm promote ${ready.id} --to TASK --basis ${ready.promotion_basis ?? "msd_reached"} --apply`,
+      reason: `讨论 ${ready.id} 已收敛（READY_TO_PROMOTE）——promote 建出 TASK（即 PRD，用 pomaster view task 审阅）${others(ready.id)}`,
+    };
+  }
+  const current = open[0];
+  if (current === undefined) {
+    return {
+      command: "pomaster brainstorm start",
+      reason: "无活跃 TASK.*（新变更从八拍① Brainstorm 入口——需求收敛后 promote 即建任务）",
+    };
+  }
+  if (!current.graph) {
+    return {
+      command: `pomaster brainstorm decide ${current.id} --set <decision-graph.json>`,
+      reason:
+        `讨论 ${current.id} 在途（${current.state}）——先读用户给的文件与仓库，每问人一个问题前过 pomaster brainstorm question-gate ${current.id}；` +
+        `候选决策写成图后 decide --set 建图${others(current.id)}`,
+    };
+  }
+  if (current.all_resolved === true) {
+    return {
+      command: `pomaster brainstorm decide ${current.id} --ready --goal <text> --scope <text> --acceptance <criterion@DECISION.*> --lanes <frontend,backend,data,platform>`,
+      reason:
+        `讨论 ${current.id} 的决策都已决议——--ready 收敛成任务契约（目标、范围、验收条目挂到决策）；` +
+        `声明 baseline 依赖范围（--lanes / --baseline-target）前项目基线要先 pomaster baseline confirm${others(current.id)}`,
+    };
+  }
+  return {
+    command: `pomaster brainstorm decide ${current.id} --answer <DECISION.*>`,
+    reason:
+      `讨论 ${current.id} 在途（${current.state}，决策图已建）——按 frontier 一次决议一个；全部决议后 ` +
+      `decide ${current.id} --ready --goal <text> --scope <text> --acceptance <criterion@anchor> 收敛${others(current.id)}`,
+  };
 }
 
 /** 空快照（未初始化/读取失败共用缺席形态）。 */
@@ -658,6 +751,8 @@ export async function collectNextActionSnapshot(
     baseline_gate_codes: baselineGateCodeList,
     baseline_unknowns_remaining: baselinePresentation?.unknowns_remaining ?? null,
     baseline_blocking_remaining: baselinePresentation?.blocking_remaining ?? null,
+    open_discoveries: scanOpenDiscoveries(rootDir),
+    tool_registry_present: existsSync(toolsBindingsPath(rootDir)),
     baseline_pending_change_ref: baselinePresentation?.pending_change?.change_ref ?? null,
   };
 }
@@ -1036,11 +1131,7 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     // promote 即建任务）。
     id: "R_NO_ACTIVE_TASK",
     when: (s) => (s.selected_task_id === null && s.active_tasks.length === 0 ? true : false),
-    render: () => ({
-      beat: "①",
-      command: "pomaster brainstorm start",
-      reason: "无活跃 TASK.*（新变更从八拍① Brainstorm 入口——需求收敛后 promote 即建任务）",
-    }),
+    render: (s) => ({ beat: "①", ...discoveryRoute(s.open_discoveries ?? []) }),
   },
   {
     // T2 R5 + P-C1 T13：baseline 未确认（或已漂移）且阻塞集清零时提示确认。
@@ -1196,11 +1287,25 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     when: (s) => {
       return s.implementation_handoff_state === "fresh";
     },
-    render: (s) => ({
-      beat: "⑤",
-      command: `pomaster plan run --task ${firstTaskOr(s, "<TASK.*>")} --execution-id <verification-AGX>`,
-      reason: `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY 主链；验证身份须按既有独立性合同登记，不能把实现交接当作通过证明；此前已有验证证据时加 --requalify --by <type:name> 只重跑源码已变或缺失的义务（V2-10）`,
-    }),
+    render: (s) => {
+      const task = firstTaskOr(s, "<TASK.*>");
+      if (s.tool_registry_present === false) {
+        return {
+          beat: "⑤",
+          command: `pomaster plan compile --task ${task} --face <kind>=present|absent:<依据>`,
+          reason:
+            `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY；本项目还没有工具注册面 ${toPosix(TOOLS_BINDINGS_RELATIVE_FOR_ROUTE)}，plan run 只执行登记过的工具、缺席时直接拒绝。` +
+            "先 plan compile 按变更面逐个声明（ui / behavior / api / data_read_write …）看清哪些证明义务 REQUIRED；" +
+            "再为每个 REQUIRED 能力在注册面登记 ToolBinding（命令、gate、报告格式；pomaster tools validate <id> 逐项列缺口）；" +
+            "然后用独立的 qa 身份（execution begin --role qa）跑 plan run。没有工具的义务保持 REQUIRED 并记 tool_gap，不算通过",
+        };
+      }
+      return {
+        beat: "⑤",
+        command: `pomaster plan run --task ${task} --execution-id <verification-AGX>`,
+        reason: `当前源码存在 fresh implementation handoff ${s.implementation_handoff_id ?? "<handoff>"}——进入 VERIFY 主链；验证身份须按既有独立性合同登记（execution begin --role qa，不复用实现者的 AGX），不能把实现交接当作通过证明；此前已有验证证据时加 --requalify --by <type:name> 只重跑源码已变或缺失的义务（V2-10）`,
+      };
+    },
   },
   {
     id: "R_RECONCILE",
