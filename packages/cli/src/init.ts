@@ -1047,7 +1047,7 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 ## 重入口安装物（init 维护）
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
-- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime。
+- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime / pomaster-ub-mode。
 - 开工、恢复、阶段完成与交付前必须运行 \`pomaster next-action --json\`，加载 \`workflow_route.required_skill.paths\` 指向的完整 SKILL.md，再执行 required_action。若 hooks 缺失、关闭、未信任或无法观察，本条静态 agent-pull 仍生效。
 - 每次刷新须保留已知身份：有已登记会话键时加 \`--session-key <key>\`（可复用 hook 的 \`workflow_route.session_key\`）；否则用已明确选定的 \`--task <TASK.*>\`。native session_id 不一定等于 kernel 会话键；首次通过公开 session attach 登记真实 session_id/cwd 元数据和任务，多候选或身份不可判时先恢复绑定，不要退回裸命令选其他任务。
 - 实现交接后在同一轮主动重取路由并进入 verify；不要等待用户补说“继续/检查”。skill 公告只作说明，不是加载或完成证据。

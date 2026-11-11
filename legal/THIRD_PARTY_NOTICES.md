@@ -742,6 +742,7 @@
 2. **minimatch@10.2.6 — BlueOak-1.0.0**：`@typescript-eslint/typescript-estree@8.68.0` 的依赖。Blue Oak Model License 1.0.0 为现代宽松许可证（非 MIT/BSD/Apache 家族），包内 LICENSE.md 全文核对一致（B1）。分发 notice 建议原文保留。
 3. **@pkgjs/parseargs 双源不一致（不在本 lockfile 内，仅记录）**：本机 node_modules 残留的 `@pkgjs/parseargs@0.11.0`（c8 树残留，见 §3）package.json 声明 MIT 但包内 LICENSE 文件为 Apache-2.0 全文。该包**不属于本 lockfile 依赖面**，但作为上游双源不一致样本记录在案；若未来进入依赖面需 Owner/上游确认。
 4. **`require-from-string@2.0.2` 与多个 sindresorhus 系包的 license 文件名为小写 `license`**：属文件名大小写差异，内容均为对应 license id 全文（B1）。
+5. **ub-mode（非依赖包，改写引用）— MIT**：`pomaster-ub-mode` 技能卡（packages/cli/src/heavy-entry.ts，`pomaster init` 播种到项目的 `.agents/skills/` 与 `.claude/skills/`）的规则内核改写自 Robert C. Martin 的 ub-mode（github.com/unclebob/ub-mode，SKILL.md，commit `3da62bf`）。原许可：MIT License，Copyright (c) 2026 Robert C. Martin——准许使用、复制、修改、合并、发布、分发，条件是在副本或实质部分中保留上述版权声明与许可声明。本条即该声明的载体；技能卡正文同时写明出处。
 
 ## §3 node_modules 与 lockfile 漂移（审计发现）
 

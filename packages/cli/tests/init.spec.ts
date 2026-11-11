@@ -66,7 +66,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 14×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份 + B6H h5 105 份——预铺面
+ * 15×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份 + B6H h5 105 份——预铺面
  * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
  * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6c-B6G+B7
  * 各批在册）。
@@ -92,7 +92,7 @@ function heavyDefaultExpectedFiles(): string[] {
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 14×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -125,7 +125,7 @@ describe("init 首次创建（CREATED）", () => {
       expect(existsSync(join(dir, ".agents", "skills", spec.name, "SKILL.md"))).toBe(true);
       expect(existsSync(join(dir, ".claude", "skills", spec.name, "SKILL.md"))).toBe(true);
     }
-    expect(SKILL_MANIFEST).toHaveLength(14); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14
+    expect(SKILL_MANIFEST).toHaveLength(15); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14；11-11 加工程纪律卡 pomaster-ub-mode 14→15
   });
 
   it("Slice A bootstrap harness receipt projects existing sources into init JSON and human output", async () => {
@@ -1347,6 +1347,25 @@ describe("高风险 workflow skills 行为合同", () => {
       "公告",
       "agent-pull",
     ]);
+  });
+
+  it("ub-mode 卡写明出处，按「先跑通 → 再做对 → 守实践」落位，阈值交 Owner 决策不代填", () => {
+    expectSemantics("pomaster-ub-mode", [
+      "Robert C. Martin",
+      "MIT",
+      "先跑通",
+      "再做对",
+      "守实践",
+      "先写会失败的测试",
+      "修根因",
+      "测行为不测实现",
+      "CRAP",
+      "变异",
+      "不由 Agent 代填",
+      "NOT_RUN",
+    ]);
+    expectSemantics("pomaster-execute", ["pomaster-ub-mode"]);
+    expectSemantics("pomaster", ["pomaster-ub-mode"]);
   });
 
   it("runtime 说明会话/执行身份来源、锁冲突与显式接管，而不把阻塞写成成功", () => {
