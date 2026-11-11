@@ -156,8 +156,8 @@ jobs:
 
       - name: Generate sample projects
         run: |
-          node scripts/scaffold-java/generate.mjs packages/cli/scaffold/examples/fleet.domain-spec.yaml "$RUNNER_TEMP/fleet"
-          node scripts/scaffold-java/generate.mjs packages/cli/scaffold/examples/shop.domain-spec.yaml "$RUNNER_TEMP/shop"
+          node scripts/scaffold-sample/generate.mjs packages/cli/scaffold/examples/fleet.domain-spec.yaml "$RUNNER_TEMP/fleet"
+          node scripts/scaffold-sample/generate.mjs packages/cli/scaffold/examples/shop.domain-spec.yaml "$RUNNER_TEMP/shop"
 
       - name: Maven package
         run: |
@@ -166,8 +166,45 @@ jobs:
 
       - name: Migrate, run both apps, exercise the API
         run: |
-          node scripts/scaffold-java/smoke.mjs "$RUNNER_TEMP/fleet"
-          node scripts/scaffold-java/smoke.mjs "$RUNNER_TEMP/shop"
+          node scripts/scaffold-sample/smoke.mjs "$RUNNER_TEMP/fleet"
+          node scripts/scaffold-sample/smoke.mjs "$RUNNER_TEMP/shop"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 脚手架前端实证（S1-7 / S1-8）：同一份样例规格按 Vue 3 + Ant Design Vue、React + Geist 各生成一个管理侧前端
+  # （受管页面 + 种子外壳），装依赖后跑项目自己的 build（先类型检查再 Vite 构建），三个系统都跑。
+  scaffold-web:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        frontend: [vue, react]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build
+        run: corepack pnpm build
+
+      - name: Generate sample project
+        shell: bash
+        run: node scripts/scaffold-sample/generate.mjs packages/cli/scaffold/examples/fleet.domain-spec.yaml "$RUNNER_TEMP/fleet-${{ matrix.frontend }}" ${{ matrix.frontend }}
+
+      - name: Install and build the generated admin web
+        shell: bash
+        working-directory: ${{ runner.temp }}/fleet-${{ matrix.frontend }}/frontend/admin
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
 
   # ─────────────────────────────────────────────────────────────────────────────
   # L6-2 自主半边（P35）：clean HOME × fresh clone bootstrap 演练。

@@ -909,6 +909,9 @@ export { renderAdminFrontendReact, REACT_FRONTEND_TEMPLATE_SET } from "./scaffol
 export type { ReactFrontendTemplateId } from "./scaffold-frontend-react.js";
 export { chooseFrontendTemplate, chooseFrontendTemplateFromStack } from "./scaffold-frontend-stack.js";
 export type { FrontendTemplateChoice } from "./scaffold-frontend-stack.js";
+export { ADMIN_WEB_ROOT, renderReactShellSeeds, renderVueShellSeeds } from "./scaffold-frontend-shell.js";
+export { uncoveredArchetypes } from "./scaffold-generate.js";
+export type { UncoveredArchetype } from "./scaffold-generate.js";
 export {
   BACKEND_TEMPLATE_SET,
   BACKEND_VERSIONS,
@@ -2938,7 +2941,7 @@ export function createProgram(
   scaffold
     .command("plan")
     .description(
-      "生成计划（S1-3，只读）：按「上次生成时的规格快照 → 现规格」求差，列出要新建 / 更新的受管文件（Flyway 迁移只追加、授权脚本随规格更新）、需要数据迁移而被拒绝的变化、受管文件被手改 / 删除的冲突。规格未确认或漂移时照样出计划但带警告（generate 会拒绝）。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_MIGRATION_NOT_ADDITIVE / NOT_INITIALIZED",
+      "生成计划（S1-3，只读）：按「上次生成时的规格快照 → 现规格」求差，列出要新建 / 更新的受管文件（Flyway 迁移只追加、授权脚本随规格更新）、需要数据迁移而被拒绝的变化、受管文件被手改 / 删除的冲突，以及只写一次的种子文件（后端的项目自有模块、管理侧前端外壳）。规格引用了模板集不覆盖的原型 → 拒绝（S1-8），逐个给出 pomaster new-entity check 命令。规格未确认或漂移时照样出计划但带警告（generate 会拒绝）。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_ARCHETYPE_UNCOVERED / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_MIGRATION_NOT_ADDITIVE / NOT_INITIALIZED",
     )
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
     .option("--json", "machine-readable JSON output (§45)")
@@ -2952,7 +2955,7 @@ export function createProgram(
   scaffold
     .command("generate")
     .description(
-      "按已确认规格生成（S1-3，harness 约束 ② ④）：只认 Owner 确认且无漂移的规格；写受管文件（数据库层：MySQL DDL 的 Flyway 迁移 + 账号授权脚本），写生成清单 .pomaster/scaffold/generation-manifest.json（路径 / sha256 / 模板 / 规格快照，history 只追加），每个受管文件登记 KEYBINDING（CAPABILITY.SCAFFOLD.*，活跃执行期内手改由 exec-guard 拦下），journal 追加 SCAFFOLD_GENERATED。已最新 → NO_CHANGE 零写入。错误码：同 plan，另加 SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT",
+      "按已确认规格生成（S1-3，harness 约束 ② ④）：只认 Owner 确认且无漂移的规格；写受管文件（数据库层：MySQL DDL 的 Flyway 迁移 + 账号授权脚本；接口层：两个面的 OpenAPI 3.1；后端：按技术基线选 spring-mybatis-plus 模板集；管理侧前端：按技术基线选 Vue / React 模板集），种子文件只在缺席时写一次且不受管，写生成清单 .pomaster/scaffold/generation-manifest.json（路径 / sha256 / 模板 / 规格快照，history 只追加），每个受管文件登记 KEYBINDING（CAPABILITY.SCAFFOLD.*，活跃执行期内手改由 exec-guard 拦下），journal 追加 SCAFFOLD_GENERATED。已最新 → NO_CHANGE 零写入。错误码：同 plan，另加 SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT；警告：SCAFFOLD_BACKEND_SKIPPED / SCAFFOLD_FRONTEND_SKIPPED",
     )
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
     .option("--json", "machine-readable JSON output (§45)")
@@ -2966,7 +2969,7 @@ export function createProgram(
   scaffold
     .command("check")
     .description(
-      "一致性门禁（S1-4，harness 约束 ③，只读）：六项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 接口文档 ↔ 规格（S1-5）/ 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING / SCAFFOLD_CONTRACT_DRIFT；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
+      "一致性门禁（S1-4，harness 约束 ③，只读）：六项——规格治理态 / 生成清单 ↔ 受管文件（被手改、被删）/ 生成新鲜度（已确认规格比上次生成新）/ KEYBINDING 在册 / 接口 ↔ 规格（S1-5 接口文档；S1-6 后端控制器的权限码、访问档、可见性与属主过滤、用户侧视图字段）/ 不受管的手工迁移（警告）。与 closeout、check --gates 的 GATE.SCAFFOLD.CONSISTENCY 同一判卷；规格缺席 → 门不适用（exit 0）。错误码：SCAFFOLD_SPEC_INVALID / SCAFFOLD_SPEC_NOT_CONFIRMED / SCAFFOLD_SPEC_DRIFT / SCAFFOLD_MANIFEST_MALFORMED / SCAFFOLD_TEMPLATE_SET_CHANGED / SCAFFOLD_GENERATED_FILE_MODIFIED / SCAFFOLD_GENERATION_STALE / SCAFFOLD_KEYBINDING_MISSING / SCAFFOLD_CONTRACT_DRIFT；警告：SCAFFOLD_NOT_GENERATED / SCAFFOLD_UNMANAGED_MIGRATION",
     )
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
     .option("--json", "machine-readable JSON output (§45)")

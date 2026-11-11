@@ -41,6 +41,7 @@ import { OPENAPI_TEMPLATE_SET, openApiPath, renderOpenApi } from "./scaffold-ope
 import { FRONTEND_TEMPLATE_SET, renderAdminFrontend, type FrontendFile, type FrontendTemplateId } from "./scaffold-frontend.js";
 import { REACT_FRONTEND_TEMPLATE_SET, renderAdminFrontendReact, type ReactFrontendTemplateId } from "./scaffold-frontend-react.js";
 import { chooseFrontendTemplate, type FrontendTemplateChoice } from "./scaffold-frontend-stack.js";
+import { renderReactShellSeeds, renderVueShellSeeds } from "./scaffold-frontend-shell.js";
 import {
   BACKEND_TEMPLATE_SET,
   chooseBackendTemplate,
@@ -50,7 +51,7 @@ import {
   type BackendTemplateId,
   type SeedFile,
 } from "./scaffold-backend.js";
-import type { NormalizedDomainSpec } from "./scaffold-spec.js";
+import { SCAFFOLD_TEMPLATE_COVERAGE, type ArchetypeSlot, type NormalizedDomainSpec } from "./scaffold-spec.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE, SCAFFOLD_GENERATION_MANIFEST_RELATIVE, journalFilePath } from "./store-layout.js";
 
 export const SCAFFOLD_MANIFEST_SCHEMA = "pomaster.scaffold-generation/v1";
@@ -223,6 +224,32 @@ export interface PlannedFile {
   readonly sha256: string;
 }
 
+/** 规格里引用了、但模板集还不覆盖的原型（S1-8：拒绝生成并转 New Entity 判定，不硬套模板）。 */
+export interface UncoveredArchetype {
+  readonly entity: string;
+  readonly slot: ArchetypeSlot;
+  readonly archetype: string;
+  /** 下一步：用 New Entity Gate 判定这个实体该改选在册原型（被拒时看匹配项）还是手写（放行时）。 */
+  readonly next_command: string;
+}
+
+export function uncoveredArchetypes(spec: NormalizedDomainSpec): UncoveredArchetype[] {
+  const out: UncoveredArchetype[] = [];
+  for (const entity of spec.entities) {
+    for (const slot of Object.keys(SCAFFOLD_TEMPLATE_COVERAGE) as ArchetypeSlot[]) {
+      const archetype = entity.archetypes[slot];
+      if (archetype === undefined || SCAFFOLD_TEMPLATE_COVERAGE[slot].includes(archetype)) continue;
+      out.push({
+        entity: entity.key,
+        slot,
+        archetype,
+        next_command: `pomaster new-entity check ${scaffoldEntityCanonicalId(spec.app.key, entity.key)} --need "${entity.name_zh.replace(/"/g, "'")} ${archetype}"`,
+      });
+    }
+  }
+  return out;
+}
+
 export interface GenerationConflict {
   readonly path: string;
   readonly kind: "modified" | "missing" | "unmanaged_exists";
@@ -239,6 +266,8 @@ export interface ScaffoldPlanResult {
   readonly statements: readonly SchemaChangeStatement[];
   readonly blocked: readonly BlockedSchemaChange[];
   readonly conflicts: readonly GenerationConflict[];
+  /** 模板集还不覆盖的原型（非空时 plan / generate 拒绝，逐个转 New Entity 判定）。 */
+  readonly uncovered: readonly UncoveredArchetype[];
   /** 这次会写的种子文件（目标位置还没有文件；写一次、不受管、之后归项目）。 */
   readonly seeds: readonly string[];
   /** 现规格与上次生成一致、且没有受管文件要写（种子不算）。 */
@@ -280,6 +309,7 @@ function emptyPlan(state: ScaffoldSpecState | null): ScaffoldPlanResult {
     statements: [],
     blocked: [],
     conflicts: [],
+    uncovered: [],
     seeds: [],
     up_to_date: false,
   };
@@ -416,7 +446,11 @@ async function buildPlan(
   }
   // 管理侧前端（S1-7）：按基线技术栈选模板集（vue-antd-admin@1 / react-geist-admin@1）——接口客户端、列表页、
   // 编辑抽屉或对话框、路由、文案字典与公共文件。
-  for (const file of renderAdminFrontendFor(spec, frontend)) {
+  const frontendFiles = renderAdminFrontendFor(spec, frontend);
+  // 外壳（package.json、Vite / TS 配置、入口与布局，React 再加 Geist 组件源码）是种子，只在有前端文件时给。
+  const frontendSeeds: SeedFile[] =
+    frontendFiles.length === 0 ? [] : frontend.kind === "vue-antd" ? renderVueShellSeeds(spec) : frontend.kind === "react-geist" ? renderReactShellSeeds(spec) : [];
+  for (const file of frontendFiles) {
     regenerable.push({
       path: file.path,
       content: file.content,
@@ -482,7 +516,7 @@ async function buildPlan(
 
   // 种子：目标位置没有文件才写（有了就归项目，不比较内容、不受管）。
   const seedContents = new Map<string, string>();
-  for (const seed of backendRender.seeds) {
+  for (const seed of [...backendRender.seeds, ...frontendSeeds].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))) {
     if (managedByPath.has(seed.path) || existsSync(join(rootDir, ...seed.path.split("/")))) continue;
     seedContents.set(seed.path, seed.content);
   }
@@ -497,6 +531,7 @@ async function buildPlan(
     statements: diff.statements,
     blocked: diff.blocked,
     conflicts,
+    uncovered: [],
     seeds: [...seedContents.keys()].sort(),
     up_to_date: writes.length === 0 && manifest?.spec_semantic_sha256 === specDigest,
   };
@@ -508,6 +543,17 @@ interface PlanInputs {
   readonly errors: readonly CliError[];
   readonly warnings: readonly CliWarning[];
   readonly state: ScaffoldSpecState | null;
+  readonly uncovered?: readonly UncoveredArchetype[];
+}
+
+function uncoveredError(uncovered: readonly UncoveredArchetype[]): CliError {
+  return {
+    code: "SCAFFOLD_ARCHETYPE_UNCOVERED",
+    message: `规格里有模板集还不覆盖的原型，不生成（${uncovered.map((item) => `${item.entity}.${item.slot} = ${item.archetype}`).join("；")}）`,
+    hint: `脚手架只按模板集覆盖的原型生成（${Object.entries(SCAFFOLD_TEMPLATE_COVERAGE)
+      .map(([slot, ids]) => `${slot}：${ids.join(" / ")}`)
+      .join("；")}），不硬套模板。逐个走 New Entity 判定：${uncovered.map((item) => item.next_command).join("；")}。被拒就按匹配到的在册原型改规格；放行就把这个实体从规格里拿出来手写。`,
+  };
 }
 
 async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undefined, strict: boolean): Promise<PlanInputs> {
@@ -556,6 +602,10 @@ async function preparePlan(rootDir: string, deps: ScaffoldGovernanceDeps | undef
   }
   if (assessment.normalized === null || assessment.semantic_sha256 === null) {
     return { plan: null, errors: [stateError ?? specStateError("invalid", null)!], warnings, state: assessment.state };
+  }
+  const uncovered = uncoveredArchetypes(assessment.normalized);
+  if (uncovered.length > 0) {
+    return { plan: null, errors: [uncoveredError(uncovered)], warnings, state: assessment.state, uncovered };
   }
   const backend = await chooseBackendTemplate(rootDir);
   if (backend.kind === "none") {
@@ -673,7 +723,7 @@ export async function runScaffoldPlan(
   if (prepared.plan === null) {
     return failOutcome(
       "scaffold plan",
-      emptyPlan(prepared.state),
+      { ...emptyPlan(prepared.state), uncovered: prepared.uncovered ?? [] },
       prepared.errors,
       prepared.errors.map((error) => `${error.code}: ${error.message}\n  → ${error.hint}`),
       prepared.warnings,
@@ -731,7 +781,7 @@ export async function runScaffoldGenerate(
   if ("error" in initialized) return failed(emptyPlan(null), [initialized.error]);
   const deps = input.catalogRoot !== undefined ? { catalogRoot: input.catalogRoot } : undefined;
   const prepared = await preparePlan(rootDir, deps, true);
-  if (prepared.plan === null) return failed(emptyPlan(prepared.state), prepared.errors, prepared.warnings);
+  if (prepared.plan === null) return failed({ ...emptyPlan(prepared.state), uncovered: prepared.uncovered ?? [] }, prepared.errors, prepared.warnings);
   const { result: plan, contents, seedContents, spec, manifest } = prepared.plan;
   if (plan.conflicts.length > 0) return failed(plan, [conflictError(plan.conflicts)]);
   if (plan.blocked.length > 0) return failed(plan, [blockedError(plan.blocked)]);

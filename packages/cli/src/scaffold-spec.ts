@@ -733,7 +733,7 @@ function validateArchetypes(
         "SPEC_ARCHETYPE_UNKNOWN",
         `${path}.${slot}`,
         `原型「${value}」不在 catalog 里`,
-        "先查 pomaster catalog explain 看有没有相近原型；确实没有，走 New Entity 登记新原型，不要硬套模板。",
+        `先查 pomaster catalog explain 看有没有相近原型；确实没有，走 New Entity 判定：pomaster new-entity check ${value} --need "<这个原型要解决什么>"，放行后登记新原型，不要硬套模板。`,
       );
       ok = false;
       continue;
@@ -743,7 +743,7 @@ function validateArchetypes(
         "SPEC_TEMPLATE_UNAVAILABLE",
         `${path}.${slot}`,
         `原型「${value}」在册，但当前还没有对应的模板集`,
-        `当前模板集覆盖：${SCAFFOLD_TEMPLATE_COVERAGE[slot].join(", ")}。scaffold plan 会拒绝生成这个实体，直到模板集补齐或改选原型。`,
+        `当前模板集覆盖：${SCAFFOLD_TEMPLATE_COVERAGE[slot].join(", ")}。scaffold plan / generate 会拒绝生成（SCAFFOLD_ARCHETYPE_UNCOVERED），并给出这个实体的 pomaster new-entity check 命令：被拒就改选在册原型，放行就把实体从规格里拿出来手写。`,
       );
     }
     out[slot] = value;
