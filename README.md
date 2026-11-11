@@ -162,6 +162,7 @@ pomaster doctor                                 # 工具链与 MCP 是否就绪�
 pomaster portability bootstrap/check            # 换机器时重建运行面 / 检查可恢复性
 pomaster update spec                            # 不带子命令 = CLI 自更新（--check / --yes）；spec = 把开发中定下的新规范写到设计规范或硬规范（写前按写入契约校验）
 pomaster spec-lint                              # 按写入契约复核已有规范条文：引用、版本号、时间戳、记录人逐处报出
+pomaster standards [id]                         # 规范的空间与抽屉：九个空间的通用规范，语言 / 框架 / 架构形态 / 产品抽屉，哪些对本项目生效
 pomaster baseline set/confirm/retire/unretire   # 回填基线键 / 确认基线 / Owner 标记某项不适用 / 撤销
 
 # ① 需求：追问到可判断的决策图，再提升为任务

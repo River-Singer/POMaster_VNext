@@ -521,6 +521,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster prototype ingest <html...> --spec <md>   # BA 的 HTML 原型 + spec → 业务事实 / 信息结构 / 冲突提问（去掉表现）",
   'pomaster update spec "<一句规范>" --scope … --why … --check-by … --do … --dont … --by <actor>    # 新规范落位（写前按写入契约校验）：界面呈现进设计规范，其余进硬规范主题文档',
   "pomaster spec-lint    # 按写入契约复核已有规范条文（引用 / 版本号 / 时间戳 / 记录人）",
+  "pomaster standards [id]    # 规范的空间与抽屉：哪些抽屉对本项目生效、文档在哪、怎么写入",
   "",
   "# ② FRAMEWORK —— 许可签发/判卷/显式接管/台账",
   "pomaster permit issue/check/steal/list",
@@ -736,6 +737,12 @@ function commandBlock(lines: readonly string[]): string[] {
   return ["## 命令", "", "```text", ...lines, "```", ""];
 }
 
+/** 规范的空间与抽屉（standards-map.ts）在卡片上的说法。 */
+const STANDARDS_CARD_LINES: readonly string[] = [
+  "- 动手前 `pomaster standards` 看本项目的规范空间与抽屉：九个空间（前端、前端服务器、后端、数据库、缓存、消息与异步、平台与运维、安全、测试）的通用规范对所有项目生效；标 [生效] 的抽屉（语言、框架、架构形态、产品）按技术基线与仓库信号判出，它们的文档同样要读；`pomaster standards <编号>` 看文档位置与写入方式。",
+  "- 规则跨语言、跨框架都成立就写进通用主题文档；只对某个语言、框架、架构形态或产品成立就写进对应抽屉（`update spec --drawer java`、`--drawer microservices`）。预留抽屉第一次写入时建项目抽屉文档，以后同一个抽屉都写在那里。",
+];
+
 /** 规范写入契约（spec-writing.ts）在卡片上的说法：写规范的人和 AI 读到的是同一套规则。 */
 const SPEC_WRITING_CARD_LINES: readonly string[] = [
   "- 写规范按写入契约：每条规则七个字段齐全——规则、级别（--level，缺省按措辞判）、适用范围（--scope）、理由（--why）、检查方式（--check-by）、正例（--do）、反例（--dont）；缺字段写入口直接拒绝。",
@@ -917,6 +924,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 有 BA 交来的 HTML 原型：先 `prototype ingest` 抽出业务事实与信息结构（读 `*.outline.md` 与 `facts.json`），按规范重绘；原型的 class、样式、栅格、字体不进实现，事实一条不少。",
       "- 开发中定下了新规范（用户说「以后都这样」「统一改成」）：`update spec` 写到该在的地方，不只留在对话里。",
       ...SPEC_WRITING_CARD_LINES,
+      ...STANDARDS_CARD_LINES,
       "- 交接前自检 `pomaster design check`；确属例外的写带理由的 `pomaster-design-ignore <检查编号>: 理由`。",
       "",
       "## 工程纪律",
@@ -932,8 +940,9 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster design show [--area <key>] [--rule <id>] [--json]",
         "pomaster design adopt [--system antd|geist] [--baseline]",
         "pomaster design set <RULE.param> <value> --by human:<name> [--note <text>]",
-        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] --by <human|agent>:<name> [--dry-run]',
+        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] [--drawer <id>] --by <human|agent>:<name> [--dry-run]',
         "pomaster spec-lint",
+        "pomaster standards [id]",
         "pomaster prototype ingest <html...> --spec <md> [--render]",
         "pomaster design check [--root <dir>]",
       ]),
@@ -1099,6 +1108,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- BA 交来 spec 与 HTML 原型：`pomaster prototype ingest <page.html...> --spec <spec.md>` 去掉表现读出业务事实、信息结构与交互意图；`questions.json` 里 spec 与原型的冲突按 Question Gate 分类（BLOCKING_AUTHORITY 问 Owner，其余带默认口径），事实清单就是后续验收的对账基准。",
       "- 讨论中定下的长期规范（「以后表格都…」「接口一律…」）：`pomaster update spec \"<一句规范>\" --scope … --why … --check-by … --do … --dont … --by <actor>` 落位到设计规范或硬规范主题文档，`--dry-run` 先看识别结果。",
       ...SPEC_WRITING_CARD_LINES,
+      ...STANDARDS_CARD_LINES,
       "",
       "## 读取用户信息与文件（开口之前）",
       "",
@@ -1402,7 +1412,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster context compile --role <role> [--change <TASK|CHANGE>] [--capability <governed-id>] [--stage <stage>] [--check]",
         "pomaster record gate-run --from <file> [--execution-id <AGX-n>]",
         "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
-        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] --by <human|agent>:<name> [--dry-run]',
+        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] [--drawer <id>] --by <human|agent>:<name> [--dry-run]',
       ]),
     ],
   },

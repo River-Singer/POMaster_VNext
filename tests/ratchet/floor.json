@@ -836,6 +836,10 @@
         "layer": "L1",
         "note": "设计规范门禁：按规范的门禁条文扫 Vue / TSX / 样式 / Tailwind，阈值取条文参数（决策位未定的检查记待定）；注释不算；带理由的豁免生效；存量基线只拦新增；design check、closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷（没落地规范 not_configured，规范坏了 blocked）"
       },
+      "packages/cli/tests/standards-map.spec.ts": {
+        "layer": "L1",
+        "note": "规范的空间与抽屉：九个空间（前端服务器显式在列）、抽屉编号唯一、已有抽屉文档 / 通用主题文档 / 测试类型证据规范都在种子里；技术基线选型与仓库信号判定生效并列原因，依赖按同族前缀命中不误中；standards 列表与详情；update spec --drawer 预留抽屉首写建项目抽屉文档、overlay 写进 Rules 并带级别子字段。无域（规范维护契约面）。"
+      },
       "packages/cli/tests/spec-writing.spec.ts": {
         "layer": "L1",
         "note": "规范写入契约：七个字段缺一即拒、级别按措辞判或显式给定；条文里的引用、版本号、时间戳与一次性措辞、记录人逐处报出，常见合法写法不误报；Markdown 跳过 frontmatter / 代码块 / 注释 / 标题，设计规范只看条文字段；spec-lint 带文件与行号、exit 1；预设种子违规数只降不升，写入规范页本身零违规。无域（规范维护契约面）。"
