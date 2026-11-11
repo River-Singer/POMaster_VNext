@@ -94,7 +94,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, rm, stat, writeFile } from "node:fs/promises";
 import {
   AGENTS_MD_RELATIVE,
   AUTHORITY_RELATIVE,
@@ -123,20 +123,21 @@ import {
 import {
   CAPABILITY_OVERVIEW,
   CODEX_HOOKS_RELATIVE,
-  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
-  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE,
   CLAUDE_SETTINGS_RELATIVE,
   COMMAND_PANORAMA_LINES,
   ENTRY_MODE_HEAVY_MARKER,
   SKILL_MANIFEST,
   SKILL_MIRROR_DIRS,
+  execGuardDistribution,
   looksLikePomasterExecGuardHook,
+  looksLikePomasterExecGuardLauncher,
   mergePomasterHooks,
   mergePomasterCodexHooks,
   readClaudeExecGuardHookAsset,
   renderCapabilityHumanLines,
   renderCapabilityMapMarkdownLines,
-  renderClaudeExecGuardLauncher,
+  renderExecGuardLauncher,
   renderSkillMd,
   resolveCurrentCliEntry,
   type CapabilityEntry,
@@ -209,7 +210,9 @@ export type InitFileAction =
   // 播种面词形（vNext Batch 6 B6a）：seeded = 种子缺席本次写入（marker-free）；
   // preserved = 播种件在座零触碰（项目可编辑物，禁被判 foreign/重写——R3 红线）。
   | "seeded"
-  | "preserved";
+  | "preserved"
+  // 迁移面：本包生成的旧件（如旧版 Python launcher）被新件取代后删除。
+  | "removed";
 
 export interface InitFileReport {
   readonly file: string;
@@ -1187,7 +1190,7 @@ async function writeClaudeHookAssetFile(
     warnings.push({
       code: "HOOK_FILE_FOREIGN",
       message: `${relative} exists but is not a POMaster-managed hook file; left untouched`,
-      hint: `人工核对后移除/合并该文件并重跑 pomaster init；PreToolUse 防线需 ${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE} 与 ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE} 同时在座。`,
+      hint: "人工核对后移除/合并该文件并重跑 pomaster init；PreToolUse 防线需同目录的 pomaster-exec-guard.mjs 与 exec-guard-hook.py 同时在座。",
     });
     files.push({ file: relative, action: "skipped_foreign" });
     return;
@@ -1196,11 +1199,13 @@ async function writeClaudeHookAssetFile(
   files.push({ file: relative, action: "updated" });
 }
 
-async function installClaudeExecGuardFiles(
+async function installExecGuardFiles(
   rootDir: string,
+  platform: "claude" | "codex",
   files: InitFileReport[],
   warnings: CliWarning[],
 ): Promise<void> {
+  const distribution = execGuardDistribution(platform);
   let guardAsset: string | null = null;
   try {
     guardAsset = readClaudeExecGuardHookAsset().content;
@@ -1216,7 +1221,7 @@ async function installClaudeExecGuardFiles(
   if (guardAsset !== null) {
     await writeClaudeHookAssetFile(
       rootDir,
-      CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+      distribution.hook,
       guardAsset,
       files,
       warnings,
@@ -1225,12 +1230,22 @@ async function installClaudeExecGuardFiles(
   }
   await writeClaudeHookAssetFile(
     rootDir,
-    CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
-    renderClaudeExecGuardLauncher(resolveCurrentCliEntry()),
+    distribution.launcher,
+    renderExecGuardLauncher(resolveCurrentCliEntry()),
     files,
     warnings,
-    (text) => text.includes(GENERATED_MARKER) && text.includes("runpy.run_path"),
+    looksLikePomasterExecGuardLauncher,
   );
+  if (platform === "claude") {
+    // 旧版 Python launcher（`python` 命令在 macOS / 多数 Linux 缺席 → hook 静默不跑）：
+    // 本包生成件才删；人手写的同名文件原样保留。
+    const legacyAbsolute = `${rootDir}/${CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE}`;
+    const legacy = await readIfExists(legacyAbsolute);
+    if (legacy !== null && looksLikePomasterExecGuardLauncher(legacy)) {
+      await rm(legacyAbsolute, { force: true });
+      files.push({ file: CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE, action: "removed" });
+    }
+  }
 }
 
 /**
@@ -1795,7 +1810,7 @@ export async function runInit(
       }
     }
     if (claudeSelected) {
-      await installClaudeExecGuardFiles(rootDir, files, warnings);
+      await installExecGuardFiles(rootDir, "claude", files, warnings);
       const settingsAbsolute = `${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`;
       const existingText = await readIfExists(settingsAbsolute);
       const merged = mergePomasterHooks(existingText, rootDir);
@@ -1817,9 +1832,10 @@ export async function runInit(
       }
     }
     if (codexSelected) {
+      await installExecGuardFiles(rootDir, "codex", files, warnings);
       const hooksAbsolute = `${rootDir}/${CODEX_HOOKS_RELATIVE}`;
       const existingText = await readIfExists(hooksAbsolute);
-      const merged = mergePomasterCodexHooks(existingText);
+      const merged = mergePomasterCodexHooks(existingText, rootDir);
       const reportIndex = platforms.findIndex((entry) => entry.name === "codex");
       if (merged.status === "skipped") {
         warnings.push({
@@ -1860,7 +1876,7 @@ export async function runInit(
     (specPreplant?.planted ?? 0) > 0 ||
     projectIdentification.created;
   const updated =
-    files.some((f) => f.action === "updated") ||
+    files.some((f) => f.action === "updated" || f.action === "removed") ||
     platforms.some((p) => p.action === "updated");
   // preserved（播种件在座零触碰 / 预植对象在座零触碰）不计入任何 change 桶——
   // 重跑全 preserved = NO_CHANGE。

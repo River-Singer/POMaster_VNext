@@ -28,6 +28,12 @@
  *   目标层，不作用于 raw verdict 层——单目标双 permit 其一覆盖仍 ALLOW）；
  *   unmapped / 无 store / 无活跃 execution 透传面不参与全称。
  *
+ * - **常开防线（不看活跃 execution）**：治理控制平面（.pomaster/state、truth、evidence、
+ *   executions、runtime … 与讨论机读文件）的确定写（文件工具 / apply_patch 补丁目标 /
+ *   Bash 写意图）→ DENY；读命令放行；脚手架生成文件在无活跃 execution 时同样 DENY。
+ * - **Codex 形态**：apply_patch（补丁在 tool_input.command，含 Edit / Write 别名）与 Bash。
+ * - **Node launcher**：init 分发的 .mjs 找 Python 3 并原样转交 stdin / 退出码。
+ *
  * 环境缺席显式（human-views.spec 同款纪律，禁静默跳过当通过）：python 垫片缺席 /
  * cli dist 缺席 / shim（工作区运行时面，CI fresh clone 不在座）缺席 → 逐用例
  * 显式 pending 登记并断言登记在座。
@@ -49,6 +55,7 @@ import { beginExecution, createStore, endExecution, type Store } from "@pomaster
 import {
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
   CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CODEX_EXEC_GUARD_LAUNCHER_RELATIVE,
   runInit,
   runPermitIssue,
 } from "@pomaster/cli";
@@ -225,17 +232,10 @@ function bashPayload(command: string): HookPayload {
   return { tool_name: "Bash", tool_input: { command }, cwd: root };
 }
 
-function runPythonScriptWithoutInjectedCli(script: string, payload: HookPayload): HookRun {
-  if (!py.available) {
-    return { spawned: false, exitCode: null, stdout: "", stderr: py.reason };
-  }
-  const [file, ...rest] = py.cmd;
-  if (file === undefined) {
-    return { spawned: false, exitCode: null, stdout: "", stderr: "python cmd empty" };
-  }
+function runLauncherWithoutInjectedCli(script: string, payload: HookPayload): HookRun {
   const env: NodeJS.ProcessEnv = { ...process.env, PYTHONIOENCODING: "utf-8" };
   delete env.POMASTER_CLI_ENTRY;
-  const res = spawnSync(file, [...rest, script], {
+  const res = spawnSync(process.execPath, [script], {
     input: JSON.stringify(payload),
     encoding: "utf8",
     env,
@@ -262,7 +262,7 @@ describe("exec-guard hook distribution installed by init", () => {
       expect(existsSync(launcher)).toBe(true);
       expect(readFileSync(distributedHook, "utf8")).toBe(readFileSync(canonicalHook, "utf8"));
       expect(readFileSync(launcher, "utf8")).toContain("POMASTER_CLI_ENTRY");
-      expect(readFileSync(launcher, "utf8")).toContain("runpy.run_path");
+      expect(readFileSync(launcher, "utf8")).toContain("spawnSync");
 
       const externalStore = await createStore(externalRoot);
       writeFileSync(join(externalRoot, "src-target.ts"), "export const target = 1;\n", "utf8");
@@ -293,7 +293,7 @@ describe("exec-guard hook distribution installed by init", () => {
         startedAt: "2026-09-13T00:00:00.000Z",
       });
 
-      const run = runPythonScriptWithoutInjectedCli(launcher, {
+      const run = runLauncherWithoutInjectedCli(launcher, {
         tool_name: "Write",
         tool_input: { file_path: join(externalRoot, "src-target.ts") },
         cwd: externalRoot,
@@ -508,6 +508,164 @@ describe("exec-guard hook 脚手架生成文件（11-01-storybook-scaffold S1-3�
     const run = runHook(writePayload("src/in-scope.ts"));
     expect(run.exitCode).toBe(2);
     expect(run.stderr).not.toContain("脚手架生成文件");
+  });
+});
+
+function patchPayload(patch: string, toolName = "apply_patch"): HookPayload {
+  return { tool_name: toolName, tool_input: { command: patch }, cwd: root };
+}
+
+function expectControlPlaneDeny(run: HookRun, rel: string): void {
+  expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
+  expect(run.exitCode, run.stderr.slice(0, 400)).toBe(2);
+  expect(run.stderr).toContain("治理控制平面不直接编辑");
+  expect(run.stderr).toContain(rel);
+}
+
+describe("exec-guard hook 常开防线：治理控制平面（无活跃 execution 也拦）", () => {
+  const cases: readonly { readonly name: string; readonly payload: () => HookPayload; readonly rel: string }[] = [
+    { name: "Write truth-index", payload: () => writePayload(".pomaster/state/truth-index.json"), rel: ".pomaster/state/truth-index.json" },
+    {
+      name: "MultiEdit 讨论 state.json",
+      payload: () => ({
+        tool_name: "MultiEdit",
+        tool_input: { file_path: join(root, ".pomaster", "discovery", "scratchpads", "T1", "state.json"), edits: [] },
+        cwd: root,
+      }),
+      rel: ".pomaster/discovery/scratchpads/T1/state.json",
+    },
+    { name: "Bash 重定向", payload: () => bashPayload("echo '{}' > .pomaster/state/truth-index.json"), rel: ".pomaster/state/truth-index.json" },
+    { name: "Bash 追加重定向", payload: () => bashPayload("printf x >> .pomaster/evidence/run.json"), rel: ".pomaster/evidence/run.json" },
+    { name: "Bash rm", payload: () => bashPayload("rm -f .pomaster/executions/AGX-1.json"), rel: ".pomaster/executions/AGX-1.json" },
+    { name: "Bash sed -i", payload: () => bashPayload("sed -i 's/a/b/' .pomaster/state/permits.json"), rel: ".pomaster/state/permits.json" },
+    { name: "Bash cp 目标", payload: () => bashPayload("cp src/in-scope.ts .pomaster/truth/keybindings/x.json"), rel: ".pomaster/truth/keybindings/x.json" },
+    { name: "Bash tee", payload: () => bashPayload("npm test | tee .pomaster/runtime/out.log"), rel: ".pomaster/runtime/out.log" },
+    { name: "Bash cd 后相对路径照样按 cwd 解析", payload: () => bashPayload("mv backup.json .pomaster/state/truth-index.json"), rel: ".pomaster/state/truth-index.json" },
+    {
+      name: "Codex apply_patch Update",
+      payload: () => patchPayload("*** Begin Patch\n*** Update File: .pomaster/state/truth-index.json\n@@\n-{}\n+{\"x\":1}\n*** End Patch\n"),
+      rel: ".pomaster/state/truth-index.json",
+    },
+    {
+      name: "Codex apply_patch 以 Edit 别名进来",
+      payload: () => patchPayload("*** Begin Patch\n*** Add File: .pomaster/runtime/locks.json\n+{}\n*** End Patch\n", "Edit"),
+      rel: ".pomaster/runtime/locks.json",
+    },
+    {
+      name: "Codex apply_patch Move to 目的地",
+      payload: () => patchPayload("*** Begin Patch\n*** Update File: src/in-scope.ts\n*** Move to: .pomaster/truth/moved.json\n@@\n-a\n+b\n*** End Patch\n"),
+      rel: ".pomaster/truth/moved.json",
+    },
+    {
+      name: "生成清单",
+      payload: () => writePayload(".pomaster/scaffold/generation-manifest.json"),
+      rel: ".pomaster/scaffold/generation-manifest.json",
+    },
+  ];
+  for (const testCase of cases) {
+    it(`${testCase.name} → DENY`, () => {
+      if (!py.available) {
+        expectPendingRecorded(`control_plane.${testCase.name}`, "控制平面 DENY 断言");
+        return;
+      }
+      expectControlPlaneDeny(runHook(testCase.payload()), testCase.rel);
+    });
+  }
+
+  const allowed: readonly { readonly name: string; readonly payload: () => HookPayload }[] = [
+    { name: "cat 读", payload: () => bashPayload("cat .pomaster/state/truth-index.json | jq .") },
+    { name: "读后重定向到别处", payload: () => bashPayload("jq . .pomaster/state/truth-index.json > report.json") },
+    { name: "cp 控制平面到别处（源只读）", payload: () => bashPayload("cp .pomaster/state/truth-index.json backup.json") },
+    { name: "规格区可编辑", payload: () => writePayload(".pomaster/specs/hard/themes/x.md") },
+    { name: "domain-spec 可编辑", payload: () => writePayload(".pomaster/scaffold/domain-spec.yaml") },
+    { name: "讨论研究笔记可编辑", payload: () => writePayload(".pomaster/discovery/scratchpads/T1/research/notes.md") },
+    { name: "Codex 改业务文件", payload: () => patchPayload("*** Begin Patch\n*** Add File: src/new.ts\n+export {};\n*** End Patch\n") },
+    { name: "2>&1 不当写目标", payload: () => bashPayload("npm test 2>&1 >/dev/null") },
+  ];
+  for (const testCase of allowed) {
+    it(`${testCase.name} → 不触发控制平面防线`, () => {
+      if (!py.available) {
+        expectPendingRecorded(`control_plane.allow.${testCase.name}`, "控制平面放行断言");
+        return;
+      }
+      const run = runHook(testCase.payload());
+      expect(run.exitCode, run.stderr.slice(0, 400)).toBe(0);
+      expect(run.stderr).not.toContain("治理控制平面不直接编辑");
+    });
+  }
+
+  it("脚手架生成文件：无活跃 execution 也 DENY 并指路改规格", () => {
+    if (!py.available) {
+      expectPendingRecorded("scaffold.no_execution", "脚手架常开防线断言");
+      return;
+    }
+    writeHostFile("backend/db/grants.sql", "-- generated\n");
+    seedBindingRow("KEYBINDING.SCAFFOLD.FLEET.GRANTS", "CAPABILITY.SCAFFOLD.FLEET.DATABASE", "backend/db/grants.sql");
+    for (const payload of [
+      writePayload("backend/db/grants.sql"),
+      bashPayload("echo x >> backend/db/grants.sql"),
+      patchPayload("*** Begin Patch\n*** Update File: backend/db/grants.sql\n@@\n-a\n+b\n*** End Patch\n"),
+    ]) {
+      const run = runHook(payload);
+      expect(run.exitCode, run.stderr.slice(0, 400)).toBe(2);
+      expect(run.stderr).toContain("脚手架生成文件不手改");
+      expect(run.stderr).toContain("CAPABILITY.SCAFFOLD.FLEET.DATABASE");
+      expect(run.stderr).toContain("pomaster scaffold generate");
+    }
+    const read = runHook(bashPayload("cat backend/db/grants.sql"));
+    expect(read.exitCode).toBe(0);
+  });
+});
+
+describe("exec-guard hook Node launcher（init 分发，Claude + Codex 同一份）", () => {
+  it("Claude / Codex launcher 都把 DENY 的退出码 2 原样带回，放行带回 0", async () => {
+    const project = mkdtempSync(join(tmpdir(), "pomaster exec guard launcher "));
+    try {
+      const init = await runInit(project, { platforms: "claude,codex" });
+      expect(init.ok).toBe(true);
+      for (const launcher of [CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE, CODEX_EXEC_GUARD_LAUNCHER_RELATIVE]) {
+        const deny = spawnSync(process.execPath, [join(project, launcher)], {
+          input: JSON.stringify({
+            tool_name: launcher.startsWith(".codex") ? "apply_patch" : "Write",
+            tool_input: launcher.startsWith(".codex")
+              ? { command: "*** Begin Patch\n*** Update File: .pomaster/state/truth-index.json\n@@\n-a\n+b\n*** End Patch\n" }
+              : { file_path: join(project, ".pomaster", "state", "truth-index.json") },
+            cwd: project,
+          }),
+          encoding: "utf8",
+        });
+        if (!py.available) {
+          expect(deny.status).toBe(0);
+          expect(deny.stderr).toContain("FAIL-OPEN: no Python 3.8+ found");
+          continue;
+        }
+        expect(deny.status, deny.stderr.slice(0, 400)).toBe(2);
+        expect(deny.stderr).toContain("治理控制平面不直接编辑");
+        const allow = spawnSync(process.execPath, [join(project, launcher)], {
+          input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "ls" }, cwd: project }),
+          encoding: "utf8",
+        });
+        expect(allow.status, allow.stderr.slice(0, 400)).toBe(0);
+      }
+    } finally {
+      rmSync(project, { recursive: true, force: true });
+    }
+  });
+
+  it("找不到 Python 3 → 退出 0 并在 stderr 明说 FAIL-OPEN（不静默）", async () => {
+    const project = mkdtempSync(join(tmpdir(), "pomaster-exec-guard-nopy-"));
+    try {
+      await runInit(project);
+      const run = spawnSync(process.execPath, [join(project, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE)], {
+        input: "{}",
+        encoding: "utf8",
+        env: { PATH: join(project, "no-such-bin"), SystemRoot: process.env.SystemRoot ?? "" },
+      });
+      expect(run.status).toBe(0);
+      expect(run.stderr).toContain("FAIL-OPEN: no Python 3.8+ found");
+    } finally {
+      rmSync(project, { recursive: true, force: true });
+    }
   });
 });
 

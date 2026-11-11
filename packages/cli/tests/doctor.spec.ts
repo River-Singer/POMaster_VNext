@@ -532,6 +532,25 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(outcome.human.join("\n")).toContain("host=unknown");
   });
 
+  it("Codex PreToolUse 防线文件缺席 → configured=missing 并点名缺的文件（注册在座不等于能拦）", async () => {
+    await runInit(dir, { platforms: "codex" });
+    rmSync(join(dir, ".codex", "hooks", "pomaster-exec-guard.mjs"));
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    const codex = outcome.result.harness_integrations?.find((row) => row.platform === "codex");
+    expect(codex?.configured).toBe("missing");
+    expect(codex?.mode).toBe("agent-pull");
+    expect(codex?.detail).toContain(".codex/hooks/pomaster-exec-guard.mjs");
+  });
+
+  it("Python 3 不可达 → hooks 探针 MISSING_CONFIGURATION（launcher 会每次 FAIL-OPEN，不能报 READY）", async () => {
+    await runInit(dir);
+    const [hooks] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: (command) => (/^(python3?|py)$/.test(command) ? null : reachableHookExecutable()),
+    });
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain("Python 3");
+  });
+
   it("Codex hook 缺失时 doctor 明确 agent-pull，而不是动态注入 READY", async () => {
     await runInit(dir, { platforms: "codex" });
     rmSync(join(dir, CODEX_HOOKS_RELATIVE));
@@ -569,7 +588,8 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(hooks.detail).toContain("installed=3");
     expect(hooks.detail).toContain("runnable=ready");
     expect(hooks.detail).toContain("prevention=prevention-capable");
-    expect(hooks.detail).toContain("Edit|Write|NotebookEdit|Bash");
+    expect(hooks.detail).toContain(CLAUDE_EXEC_GUARD_MATCHER);
+    expect(hooks.detail).toContain("exec-guard python →");
     expect(hooks.detail).toContain("PATH 可达");
     expect(skills.status).toBe("READY");
     expect(skills.detail).toContain("15 skills × 2");

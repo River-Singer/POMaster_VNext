@@ -62,13 +62,17 @@ import {
   CLAUDE_EXEC_GUARD_ASSET_RELATIVE,
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
   CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_MATCHER,
   CLAUDE_SETTINGS_RELATIVE,
   CODEX_HOOKS_RELATIVE,
+  execGuardDistribution,
   ENTRY_MODE_HEAVY_MARKER,
   POMASTER_HOOK_EVENT_COMMANDS,
   POMASTER_CODEX_HOOK_EVENT_COMMANDS,
   SKILL_MANIFEST,
   looksLikePomasterExecGuardHook,
+  looksLikePomasterExecGuardLauncher,
+  parseExecGuardLauncherCliEntry,
   readClaudeExecGuardHookAsset,
 } from "./heavy-entry.js";
 import {
@@ -246,7 +250,26 @@ async function inspectHarnessIntegration(
       );
     });
   });
-  const configured = missing.length === 0 ? "configured" : "missing";
+  // Codex PreToolUse 防线：注册在座还要 launcher + hook 副本在座（缺了 = 注册指向空文件，静默不拦）。
+  const undistributed: string[] = [];
+  if (platform === "codex") {
+    const distribution = execGuardDistribution("codex");
+    const [launcherText, hookText] = await Promise.all([
+      readTextOrNull(`${rootDir}/${distribution.launcher}`),
+      readTextOrNull(`${rootDir}/${distribution.hook}`),
+    ]);
+    if (launcherText === null || !looksLikePomasterExecGuardLauncher(launcherText)) {
+      undistributed.push(distribution.launcher);
+    }
+    if (hookText === null || !looksLikePomasterExecGuardHook(hookText)) {
+      undistributed.push(distribution.hook);
+    }
+  }
+  const configured = missing.length === 0 && undistributed.length === 0 ? "configured" : "missing";
+  const gapDetail = [
+    ...(missing.length > 0 ? [`缺少 POMaster handlers: ${missing.map((row) => row.event).join(", ")}`] : []),
+    ...(undistributed.length > 0 ? [`PreToolUse 防线文件缺席: ${undistributed.join(", ")}（重跑 pomaster init）`] : []),
+  ].join("; ");
   return {
     platform,
     host: "unknown",
@@ -257,8 +280,9 @@ async function inspectHarnessIntegration(
     observed: "unknown",
     mode: configured === "configured" ? "hook-push" : "agent-pull",
     detail: configured === "configured"
-      ? "项目 hook 已配置；当前宿主（CLI/App/扩展）、宿主信任与实际事件送达无法由项目文件判定"
-      : `缺少 POMaster handlers: ${missing.map((row) => row.event).join(", ")}`,
+      ? "项目 hook 已配置；当前宿主（CLI/App/扩展）、宿主信任与实际事件送达无法由项目文件判定" +
+        (platform === "codex" ? "；Codex 改了 hooks 需在 /hooks 里重新信任后才生效" : "")
+      : gapDetail,
   };
 }
 
@@ -528,11 +552,7 @@ function hookGroupMatches(
 }
 
 function parseLauncherCliEntry(text: string): string | null {
-  const match =
-    /^CLI_ENTRY\s*=\s*r"""([^"]+)"""/m.exec(text) ??
-    /^CLI_ENTRY\s*=\s*"([^"]+)"/m.exec(text) ??
-    /^CLI_ENTRY\s*=\s*'([^']+)'/m.exec(text);
-  return match?.[1] ?? null;
+  return parseExecGuardLauncherCliEntry(text);
 }
 
 /**
@@ -637,8 +657,8 @@ export async function probeHeavyEntryInstall(
     if (launcherText === null) {
       distributedMissing.push(CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
     } else if (
-      !launcherText.includes(GENERATED_MARKER) ||
-      !launcherText.includes("runpy.run_path") ||
+      !looksLikePomasterExecGuardLauncher(launcherText) ||
+      !launcherText.includes("spawnSync") ||
       !launcherText.includes("POMASTER_CLI_ENTRY")
     ) {
       distributedDefects.push(`${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE} is not the generated POMaster launcher`);
@@ -648,7 +668,7 @@ export async function probeHeavyEntryInstall(
         probe: HEAVY_ENTRY_HOOKS_PROBE,
         status: "DEFECT",
         detail: `hook distribution defect: ${distributedDefects.join(" / ")}`,
-        hint: "恢复 POMaster 管理的 .claude/hooks/pomaster-exec-guard.py 与 exec-guard-hook.py 后重跑 pomaster init；判卷权威仍是 pomaster exec-guard。",
+        hint: `恢复 POMaster 管理的 ${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE} 与 ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE} 后重跑 pomaster init；判卷权威仍是 pomaster exec-guard。`,
       };
     }
     if (distributedMissing.length > 0) {
@@ -691,6 +711,20 @@ export async function probeHeavyEntryInstall(
       if (executablePath === null) unreachable.push(command);
       else resolved.push(`${command} → ${executablePath}`);
     }
+    // launcher 要 Python 3 才能跑 hook（找不到 → hook 每次 FAIL-OPEN = 静默不拦）。
+    const resolveRunner = (command: string): string | null =>
+      deps?.resolveHookExecutable !== undefined
+        ? deps.resolveHookExecutable(command)
+        : defaultResolveHookExecutable(command);
+    const pythonCandidates = process.platform === "win32" ? ["py", "python", "python3"] : ["python3", "python"];
+    const pythonRunner = pythonCandidates
+      .map((candidate) => ({ candidate, path: resolveRunner(candidate) }))
+      .find((entry) => entry.path !== null);
+    if (pythonRunner === undefined) {
+      unreachable.push(`Python 3（${pythonCandidates.join(" / ")}；exec-guard launcher 需要）`);
+    } else {
+      resolved.push(`exec-guard python → ${pythonRunner.path}`);
+    }
     const launcherCliEntry = launcherText === null ? null : parseLauncherCliEntry(launcherText);
     if (launcherCliEntry === null) {
       unreachable.push(`${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}→POMASTER_CLI_ENTRY`);
@@ -712,7 +746,7 @@ export async function probeHeavyEntryInstall(
       status: "READY",
       detail:
         `defined=${POMASTER_HOOK_EVENT_COMMANDS.length}; distributed=${POMASTER_HOOK_EVENT_COMMANDS.length}; ` +
-        `installed=${POMASTER_HOOK_EVENT_COMMANDS.length}; runnable=ready; prevention=prevention-capable within Claude Code matcher Edit|Write|NotebookEdit|Bash; ` +
+        `installed=${POMASTER_HOOK_EVENT_COMMANDS.length}; runnable=ready; prevention=prevention-capable within Claude Code matcher ${CLAUDE_EXEC_GUARD_MATCHER}; ` +
         `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）+ 命令 PATH 可达（${resolved.join("; ")}）`,
       hint: null,
     };

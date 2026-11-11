@@ -29,6 +29,19 @@ packages/cli/src/exec-guard.ts——判卷权威单一实现，本脚本零第�
   DENY stderr 枚举全部越界目标（denied 列表持有全量）；unmapped / 无 store /
   无活跃 execution 透传面不参与全称（条件激活语义原样）。
 
+两道常开的防线（不看有没有活跃 execution，store 在座即生效）：
+- 治理控制平面只经 pomaster 命令写：.pomaster/ 下的 state、truth、evidence、executions、runtime、
+  traces、production、sources、memory、生成清单 scaffold/generation-manifest.json、讨论的
+  state.json / meta.json / decision-graph.json。Edit / Write / MultiEdit / NotebookEdit / apply_patch
+  直接写，或 Bash 命令有写意图（重定向、rm / mv / cp 目标、tee、sed -i、truncate、git checkout -- 等）
+  落到这些路径 → DENY（exit 2），指路对应命令。读（cat / grep / jq …）照常放行。
+- 脚手架生成文件（KEYBINDING 映射到 CAPABILITY.SCAFFOLD.*）不手改：没有活跃 execution 时
+  对它们的写同样 DENY，指路「改规格 → confirm --change → generate」。
+
+工具面：Claude Code 的 Edit / Write / MultiEdit / NotebookEdit / Bash；Codex 的 apply_patch
+（补丁在 tool_input.command，按 *** Add / Update / Delete File 与 *** Move to 行取全部目标）
+与 Bash（Codex 的 shell / exec_command 都以 Bash 名义进 hook）。
+
 边界（PRD Out of Scope，如实标注）：
 - Bash matcher 只做路径词形粗筛，不做 shell 语义分析：按空白/引号切词取疑似路径
   token 逐个判卷（op 一律 upsert_object——kernel v0 唯一可放行的写 op，delete 恒
@@ -108,7 +121,44 @@ SCAFFOLD_CANONICAL_PREFIX = "CAPABILITY.SCAFFOLD."
 
 TOOL_PATH_KEYS = ("file_path", "notebook_path")
 BASH_TOOL = "Bash"
-SUPPORTED_TOOLS = {"Edit", "Write", "NotebookEdit", BASH_TOOL}
+PATCH_TOOL = "apply_patch"
+SUPPORTED_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit", BASH_TOOL, PATCH_TOOL}
+
+# 治理控制平面（store 根相对 posix 前缀 / 精确路径）：只经 pomaster 命令写，代理不直接编辑。
+CONTROL_PLANE_PREFIXES = (
+    ".pomaster/state/",
+    ".pomaster/truth/",
+    ".pomaster/evidence/",
+    ".pomaster/executions/",
+    ".pomaster/runtime/",
+    ".pomaster/traces/",
+    ".pomaster/production/",
+    ".pomaster/sources/",
+    ".pomaster/memory/",
+)
+CONTROL_PLANE_FILES = (".pomaster/scaffold/generation-manifest.json",)
+DISCOVERY_MACHINE_FILES = ("state.json", "meta.json", "decision-graph.json")
+DISCOVERY_PREFIX = ".pomaster/discovery/scratchpads/"
+
+# 控制平面各区该用的命令（DENY 指路）。
+CONTROL_PLANE_HINTS = (
+    (".pomaster/state/authority.json", "授权只由 Owner 经既有治理通路授予，代理不改"),
+    (".pomaster/state/permits.json", "`pomaster permit issue / renew / widen`"),
+    (".pomaster/state/", "`pomaster maintain <task> --ops <tx>`（治理对象事务）或对应命令"),
+    (".pomaster/truth/", "`pomaster maintain <task> --ops <tx>`"),
+    (".pomaster/evidence/", "`pomaster record gate-run / claim / verification`、`pomaster plan run`"),
+    (".pomaster/executions/", "`pomaster execution begin / attach-permit / handoff / end`"),
+    (".pomaster/runtime/", "`pomaster session attach`、`pomaster lock acquire / release`"),
+    (".pomaster/scaffold/", "`pomaster scaffold generate`（生成清单只由生成器写）"),
+    (DISCOVERY_PREFIX, "`pomaster brainstorm decide / promote`、`pomaster research request / handoff`"),
+)
+
+# Bash 写意图：命令词 → 哪些参数是写目标（all = 全部路径参数；last = 最后一个路径参数）。
+BASH_WRITE_ALL = {"rm", "rmdir", "unlink", "truncate", "touch", "tee", "shred", "mv", "chmod", "chown"}
+BASH_WRITE_LAST = {"cp", "install", "ln", "rsync"}
+BASH_INPLACE = {"sed", "perl", "gsed"}
+BASH_SCRIPT = {"python", "python3", "node", "ruby", "perl", "deno", "bun"}
+BASH_PREFIX_WORDS = {"sudo", "env", "command", "nohup", "time", "xargs"}
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +219,83 @@ def rel_posix(store_root: str, abs_path: str) -> str | None:
     if rel.startswith("..") or os.path.isabs(rel):
         return None
     return rel.replace(os.sep, "/")
+
+
+def patch_targets(patch: str) -> list[str]:
+    """apply_patch 补丁正文 → 全部目标路径（Add / Update / Delete File 与 Move to 的目的地）。"""
+    targets: list[str] = []
+    for line in patch.splitlines():
+        match = re.match(r"^\*\*\* (?:Add|Update|Delete) File: (.+?)\s*$", line) or re.match(
+            r"^\*\*\* Move to: (.+?)\s*$", line
+        )
+        if match and match.group(1) not in targets:
+            targets.append(match.group(1))
+    return targets
+
+
+def _shell_words(segment: str) -> list[str]:
+    try:
+        import shlex
+
+        return shlex.split(segment, posix=True)
+    except ValueError:
+        return segment.split()
+
+
+def bash_write_targets(command: str) -> list[str]:
+    """Bash 命令里有写意图的目标（重定向目标 + 写类命令的路径参数）。读命令不产目标。"""
+    targets: list[str] = []
+
+    def add(raw: str) -> None:
+        token = raw.strip().strip("\"'")
+        if token and not token.startswith("-") and token not in ("/dev/null", "/dev/stdout", "/dev/stderr") and token not in targets:
+            targets.append(token)
+
+    for segment in re.split(r"\|\||&&|;|\n|(?<![>&])\|(?!\|)", command):
+        for match in re.finditer(r"(?:^|[^0-9<>&])(?:&>|\d?>>?|>\|)\s*([^\s;&|<>]+)", segment):
+            add(match.group(1))
+        words = _shell_words(segment)
+        while words and (words[0] in BASH_PREFIX_WORDS or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0])):
+            words = words[1:]
+        if not words:
+            continue
+        head = os.path.basename(words[0])
+        args = [word for word in words[1:] if not word.startswith("-")]
+        if head in BASH_WRITE_ALL:
+            for word in args:
+                add(word)
+        elif head in BASH_WRITE_LAST and args:
+            add(args[-1])
+        elif head in BASH_INPLACE and any(re.match(r"^-[A-Za-z]*i", word) or word.startswith("--in-place") for word in words[1:]):
+            for word in args[1:] if head != "perl" else args:
+                add(word)
+        elif head == "dd":
+            for word in words[1:]:
+                if word.startswith("of="):
+                    add(word[3:])
+        elif head == "git" and len(words) > 1 and words[1] in ("checkout", "restore", "rm", "mv", "clean", "apply"):
+            for word in args[1:]:
+                add(word)
+        elif head in BASH_SCRIPT:
+            code = " ".join(words[1:])
+            if re.search(r"open\([^)]*['\"][wax+]|write_text|write_bytes|writeFileSync|writeFile|appendFile|unlink|rmSync|rename|remove\(|truncate", code):
+                for token in re.findall(r"[\w./\\-]*\.pomaster[\w./\\-]*|[\w./\\-]+\.[A-Za-z0-9]+", code):
+                    add(token)
+    return targets
+
+
+def control_plane_hint(rel: str) -> str | None:
+    """store 相对路径落在治理控制平面 → 指路说明；否则 None。"""
+    norm = rel.replace("\\", "/")
+    protected = norm.startswith(CONTROL_PLANE_PREFIXES) or norm in CONTROL_PLANE_FILES
+    if not protected and norm.startswith(DISCOVERY_PREFIX):
+        protected = os.path.basename(norm) in DISCOVERY_MACHINE_FILES
+    if not protected:
+        return None
+    for prefix, hint in CONTROL_PLANE_HINTS:
+        if norm == prefix or norm.startswith(prefix):
+            return hint
+    return "对应的 pomaster 命令"
 
 
 def bash_path_candidates(command: str) -> list[str]:
@@ -361,7 +488,7 @@ def judge_once(
 
 
 def hook_targets(payload: dict) -> tuple[list[str], str | None]:
-    """工具入参 → (候选目标原始词形, Bash 命令)。非 Bash = file/notebook_path。"""
+    """工具入参 → (候选目标原始词形, Bash 命令)。非 Bash = file/notebook_path / 补丁目标。"""
     tool_input = payload.get("tool_input")
     if not isinstance(tool_input, dict):
         return [], None
@@ -372,11 +499,77 @@ def hook_targets(payload: dict) -> tuple[list[str], str | None]:
             bash_path_candidates(command) if isinstance(command, str) else [],
             command if isinstance(command, str) else None,
         )
+    # Codex apply_patch（也可能以 Edit / Write 别名进来）：补丁正文在 tool_input.command。
+    for key in ("command", "patch", "input"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and "*** Begin Patch" in value:
+            return patch_targets(value), None
+    if tool == PATCH_TOOL:
+        return [], None
     for key in TOOL_PATH_KEYS:
         value = tool_input.get(key)
         if isinstance(value, str) and value.strip():
             return [value], None
     return [], None
+
+
+def write_targets(tool: str, raw_targets: list[str], bash_command: str | None) -> list[str]:
+    """确定有写意图的目标：文件工具与补丁 = 全部目标；Bash = 写意图分析出的目标。"""
+    if tool == BASH_TOOL:
+        if bash_command is None:
+            return []
+        targets = bash_write_targets(bash_command)
+        if "*** Begin Patch" in bash_command:  # 经 shell 调 apply_patch 的老形态
+            targets += [target for target in patch_targets(bash_command) if target not in targets]
+        return targets
+    return list(raw_targets)
+
+
+def deny_always_on(tool: str, cwd: str, targets: list[str]) -> int | None:
+    """常开防线：治理控制平面 / 脚手架生成文件（无活跃 execution 时）的写 → DENY；否则 None。"""
+    control: list[tuple[str, str]] = []
+    scaffold: list[tuple[str, list[str]]] = []
+    for raw in targets:
+        absolute = resolve_target(raw, cwd)
+        if absolute is None:
+            continue
+        root = find_store_root(os.path.dirname(absolute) or cwd)
+        if root is None:
+            continue
+        rel = rel_posix(root, absolute)
+        if rel is None:
+            continue
+        hint = control_plane_hint(rel)
+        if hint is not None:
+            control.append((rel, hint))
+            continue
+        active = load_active_executions(root)
+        if active:
+            continue  # 有活跃 execution：照 permit 判卷（下游原流程）
+        ids = [cid for cid in map_path_to_ids(rel, load_keybinding_rows(root)) if cid.startswith(SCAFFOLD_CANONICAL_PREFIX)]
+        if ids:
+            scaffold.append((rel, ids))
+    if control:
+        print(f"{STDERR_PREFIX} DENY: 治理控制平面不直接编辑（tool={tool}）", file=sys.stderr)
+        for rel, hint in control:
+            print(f"  - {rel}：改用 {hint}", file=sys.stderr)
+        print(
+            "  这些文件是治理事实的单一来源，直接改会绕过判卷与审计。读可以（cat / grep / jq），写只经 pomaster 命令；"
+            "确需人工修复请交给 Owner 手动处理。",
+            file=sys.stderr,
+        )
+        return 2
+    if scaffold:
+        print(f"{STDERR_PREFIX} DENY: 脚手架生成文件不手改（tool={tool}）", file=sys.stderr)
+        for rel, ids in scaffold:
+            print(f"  - {rel}（{', '.join(ids)}）", file=sys.stderr)
+        print(
+            "  要改就改 `.pomaster/scaffold/domain-spec.yaml` → `pomaster scaffold confirm --change <CHANGE-id> "
+            "--by human:<owner>` → `pomaster scaffold generate`；业务扩展写在生成器留出的扩展点里（如后端的 <app>-support 模块）。",
+            file=sys.stderr,
+        )
+        return 2
+    return None
 
 
 def main() -> int:
@@ -410,6 +603,9 @@ def main() -> int:
     cwd = cwd if isinstance(cwd, str) and cwd.strip() else os.getcwd()
 
     raw_targets, bash_command = hook_targets(payload)
+    always_on = deny_always_on(str(tool), cwd, write_targets(str(tool), raw_targets, bash_command))
+    if always_on is not None:
+        return always_on
     if not raw_targets:
         if tool == BASH_TOOL:
             return pass_through("Bash 命令无路径词形（粗筛零候选）")
