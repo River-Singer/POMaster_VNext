@@ -11,15 +11,28 @@
  * （px、色值、圆角、阴影、hover…）时偏向设计规范。语气按措辞判：禁止 / 不得 / 不要 → MUST NOT，建议 / 尽量 → SHOULD，
  * 其余 MUST。识别结果、候选与要写的内容都会列出来；认不出就失败并要求用 --area / --theme 指定，不猜。
  * 同一句已在目标里 → 不重复写。
+ *
+ * 写入前按规范写入契约（spec-writing.ts）校验：七个字段（规则、级别、适用范围、理由、检查方式、正例、反例）
+ * 必须齐全；条文不带引用、版本号、时间戳、记录人。不合规就失败并逐条列出，什么都不写。
+ * 记录人（--by）只出现在命令结果里，不写进规范正文——谁在什么时候写的由版本库记录。
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { loadDesignStandard } from "./design.js";
-import { DESIGN_STANDARD_RELATIVE, type DesignArea } from "./design-standard.js";
+import { DESIGN_CHECKS, DESIGN_STANDARD_RELATIVE, type DesignArea } from "./design-standard.js";
 import { yamlScalar } from "./design-adopt.js";
 import { POMASTER_DIR } from "./store-layout.js";
+import {
+  SPEC_ENTRY_FIELDS,
+  lintSpecContent,
+  renderSpecEntryMarkdown,
+  specWritingContractLines,
+  validateSpecEntry,
+  type SpecEntry,
+  type SpecWritingIssue,
+} from "./spec-writing.js";
 
 const THEMES_INDEX = "specs/hard/themes/index.md";
 
@@ -36,8 +49,20 @@ export interface SpecUpdateInput {
   /** 新规则编号的后半段（设计规范；缺省 PROJECT_<n>）。 */
   readonly id?: string;
   readonly title?: string;
-  /** 记录人（human:<名字> / agent:<名字>）。 */
+  /** 记录人（human:<名字> / agent:<名字>）；只进命令结果，不写进规范正文。 */
   readonly by: string;
+  /** 级别 MUST / MUST NOT / SHOULD（缺省按措辞判）。 */
+  readonly level?: string;
+  /** 适用范围。 */
+  readonly scope?: string;
+  /** 理由。 */
+  readonly why?: string;
+  /** 检查方式：门禁检查编号，或评审时看什么。 */
+  readonly check?: string;
+  /** 正例。 */
+  readonly do?: string;
+  /** 反例。 */
+  readonly dont?: string;
   readonly dryRun?: boolean;
 }
 
@@ -61,17 +86,15 @@ export interface SpecUpdateResult {
   readonly duplicate: boolean;
   readonly preview: string;
   readonly candidates: readonly SpecCandidate[];
+  /** 记录人（命令结果里留痕，不进正文）。 */
+  readonly by: string;
 }
 
 // ============================================================
 // 识别
 // ============================================================
 
-export function modalityOf(text: string): SpecModality {
-  if (/MUST NOT|禁止|不得|不能|不要|严禁|不允许|不准|避免|勿/.test(text)) return "MUST NOT";
-  if (/SHOULD|建议|尽量|推荐|最好|宜/.test(text)) return "SHOULD";
-  return "MUST";
-}
+export { levelOf as modalityOf } from "./spec-writing.js";
 
 function keywordsOf(cell: string): string[] {
   return cell
@@ -159,45 +182,54 @@ function titleOf(text: string): string {
   return first.length > 24 ? `${first.slice(0, 24)}…` : first;
 }
 
-function insertDesignRule(standardText: string, area: DesignArea, ruleId: string, title: string, text: string, note: string): string {
+function designRuleLines(ruleId: string, title: string, entry: SpecEntry, check: string | null): string[] {
+  return [
+    `      - id: ${ruleId}`,
+    `        title_zh: ${yamlScalar(title)}`,
+    `        statement_zh: ${yamlScalar(entry.statement)}`,
+    `        rationale_zh: ${yamlScalar(entry.rationale)}`,
+    `        level: ${yamlScalar(entry.level)}`,
+    `        scope_zh: ${yamlScalar(entry.scope)}`,
+    `        check_zh: ${yamlScalar(entry.check)}`,
+    check === null ? "        enforcement: { kind: review }" : `        enforcement: { kind: gate, check: ${check} }`,
+    "        examples:",
+    `          - { kind: do, title_zh: 正例, code: ${yamlScalar(entry.do)}, lang: text }`,
+    `          - { kind: dont, title_zh: 反例, code: ${yamlScalar(entry.dont)}, lang: text }`,
+  ];
+}
+
+function insertDesignRule(standardText: string, area: DesignArea, ruleLines: readonly string[]): string {
   const lines = standardText.split("\n");
   const start = lines.findIndex((line) => line === `  - key: ${area.key}`);
   if (start === -1) throw new Error(`规范文件里找不到领域 ${area.key}`);
   let end = start + 1;
   while (end < lines.length && !/^  - key: /.test(lines[end] ?? "") && !/^  # /.test(lines[end] ?? "") && !/^\S/.test(lines[end] ?? "")) end += 1;
   while (end > start && (lines[end - 1] ?? "").trim() === "") end -= 1;
-  lines.splice(
-    end,
-    0,
-    "",
-    `      - id: ${ruleId}`,
-    `        title_zh: ${yamlScalar(title)}`,
-    `        statement_zh: ${yamlScalar(text)}`,
-    `        rationale_zh: ${yamlScalar(note)}`,
-    "        enforcement: { kind: review }",
-  );
+  lines.splice(end, 0, "", ...ruleLines);
   return lines.join("\n").replace(/^(  origin: )preset$/m, "$1customized").replace(/^(  customized: )false$/m, "$1true");
 }
 
-const SUPPLEMENT_HEADER = "**源：项目补充（pomaster update spec）**";
+const SUPPLEMENT_HEADER = "**项目补充**";
+/** 旧版写入口用过的块标题；仍按项目补充块识别。 */
+const LEGACY_SUPPLEMENT_HEADER = "**源：项目补充（pomaster update spec）**";
 
-function insertSpecRule(docText: string, modality: SpecModality, bullet: string): string | null {
+function insertSpecRule(docText: string, modality: SpecModality, bullet: readonly string[]): string | null {
   const lines = docText.split("\n");
   const start = lines.findIndex((line) => line === `## ${modality}`);
   if (start === -1) return null;
   let end = start + 1;
   while (end < lines.length && !/^## /.test(lines[end] ?? "")) end += 1;
-  const header = lines.findIndex((line, index) => index > start && index < end && line === SUPPLEMENT_HEADER);
+  const header = lines.findIndex((line, index) => index > start && index < end && (line === SUPPLEMENT_HEADER || line === LEGACY_SUPPLEMENT_HEADER));
   if (header !== -1) {
     let at = header + 1;
-    while (at < end && ((lines[at] ?? "").trim() === "" || /^- /.test(lines[at] ?? ""))) at += 1;
+    while (at < end && ((lines[at] ?? "").trim() === "" || /^(- |  )/.test(lines[at] ?? ""))) at += 1;
     while (at > header && (lines[at - 1] ?? "").trim() === "") at -= 1;
-    lines.splice(at, 0, bullet);
+    lines.splice(at, 0, ...bullet);
     return lines.join("\n");
   }
   let at = end;
   while (at > start && (lines[at - 1] ?? "").trim() === "") at -= 1;
-  lines.splice(at, 0, "", SUPPLEMENT_HEADER, "", bullet);
+  lines.splice(at, 0, "", SUPPLEMENT_HEADER, "", ...bullet);
   return lines.join("\n");
 }
 
@@ -212,6 +244,40 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
   const text = input.text.replace(/\s+/g, " ").trim();
   if (text.length < 4) return fail({ code: "SPEC_UPDATE_TEXT", message: "规范原文太短", hint: "写完整的一句规则，如「表格的操作列固定在右侧，最多放三个文字按钮」" });
   if (!/^(human|agent):[\w.\-一-鿿]+$/.test(input.by)) return fail({ code: "SPEC_UPDATE_ACTOR", message: `记录人 ${input.by} 不合规`, hint: "写 --by human:<名字> 或 agent:<名字>" });
+  const validated = validateSpecEntry({
+    statement: text,
+    ...(input.level !== undefined ? { level: input.level } : {}),
+    ...(input.scope !== undefined ? { scope: input.scope } : {}),
+    ...(input.why !== undefined ? { rationale: input.why } : {}),
+    ...(input.check !== undefined ? { check: input.check } : {}),
+    ...(input.do !== undefined ? { do: input.do } : {}),
+    ...(input.dont !== undefined ? { dont: input.dont } : {}),
+  });
+  const titleIssues: SpecWritingIssue[] = input.title === undefined ? [] : lintSpecContent(input.title, "title");
+  if (validated.missing.length > 0) {
+    return fail(
+      {
+        code: "SPEC_UPDATE_FIELDS",
+        message: `规则缺字段：${validated.missing.map((field) => `${field.label_zh}（${field.flag}）`).join("、")}`,
+        hint: "补齐字段后重试；规范写入契约见 Storybook「工程规范 / 写入规范」",
+      },
+      [...validated.missing.map((field) => `    ${field.label_zh}（${field.flag}）：${field.description_zh}`), ...specWritingContractLines().map((line) => `  ${line}`)],
+    );
+  }
+  if (validated.entry === null || titleIssues.length > 0) {
+    const issues = [...validated.issues, ...titleIssues];
+    const label = (field: SpecWritingIssue["field"]): string =>
+      field === "title" ? "标题" : field === "text" ? "条文" : (SPEC_ENTRY_FIELDS.find((item) => item.key === field)?.label_zh ?? field);
+    return fail(
+      {
+        code: "SPEC_UPDATE_CONTENT",
+        message: `规则内容不合写入契约（${issues.length} 处）`,
+        hint: "按每一处的提示改写后重试；条文不带引用、版本号、时间戳、记录人",
+      },
+      issues.map((issue) => `    ${label(issue.field)}里的「${issue.match}」：${issue.label_zh}——${issue.hint_zh}`),
+    );
+  }
+  const entry = validated.entry;
   const indexPath = join(dir, POMASTER_DIR, THEMES_INDEX);
   if (!existsSync(indexPath)) return fail({ code: "NOT_INITIALIZED", message: `找不到 ${POMASTER_DIR}/${THEMES_INDEX}`, hint: "先 pomaster init（硬规范主题文档随 init 播种）" });
   const routes = readSpecRoutes(readFileSync(indexPath, "utf8"));
@@ -248,8 +314,7 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
       ["  候选：无"],
     );
   }
-  const modality = modalityOf(text);
-  const note = `项目补充（${input.by}，${new Date().toISOString().slice(0, 10)}）`;
+  const modality: SpecModality = entry.level;
   const warnings: CliWarning[] = [];
   if (chosen.kind === "design") {
     if (standard === null || !standard.ok || standard.normalized === null) {
@@ -257,17 +322,19 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
     }
     const area = standard.normalized.areas.find((item) => item.key === chosen.ref) as DesignArea;
     const original = readFileSync(standardPath, "utf8");
-    if (original.includes(yamlScalar(text))) {
-      return okOutcome("update spec", { kind: "design", ref: area.key, modality, file: `${POMASTER_DIR}/${DESIGN_STANDARD_RELATIVE}`, rule_id: null, written: false, duplicate: true, preview: text, candidates }, [`update spec: 设计规范 ${area.title_zh} 里已有这一条，没有重复写`]);
+    if (original.includes(yamlScalar(entry.statement))) {
+      return okOutcome("update spec", { kind: "design", ref: area.key, modality, file: `${POMASTER_DIR}/${DESIGN_STANDARD_RELATIVE}`, rule_id: null, written: false, duplicate: true, preview: entry.statement, candidates, by: input.by }, [`update spec: 设计规范 ${area.title_zh} 里已有这一条，没有重复写`]);
     }
     const suffix = input.id ?? `PROJECT_${area.rules.filter((rule) => rule.id.startsWith(`${area.prefix}.PROJECT_`)).length + 1}`;
     if (!/^[A-Z][A-Z0-9_]*$/.test(suffix)) return fail({ code: "SPEC_UPDATE_TARGET", message: `规则编号后半段 ${suffix} 不合规`, hint: "大写字母、数字、下划线，如 ACTION_COLUMN" });
     const ruleId = `${area.prefix}.${suffix}`;
     if (area.rules.some((rule) => rule.id === ruleId)) return fail({ code: "SPEC_UPDATE_TARGET", message: `规则 ${ruleId} 已存在`, hint: "换一个 --id，或用 pomaster design set 改它的参数" });
-    const title = input.title ?? titleOf(text);
-    const next = insertDesignRule(original, area, ruleId, title, text, note);
-    const preview = [`      - id: ${ruleId}`, `        title_zh: ${yamlScalar(title)}`, `        statement_zh: ${yamlScalar(text)}`, "        enforcement: { kind: review }"].join("\n");
-    const result: SpecUpdateResult = { kind: "design", ref: area.key, modality, file: `${POMASTER_DIR}/${DESIGN_STANDARD_RELATIVE}`, rule_id: ruleId, written: false, duplicate: false, preview, candidates };
+    const title = input.title ?? titleOf(entry.statement);
+    const gateCheck = DESIGN_CHECKS.some((spec) => spec.id === entry.check) ? entry.check : null;
+    const ruleLines = designRuleLines(ruleId, title, entry, gateCheck);
+    const next = insertDesignRule(original, area, ruleLines);
+    const preview = ruleLines.join("\n");
+    const result: SpecUpdateResult = { kind: "design", ref: area.key, modality, file: `${POMASTER_DIR}/${DESIGN_STANDARD_RELATIVE}`, rule_id: ruleId, written: false, duplicate: false, preview, candidates, by: input.by };
     const lines = [
       `update spec: 识别为设计规范「${area.group_title_zh} / ${area.title_zh}」的新规则 ${ruleId}（${modality}）`,
       "  候选：",
@@ -295,22 +362,21 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
   const docPath = join(dir, POMASTER_DIR, "specs", "hard", chosen.ref);
   if (!existsSync(docPath)) return fail({ code: "SPEC_UPDATE_TARGET", message: `找不到主题文档 specs/hard/${chosen.ref}`, hint: "重新 pomaster init 播种缺失的主题文档" });
   const doc = readFileSync(docPath, "utf8");
-  const body = text.replace(/^(MUST NOT|MUST|SHOULD)\s*/, "");
-  const bullet = `- ${modality === "MUST" ? "" : `${modality} `}${body}（${input.by}，${new Date().toISOString().slice(0, 10)}）`;
-  if (doc.includes(body)) {
-    return okOutcome("update spec", { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: true, preview: bullet, candidates }, [`update spec: ${chosen.ref} 里已有这一条，没有重复写`]);
+  const bullet = renderSpecEntryMarkdown(entry);
+  if (doc.includes(entry.statement)) {
+    return okOutcome("update spec", { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: true, preview: bullet.join("\n"), candidates, by: input.by }, [`update spec: ${chosen.ref} 里已有这一条，没有重复写`]);
   }
   const next = insertSpecRule(doc, modality, bullet);
   if (next === null) return fail({ code: "SPEC_UPDATE_TARGET", message: `${chosen.ref} 没有「## ${modality}」章节`, hint: "主题文档应有 MUST / MUST NOT / SHOULD 章节；手工补上章节后重试" });
-  const result: SpecUpdateResult = { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: false, preview: bullet, candidates };
+  const result: SpecUpdateResult = { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: false, preview: bullet.join("\n"), candidates, by: input.by };
   const lines = [
     `update spec: 识别为硬规范 ${chosen.ref} 的 ${modality} 条目`,
     "  候选：",
     ...shown,
     `  写入「## ${modality}」章节的「项目补充」块：`,
-    `    ${bullet}`,
+    ...bullet.map((line) => `    ${line}`),
   ];
-  if (!adopted && candidates.some((c) => c.kind === "spec" && c.ref === "themes/ui-presentation-and-design.md") && VISUAL.test(text)) {
+  if (!adopted && candidates.some((c) => c.kind === "spec" && c.ref === "themes/ui-presentation-and-design.md") && VISUAL.test(entry.statement)) {
     warnings.push({ code: "DESIGN_NOT_ADOPTED", message: "这条像是界面呈现规范，但项目还没落地设计规范，先写进硬规范", hint: "pomaster design adopt 之后，同类规范会写进设计规范并出现在 Storybook" });
   }
   if (input.dryRun === true) return okOutcome("update spec", result, [...lines, "  （--dry-run：没有写）"], warnings);

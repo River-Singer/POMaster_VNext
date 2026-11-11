@@ -151,7 +151,7 @@ describe("规范页构建器 · 两个抽屉同一套结构", () => {
 
     it(`${drawer.name}：总览列出骨架里的全部领域（含待补），带指纹与本体系的修改命令`, () => {
       const tree = overviewPage(drawer.model.ctx, overviewAreas(drawer.model));
-      expect(all(tree, (element) => element.attrs["data-area-link"] !== undefined).length).toBe(156);
+      expect(all(tree, (element) => element.attrs["data-area-link"] !== undefined).length).toBe(157);
       const text = textOf(tree);
       expect(text).toContain(drawer.model.fingerprint);
       expect(text).toContain(drawer.model.profile.validate_cmd);

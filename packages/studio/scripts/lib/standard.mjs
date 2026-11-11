@@ -395,6 +395,9 @@ export function loadStandardModel(standardPath = STANDARD_PATH, tokensPath = STA
         title_zh: ruleRaw.title_zh,
         statement_zh: ruleRaw.statement_zh,
         rationale_zh: ruleRaw.rationale_zh ?? null,
+        level: ruleRaw.level ?? null,
+        scope_zh: ruleRaw.scope_zh ?? null,
+        check_zh: ruleRaw.check_zh ?? null,
         surfaces: ruleRaw.surfaces === undefined ? [...SURFACES] : SURFACES.filter((surface) => ruleRaw.surfaces.includes(surface)),
         params,
         anchors,
@@ -700,6 +703,9 @@ export function renderTwinJson(model) {
         title_zh: rule.title_zh,
         statement_zh: rule.statement_zh,
         rationale_zh: rule.rationale_zh,
+        level: rule.level,
+        scope_zh: rule.scope_zh,
+        check_zh: rule.check_zh,
         surfaces: rule.surfaces,
         enforcement: rule.enforcement,
         params: rule.params,
@@ -794,12 +800,17 @@ export function renderTwinMarkdown(model) {
           : "人工评审";
       const surfaces = rule.surfaces.length === 2 ? "管理侧与用户侧" : rule.surfaces.map((s) => (s === "admin" ? "管理侧" : "用户侧")).join("、");
       out.push(`### ${rule.id} ${rule.title_zh}`, ``, rule.statement_zh, ``, `- 执行：${enforcement}；适用：${surfaces}`);
+      if (rule.level !== null) out.push(`- 级别：${rule.level}`);
+      if (rule.scope_zh !== null) out.push(`- 适用范围：${rule.scope_zh}`);
+      if (rule.check_zh !== null) out.push(`- 检查方式：${rule.check_zh}`);
+      if (rule.level !== null && rule.rationale_zh !== null) out.push(`- 理由：${rule.rationale_zh}`);
       for (const param of rule.params) out.push(`- 参数：${mdParam(param, model.sources)}`);
       for (const block of rule.showcase) out.push(...mdShowcase(block));
       for (const anchor of rule.anchors) out.push(`- 硬规范依据：specs/hard/${anchor.doc}「${anchor.quote}」`);
       for (const example of rule.examples) {
         const kind = example.kind === "do" ? "这样做" : "别这样做";
-        out.push(`- 示例（${kind}）：${example.title_zh}${example.note_zh === null ? "" : `——${example.note_zh}`}`);
+        const text = example.lang === "text" && example.code !== null && !example.code.includes("\n") ? `：${example.code}` : "";
+        out.push(`- 示例（${kind}）：${example.title_zh}${example.note_zh === null ? "" : `——${example.note_zh}`}${text}`);
       }
       out.push(`- 页面：${storyUrl(model, rule.storybook.id)}`, ``);
     }

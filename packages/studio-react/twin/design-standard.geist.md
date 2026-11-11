@@ -1,7 +1,7 @@
 # 前端设计规范（Vercel Geist，shadcn/ui + Tailwind CSS 4）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio-react/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:fb258ad75709633c9116ad6b089f72289be23d19390caa82b70394cd331bf19f`；状态 origin=preset。
+> 规范指纹 `sha256:35248ac55010eda8185a4052f680a8dc091193c319fddfe39e44c64a15817889`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/geist.yaml` → `pomaster design validate --system geist` → `node packages/studio-react/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -6413,6 +6413,111 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 
 - 执行：人工评审；适用：管理侧与用户侧
 - 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-prototype-intake--proto-verify
+
+## 工程规范 / 写入规范（SPECW）
+
+规范条文怎么写进项目：每条规则七个字段齐全；条文自足、长期成立——不带引用、版本号、时间戳、记录人；只经 pomaster update spec 写入，写前校验，不合规直接拒绝；pomaster spec-lint 复核已有条文。
+
+页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--overview
+
+### SPECW.FIELDS 每条规则七个字段齐全
+
+写进项目的每条规则都带齐七个字段：规则、级别、适用范围、理由、检查方式、正例、反例。缺任何一个，写入口直接拒绝并说出缺了哪个。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST
+- 适用范围：所有空间的规范条文：前端、前端服务器、后端、数据库、缓存、消息与异步、平台与运维、安全、测试
+- 检查方式：pomaster update spec 写前校验（缺字段报 SPEC_UPDATE_FIELDS）
+- 理由：只有一句话的规则，读的人不知道管到哪里、为什么、怎么判定；七个字段齐了，人和 AI 才能据此写代码、做评审、接门禁。
+- 对照表「七个字段」（字段 → 用途）：
+  - `规则（规范原文）`：一句话写清做什么或不做什么，读完就能判断一段代码或一个界面是否合规
+  - `级别（--level）`：MUST / MUST NOT / SHOULD；不写时按措辞判
+  - `适用范围（--scope）`：哪个空间、哪类对象或哪些路径
+  - `理由（--why）`：为什么要这样，违反的后果是什么
+  - `检查方式（--check-by）`：门禁检查编号，或评审时具体看什么
+  - `正例（--do）`：一个合规的具体写法
+  - `反例（--dont）`：一个违规的具体写法
+- 示例（这样做）：字段齐全
+- 示例（别这样做）：只有一句话：pomaster update spec "列表接口要分页" --by agent:implementer
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-fields
+
+### SPECW.STATEMENT 一条只说一件事，读完能判定
+
+规则正文是一句可判定的话：说清对象和要求，读完就能判断合规与否；两件事拆成两条，形容词换成可检查的条件。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST
+- 适用范围：所有规范条文的规则正文
+- 检查方式：评审：正文能否直接判定一个具体写法合规与否
+- 理由：一条里塞几件事，评审时只要有一件没做到就说不清是哪条没过；「合理」「适当」这类词没法判定。
+- 示例（这样做）：可判定：表格的操作列固定在右侧，最多放三个文字按钮，更多操作收进「更多」下拉。
+- 示例（别这样做）：没法判定：表格操作要合理布局，按钮数量适当，同时注意性能和权限。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-statement
+
+### SPECW.SELF_CONTAINED 条文自足，不带引用
+
+条文里不放链接、把读者引到别处的措辞、文档路径、章节编号和变更编号；外部材料里的要求直接写成规则本身。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST NOT
+- 适用范围：规则、理由、适用范围、检查方式、正例、反例各字段，以及规范文档的正文
+- 检查方式：pomaster update spec 写前校验（SPEC_UPDATE_CONTENT）；pomaster spec-lint 复核已有条文
+- 理由：引用会过期、会失效，也逼着读的人和 AI 再去找一份文档；写进项目的规范要能单独成立。
+- 示例（这样做）：要求写在条文里：所有交互元素都能用键盘到达并操作，Tab 顺序与视觉顺序一致。
+- 示例（别这样做）：把读者引到别处：键盘可达性要求详见 docs/a11y.md 第 3 节，另见 PR
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-self-contained
+
+### SPECW.NO_VERSION 不写版本号
+
+条文里不写版本号——带点的版本串、包名加版本、主版本线都不写；用到的库和工具的版本只记在项目技术基线里，条文写成不随版本变的规则。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST NOT
+- 适用范围：所有规范条文；版本记录在技术基线（pomaster baseline）
+- 检查方式：pomaster update spec 写前校验；pomaster spec-lint 复核已有条文
+- 理由：版本一升级，带版本号的条文就过期了，还会和技术基线的记录打架；版本有唯一的记录处，条文只说规则。
+- 示例（这样做）：规则不随版本变：组件库按需引入，不整包注册；用到的组件在入口逐个登记。
+- 示例（别这样做）：条文里钉版本：使用 ant-design-vue 4.2.6，按需引入组件。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-no-version
+
+### SPECW.TIMELESS 不写时间戳与一次性措辞
+
+条文里不写日期、时刻，也不写只在某一段时间成立的话（指某一轮工作、某个截止点、待办标记）；规则写下就长期成立，什么时候写的由版本库记录。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST NOT
+- 适用范围：所有规范条文
+- 检查方式：pomaster update spec 写前校验；pomaster spec-lint 复核已有条文
+- 理由：带日期的条文让人分不清规则还算不算数；临时的说法写进规范，就会被当成长期规则执行。
+- 示例（这样做）：长期成立：金额列右对齐，统一保留两位小数，千分位分隔。
+- 示例（别这样做）：带时间：金额列暂时先左对齐，本轮结束后再统一（2026-11-11 定）。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-timeless
+
+### SPECW.NO_PROVENANCE 不写记录人与会话标记
+
+条文里不写是谁写的、在哪次会话或提交里定的（human:<名字>、agent:<名字>、提交哈希、会话编号）；写入口只把记录人放进命令结果。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST NOT
+- 适用范围：所有规范条文
+- 检查方式：pomaster update spec 写前校验；pomaster spec-lint 复核已有条文
+- 理由：规则的效力不取决于谁写的；记录人写进正文只会变成噪音，追溯交给版本库。
+- 示例（这样做）：只有规则：删除操作必须二次确认，确认框写明删除对象的名称。
+- 示例（别这样做）：带记录人：删除操作必须二次确认（agent:implementer 提议，human:owner 同意）。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-no-provenance
+
+### SPECW.WRITE_PATH 只经写入口写，写后复核
+
+新规范一律用 pomaster update spec 写：它按领域与主题找到该写的位置，写前做字段与内容校验；改动已有条文后跑 pomaster spec-lint，零问题才算写完。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 级别：MUST
+- 适用范围：往项目规范里加、改条文的所有操作（人和 AI 都一样）
+- 检查方式：pomaster spec-lint 退出码为 0
+- 理由：手写容易写错位置、漏字段、夹带引用；走同一个写入口，规范的形态和位置才一致，Storybook 与 AI 读到的才是同一份。
+- 示例（这样做）：走写入口并复核
+- 示例（别这样做）：直接改文件：打开 .pomaster/specs/hard/themes/security.md，在末尾随手加一行「注意 XSS」。
+- 页面：https://river-singer.github.io/POMaster_VNext/react/?path=/story/standard-engineering-spec-writing--specw-write-path
 
 ## 出处
 

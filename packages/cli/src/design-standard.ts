@@ -321,6 +321,12 @@ export interface DesignRule {
   readonly title_zh: string;
   readonly statement_zh: string;
   readonly rationale_zh: string | null;
+  /** 级别 MUST / MUST NOT / SHOULD；写入契约的字段，预设条文可缺省（由措辞表达）。 */
+  readonly level: "MUST" | "MUST NOT" | "SHOULD" | null;
+  /** 适用范围；缺省 = 所属领域。 */
+  readonly scope_zh: string | null;
+  /** 检查方式；缺省由 enforcement 表达。 */
+  readonly check_zh: string | null;
   readonly surfaces: readonly DesignSurface[];
   readonly params: readonly DesignParam[];
   readonly anchors: readonly DesignAnchor[];
@@ -397,7 +403,7 @@ const AREA_KEYS = ["key", "title_zh", "group", "prefix", "summary_zh", "playgrou
 const PLAYGROUND_KEYS = ["component", "text_zh", "props", "matrix"];
 const PLAYGROUND_PROP_KEYS = ["options", "boolean", "default"];
 const LAB_KEYS = ["kind", "lab", "title_zh", "description_zh"];
-const RULE_KEYS = ["id", "title_zh", "statement_zh", "rationale_zh", "surfaces", "params", "anchors", "enforcement", "showcase", "examples"];
+const RULE_KEYS = ["id", "title_zh", "statement_zh", "rationale_zh", "level", "scope_zh", "check_zh", "surfaces", "params", "anchors", "enforcement", "showcase", "examples"];
 const PARAM_KEYS = ["token", "value", "decision", "candidates", "unit", "source", "label_zh", "note_zh"];
 const ANCHOR_KEYS = ["spec", "quote"];
 const ENFORCEMENT_KEYS = ["kind", "check"];
@@ -1096,6 +1102,13 @@ function validateRule(
   const title = sink.requireString(raw, "title_zh", path);
   const statement = sink.requireString(raw, "statement_zh", path);
   const rationale = sink.optionalString(raw, "rationale_zh", path);
+  const levelRaw = sink.optionalString(raw, "level", path);
+  const level = levelRaw === null ? null : levelRaw === "MUST" || levelRaw === "MUST NOT" || levelRaw === "SHOULD" ? levelRaw : null;
+  if (levelRaw !== null && level === null) {
+    sink.error("DESIGN_SHAPE", `${path}.level`, `级别 ${levelRaw} 不在词表内`, "写 MUST、MUST NOT 或 SHOULD");
+  }
+  const scope = sink.optionalString(raw, "scope_zh", path);
+  const check = sink.optionalString(raw, "check_zh", path);
 
   let surfaces: DesignSurface[] = [...DESIGN_SURFACES];
   const surfacesRaw = raw["surfaces"];
@@ -1195,7 +1208,7 @@ function validateRule(
   }
 
   if (id === null || title === null || statement === null || enforcement === null) return null;
-  return { id, title_zh: title, statement_zh: statement, rationale_zh: rationale, surfaces, params, anchors, enforcement, showcase, examples };
+  return { id, title_zh: title, statement_zh: statement, rationale_zh: rationale, level, scope_zh: scope, check_zh: check, surfaces, params, anchors, enforcement, showcase, examples };
 }
 
 function validateMeta(sink: IssueSink, raw: unknown): NormalizedDesignStandard["meta"] | null {

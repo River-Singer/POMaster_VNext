@@ -519,7 +519,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate；D-5，裁决 18）",
   "pomaster brainstorm start/question-gate/status/decide/promote",
   "pomaster prototype ingest <html...> --spec <md>   # BA 的 HTML 原型 + spec → 业务事实 / 信息结构 / 冲突提问（去掉表现）",
-  'pomaster update spec "<一句规范>" --by <actor>    # 新规范落位：界面呈现进设计规范，其余进硬规范主题文档',
+  'pomaster update spec "<一句规范>" --scope … --why … --check-by … --do … --dont … --by <actor>    # 新规范落位（写前按写入契约校验）：界面呈现进设计规范，其余进硬规范主题文档',
+  "pomaster spec-lint    # 按写入契约复核已有规范条文（引用 / 版本号 / 时间戳 / 记录人）",
   "",
   "# ② FRAMEWORK —— 许可签发/判卷/显式接管/台账",
   "pomaster permit issue/check/steal/list",
@@ -741,6 +742,12 @@ function commandBlock(lines: readonly string[]): string[] {
  * description 写用户会自然说出的触发词（harness 自动选路由面），
  * 首句自含完整触发语义（防 listing 截断后失效）。
  */
+/** 规范写入契约（spec-writing.ts）在卡片上的说法：写规范的人和 AI 读到的是同一套规则。 */
+const SPEC_WRITING_CARD_LINES: readonly string[] = [
+  "- 写规范按写入契约：每条规则七个字段齐全——规则、级别（--level，缺省按措辞判）、适用范围（--scope）、理由（--why）、检查方式（--check-by）、正例（--do）、反例（--dont）；缺字段写入口直接拒绝。",
+  "- 条文自足、长期成立：不带链接与「参见 / 详见」类引用、文档路径与章节编号、PR / issue / 任务编号，不带版本号（版本只记在技术基线），不带日期、时刻与一次性措辞，不带记录人与会话标记；改了已有条文后跑 `pomaster spec-lint`，零问题才算写完。",
+];
+
 export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster",
@@ -875,6 +882,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 设计规范是标准不是参考：动手前 `pomaster design show --area <领域>`（或 `--rule <编号>`）读条文与已解析的取值，间距、字号、圆角、阴影、颜色、栅格、组件用法、状态反馈、加载、报错、缓存、并发、安全一律照条文；取值是决策位（待定）就停下问 Owner，定了用 `design set` 记下，不自己挑默认值。项目还没有规范时先 `design adopt`。",
       "- 有 BA 交来的 HTML 原型：先 `prototype ingest` 抽出业务事实与信息结构（读 `*.outline.md` 与 `facts.json`），按规范重绘；原型的 class、样式、栅格、字体不进实现，事实一条不少。",
       "- 开发中定下了新规范（用户说「以后都这样」「统一改成」）：`update spec` 写到该在的地方，不只留在对话里。",
+      ...SPEC_WRITING_CARD_LINES,
       "- 交接前自检 `pomaster design check`；确属例外的写带理由的 `pomaster-design-ignore <检查编号>: 理由`。",
       "",
       "## 工程纪律",
@@ -890,7 +898,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster design show [--area <key>] [--rule <id>] [--json]",
         "pomaster design adopt [--system antd|geist] [--baseline]",
         "pomaster design set <RULE.param> <value> --by human:<name> [--note <text>]",
-        'pomaster update spec "<一句规范>" --by <human|agent>:<name> [--dry-run]',
+        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] --by <human|agent>:<name> [--dry-run]',
+        "pomaster spec-lint",
         "pomaster prototype ingest <html...> --spec <md> [--render]",
         "pomaster design check [--root <dir>]",
       ]),
@@ -1054,7 +1063,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 需求含糊或有多种可行路径、权衡未定（范围/可靠性/成本）、用户自己也不知道最佳选项。",
       "- 横切：research 产物判读（五级 Evidence）；Agent 行为评测（fail-closed）。",
       "- BA 交来 spec 与 HTML 原型：`pomaster prototype ingest <page.html...> --spec <spec.md>` 去掉表现读出业务事实、信息结构与交互意图；`questions.json` 里 spec 与原型的冲突按 Question Gate 分类（BLOCKING_AUTHORITY 问 Owner，其余带默认口径），事实清单就是后续验收的对账基准。",
-      "- 讨论中定下的长期规范（「以后表格都…」「接口一律…」）：`pomaster update spec \"<一句规范>\" --by <actor>` 落位到设计规范或硬规范主题文档，`--dry-run` 先看识别结果。",
+      "- 讨论中定下的长期规范（「以后表格都…」「接口一律…」）：`pomaster update spec \"<一句规范>\" --scope … --why … --check-by … --do … --dont … --by <actor>` 落位到设计规范或硬规范主题文档，`--dry-run` 先看识别结果。",
+      ...SPEC_WRITING_CARD_LINES,
       "",
       "## 第一层 · 方法论主轴：Grill Strategy（先 Ground 后 Grill）",
       "",
@@ -1340,7 +1350,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster context compile --role <role> [--change <TASK|CHANGE>] [--capability <governed-id>] [--stage <stage>] [--check]",
         "pomaster record gate-run --from <file> [--execution-id <AGX-n>]",
         "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
-        'pomaster update spec "<一句规范>" --by <human|agent>:<name> [--dry-run]',
+        'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] --by <human|agent>:<name> [--dry-run]',
       ]),
     ],
   },

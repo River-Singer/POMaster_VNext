@@ -1634,3 +1634,16 @@ areas:
       - { id: PROTO.MAP, title_zh: 映射到规范，记下依据 }
       - { id: PROTO.REBUILD, title_zh: 按规范重绘 }
       - { id: PROTO.VERIFY, title_zh: 用同一个抽取器做事实对账 }
+  - key: spec_writing
+    title_zh: 写入规范
+    group: engineering
+    prefix: SPECW
+    summary_zh: 规范条文怎么写进项目：七个字段齐全；条文自足、长期成立——不带引用、版本号、时间戳、记录人；只经写入口写入并复核。
+    topics:
+      - { id: SPECW.FIELDS, title_zh: 每条规则七个字段齐全 }
+      - { id: SPECW.STATEMENT, title_zh: 一条只说一件事，读完能判定 }
+      - { id: SPECW.SELF_CONTAINED, title_zh: 条文自足，不带引用 }
+      - { id: SPECW.NO_VERSION, title_zh: 不写版本号 }
+      - { id: SPECW.TIMELESS, title_zh: 不写时间戳与一次性措辞 }
+      - { id: SPECW.NO_PROVENANCE, title_zh: 不写记录人与会话标记 }
+      - { id: SPECW.WRITE_PATH, title_zh: 只经写入口写，写后复核 }

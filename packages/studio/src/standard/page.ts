@@ -80,6 +80,10 @@ export interface StdRule {
   readonly title_zh: string;
   readonly statement_zh: string;
   readonly rationale_zh: string | null;
+  /** 写入契约字段（项目补充的规则必带；预设条文可缺省）。 */
+  readonly level?: "MUST" | "MUST NOT" | "SHOULD" | null;
+  readonly scope_zh?: string | null;
+  readonly check_zh?: string | null;
   readonly surfaces: readonly string[];
   readonly params: readonly StdParam[];
   readonly anchors: ReadonlyArray<{ readonly spec: string; readonly doc: string; readonly quote: string }>;
@@ -581,6 +585,16 @@ function showcaseBlocks(rule: StdRule, ctx: StdContext, levels: Levels): StdNode
   });
 }
 
+/** 写入契约的级别 / 适用范围 / 检查方式（有才显示）。 */
+function contractFacts(rule: StdRule): StdElement | null {
+  const rows: Array<[string, string]> = [];
+  if (rule.level !== undefined && rule.level !== null) rows.push(["级别", rule.level]);
+  if (rule.scope_zh !== undefined && rule.scope_zh !== null) rows.push(["适用范围", rule.scope_zh]);
+  if (rule.check_zh !== undefined && rule.check_zh !== null) rows.push(["检查方式", rule.check_zh]);
+  if (rows.length === 0) return null;
+  return el("dl", { class: "std-facts" }, rows.flatMap(([term, value]) => [el("dt", { class: "std-facts-term" }, [term]), el("dd", { class: "std-facts-value" }, [value])]));
+}
+
 /** 一条规则一节：标题与标记 → 条文 → 演示 / 对照表 / 色板 / 实验 → 这样做 / 别这样做 → 数值与出处 → 依据 → 修改方式。 */
 export function ruleSection(rule: StdRule, ctx: StdContext, page = false): StdElement {
   const levels: Levels = page ? { title: "h1", block: "h2" } : { title: "h2", block: "h3" };
@@ -594,6 +608,7 @@ export function ruleSection(rule: StdRule, ctx: StdContext, page = false): StdEl
     ]),
     el("p", { class: "std-statement" }, [rule.statement_zh]),
     rule.rationale_zh === null ? null : el("p", { class: "std-rationale" }, [rule.rationale_zh]),
+    contractFacts(rule),
     ...showcaseBlocks(rule, ctx, levels),
     rule.examples.length === 0 ? null : el("div", { class: "std-cases" }, rule.examples.map((example, index) => caseFigure(rule, example, index, ctx))),
     paramsBlock(rule, ctx, levels),

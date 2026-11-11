@@ -379,6 +379,24 @@
     line-height: 22px;
   }
 
+  .std-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 68ch);
+    gap: 4px 16px;
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .std-facts-term {
+    color: var(--std-gray-900);
+  }
+
+  .std-facts-value {
+    margin: 0;
+    color: var(--std-gray-1000);
+  }
+
   .std-rule--todo .std-rule-title {
     color: var(--std-gray-900);
   }
