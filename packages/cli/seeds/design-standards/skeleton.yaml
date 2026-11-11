@@ -1647,3 +1647,149 @@ areas:
       - { id: SPECW.TIMELESS, title_zh: 不写时间戳与一次性措辞 }
       - { id: SPECW.NO_PROVENANCE, title_zh: 不写记录人与会话标记 }
       - { id: SPECW.WRITE_PATH, title_zh: 只经写入口写，写后复核 }
+  # ═════════════════════════════ 规范空间与测试（由 scripts/sync-standards-areas.mjs 从 seeds/standards/spaces.json 生成，不要手改） ═════════════════════════════
+  - key: space_frontend
+    title_zh: 前端
+    group: standards
+    prefix: SPACE.FRONTEND
+    summary_zh: 浏览器里运行的部分：界面呈现、页面组成、状态与数据、文案与国际化；界面怎么呈现以项目设计规范为准。
+    topics:
+      - { id: SPACE.FRONTEND.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.FRONTEND.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.FRONTEND.DRAWERS, title_zh: 抽屉 }
+  - key: space_frontend_server
+    title_zh: 前端服务器
+    group: standards
+    prefix: SPACE.FRONTEND_SERVER
+    summary_zh: 浏览器与后端之间的一层：托管静态资源、反向代理与路由转发、HTTPS 与安全响应头、压缩与缓存头、单页应用的路由回退、BFF 与服务端渲染、CDN。前端项目上线都会经过它，规范要显式写出来，不靠默认配置。
+    topics:
+      - { id: SPACE.FRONTEND_SERVER.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.FRONTEND_SERVER.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.FRONTEND_SERVER.DRAWERS, title_zh: 抽屉 }
+  - key: space_backend
+    title_zh: 后端
+    group: standards
+    prefix: SPACE.BACKEND
+    summary_zh: 服务端的业务与接口。通用规范对任何语言、任何架构都成立：接口契约与错误语义、分层与模块边界、鉴权、领域数据、集成与异步、可观测、环境与配置；语言、框架与架构形态的差异放进抽屉。
+    topics:
+      - { id: SPACE.BACKEND.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.BACKEND.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.BACKEND.DRAWERS, title_zh: 抽屉 }
+  - key: space_database
+    title_zh: 数据库
+    group: standards
+    prefix: SPACE.DATABASE
+    summary_zh: 持久化数据：模型、迁移、索引与查询、事务与并发、数据生命周期与隐私。
+    topics:
+      - { id: SPACE.DATABASE.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.DATABASE.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.DATABASE.DRAWERS, title_zh: 抽屉 }
+  - key: space_cache
+    title_zh: 缓存
+    group: standards
+    prefix: SPACE.CACHE
+    summary_zh: 为了快而存的副本：缓存什么、放哪一层、键怎么设计、何时失效、穿透击穿雪崩怎么防、与数据库如何保持一致。
+    topics:
+      - { id: SPACE.CACHE.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.CACHE.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.CACHE.DRAWERS, title_zh: 抽屉 }
+  - key: space_messaging
+    title_zh: 消息与异步
+    group: standards
+    prefix: SPACE.MESSAGING
+    summary_zh: 不在请求里同步完成的工作：消息投递、重试与幂等、顺序、死信、定时任务与后台作业。
+    topics:
+      - { id: SPACE.MESSAGING.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.MESSAGING.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.MESSAGING.DRAWERS, title_zh: 抽屉 }
+  - key: space_platform
+    title_zh: 平台与运维
+    group: standards
+    prefix: SPACE.PLATFORM
+    summary_zh: 让代码变成在线服务的一切：环境与配置、构建与发布、特性开关、可观测、工具链与依赖、AI 生成代码的约束。
+    topics:
+      - { id: SPACE.PLATFORM.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.PLATFORM.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.PLATFORM.DRAWERS, title_zh: 抽屉 }
+  - key: space_security
+    title_zh: 安全
+    group: standards
+    prefix: SPACE.SECURITY
+    summary_zh: 横贯每一层的防线：输入与输出、认证与会话、授权、敏感数据、依赖与供应链。主动找漏洞的渗透测试放在测试空间。
+    topics:
+      - { id: SPACE.SECURITY.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.SECURITY.GENERIC, title_zh: 通用规范 }
+  - key: space_testing
+    title_zh: 测试
+    group: standards
+    prefix: SPACE.TESTING
+    summary_zh: 证明代码做对了的方法。每一类测试对应证据规范：冒烟、单元与集成、回归、白盒、黑盒、渗透与安全、性能、发布与数据迁移；结果按证据入账，没跑的记 NOT_RUN。
+    topics:
+      - { id: SPACE.TESTING.SCOPE, title_zh: 管什么 }
+      - { id: SPACE.TESTING.GENERIC, title_zh: 通用规范 }
+      - { id: SPACE.TESTING.TYPES, title_zh: 测试类型 }
+  - key: test_smoke
+    title_zh: 冒烟测试
+    group: testing
+    prefix: TEST.SMOKE
+    summary_zh: 构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
+    topics:
+      - { id: TEST.SMOKE.PROVES, title_zh: 证明什么 }
+      - { id: TEST.SMOKE.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_unit_integration
+    title_zh: 单元 / 组件 / 集成测试
+    group: testing
+    prefix: TEST.UNIT_INTEGRATION
+    summary_zh: 单个函数、组件与模块组合按约定工作。
+    topics:
+      - { id: TEST.UNIT_INTEGRATION.PROVES, title_zh: 证明什么 }
+      - { id: TEST.UNIT_INTEGRATION.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_regression
+    title_zh: 回归测试
+    group: testing
+    prefix: TEST.REGRESSION
+    summary_zh: 改动之后，原有行为与界面没有被改坏。
+    topics:
+      - { id: TEST.REGRESSION.PROVES, title_zh: 证明什么 }
+      - { id: TEST.REGRESSION.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_white_box
+    title_zh: 白盒测试
+    group: testing
+    prefix: TEST.WHITE_BOX
+    summary_zh: 看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。
+    topics:
+      - { id: TEST.WHITE_BOX.PROVES, title_zh: 证明什么 }
+      - { id: TEST.WHITE_BOX.EVIDENCE, title_zh: 证据怎么入账 }
+      - { id: TEST.WHITE_BOX.DISCIPLINE, title_zh: 写测试的纪律 }
+  - key: test_black_box
+    title_zh: 黑盒测试
+    group: testing
+    prefix: TEST.BLACK_BOX
+    summary_zh: 只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。
+    topics:
+      - { id: TEST.BLACK_BOX.PROVES, title_zh: 证明什么 }
+      - { id: TEST.BLACK_BOX.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_penetration
+    title_zh: 渗透与安全测试
+    group: testing
+    prefix: TEST.PENETRATION
+    summary_zh: 主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。
+    topics:
+      - { id: TEST.PENETRATION.PROVES, title_zh: 证明什么 }
+      - { id: TEST.PENETRATION.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_performance
+    title_zh: 性能与容量测试
+    group: testing
+    prefix: TEST.PERFORMANCE
+    summary_zh: 在约定的负载下响应时间、吞吐与资源占用达标。
+    topics:
+      - { id: TEST.PERFORMANCE.PROVES, title_zh: 证明什么 }
+      - { id: TEST.PERFORMANCE.EVIDENCE, title_zh: 证据怎么入账 }
+  - key: test_release
+    title_zh: 发布与数据迁移验证
+    group: testing
+    prefix: TEST.RELEASE
+    summary_zh: 迁移可执行可回退、发布可观测可回滚。
+    topics:
+      - { id: TEST.RELEASE.PROVES, title_zh: 证明什么 }
+      - { id: TEST.RELEASE.EVIDENCE, title_zh: 证据怎么入账 }

@@ -1,7 +1,7 @@
 # 前端设计规范（Ant Design，ant-design-vue@4.2.6）
 
 > Storybook「规范」分区的 AI 可读孪生，由 packages/studio/scripts/lib/standard.mjs 生成，与页面同源。不要手改。
-> 规范指纹 `sha256:e174356ffac9fd3fb632a68a7ed6de77894e5c68325be846d1780cbab0a7b2dc`；状态 origin=preset。
+> 规范指纹 `sha256:292c4dfae3707408313085a0db145f5b82ed060c4531b40cfcab8411a760eae4`；状态 origin=preset。
 > 修改规范：编辑 `packages/cli/seeds/design-standards/antd.yaml` → `pomaster design validate` → `node packages/studio/run.mjs generate`；目录（领域与条目）由骨架 `packages/cli/seeds/design-standards/skeleton.yaml` 统一。
 > 机器门禁规则违反即拦截（检查未接入时按评审执行）；人工评审规则在评审时逐条核对。标「待补」的是骨架里有、本体系还没写的：开发时参照另一套体系的同名页，并在评审时说明。
 
@@ -6587,6 +6587,574 @@ spec 与 HTML 不一致（必填、枚举、字段有无）、原型与本规范
 - 示例（这样做）：走写入口并复核
 - 示例（别这样做）：直接改文件：打开 .pomaster/specs/hard/themes/security.md，在末尾随手加一行「注意 XSS」。
 - 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-spec-writing--specw-write-path
+
+## 规范空间 / 前端（SPACE.FRONTEND）
+
+浏览器里运行的部分：界面呈现、页面组成、状态与数据、文案与国际化；界面怎么呈现以项目设计规范为准。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--overview
+
+### SPACE.FRONTEND.SCOPE 管什么
+
+浏览器里运行的部分：界面呈现、页面组成、状态与数据、文案与国际化；界面怎么呈现以项目设计规范为准。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端这一层的全部代码与配置
+- 检查方式：pomaster standards frontend 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-scope
+
+### SPACE.FRONTEND.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：UI 呈现与设计、页面构成与浏览器环境、前端状态与客户端数据、国际化与文案。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-generic
+
+### SPACE.FRONTEND.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：框架与运行时——Vue、React、H5 / 移动端、小程序、Angular、Svelte；产品——Ant Design、Geist、CSS 体系、Tailwind CSS。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `Vue（vue3）`：框架与运行时：组合式写法、响应式、路由与状态库的用法。
+  - `React（react）`：框架与运行时：Hooks 规则、纯渲染、副作用与懒加载。
+  - `H5 / 移动端（h5）`：框架与运行时：移动端视口、触控目标、弱网与安全区。
+  - `小程序（mini-program）`：框架与运行时：小程序与跨端框架的生命周期、包体与审核约束。
+  - `Angular（angular）`：框架与运行时：模块、依赖注入与变更检测。
+  - `Svelte（svelte）`：框架与运行时：组件与响应式声明。
+  - `Ant Design（antdesign）`：产品：组件库的按需引入、主题 token 与组件用法。
+  - `Geist（geist）`：产品：Geist 设计体系的组件与变体词表。
+  - `CSS 体系（css）`：产品：样式作用域、token 与重置。
+  - `Tailwind CSS（tailwind）`：产品：工具类、主题配置与设计 token 对齐。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-drawers
+
+## 规范空间 / 前端服务器（SPACE.FRONTEND_SERVER）
+
+浏览器与后端之间的一层：托管静态资源、反向代理与路由转发、HTTPS 与安全响应头、压缩与缓存头、单页应用的路由回退、BFF 与服务端渲染、CDN。前端项目上线都会经过它，规范要显式写出来，不靠默认配置。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--overview
+
+### SPACE.FRONTEND_SERVER.SCOPE 管什么
+
+浏览器与后端之间的一层：托管静态资源、反向代理与路由转发、HTTPS 与安全响应头、压缩与缓存头、单页应用的路由回退、BFF 与服务端渲染、CDN。前端项目上线都会经过它，规范要显式写出来，不靠默认配置。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端服务器这一层的全部代码与配置
+- 检查方式：pomaster standards frontend_server 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-scope
+
+### SPACE.FRONTEND_SERVER.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：安全、性能与容量、环境与配置。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端服务器这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-generic
+
+### SPACE.FRONTEND_SERVER.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：产品——Nginx、Kubernetes Ingress、CDN、Apache HTTP Server、Caddy；架构形态——BFF（面向前端的后端）；框架与运行时——服务端渲染。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：前端服务器这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `Nginx（nginx）`：产品：反向代理、静态托管、安全头、缓存头与超时。
+  - `Kubernetes Ingress（kubernetes-ingress）`：产品：入口路由、TLS 终止与注解约定。
+  - `BFF（面向前端的后端）（bff）`：架构形态：聚合接口、裁剪字段、转发鉴权的那一层服务。
+  - `服务端渲染（ssr）`：框架与运行时：Nuxt / Next 这类服务端渲染：渲染边界、数据预取、缓存与水合。
+  - `CDN（cdn）`：产品：静态资源上 CDN：缓存键、回源、版本化文件名与失效。
+  - `Apache HTTP Server（apache-httpd）`：产品：虚拟主机、重写规则与安全头。
+  - `Caddy（caddy）`：产品：自动 HTTPS、反向代理与静态托管。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-drawers
+
+## 规范空间 / 后端（SPACE.BACKEND）
+
+服务端的业务与接口。通用规范对任何语言、任何架构都成立：接口契约与错误语义、分层与模块边界、鉴权、领域数据、集成与异步、可观测、环境与配置；语言、框架与架构形态的差异放进抽屉。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--overview
+
+### SPACE.BACKEND.SCOPE 管什么
+
+服务端的业务与接口。通用规范对任何语言、任何架构都成立：接口契约与错误语义、分层与模块边界、鉴权、领域数据、集成与异步、可观测、环境与配置；语言、框架与架构形态的差异放进抽屉。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：后端这一层的全部代码与配置
+- 检查方式：pomaster standards backend 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-scope
+
+### SPACE.BACKEND.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：API 契约与错误语义、架构与模块边界、权限与鉴权、值语义与领域数据、集成与异步运行时、可观测性与埋点、环境与配置。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：后端这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-generic
+
+### SPACE.BACKEND.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：架构形态——模块化单体、微服务、Serverless；语言——Java、Kotlin、PHP、Python、Go、Node.js、C#；框架与运行时——Spring Boot、Spring MVC、Spring WebFlux、Spring Batch、Spring Cloud、Tomcat、Laravel、Symfony、Django、FastAPI、Flask、Gin、NestJS、Express、ASP.NET Core；持久层——MyBatis、JPA / Hibernate、其他 ORM。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：后端这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `模块化单体（modular-monolith）`：架构形态：一个部署单元里按业务模块划边界：模块只经公开接口互相调用，数据按模块归属。
+  - `微服务（microservices）`：架构形态：按业务能力拆服务：服务边界、服务间契约、分布式事务、服务发现、熔断与限流、链路追踪。
+  - `Serverless（serverless）`：架构形态：函数粒度、冷启动、无状态与事件触发。
+  - `Java（java）`：语言：语言习惯、空值、异常、并发与集合。
+  - `Kotlin（kotlin）`：语言：空安全、协程与数据类。
+  - `PHP（php）`：语言：类型声明、依赖管理与请求生命周期。
+  - `Python（python）`：语言：类型标注、依赖与虚拟环境、异步。
+  - `Go（go）`：语言：错误处理、并发与 context 传递。
+  - `Node.js（nodejs）`：语言：事件循环、异步错误、依赖与进程管理。
+  - `C#（csharp）`：语言：异步、空引用与依赖注入。
+  - `Spring Boot（spring-boot）`：框架与运行时：自动配置、配置绑定、启动与健康检查。
+  - `Spring MVC（spring-mvc）`：框架与运行时：控制器、校验、异常映射与过滤器。
+  - `Spring WebFlux（spring-webflux）`：框架与运行时：响应式链路、背压与阻塞隔离。
+  - `Spring Batch（spring-batch）`：框架与运行时：作业、步骤、重启与幂等。
+  - `Spring Cloud（spring-cloud）`：框架与运行时：配置中心、注册发现、网关与熔断。
+  - `Tomcat（tomcat）`：框架与运行时：Servlet 容器的线程、连接与超时配置。
+  - `Laravel（laravel）`：框架与运行时：路由、Eloquent、队列与中间件。
+  - `Symfony（symfony）`：框架与运行时：Bundle、依赖注入与 Doctrine。
+  - `Django（django）`：框架与运行时：应用划分、ORM、迁移与中间件。
+  - `FastAPI（fastapi）`：框架与运行时：路由、依赖注入、模型校验与异步。
+  - `Flask（flask）`：框架与运行时：蓝图、请求上下文与扩展。
+  - `Gin（gin）`：框架与运行时：路由组、中间件与绑定校验。
+  - `NestJS（nestjs）`：框架与运行时：模块、提供者、守卫与管道。
+  - `Express（express）`：框架与运行时：路由、中间件顺序与错误中间件。
+  - `ASP.NET Core（aspnet-core）`：框架与运行时：中间件管线、依赖注入与配置。
+  - `MyBatis（mybatis）`：持久层：Mapper、动态 SQL、分页与批量。
+  - `JPA / Hibernate（jpa）`：持久层：实体映射、懒加载、N+1 与事务边界。
+  - `其他 ORM（orm-other）`：持久层：Eloquent、Django ORM、SQLAlchemy、Prisma、GORM 一类 ORM 的查询与迁移约定。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-drawers
+
+## 规范空间 / 数据库（SPACE.DATABASE）
+
+持久化数据：模型、迁移、索引与查询、事务与并发、数据生命周期与隐私。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--overview
+
+### SPACE.DATABASE.SCOPE 管什么
+
+持久化数据：模型、迁移、索引与查询、事务与并发、数据生命周期与隐私。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：数据库这一层的全部代码与配置
+- 检查方式：pomaster standards database 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-scope
+
+### SPACE.DATABASE.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：数据与事务、隐私与数据生命周期。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：数据库这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-generic
+
+### SPACE.DATABASE.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：产品——MySQL、PostgreSQL、Oracle、SQL Server、MongoDB、SQLite、搜索引擎。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：数据库这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `MySQL（mysql）`：产品：字符集、索引、锁与迁移账号。
+  - `PostgreSQL（postgresql）`：产品：类型、索引、锁与扩展。
+  - `Oracle（oracle）`：产品：序列、分区与 PL/SQL 边界。
+  - `SQL Server（sqlserver）`：产品：排序规则、隔离级别与索引。
+  - `MongoDB（mongodb）`：产品：文档建模、索引与一致性级别。
+  - `SQLite（sqlite）`：产品：单文件库的并发与迁移。
+  - `搜索引擎（search-engine）`：产品：Elasticsearch / OpenSearch 的索引设计、同步与查询。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-drawers
+
+## 规范空间 / 缓存（SPACE.CACHE）
+
+为了快而存的副本：缓存什么、放哪一层、键怎么设计、何时失效、穿透击穿雪崩怎么防、与数据库如何保持一致。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--overview
+
+### SPACE.CACHE.SCOPE 管什么
+
+为了快而存的副本：缓存什么、放哪一层、键怎么设计、何时失效、穿透击穿雪崩怎么防、与数据库如何保持一致。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：缓存这一层的全部代码与配置
+- 检查方式：pomaster standards cache 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-scope
+
+### SPACE.CACHE.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：性能与容量、数据与事务。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：缓存这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-generic
+
+### SPACE.CACHE.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：产品——Redis、本地缓存、Memcached。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：缓存这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `Redis（redis）`：产品：键设计、过期、序列化与一致性。
+  - `本地缓存（local-cache）`：产品：进程内缓存（Caffeine 一类）的容量、过期与多实例一致。
+  - `Memcached（memcached）`：产品：键空间、过期与分片。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-drawers
+
+## 规范空间 / 消息与异步（SPACE.MESSAGING）
+
+不在请求里同步完成的工作：消息投递、重试与幂等、顺序、死信、定时任务与后台作业。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--overview
+
+### SPACE.MESSAGING.SCOPE 管什么
+
+不在请求里同步完成的工作：消息投递、重试与幂等、顺序、死信、定时任务与后台作业。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：消息与异步这一层的全部代码与配置
+- 检查方式：pomaster standards messaging 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-scope
+
+### SPACE.MESSAGING.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：集成与异步运行时。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：消息与异步这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-generic
+
+### SPACE.MESSAGING.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：产品——可靠投递（通用）、Kafka、RabbitMQ、RocketMQ。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：消息与异步这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `可靠投递（通用）（messaging）`：产品：至少一次投递下的幂等消费、重试、死信与顺序。
+  - `Kafka（kafka）`：产品：分区、消费组、位点提交与重平衡。
+  - `RabbitMQ（rabbitmq）`：产品：交换机、确认、预取与死信。
+  - `RocketMQ（rocketmq）`：产品：事务消息、顺序消息与重试。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-drawers
+
+## 规范空间 / 平台与运维（SPACE.PLATFORM）
+
+让代码变成在线服务的一切：环境与配置、构建与发布、特性开关、可观测、工具链与依赖、AI 生成代码的约束。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--overview
+
+### SPACE.PLATFORM.SCOPE 管什么
+
+让代码变成在线服务的一切：环境与配置、构建与发布、特性开关、可观测、工具链与依赖、AI 生成代码的约束。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：平台与运维这一层的全部代码与配置
+- 检查方式：pomaster standards platform 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-scope
+
+### SPACE.PLATFORM.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：发布与开关、环境与配置、可观测性与埋点、工程工具链与依赖、AI 生成代码。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：平台与运维这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-generic
+
+### SPACE.PLATFORM.DRAWERS 抽屉
+
+只对某种技术成立的规则放进抽屉：产品——Docker、Kubernetes、GitHub Actions、GitLab CI。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：平台与运维这一层用到的语言、框架、架构形态与产品
+- 检查方式：pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>
+- 对照表「抽屉一览」（抽屉 → 用途）：
+  - `Docker（docker）`：产品：镜像分层、非 root、健康检查与体积。
+  - `Kubernetes（kubernetes）`：产品：资源配额、探针、滚动发布与配置挂载。
+  - `GitHub Actions（github-actions）`：产品：工作流权限、缓存、矩阵与密钥。
+  - `GitLab CI（gitlab-ci）`：产品：流水线阶段、缓存与变量保护。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-drawers
+
+## 规范空间 / 安全（SPACE.SECURITY）
+
+横贯每一层的防线：输入与输出、认证与会话、授权、敏感数据、依赖与供应链。主动找漏洞的渗透测试放在测试空间。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--overview
+
+### SPACE.SECURITY.SCOPE 管什么
+
+横贯每一层的防线：输入与输出、认证与会话、授权、敏感数据、依赖与供应链。主动找漏洞的渗透测试放在测试空间。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：安全这一层的全部代码与配置
+- 检查方式：pomaster standards security 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--space-security-scope
+
+### SPACE.SECURITY.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：安全、权限与鉴权、隐私与数据生命周期。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：安全这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--space-security-generic
+
+## 规范空间 / 测试（SPACE.TESTING）
+
+证明代码做对了的方法。每一类测试对应证据规范：冒烟、单元与集成、回归、白盒、黑盒、渗透与安全、性能、发布与数据迁移；结果按证据入账，没跑的记 NOT_RUN。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--overview
+
+### SPACE.TESTING.SCOPE 管什么
+
+证明代码做对了的方法。每一类测试对应证据规范：冒烟、单元与集成、回归、白盒、黑盒、渗透与安全、性能、发布与数据迁移；结果按证据入账，没跑的记 NOT_RUN。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：测试这一层的全部代码与配置
+- 检查方式：pomaster standards testing 看本空间的通用规范与抽屉
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-scope
+
+### SPACE.TESTING.GENERIC 通用规范
+
+这一层的通用规范对所有项目生效，不分语言、框架与架构形态：测试与验证、任务治理与验收。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：测试这一层的全部代码与配置
+- 检查方式：评审时逐份对照；pomaster standards 列出每份文档在项目里的位置
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-generic
+
+### SPACE.TESTING.TYPES 测试类型
+
+测试按要证明的事情分类：冒烟测试、单元 / 组件 / 集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的结果；没跑的记 NOT_RUN
+- 对照表「测试类型与证据」（测试类型 → 用途）：
+  - `冒烟测试`：构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
+  - `单元 / 组件 / 集成测试`：单个函数、组件与模块组合按约定工作。
+  - `回归测试`：改动之后，原有行为与界面没有被改坏。
+  - `白盒测试`：看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。
+  - `黑盒测试`：只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。
+  - `渗透与安全测试`：主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。
+  - `性能与容量测试`：在约定的负载下响应时间、吞吐与资源占用达标。
+  - `发布与数据迁移验证`：迁移可执行可回退、发布可观测可回滚。
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-types
+
+## 测试 / 冒烟测试（TEST.SMOKE）
+
+构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--overview
+
+### TEST.SMOKE.PROVES 证明什么
+
+构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--test-smoke-proves
+
+### TEST.SMOKE.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：构建成功、浏览器端到端。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--test-smoke-evidence
+
+## 测试 / 单元 / 组件 / 集成测试（TEST.UNIT_INTEGRATION）
+
+单个函数、组件与模块组合按约定工作。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--overview
+
+### TEST.UNIT_INTEGRATION.PROVES 证明什么
+
+单个函数、组件与模块组合按约定工作。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--test-unit-integration-proves
+
+### TEST.UNIT_INTEGRATION.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：单元/组件/集成测试。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--test-unit-integration-evidence
+
+## 测试 / 回归测试（TEST.REGRESSION）
+
+改动之后，原有行为与界面没有被改坏。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--overview
+
+### TEST.REGRESSION.PROVES 证明什么
+
+改动之后，原有行为与界面没有被改坏。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--test-regression-proves
+
+### TEST.REGRESSION.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：单元/组件/集成测试、浏览器端到端、视觉回归。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--test-regression-evidence
+
+## 测试 / 白盒测试（TEST.WHITE_BOX）
+
+看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--overview
+
+### TEST.WHITE_BOX.PROVES 证明什么
+
+看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-proves
+
+### TEST.WHITE_BOX.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：测试覆盖率、复杂度风险(CRAP)、变异测试、死代码与重复代码、类型检查与静态检查、架构核查。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-evidence
+
+### TEST.WHITE_BOX.DISCIPLINE 写测试的纪律
+
+改代码前先写一个会失败的测试，看它因预期的原因失败，再做让它通过的最小改动；测试按使用者的方式调用、检查使用者看得到的结果——所有函数都返回空时仍能通过的测试要删掉；单个函数的 CRAP 超过项目质量基线里的阈值就拆分或补测；变异测试里存活的变异用新测试杀掉，覆盖不到的死代码删掉。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与测试
+- 检查方式：评审时看测试是否先于实现失败过；CRAP 与变异结果按证据规范入账，没跑的记 NOT_RUN
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-discipline
+
+## 测试 / 黑盒测试（TEST.BLACK_BOX）
+
+只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--overview
+
+### TEST.BLACK_BOX.PROVES 证明什么
+
+只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--test-black-box-proves
+
+### TEST.BLACK_BOX.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：浏览器端到端、API 契约兼容、业务验收、视觉回归、可访问性。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--test-black-box-evidence
+
+## 测试 / 渗透与安全测试（TEST.PENETRATION）
+
+主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--overview
+
+### TEST.PENETRATION.PROVES 证明什么
+
+主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--test-penetration-proves
+
+### TEST.PENETRATION.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：安全核查、依赖与供应链。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--test-penetration-evidence
+
+## 测试 / 性能与容量测试（TEST.PERFORMANCE）
+
+在约定的负载下响应时间、吞吐与资源占用达标。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--overview
+
+### TEST.PERFORMANCE.PROVES 证明什么
+
+在约定的负载下响应时间、吞吐与资源占用达标。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--test-performance-proves
+
+### TEST.PERFORMANCE.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：性能。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--test-performance-evidence
+
+## 测试 / 发布与数据迁移验证（TEST.RELEASE）
+
+迁移可执行可回退、发布可观测可回滚。
+
+页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--overview
+
+### TEST.RELEASE.PROVES 证明什么
+
+迁移可执行可回退、发布可观测可回滚。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的代码与配置
+- 检查方式：verify 时对照验收条目判读
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--test-release-proves
+
+### TEST.RELEASE.EVIDENCE 证据怎么入账
+
+结果按证据规范入账：数据迁移、发布、运行时可观测。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。
+
+- 执行：人工评审；适用：管理侧与用户侧
+- 适用范围：所有空间的验证工作
+- 检查方式：pomaster plan run 与 record gate-run 的入账结果
+- 页面：https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--test-release-evidence
 
 ## 出处
 

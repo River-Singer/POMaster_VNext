@@ -16,14 +16,15 @@
  * 必须齐全；条文不带引用、版本号、时间戳、记录人。不合规就失败并逐条列出，什么都不写。
  * 记录人（--by）只出现在命令结果里，不写进规范正文——谁在什么时候写的由版本库记录。
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { loadDesignStandard } from "./design.js";
 import { DESIGN_CHECKS, DESIGN_STANDARD_RELATIVE, type DesignArea } from "./design-standard.js";
 import { yamlScalar } from "./design-adopt.js";
 import { POMASTER_DIR } from "./store-layout.js";
+import { STANDARDS_SPACES, findDrawer, projectDrawerDoc, renderProjectDrawerDoc } from "./standards-map.js";
 import {
   SPEC_ENTRY_FIELDS,
   lintSpecContent,
@@ -46,6 +47,8 @@ export interface SpecUpdateInput {
   readonly area?: string;
   /** 主题文档（如 security、themes/security.md）。 */
   readonly theme?: string;
+  /** 规范抽屉（pomaster standards 里的编号，如 java、spring-boot、php、microservices）。 */
+  readonly drawer?: string;
   /** 新规则编号的后半段（设计规范；缺省 PROJECT_<n>）。 */
   readonly id?: string;
   readonly title?: string;
@@ -215,8 +218,13 @@ const LEGACY_SUPPLEMENT_HEADER = "**源：项目补充（pomaster update spec）
 
 function insertSpecRule(docText: string, modality: SpecModality, bullet: readonly string[]): string | null {
   const lines = docText.split("\n");
-  const start = lines.findIndex((line) => line === `## ${modality}`);
-  if (start === -1) return null;
+  let start = lines.findIndex((line) => line === `## ${modality}`);
+  if (start === -1) {
+    // 栈抽屉文档（overlay）不按语气分章节，规则都在「## Rules」里：级别作为子字段写在规则下面。
+    start = lines.findIndex((line) => line === "## Rules");
+    if (start === -1) return null;
+    bullet = [bullet[0] ?? "", `  - 级别：${modality}`, ...bullet.slice(1)];
+  }
   let end = start + 1;
   while (end < lines.length && !/^## /.test(lines[end] ?? "")) end += 1;
   const header = lines.findIndex((line, index) => index > start && index < end && (line === SUPPLEMENT_HEADER || line === LEGACY_SUPPLEMENT_HEADER));
@@ -290,7 +298,21 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
   if (input.target === "design") candidates = candidates.filter((c) => c.kind === "design");
   if (input.target === "spec") candidates = candidates.filter((c) => c.kind === "spec");
   let chosen: SpecCandidate | undefined;
-  if (input.area !== undefined) {
+  /** 预留抽屉第一次写入时要建的项目抽屉文档（相对 specs/hard/ 与初始正文）。 */
+  let newDrawerDoc: { readonly ref: string; readonly text: string } | null = null;
+  if (input.drawer !== undefined) {
+    const drawer = findDrawer(input.drawer);
+    if (drawer === undefined) {
+      return fail({ code: "SPEC_UPDATE_TARGET", message: `没有规范抽屉 ${input.drawer}`, hint: "pomaster standards 列出全部抽屉编号" });
+    }
+    const ref = drawer.doc ?? projectDrawerDoc(drawer.id);
+    if (!existsSync(join(dir, POMASTER_DIR, "specs", "hard", ref))) {
+      if (drawer.doc !== null) return fail({ code: "SPEC_UPDATE_TARGET", message: `找不到抽屉文档 specs/hard/${ref}`, hint: "重新 pomaster init 播种缺失的规范文档" });
+      const space = STANDARDS_SPACES.find((item) => item.key === drawer.space)!;
+      newDrawerDoc = { ref, text: renderProjectDrawerDoc(drawer, space.title_zh) };
+    }
+    chosen = { kind: "spec", ref, title_zh: `${drawer.title_zh}（${drawer.id}）`, score: 0, hits: [] };
+  } else if (input.area !== undefined) {
     const area = areas.find((item) => item.key === input.area);
     if (area === undefined) {
       return fail(
@@ -360,26 +382,29 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
   }
 
   const docPath = join(dir, POMASTER_DIR, "specs", "hard", chosen.ref);
-  if (!existsSync(docPath)) return fail({ code: "SPEC_UPDATE_TARGET", message: `找不到主题文档 specs/hard/${chosen.ref}`, hint: "重新 pomaster init 播种缺失的主题文档" });
-  const doc = readFileSync(docPath, "utf8");
+  if (newDrawerDoc === null && !existsSync(docPath)) return fail({ code: "SPEC_UPDATE_TARGET", message: `找不到主题文档 specs/hard/${chosen.ref}`, hint: "重新 pomaster init 播种缺失的主题文档" });
+  const doc = newDrawerDoc === null ? readFileSync(docPath, "utf8") : newDrawerDoc.text;
   const bullet = renderSpecEntryMarkdown(entry);
   if (doc.includes(entry.statement)) {
     return okOutcome("update spec", { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: true, preview: bullet.join("\n"), candidates, by: input.by }, [`update spec: ${chosen.ref} 里已有这一条，没有重复写`]);
   }
   const next = insertSpecRule(doc, modality, bullet);
-  if (next === null) return fail({ code: "SPEC_UPDATE_TARGET", message: `${chosen.ref} 没有「## ${modality}」章节`, hint: "主题文档应有 MUST / MUST NOT / SHOULD 章节；手工补上章节后重试" });
+  const rulesSection = !doc.split("\n").includes(`## ${modality}`);
+  if (next === null) return fail({ code: "SPEC_UPDATE_TARGET", message: `${chosen.ref} 没有「## ${modality}」章节，也没有「## Rules」章节`, hint: "主题文档应有 MUST / MUST NOT / SHOULD 章节，栈抽屉文档应有 Rules 章节；手工补上章节后重试" });
   const result: SpecUpdateResult = { kind: "spec", ref: chosen.ref, modality, file: `${POMASTER_DIR}/specs/hard/${chosen.ref}`, rule_id: null, written: false, duplicate: false, preview: bullet.join("\n"), candidates, by: input.by };
   const lines = [
     `update spec: 识别为硬规范 ${chosen.ref} 的 ${modality} 条目`,
     "  候选：",
     ...shown,
-    `  写入「## ${modality}」章节的「项目补充」块：`,
-    ...bullet.map((line) => `    ${line}`),
+    `  写入「## ${rulesSection ? "Rules" : modality}」章节的「项目补充」块：`,
+    ...(rulesSection ? [bullet[0] ?? "", `  - 级别：${modality}`, ...bullet.slice(1)] : bullet).map((line) => `    ${line}`),
   ];
   if (!adopted && candidates.some((c) => c.kind === "spec" && c.ref === "themes/ui-presentation-and-design.md") && VISUAL.test(entry.statement)) {
     warnings.push({ code: "DESIGN_NOT_ADOPTED", message: "这条像是界面呈现规范，但项目还没落地设计规范，先写进硬规范", hint: "pomaster design adopt 之后，同类规范会写进设计规范并出现在 Storybook" });
   }
+  if (newDrawerDoc !== null) lines.push(`  预留抽屉第一次写入：新建 ${POMASTER_DIR}/specs/hard/${newDrawerDoc.ref}`);
   if (input.dryRun === true) return okOutcome("update spec", result, [...lines, "  （--dry-run：没有写）"], warnings);
+  if (newDrawerDoc !== null) mkdirSync(dirname(docPath), { recursive: true });
   writeFileSync(docPath, next, "utf8");
   return okOutcome("update spec", { ...result, written: true }, [...lines, `  已写入 ${POMASTER_DIR}/specs/hard/${chosen.ref}`], warnings);
 }

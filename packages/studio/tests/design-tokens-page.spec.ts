@@ -143,7 +143,7 @@ describe("studio design-tokens 页 · 生成器契约（R1/R3/R4）", () => {
     }
   });
 
-  it("generateAll 分母随动：132→133（foundations tokens 页 1 张）→134（B6H h5 overlay 页 1 张；41+71+19+1+1+1）→142（规范分区 8 张）→163（规范分区 29 张：加设计模式全局规则 / 原则 / 模板文档与工程规范）→263（规范分区 129 张：目录取统一骨架的 128 个领域）→290（规范分区 156 张：骨架加体验管理、数据呈现、工程机制与圆角、投影、点击反馈、焦点环，155 个领域）→293（React / Tailwind 两个 VNext 原生 overlay 页 2 张 + 规范分区加前端架构 1 张：156 个领域）→294（规范分区加写入规范 1 张：157 个领域）", () => {
+  it("generateAll 分母随动：132→133（foundations tokens 页 1 张）→134（B6H h5 overlay 页 1 张；41+71+19+1+1+1）→142（规范分区 8 张）→163（规范分区 29 张：加设计模式全局规则 / 原则 / 模板文档与工程规范）→263（规范分区 129 张：目录取统一骨架的 128 个领域）→290（规范分区 156 张：骨架加体验管理、数据呈现、工程机制与圆角、投影、点击反馈、焦点环，155 个领域）→293（React / Tailwind 两个 VNext 原生 overlay 页 2 张 + 规范分区加前端架构 1 张：156 个领域）→294（规范分区加写入规范 1 张：157 个领域）→311（规范分区加规范空间 9 张、测试 8 张：174 个领域）", () => {
     const out = tempRoot("all");
     try {
       const counts = generateAll(out);
@@ -152,8 +152,8 @@ describe("studio design-tokens 页 · 生成器契约（R1/R3/R4）", () => {
       expect(counts.tokenUnknowns).toBe(14);
       const tree = snapshotTree(out);
       // 分母：41 archetype + 71 component + 21 overlay（B6H 增 h5，B8-VNEXT 增 react / tailwind）+ 1 baseline + 1 dataStruct
-      //      + 1 foundations（F-M2 增量）+ 158 规范分区（总览 + 统一骨架的 157 个领域，含待补）= 294。
-      expect(tree.size).toBe(294);
+      //      + 1 foundations（F-M2 增量）+ 175 规范分区（总览 + 统一骨架的 174 个领域，含待补）= 311。
+      expect(tree.size).toBe(311);
       expect(
         [...tree.keys()].some((path) =>
           path.split("\\").join("/").includes("foundations/design-tokens.stories.ts"),

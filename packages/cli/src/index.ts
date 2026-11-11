@@ -330,6 +330,7 @@ import { runDesignCheck } from "./design-check.js";
 import { runDesignAdopt, runDesignSet } from "./design-adopt.js";
 import { runSpecUpdate } from "./spec-update.js";
 import { runSpecLint } from "./spec-writing.js";
+import { runStandards } from "./standards-map.js";
 import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
@@ -1068,6 +1069,16 @@ export {
   validateSpecEntry,
 } from "./spec-writing.js";
 export type { SpecEntry, SpecEntryField, SpecLintResult, SpecWritingIssue } from "./spec-writing.js";
+export {
+  DRAWER_KIND_TITLES,
+  STANDARDS_SPACES,
+  allDrawers,
+  findDrawer,
+  projectDrawerDoc,
+  resolveStandards,
+  runStandards,
+} from "./standards-map.js";
+export type { DrawerState, StandardsDrawer, StandardsResult, StandardsSpace, StandardsTestType } from "./standards-map.js";
 export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-update.js";
 export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
 export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
@@ -1972,6 +1983,7 @@ export function createProgram(
     .option("--target <target>", "auto（缺省）/ design / spec")
     .option("--area <key>", "写进设计规范的这个领域（如 table）")
     .option("--theme <theme>", "写进这个硬规范主题文档（如 security）")
+    .option("--drawer <id>", "写进这个规范抽屉（pomaster standards 里的编号，如 java、spring-boot、php、microservices；预留抽屉第一次写入时建项目抽屉文档）")
     .option("--id <suffix>", "设计规范新规则编号的后半段（缺省 PROJECT_<n>）")
     .option("--title <title>", "设计规范新规则的标题（缺省取原文第一句）")
     .option("--level <level>", "级别 MUST / MUST NOT / SHOULD（缺省按措辞判）")
@@ -1989,6 +2001,7 @@ export function createProgram(
         ...(opts.target !== undefined ? { target: opts.target as "auto" | "design" | "spec" } : {}),
         ...(opts.area !== undefined ? { area: opts.area as string } : {}),
         ...(opts.theme !== undefined ? { theme: opts.theme as string } : {}),
+        ...(opts.drawer !== undefined ? { drawer: opts.drawer as string } : {}),
         ...(opts.id !== undefined ? { id: opts.id as string } : {}),
         ...(opts.title !== undefined ? { title: opts.title as string } : {}),
         ...(opts.level !== undefined ? { level: opts.level as string } : {}),
@@ -2000,6 +2013,18 @@ export function createProgram(
         dryRun: opts.dryRun === true,
       });
       record({ command: "update spec", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+
+  program
+    .command("standards")
+    .description(
+      "规范的空间与抽屉：前端、前端服务器、后端、数据库、缓存、消息与异步、平台与运维、安全、测试九个空间，每个空间的通用规范（主题文档）与抽屉（架构形态 / 语言 / 框架 / 持久层 / 产品；已有 / 项目抽屉 / 预留）；按技术基线选型与仓库信号标出对本项目生效的抽屉并列出原因。带 [id]（空间键或抽屉编号）看详情与写入方式。只读。错误码：STANDARDS_UNKNOWN",
+    )
+    .argument("[id]", "空间键（如 backend、testing）或抽屉编号（如 java、spring-boot、php）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((id: string | undefined, _opts, command) => {
+      const outcome = runStandards(resolveDir(command), id === undefined ? {} : { show: id });
+      record({ command: "standards", outcome, asJson: command.optsWithGlobals().json === true });
     });
 
   program

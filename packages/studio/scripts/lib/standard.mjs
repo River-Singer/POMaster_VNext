@@ -146,6 +146,8 @@ export const GROUP_TITLES = {
   "patterns.experience": "设计模式/体验管理",
   "patterns.data": "设计模式/数据呈现",
   engineering: "工程规范",
+  standards: "规范空间",
+  testing: "测试",
 };
 const SURFACES = ["admin", "public"];
 const ICON_NAME = /^[A-Z][A-Za-z0-9]*(Outlined|Filled|TwoTone)$/;

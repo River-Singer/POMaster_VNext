@@ -45,11 +45,11 @@ function areaOf(key: string): any {
 }
 
 describe("规范分区 · 装载模型", () => {
-  it("目录取统一骨架：157 个领域按骨架顺序，本体系全部写完（组件类型取并集，664 条规则）", () => {
-    expect(model.areas.length).toBe(157);
+  it("目录取统一骨架：174 个领域按骨架顺序，本体系全部写完（组件类型取并集，707 条规则）", () => {
+    expect(model.areas.length).toBe(174);
     expect(model.areas.map((area: { key: string }) => area.key)).toEqual(skeleton.areas.map((area) => area.key));
-    expect(covered.length).toBe(157);
-    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(664);
+    expect(covered.length).toBe(174);
+    expect(model.areas.reduce((sum: number, area: { rules: unknown[] }) => sum + area.rules.length, 0)).toBe(707);
     for (const area of model.areas) {
       const skeletonArea = skeleton.areas.find((item) => item.key === area.key)!;
       expect([area.title_zh, area.group, area.prefix, area.counterparts]).toEqual([skeletonArea.title_zh, skeletonArea.group, skeletonArea.prefix, skeletonArea.counterparts]);
@@ -153,7 +153,7 @@ describe("规范分区 · Storybook 页面", () => {
     const out = tempRoot("pages");
     try {
       const result = generateStandardPages(out, model);
-      expect(result).toMatchObject({ count: 158, areas: 157, covered: 157, rules: 664 });
+      expect(result).toMatchObject({ count: 175, areas: 174, covered: 174, rules: 707 });
       const overview = readFileSync(join(out, "000-overview.stories.ts"), "utf8");
       expect(overview).toContain("title: '规范/总览'");
       expect(overview).toContain(model.fingerprint);
@@ -241,8 +241,8 @@ describe("规范分区 · AI 孪生", () => {
       "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
       "packages/cli/seeds/design-standards/skeleton.yaml",
     ]);
-    expect(twin.areas.length).toBe(157);
-    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(157);
+    expect(twin.areas.length).toBe(174);
+    expect(twin.areas.filter((area: { covered: boolean }) => area.covered).length).toBe(174);
     const grid = twin.areas.find((area: { key: string }) => area.key === "grid");
     const gutter = grid.rules[1];
     expect(gutter.id).toBe("GRID.GUTTER");

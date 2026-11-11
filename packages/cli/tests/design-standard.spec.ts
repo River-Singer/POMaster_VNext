@@ -88,13 +88,13 @@ function rule(raw: Raw, area = 0, index = 0): Raw {
 }
 
 
-const SKELETON_ORDER: readonly string[] = ["color", "typography", "headings", "icons", "materials", "radius", "elevation", "layout", "grid", "spacing", "motion", "press_feedback", "focus_ring", "button", "split_button", "copy_button", "float_button", "typography_text", "code_block", "snippet", "kbd", "divider", "flex", "space", "grid_component", "page_layout", "scroller", "anchor", "breadcrumb", "dropdown", "context_menu", "command_menu", "nav_menu", "pagination", "load_more", "steps", "tabs", "auto_complete", "combobox", "cascader", "checkbox", "choicebox", "date_picker", "time_picker", "form", "input", "search_input", "textarea", "input_number", "mentions", "radio", "rate", "select", "multi_select", "slider", "switch", "segmented", "transfer", "tree_select", "upload", "address_input", "destructive_input", "filter_bar", "feedback_widget", "theme_switcher", "avatar", "badge", "tag", "status_dot", "calendar", "card", "carousel", "collapse", "descriptions", "empty", "image", "video", "list", "popover", "relative_time", "qrcode", "statistic", "gauge", "table", "timeline", "tooltip", "tour", "tree", "json_view", "middle_truncate", "device_frame", "book", "comment", "page_header", "alert", "banner", "drawer", "bottom_sheet", "message", "notification", "modal", "destructive_modal", "popconfirm", "progress", "result", "skeleton", "spin", "watermark", "affix", "config_provider", "feedback", "navigation", "data_entry", "data_display", "data_format", "copywriting", "buttons", "data_list", "proximity", "alignment", "contrast", "repetition", "direct", "stay", "lightweight", "invitation", "transition", "reaction", "visualization_page", "detail_page", "ui_stills", "component_motion", "bento_grid", "state_feedback", "context", "sidebar", "card_hover", "loading_bar", "data_grid", "charts", "reports", "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake", "spec_writing"];
+const SKELETON_ORDER: readonly string[] = ["color", "typography", "headings", "icons", "materials", "radius", "elevation", "layout", "grid", "spacing", "motion", "press_feedback", "focus_ring", "button", "split_button", "copy_button", "float_button", "typography_text", "code_block", "snippet", "kbd", "divider", "flex", "space", "grid_component", "page_layout", "scroller", "anchor", "breadcrumb", "dropdown", "context_menu", "command_menu", "nav_menu", "pagination", "load_more", "steps", "tabs", "auto_complete", "combobox", "cascader", "checkbox", "choicebox", "date_picker", "time_picker", "form", "input", "search_input", "textarea", "input_number", "mentions", "radio", "rate", "select", "multi_select", "slider", "switch", "segmented", "transfer", "tree_select", "upload", "address_input", "destructive_input", "filter_bar", "feedback_widget", "theme_switcher", "avatar", "badge", "tag", "status_dot", "calendar", "card", "carousel", "collapse", "descriptions", "empty", "image", "video", "list", "popover", "relative_time", "qrcode", "statistic", "gauge", "table", "timeline", "tooltip", "tour", "tree", "json_view", "middle_truncate", "device_frame", "book", "comment", "page_header", "alert", "banner", "drawer", "bottom_sheet", "message", "notification", "modal", "destructive_modal", "popconfirm", "progress", "result", "skeleton", "spin", "watermark", "affix", "config_provider", "feedback", "navigation", "data_entry", "data_display", "data_format", "copywriting", "buttons", "data_list", "proximity", "alignment", "contrast", "repetition", "direct", "stay", "lightweight", "invitation", "transition", "reaction", "visualization_page", "detail_page", "ui_stills", "component_motion", "bento_grid", "state_feedback", "context", "sidebar", "card_hover", "loading_bar", "data_grid", "charts", "reports", "state", "performance", "security", "session", "tamper", "robustness", "error_handling", "route_guard", "page_loading", "caching", "async", "concurrency", "click_guard", "prototype_intake", "spec_writing", "space_frontend", "space_frontend_server", "space_backend", "space_database", "space_cache", "space_messaging", "space_platform", "space_security", "space_testing", "test_smoke", "test_unit_integration", "test_regression", "test_white_box", "test_black_box", "test_penetration", "test_performance", "test_release"];
 function skeletonOrder(keys: readonly string[]): string[] {
   return SKELETON_ORDER.filter((key) => keys.includes(key));
 }
 
 describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
-  it("预设通过校验：骨架 157 个领域全部写完、664 条规则——基础 13 篇、组件 97 篇（组件类型取并集）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 16 篇（前端架构打头，写入规范收尾）；顺序与统一骨架一致", () => {
+  it("预设通过校验：骨架 174 个领域全部写完、707 条规则——基础 13 篇、组件 97 篇（组件类型取并集）；设计模式：全局规则 8 篇、原则 10 篇、模板文档 2 篇、体验管理 8 篇、数据呈现 3 篇；工程规范 16 篇（前端架构打头，写入规范收尾）；规范空间 9 篇、测试 8 篇；顺序与统一骨架一致", () => {
     const loaded = loadDesignStandard(join(tmpdir(), "pomaster-no-project"), {});
     expect(loaded.mode).toBe("preset");
     expect(loaded.ok).toBe(true);
@@ -118,7 +118,7 @@ describe("设计规范预设（seeds/design-standards/antd.yaml）", () => {
     const skeletonKeys = readDesignSkeleton(SKELETON_PATH)!.skeleton!.areas.map((area) => area.key);
     const keys = standard.areas.map((area) => area.key);
     expect(keys).toEqual(skeletonKeys.filter((key) => keys.includes(key)));
-    expect(loaded.summary).toEqual({ areas: 157, rules: 664, gate_rules: 43, review_rules: 621, pending_params: 11 });
+    expect(loaded.summary).toEqual({ areas: 174, rules: 707, gate_rules: 43, review_rules: 664, pending_params: 11 });
     expect(loaded.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -478,9 +478,9 @@ describe("pomaster design validate / show", () => {
     expect(envelope.command).toBe("design validate");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.mode).toBe("preset");
-    expect(envelope.result.summary.rules).toBe(664);
+    expect(envelope.result.summary.rules).toBe(707);
     expect(envelope.warnings.map((warning: Raw) => warning.code)).toEqual(["DESIGN_DECISION_PENDING", "DESIGN_CHECK_PENDING"]);
-    expect(envelope.result.normalized.areas).toHaveLength(157);
+    expect(envelope.result.normalized.areas).toHaveLength(174);
     expect(envelope.result.skeleton_path).toBe(SKELETON_PATH);
     expect(readFileSync(PRESET_PATH, "utf8").length).toBeGreaterThan(0);
   });
@@ -529,7 +529,7 @@ describe("pomaster design validate / show", () => {
     expect(code).toBe(0);
     const result = JSON.parse(out).result;
     expect(result.normalized.meta.design_system).toBe("geist");
-    expect(result.summary).toEqual({ areas: 157, rules: 664, gate_rules: 40, review_rules: 624, pending_params: 13 });
+    expect(result.summary).toEqual({ areas: 174, rules: 707, gate_rules: 40, review_rules: 667, pending_params: 13 });
     const examples = result.normalized.areas.flatMap((area: Raw) => area.rules.flatMap((r: Raw) => r.examples));
     expect(examples.some((example: Raw) => example.jsx !== null)).toBe(true);
     expect(examples.every((example: Raw) => example.template === null)).toBe(true);
@@ -634,11 +634,11 @@ const SKELETON_GRID = {
 const SKELETON_SPACING = { key: "spacing", title_zh: "间距", group: "foundations", prefix: "SPACING", summary_zh: "间距", topics: [{ id: "SPACING.SCALE", title_zh: "间距阶梯" }] };
 
 describe("统一骨架（seeds/design-standards/skeleton.yaml）", () => {
-  it("骨架通过校验：157 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
+  it("骨架通过校验：174 个领域是两套体系目录的并集；组件领域写两套体系各自的现成组件，其他领域不写", () => {
     const read = readDesignSkeleton(SKELETON_PATH)!;
     expect(read.issues.filter((issue) => issue.severity === "error")).toEqual([]);
     const skeleton = read.skeleton!;
-    expect(skeleton.areas).toHaveLength(157);
+    expect(skeleton.areas).toHaveLength(174);
     const button = skeleton.areas.find((area) => area.key === "button")!;
     expect(button.counterparts).toEqual({ antd: ["Button"], geist: ["Button", "ButtonLink"] });
     expect(button.topics.map((topic) => topic.id)).toContain("CMP.BUTTON.ICON_ONLY");

@@ -245,7 +245,11 @@ describe("预设种子与写入契约", () => {
   it("写入规范这一页（两套体系）条文零违规，七条规则都带齐写入契约字段", () => {
     for (const name of ["antd.yaml", "geist.yaml"]) {
       const text = readFileSync(join(seeds, "design-standards", name), "utf8");
-      const area = text.slice(text.indexOf("  - key: spec_writing"));
+      const start = text.indexOf("  - key: spec_writing");
+      // 这一页到下一个领域（或生成区标记）为止，不把后面的领域算进来。
+      const rest = text.slice(start + 1);
+      const next = rest.search(/\n  - key: |\n  # ═/);
+      const area = next === -1 ? text.slice(start) : text.slice(start, start + 1 + next + 1);
       expect(lintRuleLines(name, designStandardRuleLines(`areas:\n${area}`))).toEqual([]);
       const ids = [...area.matchAll(/^      - id: (SPECW\.[A-Z_]+)$/gm)].map((match) => match[1]);
       expect(ids).toEqual([
