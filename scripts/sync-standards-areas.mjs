@@ -61,7 +61,6 @@ function spaceArea(space, data) {
       check_zh: "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
     },
   ];
-  const lines = [];
   if (space.drawers.length > 0) {
     const kinds = [...new Set(space.drawers.map((drawer) => drawer.kind))];
     const summary = kinds
