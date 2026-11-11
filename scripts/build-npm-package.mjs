@@ -99,7 +99,7 @@ mkdirSync(join(STAGE_PKG, "legal"), { recursive: true });
 // 3) esbuild bundle：CLI 单入口 → 单文件 ESM
 // ============================================================
 
-esbuild.buildSync({
+const built = esbuild.buildSync({
   entryPoints: [p("packages", "cli", "dist", "bin.js")],
   bundle: true,
   platform: "node",
@@ -109,6 +109,8 @@ esbuild.buildSync({
   banner: { js: BANNER },
   sourcemap: false,
   logLevel: "warning",
+  // 出口判据 4.4 读 esbuild 自己的 import 图（哪些 import 留成了外部依赖），不按 bundle 文本猜。
+  metafile: true,
   // F3 bundled --version 修复：发布版本以 define 注入字面量（真源 = 顶部
   // POMASTER_VERSION 单点常量；cli 源 version.ts 以 typeof 守卫读取，dev 形态
   // 回落 cli package.json 的 0.0.0）。此前 bundle 后 `pomaster --version` 恒报
@@ -167,12 +169,17 @@ if (nonNodeDynamicRequires.length > 0) {
 }
 
 // 4.4 静态 import 全 node: 前缀（workspace 包与 commander 必须已内联）。
-// 行首锚定：esbuild 的 import 语句恒在行首；代码内模板串（如 kernel hint
-// `from "${String(from)}" 不在 …`）不匹配，避免误伤。
-const staticImports = [
-  ...bundle.matchAll(/^import\s+[^;]*?\bfrom\s+"([^"]+)"/gm),
-  ...bundle.matchAll(/^import\s+"([^"]+)"/gm),
-].map((m) => m[1]);
+// 判据取 esbuild metafile：bundle 输出里标 external 的 import-statement 才是真正留到运行期
+// 解析的依赖。不按 bundle 文本匹配——脚手架生成器把要写进用户项目的 Vue / React 源码
+// 当模板串带在 bundle 里（多行模板串里的 `import … from "vue"` 恰好落在行首），
+// 文本匹配会把这些死数据误判成 CLI 自己的依赖。
+const bundleOutputs = Object.values(built.metafile.outputs);
+if (bundleOutputs.length !== 1) {
+  fail(`esbuild metafile 应恰好一个输出，实为 ${bundleOutputs.length} 个`);
+}
+const staticImports = bundleOutputs[0].imports
+  .filter((entry) => entry.external && entry.kind === "import-statement")
+  .map((entry) => entry.path);
 const nonNodeStaticImports = staticImports.filter(
   (spec) => !spec.startsWith("node:") && !spec.startsWith("."),
 );
