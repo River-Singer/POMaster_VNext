@@ -42,12 +42,57 @@ export const ENTRY_MODE_HEAVY_MARKER = "<!-- pomaster:entry-mode:heavy -->";
 export const CLAUDE_SETTINGS_RELATIVE = ".claude/settings.json";
 /** Codex project hooks use the same matcher-group JSON shape as Claude settings. */
 export const CODEX_HOOKS_RELATIVE = ".codex/hooks.json";
-export const CLAUDE_EXEC_GUARD_MATCHER = "Edit|Write|NotebookEdit|Bash";
+export const CLAUDE_EXEC_GUARD_MATCHER = "Edit|Write|MultiEdit|NotebookEdit|Bash";
 export const CLAUDE_EXEC_GUARD_HOOK_RELATIVE = ".claude/hooks/exec-guard-hook.py";
-export const CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE = ".claude/hooks/pomaster-exec-guard.py";
+/**
+ * Node launcher: node is always present wherever pomaster runs, while the bare `python`
+ * command is missing on stock macOS / many Linux images (python3 only) and is a Store stub
+ * on Windows. The launcher probes python3 / python / `py -3` and forwards stdin + exit code.
+ */
+export const CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE = ".claude/hooks/pomaster-exec-guard.mjs";
+/** Earlier Python launcher; recognized as managed so re-init migrates its registration. */
+export const CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE = ".claude/hooks/pomaster-exec-guard.py";
 export const CLAUDE_EXEC_GUARD_COMMAND =
-  `python "${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}"`;
+  `node "${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}"`;
 export const CLAUDE_EXEC_GUARD_ASSET_RELATIVE = "seeds/hooks/exec-guard-hook.py";
+/**
+ * Codex PreToolUse: shell / exec_command arrive as `Bash`, file edits arrive as `apply_patch`
+ * (Edit / Write are accepted aliases). The patch text sits in tool_input.command.
+ */
+export const CODEX_EXEC_GUARD_MATCHER = "Bash|apply_patch|Edit|Write";
+export const CODEX_EXEC_GUARD_HOOK_RELATIVE = ".codex/hooks/exec-guard-hook.py";
+export const CODEX_EXEC_GUARD_LAUNCHER_RELATIVE = ".codex/hooks/pomaster-exec-guard.mjs";
+export const CODEX_EXEC_GUARD_COMMAND = `node "${CODEX_EXEC_GUARD_LAUNCHER_RELATIVE}"`;
+
+/** One distributed guard per platform: launcher + canonical hook copy, side by side. */
+export interface ExecGuardDistribution {
+  readonly platform: "claude" | "codex";
+  readonly launcher: string;
+  readonly hook: string;
+  readonly matcher: string;
+  readonly command: string;
+}
+
+export const EXEC_GUARD_DISTRIBUTIONS: readonly ExecGuardDistribution[] = [
+  {
+    platform: "claude",
+    launcher: CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+    hook: CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+    matcher: CLAUDE_EXEC_GUARD_MATCHER,
+    command: CLAUDE_EXEC_GUARD_COMMAND,
+  },
+  {
+    platform: "codex",
+    launcher: CODEX_EXEC_GUARD_LAUNCHER_RELATIVE,
+    hook: CODEX_EXEC_GUARD_HOOK_RELATIVE,
+    matcher: CODEX_EXEC_GUARD_MATCHER,
+    command: CODEX_EXEC_GUARD_COMMAND,
+  },
+];
+
+export function execGuardDistribution(platform: "claude" | "codex"): ExecGuardDistribution {
+  return EXEC_GUARD_DISTRIBUTIONS.find((entry) => entry.platform === platform)!;
+}
 
 // ============================================================
 // hooks 注册（claude/codex 层）：shell form + hook stdin identity adapter + 恒 exit 0 输出契约
@@ -73,12 +118,15 @@ export const POMASTER_HOOK_EVENT_COMMANDS: readonly {
   },
 ];
 
-/** Codex has no POMaster write guard adapter; it receives the two context events. */
+/** Codex gets the same two context events plus its own PreToolUse guard (apply_patch + Bash). */
 export const POMASTER_CODEX_HOOK_EVENT_COMMANDS: readonly {
   readonly event: string;
   readonly command: string;
   readonly matcher?: string;
-}[] = POMASTER_HOOK_EVENT_COMMANDS.filter((entry) => entry.event !== "PreToolUse");
+}[] = [
+  ...POMASTER_HOOK_EVENT_COMMANDS.filter((entry) => entry.event !== "PreToolUse"),
+  { event: "PreToolUse", matcher: CODEX_EXEC_GUARD_MATCHER, command: CODEX_EXEC_GUARD_COMMAND },
+];
 
 /** 本包 hook 命令词形闭包（幂等查重与卸载剥离的唯一识别依据）。 */
 export const POMASTER_HOOK_COMMANDS: readonly string[] =
@@ -111,6 +159,15 @@ export type HooksMergeOutcome =
  * ——跨文件去重由 Claude Code 处理，同文件去重是安装器的责任）；既有条目
  * （人类/Trellis hooks）一律原样保留；indent 2 + 尾换行写盘格式。
  */
+/** Every script path a POMaster-managed PreToolUse handler has ever pointed at. */
+const MANAGED_EXEC_GUARD_SCRIPTS: readonly string[] = [
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CODEX_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CODEX_EXEC_GUARD_HOOK_RELATIVE,
+];
+
 function isAbsoluteManagedExecGuardPath(scriptPath: string, rootDir: string | undefined): boolean {
   if (rootDir === undefined) return false;
 
@@ -120,7 +177,7 @@ function isAbsoluteManagedExecGuardPath(scriptPath: string, rootDir: string | un
   if (isWindowsAbsolute(scriptPath)) {
     if (!isWindowsAbsolute(rootDir) || !win32.isAbsolute(rootDir)) return false;
     const candidate = win32.normalize(scriptPath).toLowerCase();
-    return [CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE, CLAUDE_EXEC_GUARD_HOOK_RELATIVE]
+    return MANAGED_EXEC_GUARD_SCRIPTS
       .map((relative) => win32.normalize(win32.join(rootDir, relative)).toLowerCase())
       .includes(candidate);
   }
@@ -128,7 +185,7 @@ function isAbsoluteManagedExecGuardPath(scriptPath: string, rootDir: string | un
   if (posix.isAbsolute(scriptPath)) {
     if (!posix.isAbsolute(rootDir)) return false;
     const candidate = posix.normalize(scriptPath);
-    return [CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE, CLAUDE_EXEC_GUARD_HOOK_RELATIVE]
+    return MANAGED_EXEC_GUARD_SCRIPTS
       .map((relative) => posix.normalize(posix.join(rootDir, relative)))
       .includes(candidate);
   }
@@ -151,18 +208,15 @@ function isManagedPomasterHook(
     return /^(?:npx )?pomaster(?:\.cmd)? alerts(?: --hook-input)?(?: --json)?$/.test(normalized);
   }
   if (event !== "PreToolUse") return false;
-  if (
-    normalized === CLAUDE_EXEC_GUARD_COMMAND ||
-    normalized === `python ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}` ||
-    normalized === `python "${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}"`
-  ) {
-    return true;
-  }
+  const relativeForms = MANAGED_EXEC_GUARD_SCRIPTS.flatMap((script) =>
+    ["node", "python", "python3"].flatMap((runner) => [`${runner} ${script}`, `${runner} "${script}"`]),
+  );
+  if (relativeForms.includes(normalized)) return true;
 
   // Parse the original trimmed command so whitespace inside a quoted path is
   // preserved. Normalizing the whole command would change valid paths such as
   // `C:\\Work  Space\\...` before the exact managed-path comparison.
-  const pythonCommand = /^python(?:3(?:\.\d+)?)?\s+(?:"([^"]+)"|'([^']+)'|(\S+))$/.exec(trimmed);
+  const pythonCommand = /^(?:node|python(?:3(?:\.\d+)?)?)\s+(?:"([^"]+)"|'([^']+)'|(\S+))$/.exec(trimmed);
   const scriptPath = pythonCommand?.[1] ?? pythonCommand?.[2] ?? pythonCommand?.[3];
   return scriptPath !== undefined && isAbsoluteManagedExecGuardPath(scriptPath, rootDir);
 }
@@ -240,6 +294,12 @@ function mergeManagedHooks(
       return handlers.length === ((record.hooks ?? []) as unknown[]).length
         ? group
         : { ...record, hooks: handlers };
+    }).filter((group, index) => {
+      // A group emptied only because its managed handler migrated is dropped; a group that
+      // was already empty (someone else's) stays as it was.
+      const before = ((groups[index] as Record<string, unknown>).hooks ?? []) as unknown[];
+      const after = ((group as Record<string, unknown>).hooks ?? []) as unknown[];
+      return !(before.length > 0 && after.length === 0);
     });
     if (removedLegacy) changed = true;
     const alreadyRegistered = migratedGroups.some((group) => {
@@ -281,8 +341,11 @@ export function mergePomasterHooks(
   return mergeManagedHooks(existingText, POMASTER_HOOK_EVENT_COMMANDS, rootDir);
 }
 
-export function mergePomasterCodexHooks(existingText: string | null): HooksMergeOutcome {
-  return mergeManagedHooks(existingText, POMASTER_CODEX_HOOK_EVENT_COMMANDS);
+export function mergePomasterCodexHooks(
+  existingText: string | null,
+  rootDir?: string,
+): HooksMergeOutcome {
+  return mergeManagedHooks(existingText, POMASTER_CODEX_HOOK_EVENT_COMMANDS, rootDir);
 }
 
 export function claudeExecGuardAssetCandidates(moduleUrl: string = import.meta.url): readonly string[] {
@@ -316,39 +379,103 @@ export function resolveCurrentCliEntry(moduleUrl: string = import.meta.url): str
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
 }
 
-function pythonRawString(value: string): string {
-  return `r"""${value.replace(/"""/g, '\\"\\"\\"')}"""`;
-}
-
-export function renderClaudeExecGuardLauncher(cliEntry: string | null): string {
+/**
+ * Generated Node launcher (same text for .claude/hooks and .codex/hooks). It finds a Python 3
+ * interpreter, runs the sibling exec-guard-hook.py with the hook's stdin, and passes its exit
+ * code through (2 = deny). Path resolution lives here; permission judgment stays in
+ * exec-guard-hook.py and the `pomaster exec-guard` CLI/kernel.
+ */
+export function renderExecGuardLauncher(cliEntry: string | null): string {
   const cliLine =
     cliEntry === null
-      ? "CLI_ENTRY = None"
-      : `CLI_ENTRY = ${pythonRawString(cliEntry.replace(/\\/g, "/"))}`;
-  return `#!/usr/bin/env python3
-# ${GENERATED_MARKER}
-# POMaster generated launcher. Path resolution lives here; permission judgment
-# stays in exec-guard-hook.py and the \`pomaster exec-guard\` CLI/kernel.
-from __future__ import annotations
-
-import os
-import runpy
-import sys
-from pathlib import Path
+      ? "const CLI_ENTRY = null;"
+      : `const CLI_ENTRY = ${JSON.stringify(cliEntry.replace(/\\/g, "/"))};`;
+  return `#!/usr/bin/env node
+// ${GENERATED_MARKER}
+// POMaster generated launcher. Finds Python 3 (python3 / python / py -3), runs the sibling
+// exec-guard-hook.py with this hook's stdin, and returns its exit code (2 = deny).
+// Permission judgment stays in exec-guard-hook.py and the \`pomaster exec-guard\` CLI/kernel.
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 ${cliLine}
-HOOK = Path(__file__).with_name("exec-guard-hook.py")
+const HOOK = join(dirname(fileURLToPath(import.meta.url)), "exec-guard-hook.py");
+const CANDIDATES = process.platform === "win32"
+  ? [["py", ["-3"]], ["python", []], ["python3", []]]
+  : [["python3", []], ["python", []]];
+const PROBE = "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)";
 
-if CLI_ENTRY is not None and Path(CLI_ENTRY).is_file():
-    os.environ.setdefault("POMASTER_CLI_ENTRY", CLI_ENTRY)
-os.environ.setdefault("POMASTER_DISTRIBUTED_HOOK", str(HOOK))
+function note(message) {
+  process.stderr.write(\`[pomaster exec-guard launcher] \${message}\\n\`);
+}
 
-if not HOOK.is_file():
-    print("[pomaster exec-guard launcher] FAIL-OPEN: distributed exec-guard hook missing", file=sys.stderr)
-    sys.exit(0)
+const env = { ...process.env, PYTHONIOENCODING: process.env.PYTHONIOENCODING ?? "utf-8" };
+if (CLI_ENTRY !== null && existsSync(CLI_ENTRY) && !env.POMASTER_CLI_ENTRY) env.POMASTER_CLI_ENTRY = CLI_ENTRY;
+if (!env.POMASTER_DISTRIBUTED_HOOK) env.POMASTER_DISTRIBUTED_HOOK = HOOK;
 
-runpy.run_path(str(HOOK), run_name="__main__")
+if (!existsSync(HOOK)) {
+  note("FAIL-OPEN: distributed exec-guard hook missing; re-run \`pomaster init\`");
+  process.exit(0);
+}
+
+let input = Buffer.alloc(0);
+try {
+  input = readFileSync(0);
+} catch {
+  // no stdin: the hook reports its own fail-open
+}
+
+for (const [command, prefix] of CANDIDATES) {
+  const probe = spawnSync(command, [...prefix, "-c", PROBE], { stdio: "ignore", timeout: 10000, windowsHide: true });
+  if (probe.error || probe.status !== 0) continue;
+  const run = spawnSync(command, [...prefix, HOOK], {
+    input,
+    stdio: ["pipe", "inherit", "inherit"],
+    env,
+    windowsHide: true,
+  });
+  if (run.error) {
+    note(\`FAIL-OPEN: \${command} could not run the hook (\${run.error.message})\`);
+    process.exit(0);
+  }
+  process.exit(run.status ?? 0);
+}
+
+note("FAIL-OPEN: no Python 3.8+ found (tried python3, python, py -3); install Python 3, then run \`pomaster doctor\`");
+process.exit(0);
 `;
+}
+
+/** @deprecated Kept for callers of the 0.11 name; same launcher text for every platform. */
+export const renderClaudeExecGuardLauncher = renderExecGuardLauncher;
+
+/** Generated launcher recognition (current Node form, or the legacy Python form). */
+export function looksLikePomasterExecGuardLauncher(text: string): boolean {
+  return (
+    text.includes(GENERATED_MARKER) &&
+    text.includes("exec-guard-hook.py") &&
+    (text.includes("spawnSync") || text.includes("runpy.run_path"))
+  );
+}
+
+/** CLI entry baked into a generated launcher (Node `const CLI_ENTRY = "…";` or legacy Python). */
+export function parseExecGuardLauncherCliEntry(text: string): string | null {
+  const node = /^const CLI_ENTRY = (".*");$/m.exec(text);
+  if (node?.[1] !== undefined) {
+    try {
+      const value = JSON.parse(node[1]) as unknown;
+      return typeof value === "string" ? value : null;
+    } catch {
+      return null;
+    }
+  }
+  const match =
+    /^CLI_ENTRY\s*=\s*r"""([^"]+)"""/m.exec(text) ??
+    /^CLI_ENTRY\s*=\s*"([^"]+)"/m.exec(text) ??
+    /^CLI_ENTRY\s*=\s*'([^']+)'/m.exec(text);
+  return match?.[1] ?? null;
 }
 
 export function looksLikePomasterExecGuardHook(text: string): boolean {

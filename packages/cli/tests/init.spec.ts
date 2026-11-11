@@ -44,6 +44,12 @@ import {
   loadSeedManifestEntries,
   collectBootstrapHarnessSnapshot,
   mergePomasterHooks,
+  CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE,
+  CODEX_EXEC_GUARD_COMMAND,
+  CODEX_EXEC_GUARD_HOOK_RELATIVE,
+  CODEX_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CODEX_EXEC_GUARD_MATCHER,
+  readClaudeExecGuardHookAsset,
 } from "@pomaster/cli";
 import { CONTEXT_PARTITION_TITLES } from "../src/context.js";
 
@@ -1562,6 +1568,53 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
     ).toBe("updated");
   });
 
+  it("迁移：旧 Python launcher 注册（旧 matcher）→ 换成 node launcher，旧 group 不留空壳，旧生成件删除", async () => {
+    mkdirSync(join(dir, ".claude", "hooks"), { recursive: true });
+    const legacyCommand = `python "${CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE}"`;
+    writeFileSync(
+      join(dir, CLAUDE_SETTINGS_RELATIVE),
+      `${JSON.stringify(
+        {
+          hooks: {
+            PreToolUse: [
+              { matcher: "Edit|Write|NotebookEdit|Bash", hooks: [{ type: "command", command: legacyCommand }] },
+              { matcher: "Bash", hooks: [{ type: "command", command: "python my-own-guard.py" }] },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    writeFileSync(
+      join(dir, CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE),
+      `#!/usr/bin/env python3\n# ${GENERATED_MARKER}\nHOOK = "exec-guard-hook.py"\nrunpy.run_path(HOOK)\n`,
+      "utf8",
+    );
+    const outcome = await runInit(dir);
+    const settings = JSON.parse(read(CLAUDE_SETTINGS_RELATIVE)) as {
+      hooks: { PreToolUse: Array<{ matcher?: string; hooks: Array<{ command: string }> }> };
+    };
+    expect(settings.hooks.PreToolUse).toEqual([
+      { matcher: "Bash", hooks: [{ type: "command", command: "python my-own-guard.py" }] },
+      { matcher: CLAUDE_EXEC_GUARD_MATCHER, hooks: [{ type: "command", command: CLAUDE_EXEC_GUARD_COMMAND }] },
+    ]);
+    expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE))).toBe(false);
+    expect(outcome.result.files).toContainEqual({
+      file: CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE,
+      action: "removed",
+    });
+    expect(read(CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE)).toContain("spawnSync");
+  });
+
+  it("迁移不碰人手写的同名旧 launcher（无生成标记）", async () => {
+    mkdirSync(join(dir, ".claude", "hooks"), { recursive: true });
+    writeFileSync(join(dir, CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE), "print('mine')\n", "utf8");
+    await runInit(dir);
+    expect(read(CLAUDE_EXEC_GUARD_LEGACY_LAUNCHER_RELATIVE)).toBe("print('mine')\n");
+  });
+
   it("幂等：重跑 init → settings 字节不动（unchanged），change=NO_CHANGE", async () => {
     await runInit(dir);
     const before = read(CLAUDE_SETTINGS_RELATIVE);
@@ -1670,7 +1723,7 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
 });
 
 describe("Codex 项目 hooks 与 agent-pull", () => {
-  it("codex 平台生成真实 hooks.json，保留静态 agent-pull，且不安装 Claude 文件", async () => {
+  it("codex 平台生成真实 hooks.json（含 PreToolUse 防线 + launcher/hook 副本），保留静态 agent-pull，且不安装 Claude 文件", async () => {
     const outcome = await runInit(dir, { platforms: "codex" });
     expect(outcome.ok).toBe(true);
     const hooks = JSON.parse(read(CODEX_HOOKS_RELATIVE)) as {
@@ -1680,7 +1733,13 @@ describe("Codex 项目 hooks 与 agent-pull", () => {
       (hooks.hooks[event] ?? []).flatMap((group) => group.hooks ?? []).map((row) => row.command);
     expect(commands("SessionStart")).toContain("pomaster session --hook-input");
     expect(commands("UserPromptSubmit")).toContain("pomaster alerts --hook-input");
-    expect(hooks.hooks.PreToolUse).toBeUndefined();
+    const preTool = (hooks.hooks.PreToolUse ?? []) as Array<{ matcher?: string; hooks?: Array<Record<string, unknown>> }>;
+    expect(preTool).toEqual([
+      { matcher: CODEX_EXEC_GUARD_MATCHER, hooks: [{ type: "command", command: CODEX_EXEC_GUARD_COMMAND }] },
+    ]);
+    expect(read(CODEX_EXEC_GUARD_HOOK_RELATIVE)).toBe(readClaudeExecGuardHookAsset().content);
+    expect(read(CODEX_EXEC_GUARD_LAUNCHER_RELATIVE)).toContain("spawnSync");
+    expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE))).toBe(false);
     expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
     expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(false);
     expect(read(AGENTS_MD_RELATIVE)).toContain("静态 agent-pull");
