@@ -837,6 +837,8 @@ const GROUP_ORDER = [
   "patterns.experience",
   "patterns.data",
   "engineering",
+  "standards",
+  "testing",
 ];
 
 /** 总览页：规范是什么、当前进度、怎么改、怎么读标记、各领域入口（含待补）。 */

@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.design-standard-twin/v2",
   "note_zh": "Storybook「规范」分区的 AI 可读孪生，与页面同源同指纹。不要手改：改规范源或骨架后运行 node packages/studio/run.mjs generate。covered=false 的领域与条目是骨架里有、本体系还没写的（页面显示「待补」）。",
-  "fingerprint": "sha256:e174356ffac9fd3fb632a68a7ed6de77894e5c68325be846d1780cbab0a7b2dc",
+  "fingerprint": "sha256:292c4dfae3707408313085a0db145f5b82ed060c4531b40cfcab8411a760eae4",
   "generator": {
     "path": "packages/studio/scripts/lib/standard.mjs",
     "version": "2"
@@ -9,7 +9,7 @@
   "inputs": [
     {
       "path": "packages/cli/seeds/design-standards/antd.yaml",
-      "sha256": "8cb7cee9ecbb62e83bbd8fa798f4f231f7393fe53cf7e9340c49d9966d58c834"
+      "sha256": "e2c5999981a9949825276fd1e42cd9cfcb22ed70be98315106ef67112869fb0c"
     },
     {
       "path": "packages/cli/seeds/baseline/frontend/design-tokens.yaml",
@@ -17,7 +17,7 @@
     },
     {
       "path": "packages/cli/seeds/design-standards/skeleton.yaml",
-      "sha256": "01e97b8cb96660b8f6d5d2277442dce8244e3b2b645c669993134edaddd4a8a2"
+      "sha256": "61df8b6ad10a783fd527735a8df0349a7bed7b67ed69d2c986fde14c0ed915cf"
     }
   ],
   "edit": {
@@ -33489,6 +33489,2196 @@
           "storybook": {
             "id": "standard-engineering-spec-writing--specw-write-path",
             "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-engineering-spec-writing--specw-write-path"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_frontend",
+      "title_zh": "前端",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.FRONTEND",
+      "summary_zh": "浏览器里运行的部分：界面呈现、页面组成、状态与数据、文案与国际化；界面怎么呈现以项目设计规范为准。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.FRONTEND.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.FRONTEND.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.FRONTEND.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/前端",
+        "id": "standard-standards-space-frontend--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.FRONTEND.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "浏览器里运行的部分：界面呈现、页面组成、状态与数据、文案与国际化；界面怎么呈现以项目设计规范为准。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "前端这一层的全部代码与配置",
+          "check_zh": "pomaster standards frontend 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend--space-frontend-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-scope"
+          }
+        },
+        {
+          "id": "SPACE.FRONTEND.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：UI 呈现与设计、页面构成与浏览器环境、前端状态与客户端数据、国际化与文案。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "前端这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend--space-frontend-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-generic"
+          }
+        },
+        {
+          "id": "SPACE.FRONTEND.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：框架与运行时——Vue、React、H5 / 移动端、小程序、Angular、Svelte；产品——Ant Design、Geist、CSS 体系、Tailwind CSS。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "前端这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "Vue（vue3）",
+                  "usage_zh": "框架与运行时：组合式写法、响应式、路由与状态库的用法。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "React（react）",
+                  "usage_zh": "框架与运行时：Hooks 规则、纯渲染、副作用与懒加载。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "H5 / 移动端（h5）",
+                  "usage_zh": "框架与运行时：移动端视口、触控目标、弱网与安全区。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "小程序（mini-program）",
+                  "usage_zh": "框架与运行时：小程序与跨端框架的生命周期、包体与审核约束。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Angular（angular）",
+                  "usage_zh": "框架与运行时：模块、依赖注入与变更检测。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Svelte（svelte）",
+                  "usage_zh": "框架与运行时：组件与响应式声明。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Ant Design（antdesign）",
+                  "usage_zh": "产品：组件库的按需引入、主题 token 与组件用法。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Geist（geist）",
+                  "usage_zh": "产品：Geist 设计体系的组件与变体词表。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "CSS 体系（css）",
+                  "usage_zh": "产品：样式作用域、token 与重置。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Tailwind CSS（tailwind）",
+                  "usage_zh": "产品：工具类、主题配置与设计 token 对齐。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend--space-frontend-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend--space-frontend-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_frontend_server",
+      "title_zh": "前端服务器",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.FRONTEND_SERVER",
+      "summary_zh": "浏览器与后端之间的一层：托管静态资源、反向代理与路由转发、HTTPS 与安全响应头、压缩与缓存头、单页应用的路由回退、BFF 与服务端渲染、CDN。前端项目上线都会经过它，规范要显式写出来，不靠默认配置。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.FRONTEND_SERVER.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.FRONTEND_SERVER.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.FRONTEND_SERVER.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/前端服务器",
+        "id": "standard-standards-space-frontend-server--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.FRONTEND_SERVER.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "浏览器与后端之间的一层：托管静态资源、反向代理与路由转发、HTTPS 与安全响应头、压缩与缓存头、单页应用的路由回退、BFF 与服务端渲染、CDN。前端项目上线都会经过它，规范要显式写出来，不靠默认配置。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "前端服务器这一层的全部代码与配置",
+          "check_zh": "pomaster standards frontend_server 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend-server--space-frontend-server-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-scope"
+          }
+        },
+        {
+          "id": "SPACE.FRONTEND_SERVER.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：安全、性能与容量、环境与配置。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "前端服务器这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend-server--space-frontend-server-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-generic"
+          }
+        },
+        {
+          "id": "SPACE.FRONTEND_SERVER.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：产品——Nginx、Kubernetes Ingress、CDN、Apache HTTP Server、Caddy；架构形态——BFF（面向前端的后端）；框架与运行时——服务端渲染。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "前端服务器这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "Nginx（nginx）",
+                  "usage_zh": "产品：反向代理、静态托管、安全头、缓存头与超时。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Kubernetes Ingress（kubernetes-ingress）",
+                  "usage_zh": "产品：入口路由、TLS 终止与注解约定。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "BFF（面向前端的后端）（bff）",
+                  "usage_zh": "架构形态：聚合接口、裁剪字段、转发鉴权的那一层服务。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "服务端渲染（ssr）",
+                  "usage_zh": "框架与运行时：Nuxt / Next 这类服务端渲染：渲染边界、数据预取、缓存与水合。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "CDN（cdn）",
+                  "usage_zh": "产品：静态资源上 CDN：缓存键、回源、版本化文件名与失效。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Apache HTTP Server（apache-httpd）",
+                  "usage_zh": "产品：虚拟主机、重写规则与安全头。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Caddy（caddy）",
+                  "usage_zh": "产品：自动 HTTPS、反向代理与静态托管。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-frontend-server--space-frontend-server-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-frontend-server--space-frontend-server-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_backend",
+      "title_zh": "后端",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.BACKEND",
+      "summary_zh": "服务端的业务与接口。通用规范对任何语言、任何架构都成立：接口契约与错误语义、分层与模块边界、鉴权、领域数据、集成与异步、可观测、环境与配置；语言、框架与架构形态的差异放进抽屉。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.BACKEND.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.BACKEND.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.BACKEND.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/后端",
+        "id": "standard-standards-space-backend--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.BACKEND.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "服务端的业务与接口。通用规范对任何语言、任何架构都成立：接口契约与错误语义、分层与模块边界、鉴权、领域数据、集成与异步、可观测、环境与配置；语言、框架与架构形态的差异放进抽屉。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "后端这一层的全部代码与配置",
+          "check_zh": "pomaster standards backend 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-backend--space-backend-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-scope"
+          }
+        },
+        {
+          "id": "SPACE.BACKEND.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：API 契约与错误语义、架构与模块边界、权限与鉴权、值语义与领域数据、集成与异步运行时、可观测性与埋点、环境与配置。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "后端这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-backend--space-backend-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-generic"
+          }
+        },
+        {
+          "id": "SPACE.BACKEND.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：架构形态——模块化单体、微服务、Serverless；语言——Java、Kotlin、PHP、Python、Go、Node.js、C#；框架与运行时——Spring Boot、Spring MVC、Spring WebFlux、Spring Batch、Spring Cloud、Tomcat、Laravel、Symfony、Django、FastAPI、Flask、Gin、NestJS、Express、ASP.NET Core；持久层——MyBatis、JPA / Hibernate、其他 ORM。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "后端这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "模块化单体（modular-monolith）",
+                  "usage_zh": "架构形态：一个部署单元里按业务模块划边界：模块只经公开接口互相调用，数据按模块归属。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "微服务（microservices）",
+                  "usage_zh": "架构形态：按业务能力拆服务：服务边界、服务间契约、分布式事务、服务发现、熔断与限流、链路追踪。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Serverless（serverless）",
+                  "usage_zh": "架构形态：函数粒度、冷启动、无状态与事件触发。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Java（java）",
+                  "usage_zh": "语言：语言习惯、空值、异常、并发与集合。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Kotlin（kotlin）",
+                  "usage_zh": "语言：空安全、协程与数据类。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "PHP（php）",
+                  "usage_zh": "语言：类型声明、依赖管理与请求生命周期。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Python（python）",
+                  "usage_zh": "语言：类型标注、依赖与虚拟环境、异步。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Go（go）",
+                  "usage_zh": "语言：错误处理、并发与 context 传递。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Node.js（nodejs）",
+                  "usage_zh": "语言：事件循环、异步错误、依赖与进程管理。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "C#（csharp）",
+                  "usage_zh": "语言：异步、空引用与依赖注入。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Spring Boot（spring-boot）",
+                  "usage_zh": "框架与运行时：自动配置、配置绑定、启动与健康检查。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Spring MVC（spring-mvc）",
+                  "usage_zh": "框架与运行时：控制器、校验、异常映射与过滤器。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Spring WebFlux（spring-webflux）",
+                  "usage_zh": "框架与运行时：响应式链路、背压与阻塞隔离。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Spring Batch（spring-batch）",
+                  "usage_zh": "框架与运行时：作业、步骤、重启与幂等。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Spring Cloud（spring-cloud）",
+                  "usage_zh": "框架与运行时：配置中心、注册发现、网关与熔断。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Tomcat（tomcat）",
+                  "usage_zh": "框架与运行时：Servlet 容器的线程、连接与超时配置。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Laravel（laravel）",
+                  "usage_zh": "框架与运行时：路由、Eloquent、队列与中间件。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Symfony（symfony）",
+                  "usage_zh": "框架与运行时：Bundle、依赖注入与 Doctrine。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Django（django）",
+                  "usage_zh": "框架与运行时：应用划分、ORM、迁移与中间件。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "FastAPI（fastapi）",
+                  "usage_zh": "框架与运行时：路由、依赖注入、模型校验与异步。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Flask（flask）",
+                  "usage_zh": "框架与运行时：蓝图、请求上下文与扩展。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Gin（gin）",
+                  "usage_zh": "框架与运行时：路由组、中间件与绑定校验。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "NestJS（nestjs）",
+                  "usage_zh": "框架与运行时：模块、提供者、守卫与管道。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Express（express）",
+                  "usage_zh": "框架与运行时：路由、中间件顺序与错误中间件。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "ASP.NET Core（aspnet-core）",
+                  "usage_zh": "框架与运行时：中间件管线、依赖注入与配置。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "MyBatis（mybatis）",
+                  "usage_zh": "持久层：Mapper、动态 SQL、分页与批量。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "JPA / Hibernate（jpa）",
+                  "usage_zh": "持久层：实体映射、懒加载、N+1 与事务边界。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "其他 ORM（orm-other）",
+                  "usage_zh": "持久层：Eloquent、Django ORM、SQLAlchemy、Prisma、GORM 一类 ORM 的查询与迁移约定。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-backend--space-backend-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-backend--space-backend-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_database",
+      "title_zh": "数据库",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.DATABASE",
+      "summary_zh": "持久化数据：模型、迁移、索引与查询、事务与并发、数据生命周期与隐私。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.DATABASE.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.DATABASE.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.DATABASE.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/数据库",
+        "id": "standard-standards-space-database--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.DATABASE.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "持久化数据：模型、迁移、索引与查询、事务与并发、数据生命周期与隐私。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "数据库这一层的全部代码与配置",
+          "check_zh": "pomaster standards database 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-database--space-database-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-scope"
+          }
+        },
+        {
+          "id": "SPACE.DATABASE.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：数据与事务、隐私与数据生命周期。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "数据库这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-database--space-database-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-generic"
+          }
+        },
+        {
+          "id": "SPACE.DATABASE.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：产品——MySQL、PostgreSQL、Oracle、SQL Server、MongoDB、SQLite、搜索引擎。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "数据库这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "MySQL（mysql）",
+                  "usage_zh": "产品：字符集、索引、锁与迁移账号。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "PostgreSQL（postgresql）",
+                  "usage_zh": "产品：类型、索引、锁与扩展。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Oracle（oracle）",
+                  "usage_zh": "产品：序列、分区与 PL/SQL 边界。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "SQL Server（sqlserver）",
+                  "usage_zh": "产品：排序规则、隔离级别与索引。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "MongoDB（mongodb）",
+                  "usage_zh": "产品：文档建模、索引与一致性级别。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "SQLite（sqlite）",
+                  "usage_zh": "产品：单文件库的并发与迁移。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "搜索引擎（search-engine）",
+                  "usage_zh": "产品：Elasticsearch / OpenSearch 的索引设计、同步与查询。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-database--space-database-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-database--space-database-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_cache",
+      "title_zh": "缓存",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.CACHE",
+      "summary_zh": "为了快而存的副本：缓存什么、放哪一层、键怎么设计、何时失效、穿透击穿雪崩怎么防、与数据库如何保持一致。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.CACHE.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.CACHE.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.CACHE.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/缓存",
+        "id": "standard-standards-space-cache--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.CACHE.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "为了快而存的副本：缓存什么、放哪一层、键怎么设计、何时失效、穿透击穿雪崩怎么防、与数据库如何保持一致。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "缓存这一层的全部代码与配置",
+          "check_zh": "pomaster standards cache 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-cache--space-cache-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-scope"
+          }
+        },
+        {
+          "id": "SPACE.CACHE.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：性能与容量、数据与事务。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "缓存这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-cache--space-cache-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-generic"
+          }
+        },
+        {
+          "id": "SPACE.CACHE.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：产品——Redis、本地缓存、Memcached。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "缓存这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "Redis（redis）",
+                  "usage_zh": "产品：键设计、过期、序列化与一致性。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "本地缓存（local-cache）",
+                  "usage_zh": "产品：进程内缓存（Caffeine 一类）的容量、过期与多实例一致。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Memcached（memcached）",
+                  "usage_zh": "产品：键空间、过期与分片。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-cache--space-cache-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-cache--space-cache-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_messaging",
+      "title_zh": "消息与异步",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.MESSAGING",
+      "summary_zh": "不在请求里同步完成的工作：消息投递、重试与幂等、顺序、死信、定时任务与后台作业。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.MESSAGING.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.MESSAGING.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.MESSAGING.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/消息与异步",
+        "id": "standard-standards-space-messaging--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.MESSAGING.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "不在请求里同步完成的工作：消息投递、重试与幂等、顺序、死信、定时任务与后台作业。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "消息与异步这一层的全部代码与配置",
+          "check_zh": "pomaster standards messaging 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-messaging--space-messaging-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-scope"
+          }
+        },
+        {
+          "id": "SPACE.MESSAGING.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：集成与异步运行时。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "消息与异步这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-messaging--space-messaging-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-generic"
+          }
+        },
+        {
+          "id": "SPACE.MESSAGING.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：产品——可靠投递（通用）、Kafka、RabbitMQ、RocketMQ。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "消息与异步这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "可靠投递（通用）（messaging）",
+                  "usage_zh": "产品：至少一次投递下的幂等消费、重试、死信与顺序。",
+                  "sample_zh": "已有",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Kafka（kafka）",
+                  "usage_zh": "产品：分区、消费组、位点提交与重平衡。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "RabbitMQ（rabbitmq）",
+                  "usage_zh": "产品：交换机、确认、预取与死信。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "RocketMQ（rocketmq）",
+                  "usage_zh": "产品：事务消息、顺序消息与重试。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-messaging--space-messaging-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-messaging--space-messaging-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_platform",
+      "title_zh": "平台与运维",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.PLATFORM",
+      "summary_zh": "让代码变成在线服务的一切：环境与配置、构建与发布、特性开关、可观测、工具链与依赖、AI 生成代码的约束。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.PLATFORM.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.PLATFORM.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.PLATFORM.DRAWERS",
+          "title_zh": "抽屉",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/平台与运维",
+        "id": "standard-standards-space-platform--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.PLATFORM.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "让代码变成在线服务的一切：环境与配置、构建与发布、特性开关、可观测、工具链与依赖、AI 生成代码的约束。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "平台与运维这一层的全部代码与配置",
+          "check_zh": "pomaster standards platform 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-platform--space-platform-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-scope"
+          }
+        },
+        {
+          "id": "SPACE.PLATFORM.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：发布与开关、环境与配置、可观测性与埋点、工程工具链与依赖、AI 生成代码。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "平台与运维这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-platform--space-platform-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-generic"
+          }
+        },
+        {
+          "id": "SPACE.PLATFORM.DRAWERS",
+          "title_zh": "抽屉",
+          "statement_zh": "只对某种技术成立的规则放进抽屉：产品——Docker、Kubernetes、GitHub Actions、GitLab CI。项目用到哪个抽屉由技术基线的选型与仓库信号判定；预留抽屉第一次写入时建项目抽屉文档。",
+          "rationale_zh": "语言、框架与产品的差异单独成册，项目换掉一种技术时只换对应的抽屉，通用规范不动。",
+          "level": null,
+          "scope_zh": "平台与运维这一层用到的语言、框架、架构形态与产品",
+          "check_zh": "pomaster standards 标 [生效] 的抽屉；写入用 pomaster update spec --drawer <编号>",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "抽屉一览",
+              "description_zh": "已有 = 有现成规范文档；预留 = 项目用到时第一次写入建文档。",
+              "name_label_zh": "抽屉",
+              "rows": [
+                {
+                  "name": "Docker（docker）",
+                  "usage_zh": "产品：镜像分层、非 root、健康检查与体积。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "Kubernetes（kubernetes）",
+                  "usage_zh": "产品：资源配额、探针、滚动发布与配置挂载。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "GitHub Actions（github-actions）",
+                  "usage_zh": "产品：工作流权限、缓存、矩阵与密钥。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "GitLab CI（gitlab-ci）",
+                  "usage_zh": "产品：流水线阶段、缓存与变量保护。",
+                  "sample_zh": "预留",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-platform--space-platform-drawers",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-platform--space-platform-drawers"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_security",
+      "title_zh": "安全",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.SECURITY",
+      "summary_zh": "横贯每一层的防线：输入与输出、认证与会话、授权、敏感数据、依赖与供应链。主动找漏洞的渗透测试放在测试空间。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.SECURITY.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.SECURITY.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/安全",
+        "id": "standard-standards-space-security--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.SECURITY.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "横贯每一层的防线：输入与输出、认证与会话、授权、敏感数据、依赖与供应链。主动找漏洞的渗透测试放在测试空间。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "安全这一层的全部代码与配置",
+          "check_zh": "pomaster standards security 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-security--space-security-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--space-security-scope"
+          }
+        },
+        {
+          "id": "SPACE.SECURITY.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：安全、权限与鉴权、隐私与数据生命周期。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "安全这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-security--space-security-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-security--space-security-generic"
+          }
+        }
+      ]
+    },
+    {
+      "key": "space_testing",
+      "title_zh": "测试",
+      "group": "standards",
+      "group_title_zh": "规范空间",
+      "prefix": "SPACE.TESTING",
+      "summary_zh": "证明代码做对了的方法。每一类测试对应证据规范：冒烟、单元与集成、回归、白盒、黑盒、渗透与安全、性能、发布与数据迁移；结果按证据入账，没跑的记 NOT_RUN。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "SPACE.TESTING.SCOPE",
+          "title_zh": "管什么",
+          "covered": true
+        },
+        {
+          "id": "SPACE.TESTING.GENERIC",
+          "title_zh": "通用规范",
+          "covered": true
+        },
+        {
+          "id": "SPACE.TESTING.TYPES",
+          "title_zh": "测试类型",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/规范空间/测试",
+        "id": "standard-standards-space-testing--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "SPACE.TESTING.SCOPE",
+          "title_zh": "管什么",
+          "statement_zh": "证明代码做对了的方法。每一类测试对应证据规范：冒烟、单元与集成、回归、白盒、黑盒、渗透与安全、性能、发布与数据迁移；结果按证据入账，没跑的记 NOT_RUN。",
+          "rationale_zh": "规范按系统的层组织，每一层的规则写在这一层；读的人和 AI 按层找，不在一份大文档里翻。",
+          "level": null,
+          "scope_zh": "测试这一层的全部代码与配置",
+          "check_zh": "pomaster standards testing 看本空间的通用规范与抽屉",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-testing--space-testing-scope",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-scope"
+          }
+        },
+        {
+          "id": "SPACE.TESTING.GENERIC",
+          "title_zh": "通用规范",
+          "statement_zh": "这一层的通用规范对所有项目生效，不分语言、框架与架构形态：测试与验证、任务治理与验收。",
+          "rationale_zh": "通用规范说的是这一层无论用什么技术都成立的规则，换技术栈不用重写。",
+          "level": null,
+          "scope_zh": "测试这一层的全部代码与配置",
+          "check_zh": "评审时逐份对照；pomaster standards 列出每份文档在项目里的位置",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-testing--space-testing-generic",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-generic"
+          }
+        },
+        {
+          "id": "SPACE.TESTING.TYPES",
+          "title_zh": "测试类型",
+          "statement_zh": "测试按要证明的事情分类：冒烟测试、单元 / 组件 / 集成测试、回归测试、白盒测试、黑盒测试、渗透与安全测试、性能与容量测试、发布与数据迁移验证；每一类对应证据规范，结果按证据入账。",
+          "rationale_zh": "按证明的事情分类，缺哪一类一眼可见；同一种工具可以服务多类测试。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的结果；没跑的记 NOT_RUN",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [
+            {
+              "kind": "specimen",
+              "title_zh": "测试类型与证据",
+              "description_zh": "每一类测试证明什么、用哪些证据规范入账。",
+              "name_label_zh": "测试类型",
+              "rows": [
+                {
+                  "name": "冒烟测试",
+                  "usage_zh": "构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。",
+                  "sample_zh": "构建成功、浏览器端到端",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "单元 / 组件 / 集成测试",
+                  "usage_zh": "单个函数、组件与模块组合按约定工作。",
+                  "sample_zh": "单元/组件/集成测试",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "回归测试",
+                  "usage_zh": "改动之后，原有行为与界面没有被改坏。",
+                  "sample_zh": "单元/组件/集成测试、浏览器端到端、视觉回归",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "白盒测试",
+                  "usage_zh": "看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。",
+                  "sample_zh": "测试覆盖率、复杂度风险(CRAP)、变异测试、死代码与重复代码、类型检查与静态检查、架构核查",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "黑盒测试",
+                  "usage_zh": "只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。",
+                  "sample_zh": "浏览器端到端、API 契约兼容、业务验收、视觉回归、可访问性",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "渗透与安全测试",
+                  "usage_zh": "主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。",
+                  "sample_zh": "安全核查、依赖与供应链",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "性能与容量测试",
+                  "usage_zh": "在约定的负载下响应时间、吞吐与资源占用达标。",
+                  "sample_zh": "性能",
+                  "template": null,
+                  "jsx": null
+                },
+                {
+                  "name": "发布与数据迁移验证",
+                  "usage_zh": "迁移可执行可回退、发布可观测可回滚。",
+                  "sample_zh": "数据迁移、发布、运行时可观测",
+                  "template": null,
+                  "jsx": null
+                }
+              ]
+            }
+          ],
+          "examples": [],
+          "storybook": {
+            "id": "standard-standards-space-testing--space-testing-types",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-standards-space-testing--space-testing-types"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_smoke",
+      "title_zh": "冒烟测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.SMOKE",
+      "summary_zh": "构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.SMOKE.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.SMOKE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/冒烟测试",
+        "id": "standard-testing-test-smoke--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.SMOKE.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "构建通过、应用能起来、主路径走得通——更深的测试之前先过这一关。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-smoke--test-smoke-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--test-smoke-proves"
+          }
+        },
+        {
+          "id": "TEST.SMOKE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：构建成功、浏览器端到端。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-smoke--test-smoke-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-smoke--test-smoke-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_unit_integration",
+      "title_zh": "单元 / 组件 / 集成测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.UNIT_INTEGRATION",
+      "summary_zh": "单个函数、组件与模块组合按约定工作。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.UNIT_INTEGRATION.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.UNIT_INTEGRATION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/单元 / 组件 / 集成测试",
+        "id": "standard-testing-test-unit-integration--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.UNIT_INTEGRATION.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "单个函数、组件与模块组合按约定工作。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-unit-integration--test-unit-integration-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--test-unit-integration-proves"
+          }
+        },
+        {
+          "id": "TEST.UNIT_INTEGRATION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：单元/组件/集成测试。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-unit-integration--test-unit-integration-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-unit-integration--test-unit-integration-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_regression",
+      "title_zh": "回归测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.REGRESSION",
+      "summary_zh": "改动之后，原有行为与界面没有被改坏。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.REGRESSION.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.REGRESSION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/回归测试",
+        "id": "standard-testing-test-regression--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.REGRESSION.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "改动之后，原有行为与界面没有被改坏。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-regression--test-regression-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--test-regression-proves"
+          }
+        },
+        {
+          "id": "TEST.REGRESSION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：单元/组件/集成测试、浏览器端到端、视觉回归。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-regression--test-regression-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-regression--test-regression-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_white_box",
+      "title_zh": "白盒测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.WHITE_BOX",
+      "summary_zh": "看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.WHITE_BOX.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.WHITE_BOX.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        },
+        {
+          "id": "TEST.WHITE_BOX.DISCIPLINE",
+          "title_zh": "写测试的纪律",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/白盒测试",
+        "id": "standard-testing-test-white-box--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.WHITE_BOX.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "看着代码测：覆盖率、复杂度（CRAP）、变异测试、死代码与重复、类型与静态检查、架构约定。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-white-box--test-white-box-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-proves"
+          }
+        },
+        {
+          "id": "TEST.WHITE_BOX.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：测试覆盖率、复杂度风险(CRAP)、变异测试、死代码与重复代码、类型检查与静态检查、架构核查。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-white-box--test-white-box-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-evidence"
+          }
+        },
+        {
+          "id": "TEST.WHITE_BOX.DISCIPLINE",
+          "title_zh": "写测试的纪律",
+          "statement_zh": "改代码前先写一个会失败的测试，看它因预期的原因失败，再做让它通过的最小改动；测试按使用者的方式调用、检查使用者看得到的结果——所有函数都返回空时仍能通过的测试要删掉；单个函数的 CRAP 超过项目质量基线里的阈值就拆分或补测；变异测试里存活的变异用新测试杀掉，覆盖不到的死代码删掉。",
+          "rationale_zh": "覆盖率、CRAP 与变异分数只在测试真正测行为时才有意义；先失败再通过，才能证明测试确实在测。",
+          "level": null,
+          "scope_zh": "所有空间的代码与测试",
+          "check_zh": "评审时看测试是否先于实现失败过；CRAP 与变异结果按证据规范入账，没跑的记 NOT_RUN",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-white-box--test-white-box-discipline",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-white-box--test-white-box-discipline"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_black_box",
+      "title_zh": "黑盒测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.BLACK_BOX",
+      "summary_zh": "只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.BLACK_BOX.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.BLACK_BOX.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/黑盒测试",
+        "id": "standard-testing-test-black-box--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.BLACK_BOX.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "只看外部行为：端到端、接口契约、业务验收、视觉、可访问性。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-black-box--test-black-box-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--test-black-box-proves"
+          }
+        },
+        {
+          "id": "TEST.BLACK_BOX.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：浏览器端到端、API 契约兼容、业务验收、视觉回归、可访问性。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-black-box--test-black-box-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-black-box--test-black-box-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_penetration",
+      "title_zh": "渗透与安全测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.PENETRATION",
+      "summary_zh": "主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.PENETRATION.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.PENETRATION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/渗透与安全测试",
+        "id": "standard-testing-test-penetration--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.PENETRATION.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "主动找漏洞：注入、越权、敏感信息暴露、依赖漏洞与供应链风险。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-penetration--test-penetration-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--test-penetration-proves"
+          }
+        },
+        {
+          "id": "TEST.PENETRATION.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：安全核查、依赖与供应链。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-penetration--test-penetration-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-penetration--test-penetration-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_performance",
+      "title_zh": "性能与容量测试",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.PERFORMANCE",
+      "summary_zh": "在约定的负载下响应时间、吞吐与资源占用达标。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.PERFORMANCE.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.PERFORMANCE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/性能与容量测试",
+        "id": "standard-testing-test-performance--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.PERFORMANCE.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "在约定的负载下响应时间、吞吐与资源占用达标。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-performance--test-performance-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--test-performance-proves"
+          }
+        },
+        {
+          "id": "TEST.PERFORMANCE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：性能。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-performance--test-performance-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-performance--test-performance-evidence"
+          }
+        }
+      ]
+    },
+    {
+      "key": "test_release",
+      "title_zh": "发布与数据迁移验证",
+      "group": "testing",
+      "group_title_zh": "测试",
+      "prefix": "TEST.RELEASE",
+      "summary_zh": "迁移可执行可回退、发布可观测可回滚。",
+      "covered": true,
+      "counterparts": null,
+      "playground": null,
+      "topics": [
+        {
+          "id": "TEST.RELEASE.PROVES",
+          "title_zh": "证明什么",
+          "covered": true
+        },
+        {
+          "id": "TEST.RELEASE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "covered": true
+        }
+      ],
+      "storybook": {
+        "title": "规范/测试/发布与数据迁移验证",
+        "id": "standard-testing-test-release--overview",
+        "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--overview",
+        "playground": null,
+        "matrix": null
+      },
+      "rules": [
+        {
+          "id": "TEST.RELEASE.PROVES",
+          "title_zh": "证明什么",
+          "statement_zh": "迁移可执行可回退、发布可观测可回滚。",
+          "rationale_zh": "先说清这一类测试要证明的事，才知道它缺席时少了哪一块把握。",
+          "level": null,
+          "scope_zh": "所有空间的代码与配置",
+          "check_zh": "verify 时对照验收条目判读",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-release--test-release-proves",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--test-release-proves"
+          }
+        },
+        {
+          "id": "TEST.RELEASE.EVIDENCE",
+          "title_zh": "证据怎么入账",
+          "statement_zh": "结果按证据规范入账：数据迁移、发布、运行时可观测。真实运行的结果用 pomaster record gate-run 记录；没跑的记 NOT_RUN，不算通过；阈值是项目决策，记在项目质量基线里。",
+          "rationale_zh": "测试做没做、结果如何，要能从证据里查到，而不是靠实现者自己说。",
+          "level": null,
+          "scope_zh": "所有空间的验证工作",
+          "check_zh": "pomaster plan run 与 record gate-run 的入账结果",
+          "surfaces": [
+            "admin",
+            "public"
+          ],
+          "enforcement": {
+            "kind": "review"
+          },
+          "params": [],
+          "anchors": [],
+          "showcase": [],
+          "examples": [],
+          "storybook": {
+            "id": "standard-testing-test-release--test-release-evidence",
+            "url": "https://river-singer.github.io/POMaster_VNext/vue/?path=/story/standard-testing-test-release--test-release-evidence"
           }
         }
       ]

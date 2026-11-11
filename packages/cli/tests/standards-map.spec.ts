@@ -5,6 +5,7 @@
  * - 生效判定：技术基线选型与仓库信号（根目录与一级子目录的文件名、依赖与构建清单）命中即生效，原因逐条列出；
  *   依赖名按同族前缀命中（spring-boot → spring-boot-starter-parent），不误中别的包；
  * - 写入：已有抽屉写进文档（overlay 写在 Rules 章节并带级别子字段）；预留抽屉第一次写入时建项目抽屉文档，之后状态变「项目抽屉」。
+ * - Storybook「规范空间」「测试」两组领域由 scripts/sync-standards-areas.mjs 从同一份 spaces.json 生成，漏同步这里会红。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,6 +13,13 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { STANDARDS_SPACES, allDrawers, resolveStandards, runCli, runInit, runSpecUpdate, runStandards } from "@pomaster/cli";
+import {
+  STANDARDS_AREA_FILES,
+  SPACES_PATH,
+  renderStandardsAreasBlock,
+  spliceStandardsAreas,
+  standardsAreas,
+} from "../../../scripts/sync-standards-areas.mjs";
 
 const seeds = fileURLToPath(new URL("../seeds", import.meta.url));
 
@@ -146,5 +154,40 @@ describe("update spec --drawer", () => {
 
   it("未知抽屉 → SPEC_UPDATE_TARGET", () => {
     expect(runSpecUpdate(dir, { text: "规则正文写满一句话", by: "agent:claude", drawer: "cobol", ...FIELDS }).errors[0]?.code).toBe("SPEC_UPDATE_TARGET");
+  });
+});
+
+describe("Storybook「规范空间」与「测试」领域（生成区与 spaces.json 同步）", () => {
+  const data = JSON.parse(readFileSync(SPACES_PATH, "utf8"));
+
+  it("骨架与两套体系的生成区都等于按 spaces.json 重新渲染的结果（改了 spaces.json 要重跑 node scripts/sync-standards-areas.mjs）", () => {
+    for (const [name, path] of Object.entries(STANDARDS_AREA_FILES)) {
+      const text = readFileSync(path, "utf8");
+      const block = renderStandardsAreasBlock(name === "skeleton" ? "skeleton" : "standard", data);
+      expect(spliceStandardsAreas(text, block), name).toBe(text);
+    }
+  });
+
+  it("每个空间一页、每类测试一页；测试页把冒烟、白盒、黑盒、渗透都显式列出，白盒带写测试的纪律", () => {
+    const areas = standardsAreas(data);
+    const spaces = areas.filter((area) => area.group === "standards").map((area) => area.title_zh);
+    expect(spaces).toEqual(STANDARDS_SPACES.map((space) => space.title_zh));
+    expect(spaces).toContain("前端服务器");
+    const tests = areas.filter((area) => area.group === "testing").map((area) => area.title_zh);
+    for (const title of ["冒烟测试", "回归测试", "白盒测试", "黑盒测试", "渗透与安全测试"]) expect(tests).toContain(title);
+    const whiteBox = areas.find((area) => area.key === "test_white_box")!;
+    expect(whiteBox.rules.map((rule) => rule.id)).toEqual(["TEST.WHITE_BOX.PROVES", "TEST.WHITE_BOX.EVIDENCE", "TEST.WHITE_BOX.DISCIPLINE"]);
+    const discipline = whiteBox.rules[2]!.statement_zh;
+    for (const phrase of ["先写一个会失败的测试", "CRAP", "变异", "死代码"]) expect(discipline).toContain(phrase);
+  });
+
+  it("生成的条文按写入契约：每条都有规则、理由、适用范围、检查方式", () => {
+    for (const area of standardsAreas(data)) {
+      for (const rule of area.rules) {
+        for (const field of ["statement_zh", "rationale_zh", "scope_zh", "check_zh"] as const) {
+          expect(rule[field].trim().length, `${rule.id}.${field}`).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });
