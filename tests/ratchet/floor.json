@@ -836,6 +836,10 @@
         "layer": "L1",
         "note": "设计规范门禁：按规范的门禁条文扫 Vue / TSX / 样式 / Tailwind，阈值取条文参数（决策位未定的检查记待定）；注释不算；带理由的豁免生效；存量基线只拦新增；design check、closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷（没落地规范 not_configured，规范坏了 blocked）"
       },
+      "packages/cli/tests/spec-writing.spec.ts": {
+        "layer": "L1",
+        "note": "规范写入契约：七个字段缺一即拒、级别按措辞判或显式给定；条文里的引用、版本号、时间戳与一次性措辞、记录人逐处报出，常见合法写法不误报；Markdown 跳过 frontmatter / 代码块 / 注释 / 标题，设计规范只看条文字段；spec-lint 带文件与行号、exit 1；预设种子违规数只降不升，写入规范页本身零违规。无域（规范维护契约面）。"
+      },
       "packages/cli/tests/design-adopt.spec.ts": {
         "layer": "L1",
         "note": "设计规范落到项目与开发中改它：adopt 要先 init、体系按依赖推断、不覆盖已有规范、--baseline 记存量；set 只改一行参数、出处记项目决策、决策位定下后门禁生效、决定人必须是 human；update spec 界面呈现类写进设计规范领域新规则、工程规则按路由表写进主题文档对应语气章节、同句不重复、认不出失败、update 子命令经 runCli 可达。无域（规范维护契约面）。"
