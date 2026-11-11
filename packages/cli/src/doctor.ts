@@ -546,8 +546,9 @@ function parseLauncherCliEntry(text: string): string | null {
  *   而命令不可达时 hooks 静默失效）= READY；文件缺失/注册项缺失/命令不可达 =
  *   MISSING_CONFIGURATION（不可达带 HEAVY_ENTRY_HOOKS_REPAIR_HINT 三段路标），坏
  *   JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、hooks 静默失效）；
- *   skills：14 份 × 双镜像全在且逐字节一致 = READY（原 15 份——pomaster-triage 卡随
- *   D-1/D-5 命令退役删除，owner-adjudications.md#裁决18），任一缺失 = MISSING_CONFIGURATION，
+ *   skills：SKILL_MANIFEST 全部（现 15 份：pomaster-triage 卡随 D-1/D-5 命令退役删除
+ *   ——owner-adjudications.md#裁决18——后加工程纪律卡 pomaster-ub-mode）× 双镜像全在且逐字节一致
+ *   = READY，任一缺失 = MISSING_CONFIGURATION，
  *   字节漂移 = DEFECT（双镜像漂移会使「哪份被加载」成为行为分叉点——单一事实源纪律破坏）。
  */
 export async function probeHeavyEntryInstall(

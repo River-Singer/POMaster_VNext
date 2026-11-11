@@ -125,7 +125,7 @@ describe("init 首次创建（CREATED）", () => {
       expect(existsSync(join(dir, ".agents", "skills", spec.name, "SKILL.md"))).toBe(true);
       expect(existsSync(join(dir, ".claude", "skills", spec.name, "SKILL.md"))).toBe(true);
     }
-    expect(SKILL_MANIFEST).toHaveLength(14); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14
+    expect(SKILL_MANIFEST).toHaveLength(15); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14；11-11 加工程纪律卡 pomaster-ub-mode 14→15
   });
 
   it("Slice A bootstrap harness receipt projects existing sources into init JSON and human output", async () => {
@@ -1347,6 +1347,25 @@ describe("高风险 workflow skills 行为合同", () => {
       "公告",
       "agent-pull",
     ]);
+  });
+
+  it("ub-mode 卡写明出处，按「先跑通 → 再做对 → 守实践」落位，阈值交 Owner 决策不代填", () => {
+    expectSemantics("pomaster-ub-mode", [
+      "Robert C. Martin",
+      "MIT",
+      "先跑通",
+      "再做对",
+      "守实践",
+      "先写会失败的测试",
+      "修根因",
+      "测行为不测实现",
+      "CRAP",
+      "变异",
+      "不由 Agent 代填",
+      "NOT_RUN",
+    ]);
+    expectSemantics("pomaster-execute", ["pomaster-ub-mode"]);
+    expectSemantics("pomaster", ["pomaster-ub-mode"]);
   });
 
   it("runtime 说明会话/执行身份来源、锁冲突与显式接管，而不把阻塞写成成功", () => {
