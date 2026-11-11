@@ -79,16 +79,29 @@ function loadStandardsData(): StandardsData {
   throw new Error(`standards spaces asset not found: seeds/${STANDARDS_SPACES_RELATIVE}`);
 }
 
-const STANDARDS_DATA = loadStandardsData();
+// 首次用到时才读（与其他种子读取面一致）：模块装载期读盘会让资产缺席时连 --help 都起不来，
+// 打包流程在拷贝 seeds 之前的直载冒烟也因此失败。
+let standardsDataCache: StandardsData | null = null;
+function standardsData(): StandardsData {
+  standardsDataCache ??= loadStandardsData();
+  return standardsDataCache;
+}
 
-export const STANDARDS_SPACES: readonly StandardsSpace[] = STANDARDS_DATA.spaces;
+/** 九个规范空间（含抽屉与测试类型）。 */
+export function standardsSpaces(): readonly StandardsSpace[] {
+  return standardsData().spaces;
+}
 /** 通用主题文档的标题（slug → 标题）。 */
-export const STANDARDS_THEME_TITLES: Readonly<Record<string, string>> = STANDARDS_DATA.theme_titles;
+export function standardsThemeTitles(): Readonly<Record<string, string>> {
+  return standardsData().theme_titles;
+}
 /** 证据规范的标题（slug → 标题）。 */
-export const STANDARDS_EVIDENCE_TITLES: Readonly<Record<string, string>> = STANDARDS_DATA.evidence_titles;
+export function standardsEvidenceTitles(): Readonly<Record<string, string>> {
+  return standardsData().evidence_titles;
+}
 
 export function allDrawers(): Array<StandardsDrawer & { readonly space: string }> {
-  return STANDARDS_SPACES.flatMap((space) => space.drawers.map((drawer) => ({ ...drawer, space: space.key })));
+  return standardsSpaces().flatMap((space) => space.drawers.map((drawer) => ({ ...drawer, space: space.key })));
 }
 
 export function findDrawer(id: string): (StandardsDrawer & { readonly space: string }) | undefined {
@@ -221,7 +234,7 @@ export function resolveStandards(dir: string): StandardsResult {
   const repo = readRepoSignals(dir);
   const hardRoot = join(dir, ".pomaster", "specs", "hard");
   const active: string[] = [];
-  const spaces = STANDARDS_SPACES.map((space) => ({
+  const spaces = standardsSpaces().map((space) => ({
     key: space.key,
     title_zh: space.title_zh,
     summary_zh: space.summary_zh,

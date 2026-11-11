@@ -276,3 +276,33 @@ jobs:
         run: |
           echo "HOME=$HOME (runner default was /home/runner)"
           node benchmarks/run-all.mjs
+
+  # npm 单包出口：每个 PR 都按发布流程把包真建一次、真装一次（publish.yml 复用本 workflow，
+  # 所以发布前置闸也包含这一腿）。此前只有打 tag 发布时才跑 build-npm-package，
+  # 打包判据坏了要到发布当天才暴露。
+  npm-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      # 与 publish.yml 同一 Node 主版本（发布机 Node 24 自带 npm ≥ 11.5.1）。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: corepack pnpm -r build
+
+      # esbuild 单文件 bundle + catalog / seeds / 法务文档 + 生成的 package.json；含出口判据与直载冒烟。
+      - name: Build npm staging package
+        run: node scripts/build-npm-package.mjs
+
+      # npm pack 清单断言 + 本地 tgz fresh-install 冒烟（零 dependencies，不联网装依赖）。
+      - name: Verify npm staging package
+        run: node scripts/verify-npm-package.mjs

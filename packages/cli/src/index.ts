@@ -1072,12 +1072,14 @@ export {
 export type { SpecEntry, SpecEntryField, SpecLintResult, SpecWritingIssue } from "./spec-writing.js";
 export {
   DRAWER_KIND_TITLES,
-  STANDARDS_SPACES,
   allDrawers,
   findDrawer,
   projectDrawerDoc,
   resolveStandards,
   runStandards,
+  standardsEvidenceTitles,
+  standardsSpaces,
+  standardsThemeTitles,
 } from "./standards-map.js";
 export type { DrawerState, StandardsDrawer, StandardsResult, StandardsSpace, StandardsTestType } from "./standards-map.js";
 export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-update.js";

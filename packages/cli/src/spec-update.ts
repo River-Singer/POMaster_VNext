@@ -24,7 +24,7 @@ import { loadDesignStandard } from "./design.js";
 import { DESIGN_CHECKS, DESIGN_STANDARD_RELATIVE, type DesignArea } from "./design-standard.js";
 import { yamlScalar } from "./design-adopt.js";
 import { POMASTER_DIR } from "./store-layout.js";
-import { STANDARDS_SPACES, findDrawer, projectDrawerDoc, renderProjectDrawerDoc } from "./standards-map.js";
+import { findDrawer, projectDrawerDoc, renderProjectDrawerDoc, standardsSpaces } from "./standards-map.js";
 import {
   SPEC_ENTRY_FIELDS,
   lintSpecContent,
@@ -308,7 +308,7 @@ export function runSpecUpdate(dir: string, input: SpecUpdateInput): CommandOutco
     const ref = drawer.doc ?? projectDrawerDoc(drawer.id);
     if (!existsSync(join(dir, POMASTER_DIR, "specs", "hard", ref))) {
       if (drawer.doc !== null) return fail({ code: "SPEC_UPDATE_TARGET", message: `找不到抽屉文档 specs/hard/${ref}`, hint: "重新 pomaster init 播种缺失的规范文档" });
-      const space = STANDARDS_SPACES.find((item) => item.key === drawer.space)!;
+      const space = standardsSpaces().find((item) => item.key === drawer.space)!;
       newDrawerDoc = { ref, text: renderProjectDrawerDoc(drawer, space.title_zh) };
     }
     chosen = { kind: "spec", ref, title_zh: `${drawer.title_zh}（${drawer.id}）`, score: 0, hits: [] };

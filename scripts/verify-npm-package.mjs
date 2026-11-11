@@ -2,14 +2,14 @@
 //
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
-//    __pycache__ 排除] + lock 271 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
-//    全等 + 清单 103 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
+//    __pycache__ 排除] + lock 条目数与仓库 lock 相等）/ seeds 完整（与仓库 packages/cli/seeds 文件集
+//    全等 + 清单条目数与仓库清单相等）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
 //    关键词形。关键断言：catalog status 的 catalog_root 命中
 //    node_modules/pomaster/catalog（resolveCatalogRoot 候选链的包内资产候选，
-//    ok:true 且 271 entries 0 drift）。
+//    ok:true 且 lock 全部条目 0 drift）。
 //
 // 冒烟产物（tgz 与 smoke 目录）留系统 temp 并在末尾打印路径，不进仓库
 // （stage/ 已在 .gitignore；temp 目录由操作系统清理策略兜底）。
@@ -86,7 +86,8 @@ const packedPaths = packReport.files.map((file) => file.path.replace(/\\/g, "/")
 // 1.1 bin 在座。
 assert(packedPaths.includes("dist/bin.js"), "bin 在座（dist/bin.js）");
 
-// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等（__pycache__ 排除）+ lock 271 entries。
+// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等（__pycache__ 排除）+ lock 条目数与仓库 lock 相等
+//     （不钉魔数：catalog 增删条目时打包侧自动跟随，漏打包才红）。
 const repoCatalogFiles = walkFiles(p("catalog")).map((file) => `catalog/${file}`);
 const packedCatalogFiles = packedPaths.filter((file) => file.startsWith("catalog/"));
 const repoSet = new Set(repoCatalogFiles);
@@ -101,7 +102,12 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 271, "catalog-lock 271 entries", `实为 ${stageLock.entries.length}`);
+const repoLock = JSON.parse(readFileSync(p("catalog", "catalog-lock.draft.json"), "utf8"));
+assert(
+  stageLock.entries.length === repoLock.entries.length && stageLock.entries.length > 0,
+  `catalog-lock ${repoLock.entries.length} entries（与仓库 lock 相等）`,
+  `实为 ${stageLock.entries.length}`,
+);
 
 // 1.2.1 seeds 完整（B6c + B6d + B6e + B6f + B6G + B7-THEME）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
@@ -124,9 +130,10 @@ assert(
   "stage seeds manifest schema = pomaster.seed-manifest/1",
   `实为 ${stageSeedManifest.schema}`,
 );
+const repoSeedManifest = JSON.parse(readFileSync(p("packages", "cli", "seeds", "manifest.json"), "utf8"));
 assert(
-  stageSeedManifest.entries?.length === 103,
-  "stage seeds manifest 103 entries",
+  stageSeedManifest.entries?.length === repoSeedManifest.entries.length && repoSeedManifest.entries.length > 0,
+  `stage seeds manifest ${repoSeedManifest.entries.length} entries（与仓库清单相等）`,
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -244,7 +251,7 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B7-THEME 播种件落盘（themes 21（20 主题 + 1 导航）+ 36 份 stacks 进
+//     + B7-THEME 播种件落盘（themes 21（20 主题 + 1 导航）+ 全部技术栈抽屉（index + overlay）进
 //     .pomaster/specs/hard/ + 25 份 baseline 进 .pomaster/baseline/ + 20 份 evidence
 //     进 .pomaster/specs/evidence/——包内 seeds 资产位 + 装载器 fail-closed 的端到端
 //     实证：缺 seeds 的包 init 即炸）。
@@ -283,18 +290,18 @@ assert(
   "init 播种件落盘：themes/index.md（导航；D6 聚合 pin 形态）",
 );
 assert(!navSample.includes("GENERATED"), "播种件 marker-free 抽查（导航件）");
-// stacks 面（B6c）：14 slug 子目录 × (index + overlay)。
-const STACK_SLUGS = [
-  "java", "jpa", "kubernetes-ingress", "messaging", "mybatis", "mysql",
-  "nginx", "postgresql", "redis", "spring-batch", "spring-boot", "spring-mvc",
-  "spring-webflux", "tomcat",
-];
+// stacks 面（B6c）：包内种子里的每个技术栈抽屉子目录 × (index + overlay)——清单跟随种子，不钉死。
+const STACK_SLUGS = readdirSync(p("packages", "cli", "seeds", "specs", "hard", "stacks"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+assert(STACK_SLUGS.length > 0, `包内种子技术栈抽屉 ${STACK_SLUGS.length} 个`);
 const seededStacksDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "stacks");
 for (const slug of STACK_SLUGS) {
   const slugDir = join(seededStacksDir, slug);
   const files = existsSync(slugDir) ? readdirSync(slugDir).sort() : [];
   assert(
-    files.length === 2 && files[0] === "index.md" && files[1].endsWith("-overlay.md"),
+    files.length === 2 && files.includes("index.md") && files.some((name) => name !== "index.md" && name.endsWith("-overlay.md")),
     `init 播种件落盘：specs/hard/stacks/${slug}/（index + overlay）`,
     `实为 ${files.join(", ")}`,
   );
@@ -429,11 +436,14 @@ assert(
 
 // 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）+
 //     SPEC 预植计数呈现（裁定批 D D2）。（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
+// stacks 计数跟随包内种子（每个技术栈抽屉 index + overlay；README 不计）——加抽屉时不必改这里。
+const seededStackCount = walkFiles(p("packages", "cli", "seeds", "specs", "hard", "stacks"))
+  .filter((file) => !file.endsWith("README.md")).length;
 smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [
     "status: .pomaster/state/truth-index.json (seq=2)",
-    "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 26",
+    `seeded assets: themes 21 / stacks ${seededStackCount} / evidence 20 / baseline 26`,
     "spec preplant: 19/19 in place",
   ],
 });
@@ -444,15 +454,15 @@ assert(
   "安装后 status 优先引导真实识别 TASK 的公开 report 流程",
 );
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 271 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + lock 全部条目 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 271,
-  `catalog entries = 271（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === repoLock.entries.length,
+  `catalog entries = ${repoLock.entries.length}（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&
