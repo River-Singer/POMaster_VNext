@@ -363,8 +363,20 @@ async function smokeServer(
     let snapshot: string;
     try {
       if (def.name === "chrome-devtools") {
-        const opened = await session.callTool("new_page", { url: fixture.url }, browserTimeout);
-        if (opened.isError) return { ...base, browser: "fail", reason: redact(`new_page：${opened.text}`) };
+        // new_page 偶发 net::ERR_ABORTED（PR #53 windows CI 实证：同一步在 #52 的 windows 腿通过）：
+        // 先看页面其实开没开；没开就隔一秒重试一次，两次都失败才判失败（两次原因都留档）。
+        let opened = await session.callTool("new_page", { url: fixture.url }, browserTimeout);
+        if (opened.isError) {
+          const firstError = opened.text;
+          const listed = await session.callTool("list_pages", {}, timeoutMs);
+          if (pageIdOf(listed.text, fixture.url) !== null) {
+            opened = listed;
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            opened = await session.callTool("new_page", { url: fixture.url }, browserTimeout);
+            if (opened.isError) return { ...base, browser: "fail", reason: redact(`new_page（重试一次）：${firstError} / ${opened.text}`) };
+          }
+        }
         // 页面行的格式是 `<id>: <标题> (<url>) [selected]`；new_page 没带页面清单时再问一次 list_pages。
         let pageId = pageIdOf(opened.text, fixture.url);
         if (pageId === null) {

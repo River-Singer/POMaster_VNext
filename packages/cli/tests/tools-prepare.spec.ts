@@ -4,7 +4,7 @@
 // 宿主缺失；Node 不满足；init --full-auto 只加警告不改 init 结局。
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CommandOutcome } from "../src/envelope.js";
@@ -102,7 +102,7 @@ function snapshot(dir: string): Map<string, string> {
     for (const name of readdirSync(current).sort()) {
       const full = join(current, name);
       if (statSync(full).isDirectory()) walk(full);
-      else out.set(full.slice(dir.length), readFileSync(full, "utf8"));
+      else out.set(full.slice(dir.length).split(sep).join("/"), readFileSync(full, "utf8"));
     }
   };
   walk(dir);
@@ -188,6 +188,14 @@ describe("tools prepare · 失败与恢复", () => {
     const outcome = await prepare({ calls: [] });
     expect(outcome.errors.map((error) => error.code)).toContain("TOOLCHAIN_BROWSER_SMOKE_FAILED");
     expect(outcome.result?.receipt.servers["chrome-devtools"]).toMatchObject({ protocol: "pass", browser: "fail" });
+  });
+
+  it("new_page 偶发 net::ERR_ABORTED：重试一次就过，不判失败", async () => {
+    await prepare({ calls: [] });
+    writeFileSync(join(root(), "fake-behavior.json"), JSON.stringify({ fail: "abort-once" }));
+    const outcome = await prepare({ calls: [] });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result?.receipt.servers["chrome-devtools"]?.browser).toBe("pass");
   });
 
   it("工具清单缺了预期工具：TOOLCHAIN_PROTOCOL_FAILED，浏览器层不跑", async () => {
