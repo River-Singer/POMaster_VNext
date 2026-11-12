@@ -333,6 +333,7 @@ import { runSpecLint } from "./spec-writing.js";
 import { runStandards } from "./standards-map.js";
 import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
 import { runIntakeChanges, runIntakeCheck, runIntakePending, runIntakeRead, runIntakeResolve, runIntakeStatus } from "./intake.js";
+import { runIntakeDraft } from "./intake-draft.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -1088,6 +1089,7 @@ export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-updat
 export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
 export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
 export { runIntakeRead, runIntakeStatus, runIntakePending, runIntakeResolve, runIntakeChanges, runIntakeCheck } from "./intake.js";
+export { runIntakeDraft, INTAKE_DRAFT_SCHEMA } from "./intake-draft.js";
 export { parseHtml, outlineOf, factsOf, specFactsOf, questionsOf, diffFacts, extractPrototype, outlineMarkdown } from "./prototype-extract.js";
 export type {
   DesignInputs,
@@ -3362,6 +3364,15 @@ export function createProgram(
         ...(opts.to !== undefined ? { to: Number.parseInt(String(opts.to), 10) } : {}),
       });
       record({ command: "intake changes", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("draft")
+    .description("从最新修订生成可签草案（交给启动确认单）：业务草案（用途 / 角色 / 场景 / 按权限、计算、审批……打标的关键规则）、领域草案（domain-spec 形状，脚手架校验器校验）、歧义清单、非功能线索（没写的记未定）、技术线索与脚手架支持面对照。只写 <工作区>/draft/，修订与判读都没变时 NO_CHANGE。警告：INTAKE_DRAFT_CATALOG_UNAVAILABLE")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakeDraft(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "intake draft", outcome, asJson: command.opts().json === true });
     });
   intake
     .command("check")

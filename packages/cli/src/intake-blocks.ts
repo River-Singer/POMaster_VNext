@@ -515,19 +515,35 @@ export function readMarkdownDoc(rel: string, markdown: string, options: { readon
 
 /** YAML 项目约定：逐行读出技术线索与规则句；其余行 pending。 */
 export function readYamlProjectDoc(rel: string, text: string): DocReading {
-  const markdown = text
-    .split(/\r?\n/)
-    .map((line) => {
-      const key = /^(\s*)([^\s:#-][^:#]*?)\s*:\s*[|>]?\s*$/.exec(line);
-      if (key !== null) return `${"#".repeat(Math.min(6, 2 + Math.floor((key[1] ?? "").length / 2)))} ${key[2] ?? ""}`;
-      const pair = /^\s*-?\s*([^:：#]{1,20})\s*[:：]\s*(.+)$/.exec(line);
-      if (pair !== null && TECH_KEY.test(pair[1]?.trim() ?? "")) return `- ${pair[1]?.trim() ?? ""}: ${pair[2] ?? ""}`;
+  // 按缩进维护键的作用域：缩进回到父键那一层，就离开了子键（「领域:」不属于上面的「技术栈:」）
+  const stack: Array<{ indent: number; key: string }> = [];
+  const out: string[] = [];
+  let emittedDepth = 0;
+  const heading = () => {
+    const top = stack.at(-1);
+    out.push(`${"#".repeat(Math.min(6, 1 + stack.length))} ${top?.key ?? "project"}`);
+    emittedDepth = stack.length;
+  };
+  for (const line of text.split(/\r?\n/)) {
+    if (line.trim() === "" || line.trim().startsWith("#")) continue;
+    const indent = (/^(\s*)/.exec(line)?.[1] ?? "").length;
+    const popped = stack.length;
+    while ((stack.at(-1)?.indent ?? -1) >= indent) stack.pop();
+    if (stack.length !== popped || stack.length !== emittedDepth) heading();
+    const key = /^\s*([^\s:#-][^:#]*?)\s*:\s*[|>]?\s*$/.exec(line);
+    if (key !== null) {
+      stack.push({ indent, key: key[1] ?? "" });
+      heading();
+      continue;
+    }
+    const pair = /^\s*-?\s*([^:：#]{1,20})\s*[:：]\s*(.+)$/.exec(line);
+    if (pair !== null && TECH_KEY.test(pair[1]?.trim() ?? "")) out.push(`- ${pair[1]?.trim() ?? ""}: ${pair[2] ?? ""}`);
+    else {
       const item = /^\s*-\s+(.*)$/.exec(line);
-      if (item !== null) return `- ${item[1] ?? ""}`;
-      return line.trim() === "" || line.trim().startsWith("#") ? "" : line.trim();
-    })
-    .join("\n\n");
-  return readMarkdownDoc(rel, `# project\n${markdown}`, { module: "project", source: `project:${slugKey((rel.split("/").at(-1) ?? rel).replace(/\.[^.]+$/, ""))}` });
+      out.push(item !== null ? `- ${item[1] ?? ""}` : line.trim());
+    }
+  }
+  return readMarkdownDoc(rel, `# project\n\n${out.join("\n\n")}`, { module: "project", source: `project:${slugKey((rel.split("/").at(-1) ?? rel).replace(/\.[^.]+$/, ""))}` });
 }
 
 export interface ChangeEvidence {

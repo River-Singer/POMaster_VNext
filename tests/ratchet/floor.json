@@ -992,6 +992,10 @@
       "packages/cli/tests/tools-prepare.spec.ts": {
         "layer": "L2",
         "note": "浏览器工具链 · 命令全链（INIT-C）：注入执行器替代 npm / 浏览器下载 / runner，MCP 服务经生成的启动器真进程起——首跑每层真跑 machine_ready 而 full_auto_ready 仍 false；重跑复用且宿主配置字节不动；安装失败凭据抹除、重跑恢复；单宿主同名异配零写入；握手 / 工具清单 / 浏览器 smoke / runner 各自失败归因；Linux 沙箱重试并记进清单；锁忙与陈旧锁接管；预演零写入；宿主缺失与认出；Node 不满足；init --full-auto 只加警告。"
+      },
+      "packages/cli/tests/intake-draft.spec.ts": {
+        "layer": "L2",
+        "note": "需求读取 · 草案：合成材料 v1 → v2 读入后出业务草案（规则多标签打标）、领域草案（domain-spec 形状，脚手架校验器校验，缺省值写明）、歧义清单（变更提议问范围、spec 与原型差异、命名按实体汇总）、非功能线索（对口单位才收，没写记未定）、技术线索（对照脚手架支持面）；修订与判读不变 NO_CHANGE 字节零写，判读变了重生成；catalog 不可用仍出草案并警告；无工作区报错。"
       }
     },
     "notes": {
