@@ -4,7 +4,7 @@
 // 宿主缺失；Node 不满足；init --full-auto 只加警告不改 init 结局。
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CommandOutcome } from "../src/envelope.js";
@@ -102,7 +102,7 @@ function snapshot(dir: string): Map<string, string> {
     for (const name of readdirSync(current).sort()) {
       const full = join(current, name);
       if (statSync(full).isDirectory()) walk(full);
-      else out.set(full.slice(dir.length), readFileSync(full, "utf8"));
+      else out.set(full.slice(dir.length).split(sep).join("/"), readFileSync(full, "utf8"));
     }
   };
   walk(dir);
@@ -188,6 +188,14 @@ describe("tools prepare · 失败与恢复", () => {
     const outcome = await prepare({ calls: [] });
     expect(outcome.errors.map((error) => error.code)).toContain("TOOLCHAIN_BROWSER_SMOKE_FAILED");
     expect(outcome.result?.receipt.servers["chrome-devtools"]).toMatchObject({ protocol: "pass", browser: "fail" });
+  });
+
+  it("new_page 偶发 net::ERR_ABORTED：重试一次就过，不判失败", async () => {
+    await prepare({ calls: [] });
+    writeFileSync(join(root(), "fake-behavior.json"), JSON.stringify({ fail: "abort-once" }));
+    const outcome = await prepare({ calls: [] });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result?.receipt.servers["chrome-devtools"]?.browser).toBe("pass");
   });
 
   it("工具清单缺了预期工具：TOOLCHAIN_PROTOCOL_FAILED，浏览器层不跑", async () => {
@@ -281,19 +289,87 @@ describe("tools prepare · 前置与预演", () => {
   });
 });
 
+describe("tools prepare --check（只核验）", () => {
+  it("什么都没装：每样记 missing、给推荐命令；除回执外零写入，只起了 node -v", async () => {
+    const state: FakeState = { calls: [] };
+    const outcome = await runToolsPrepare(project, { hosts: ["claude", "codex"], home, run: fakeRun(state), check: true });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]).toMatchObject({ code: "TOOLCHAIN_NOT_INSTALLED" });
+    expect(outcome.errors[0]?.hint).toContain("pomaster tools prepare --host claude,codex");
+    expect(outcome.result?.check).toBe(true);
+    const receipt = outcome.result?.receipt;
+    expect(receipt?.steps.filter((entry) => entry.status === "missing").map((entry) => entry.step)).toEqual(["packages", "browsers", "launcher", "hosts"]);
+    expect(receipt?.hosts).toMatchObject({ claude: { config: "missing" }, codex: { config: "missing" } });
+    expect(receipt?.blockers[0]).toMatchObject({ who: "human" });
+    expect(state.calls).toEqual(["node -v"]);
+    expect(readdirSync(home)).toEqual([]);
+    expect([...snapshot(project).keys()]).toEqual([`/${TOOLCHAIN_RECEIPT_RELATIVE}`]);
+  });
+
+  it("装好之后核验：全部复用、照样真跑握手与浏览器 smoke；不碰包、启动器和宿主配置", async () => {
+    await prepare({ calls: [] });
+    const before = snapshot(project);
+    const manifest = readFileSync(join(root(), "manifest.json"), "utf8");
+    const state: FakeState = { calls: [] };
+    const outcome = await runToolsPrepare(project, { hosts: ["claude", "codex"], home, run: fakeRun(state), check: true, mcpTimeoutMs: 10_000 });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result?.receipt.machine_ready).toBe(true);
+    expect(outcome.result?.receipt.steps.map((entry) => [entry.step, entry.status])).toEqual([
+      ["node", "done"], ["packages", "reused"], ["browsers", "reused"], ["launcher", "reused"], ["hosts", "reused"], ["protocol", "done"], ["browser_smoke", "done"], ["runner", "done"],
+    ]);
+    expect(state.calls.some((call) => call.startsWith("npm") || call.includes(" install"))).toBe(false);
+    for (const [path, text] of before) if (path !== `/${TOOLCHAIN_RECEIPT_RELATIVE}`) expect(snapshot(project).get(path)).toBe(text);
+    expect(readFileSync(join(root(), "manifest.json"), "utf8")).toBe(manifest);
+  });
+
+  it("宿主条目被人删了：记 missing、不替人加回；Linux 沙箱问题只报不改（不写托管清单）", async () => {
+    await prepare({ calls: [] }, { hosts: ["claude"] });
+    writeFileSync(join(project, ".mcp.json"), "{}\n");
+    const removed = await runToolsPrepare(project, { hosts: ["claude"], home, run: fakeRun({ calls: [] }), check: true, mcpTimeoutMs: 10_000 });
+    expect(removed.result?.receipt.hosts["claude"]?.config).toBe("missing");
+    expect(removed.result?.receipt.machine_ready).toBe(false);
+    expect(readFileSync(join(project, ".mcp.json"), "utf8")).toBe("{}\n");
+    writeFileSync(join(root(), "fake-behavior.json"), JSON.stringify({ fail: "crash" }));
+    const manifest = readFileSync(join(root(), "manifest.json"), "utf8");
+    const sandboxed = await runToolsPrepare(project, { hosts: ["claude"], home, run: fakeRun({ calls: [] }), check: true, mcpTimeoutMs: 10_000, platform: "linux", probeSandbox: () => "kernel.apparmor_restrict_unprivileged_userns = 1" });
+    expect(sandboxed.result?.receipt.servers["chrome-devtools"]).toMatchObject({ browser: "fail", sandbox: "enabled" });
+    expect(readFileSync(join(root(), "manifest.json"), "utf8")).toBe(manifest);
+    expect(sandboxed.errors.find((error) => error.code === "TOOLCHAIN_BROWSER_SMOKE_FAILED")?.hint).toContain("pomaster tools prepare");
+  });
+
+  it("预演把锁定版本和每步打算（新装 / 复用）写在屏幕上", async () => {
+    const fresh = await prepare({ calls: [] }, { dryRun: true });
+    const text = fresh.human.join("\n");
+    expect(text).toContain(`chrome-devtools-mcp ${TOOLCHAIN_LOCK.packages["chrome-devtools-mcp"]}`);
+    expect(text).toContain("packages：将安装到");
+    expect(text).toContain("browsers：将下载 Chromium");
+    await prepare({ calls: [] });
+    const again = (await prepare({ calls: [] }, { dryRun: true })).human.join("\n");
+    expect(again).toContain("packages：已装，将复用");
+    expect(again).toContain("browsers：已装，将复用");
+  });
+});
+
 describe("init --full-auto", () => {
   const initOutcome = (ok: boolean): CommandOutcome<Record<string, unknown>> => ({ ok, result: { change: "CREATED" }, warnings: [], errors: ok ? [] : [{ code: "X", message: "x", hint: "x" }], human: ["init: CREATED"] });
 
-  it("init 成功：对选中的 claude / codex 跑 prepare，结果挂在 toolchain 上；未就绪只加警告，不改 init 结局", async () => {
-    const ready = await attachToolchain(project, initOutcome(true), ["claude", "cursor"], { home, run: fakeRun({ calls: [] }), mcpTimeoutMs: 10_000 });
-    expect(ready.ok).toBe(true);
-    expect(ready.warnings).toEqual([]);
-    expect((ready.result as { toolchain: { machine_ready: boolean; hosts: object } }).toolchain).toMatchObject({ machine_ready: true });
-    expect(Object.keys((ready.result as { toolchain: { hosts: object } }).toolchain.hosts)).toEqual(["claude"]);
-    const notReady = await attachToolchain(project, initOutcome(true), ["claude"], { home, run: fakeRun({ calls: [], runnerFail: true }), mcpTimeoutMs: 10_000 });
-    expect(notReady.ok).toBe(true);
-    expect(notReady.warnings.map((warning) => warning.code)).toEqual(["TOOLCHAIN_NOT_READY"]);
-    expect(notReady.human.join("\n")).toContain("本机工具链未就绪");
+  it("只推荐、不代装：init 成功后只核验，没装就给推荐命令、什么都不装；人 / agent 执行 prepare 之后再 init 就核验通过", async () => {
+    const state: FakeState = { calls: [] };
+    const fresh = await attachToolchain(project, initOutcome(true), ["claude", "cursor"], { home, run: fakeRun(state), mcpTimeoutMs: 10_000 });
+    expect(fresh.ok).toBe(true); // init 自己的结局不变
+    expect(fresh.warnings.map((warning) => warning.code)).toEqual(["TOOLCHAIN_NOT_READY"]);
+    expect(fresh.warnings[0]?.message).toContain("TOOLCHAIN_NOT_INSTALLED");
+    expect(fresh.warnings[0]?.hint).toContain("pomaster tools prepare --host claude");
+    expect(state.calls).toEqual(["node -v"]); // 没装包、没下浏览器
+    expect(existsSync(join(project, ".mcp.json"))).toBe(false);
+    expect(existsSync(join(project, TOOLCHAIN_LAUNCHER_RELATIVE))).toBe(false);
+    expect(readdirSync(home)).toEqual([]);
+    expect(Object.keys((fresh.result as { toolchain: { hosts: object } }).toolchain.hosts)).toEqual(["claude"]);
+    expect(fresh.human.join("\n")).toContain("只核验，未安装任何东西");
+    await prepare({ calls: [] }, { hosts: ["claude"] }); // 人或 agent 采纳推荐
+    const after = await attachToolchain(project, initOutcome(true), ["claude"], { home, run: fakeRun({ calls: [] }), mcpTimeoutMs: 10_000 });
+    expect(after.warnings).toEqual([]);
+    expect((after.result as { toolchain: { machine_ready: boolean } }).toolchain.machine_ready).toBe(true);
   });
 
   it("init 失败不跑 prepare；选的平台里没有 claude / codex 时警告而不是猜", async () => {

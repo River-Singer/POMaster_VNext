@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TOOLCHAIN_LOCK, lockIdOf, managedPackageJson, satisfiesRange } from "../src/toolchain-lock.js";
 import { detectHosts, mergeClaudeMcpJson, mergeCodexToml } from "../src/toolchain-hosts.js";
 import { handshake, startMcp } from "../src/toolchain-mcp.js";
-import { linuxSandboxBlocker, pageIdOf, redact } from "../src/toolchain.js";
+import { linuxSandboxBlocker, pageIdOf, quoteForCmd, redact } from "../src/toolchain.js";
 
 const FAKE_MCP = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "toolchain", "fake-mcp.mjs");
 const entries = [
@@ -54,6 +54,13 @@ describe("toolchain lock", () => {
     expect(linuxSandboxBlocker(kernel({ "/proc/sys/kernel/unprivileged_userns_clone": "0" }))).toContain("userns_clone");
     expect(linuxSandboxBlocker(kernel({ "/proc/sys/kernel/apparmor_restrict_unprivileged_userns": "0" }))).toBeNull();
     expect(linuxSandboxBlocker(kernel({}))).toBeNull();
+  });
+
+  it("Windows 命令行引号：普通参数原样，含空格或元字符才加引号，内部引号翻倍（不再用 shell + 参数数组，免 DEP0190）", () => {
+    expect(quoteForCmd("--ignore-scripts")).toBe("--ignore-scripts");
+    expect(quoteForCmd("C:\\Program Files\\nodejs")).toBe('"C:\\Program Files\\nodejs"');
+    expect(quoteForCmd('a"b')).toBe('"a""b"');
+    expect(quoteForCmd("a&b")).toBe('"a&b"');
   });
 
   it("输出里的凭据抹掉、过长截尾", () => {
