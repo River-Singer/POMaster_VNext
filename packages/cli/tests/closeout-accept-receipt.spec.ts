@@ -37,6 +37,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore, sha256OfCanonical } from "@pomaster/kernel";
 import { acceptRevisionFingerprint, runCloseout, runRecordRequalify, runRecordVerification, type CloseoutResult } from "@pomaster/cli";
+import { acceptStatement, requireHumanSignoff, runTrustEnroll, runTrustRequest, statementSubject, writeAcceptSidecar } from "../src/trust.js";
+import { makeKey, opensshPrivateKeyText, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 
 let root: string;
 
@@ -560,5 +562,68 @@ describe("record requalify：已判定 claim 走后继 CLM（V2-8；VX-WRITE-01 
     expect(second.errors).toEqual([]);
     expect(second.result).toMatchObject({ successor: "CLM-0003", advance: "ADV-0002" });
     expect(acceptanceClaim()).toBe("CLM-0003");
+  });
+});
+
+describe("可信签发复核（AP-0a / D-2）：登记签名人后，覆盖成果的 ACCEPT 要有仍成立的签发", () => {
+  const noAgent = { listAgentKeys: () => [] as string[] };
+  function enroll() {
+    const key = makeKey("ssh-ed25519");
+    const keyDir = mkdtempSync(join(tmpdir(), "pomaster-closeout-keys-"));
+    writeFileSync(join(keyDir, "owner.pub"), `${key.line}\n`);
+    writeFileSync(join(keyDir, "owner"), opensshPrivateKeyText("aes256-ctr"));
+    expect(runTrustEnroll(root, { key: join(keyDir, "owner.pub"), principal: "owner", private: join(keyDir, "owner") }, noAgent).ok).toBe(true);
+    rmSync(keyDir, { recursive: true, force: true });
+    return key;
+  }
+  function signAccept(key: ReturnType<typeof makeKey>, padId: string, decisionId: string, binding: { task_ref: string; revision_fingerprint: string }) {
+    const subject = statementSubject(acceptStatement(padId, decisionId, binding));
+    const id = (runTrustRequest(root, { kind: "accept", ref: subject.ref, sha256: subject.sha256 }, noAgent).result as { id: string }).id;
+    const path = join(root, ".pomaster", "trust", "requests", `${id}.json`);
+    writeFileSync(`${path}.sig`, signSshsig(key, readFileSync(path)));
+    const proof = requireHumanSignoff(root, { kind: "accept", ...subject, by: "test", consumedBy: "brainstorm decide", signoff: id }, noAgent);
+    if (!proof.ok) throw new Error(proof.error.message);
+    writeAcceptSidecar(root, padId, decisionId, binding, proof.record);
+    return id;
+  }
+
+  it("登记后，没有签发记录的成果 ACCEPT 不算：CLOSEOUT_ACCEPT_UNSIGNED，零写入", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    enroll();
+    seedDecisionGraph("idea-unsigned", [{ decisionId: "DECISION.SIGNED_SCOPE", answer: "ACCEPT", outcomeBinding: { task_ref: "TASK.T0001", revision_fingerprint: taskBodyFingerprint() } }]);
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors.map((error) => error.code)).toEqual(["CLOSEOUT_ACCEPT_UNSIGNED"]);
+    expect(outcome.errors[0]?.hint).toContain("pomaster trust request accept --ref");
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("签发成立 → 放行；签名文件被换掉 → 不算", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    const key = enroll();
+    const binding = { task_ref: "TASK.T0001", revision_fingerprint: taskBodyFingerprint() };
+    seedDecisionGraph("idea-signed", [{ decisionId: "DECISION.SIGNED_SCOPE", answer: "ACCEPT", outcomeBinding: binding }]);
+    const id = signAccept(key, "idea-signed", "DECISION.SIGNED_SCOPE", binding);
+    const sigPath = join(root, ".pomaster", "trust", "requests", `${id}.json.sig`);
+    const genuine = readFileSync(sigPath, "utf8");
+    writeFileSync(sigPath, signSshsig(makeKey("ssh-ed25519"), readFileSync(join(root, ".pomaster", "trust", "requests", `${id}.json`))));
+    const forged = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(forged.errors.map((error) => error.code)).toEqual(["CLOSEOUT_ACCEPT_UNSIGNED"]);
+    writeFileSync(sigPath, genuine);
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+
+  it("没登记签名人：照旧（self_attested），既有回执语义不变", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedDecisionGraph("idea-legacy", [{ decisionId: "DECISION.OK_SCOPE", answer: "ACCEPT", outcomeBinding: { task_ref: "TASK.T0001" } }]);
+    expect((await runCloseout(root, { taskId: "TASK.T0001" })).ok).toBe(true);
   });
 });

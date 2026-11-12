@@ -364,6 +364,7 @@ import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
+import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
@@ -1387,6 +1388,8 @@ export {
   runToolsValidate,
 } from "./tools.js";
 export { packageRunner, runToolsInit } from "./tools-init.js";
+export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, requireHumanSignoff, loadRegistry, SIGNOFF_KINDS } from "./trust.js";
+export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
 export type { ToolsInitInput, ToolsInitResult } from "./tools-init.js";
@@ -1837,11 +1840,13 @@ export function createProgram(
     .description("human Owner 确认识别报告；确认成功后才编译并持久化架构治理 profile")
     .argument("<task-id>", "已提交报告的项目识别 TASK.*")
     .requiredOption("--actor <human:name>", "Owner 身份；只接受 human:<name>")
+    .option("--signoff <SO-id>", "可信签发（AP-0a）：项目登记了签名人后必填——Owner 用 SSH 私钥签过的签发请求编号（被拒时的提示里有确切的 pomaster trust request 命令）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (taskId: string, opts, command) => {
       const outcome = await runProjectIdentificationConfirm(resolveDir(command), {
         taskId,
         actor: opts.actor as string,
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
       });
       record({ command: "project-identification confirm", outcome, asJson: command.opts().json === true });
     });
@@ -1935,13 +1940,15 @@ export function createProgram(
     .argument("<target>", "确认目标（如 baseline/backend/stack.yaml）")
     .option("--not-applicable", "退役种类：对本项目不适用（必给）")
     .requiredOption("--reason <text>", "为什么不适用（非占位）")
-    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .requiredOption("--by <human:owner>", "Owner 身份（只接受 human:；登记了签名人后还要 --signoff）")
+    .option("--signoff <SO-id>", "可信签发（AP-0a）：项目登记了签名人后必填——Owner 用 SSH 私钥签过的签发请求编号（被拒时的提示里有确切的 pomaster trust request 命令）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (target: string, opts, command) => {
       const outcome = await runBaselineRetire(resolveDir(command), {
         target,
         reason: opts.reason as string,
         by: opts.by as string,
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
         ...(opts.notApplicable === true ? { notApplicable: true } : {}),
       });
       record({ command: "baseline retire", outcome, asJson: command.opts().json === true });
@@ -1954,10 +1961,16 @@ export function createProgram(
     )
     .argument("<target>", "已退役的确认目标")
     .requiredOption("--reason <text>", "为什么重新适用（非占位）")
-    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .requiredOption("--by <human:owner>", "Owner 身份（只接受 human:；登记了签名人后还要 --signoff）")
+    .option("--signoff <SO-id>", "可信签发（AP-0a）：项目登记了签名人后必填——Owner 用 SSH 私钥签过的签发请求编号（被拒时的提示里有确切的 pomaster trust request 命令）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (target: string, opts, command) => {
-      const outcome = await runBaselineUnretire(resolveDir(command), { target, reason: opts.reason as string, by: opts.by as string });
+      const outcome = await runBaselineUnretire(resolveDir(command), {
+        target,
+        reason: opts.reason as string,
+        by: opts.by as string,
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
+      });
       record({ command: "baseline unretire", outcome, asJson: command.opts().json === true });
     });
 
@@ -3028,13 +3041,15 @@ export function createProgram(
     .description(
       `领域规格确认（S1-2，harness 约束 ①）：校验 .pomaster/scaffold/domain-spec.yaml 后写确认记录（归一化规格的语义摘要 + 原始字节摘要 + at_seq + 确认人，history 只追加）并追加 journal SCAFFOLD_SPEC_CONFIRMED。首次确认不需要通道；已确认且语义未变 → NO_CHANGE 零写入（只改格式 / 注释不算漂移）；确认后语义变化 → 必须 --change <CHANGE.*>（在册、change_object、PROPOSED | CURRENT），没有手改声明通道。错误码：SCAFFOLD_SPEC_MISSING / SCAFFOLD_SPEC_INVALID / SCAFFOLD_RECONFIRM_REQUIRES_CHANGE / SCAFFOLD_CHANGE_NOT_ACTIVE / OBJECT_NOT_FOUND / SCHEMA_INVALID（--by 非 human:、无可授权变更时携 --change）/ NOT_INITIALIZED`,
     )
-    .requiredOption("--by <human:owner>", "Owner 身份（V5-4 前只接受 human:）")
+    .requiredOption("--by <human:owner>", "Owner 身份（只接受 human:；登记了签名人后还要 --signoff）")
+    .option("--signoff <SO-id>", "可信签发（AP-0a）：项目登记了签名人后必填——Owner 用 SSH 私钥签过的签发请求编号（被拒时的提示里有确切的 pomaster trust request 命令）")
     .option("--change <change-id>", "治理通道：确认后规格语义变化时必携的活性 CHANGE.*")
     .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runScaffoldConfirm(resolveDir(command), {
         by: opts.by as string,
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
         ...(opts.change !== undefined ? { change: opts.change as string } : {}),
         ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
       });
@@ -3569,6 +3584,7 @@ export function createProgram(
     .option("--outcome-task <id>", "SP-W1-a 成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的覆盖判定载体；只随 --answer）")
     .option("--outcome-change <id>", "SP-W1-a 成果绑定 change_ref（间绑 task payload.implements_change；只随 --answer）")
     .option("--outcome-revision <current|sha256:…>", "SP-W1-a 消费端对账指纹：current = 绑定 task 当前正文的语义修订指纹（V2-9，状态迁移 / 证据挂载不使回执失效）；或显式 sha256:<64hex>（与对象行 body_sha256 全等）——内容漂移后旧 ACCEPT 失效")
+    .option("--signoff <SO-id>", "可信签发（AP-0a）：项目登记了签名人后，带成果绑定的 --accept 必填（且须 --outcome-revision）；被拒时的提示里有确切的 pomaster trust request 命令")
     .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
     .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
@@ -3597,6 +3613,7 @@ export function createProgram(
         ...(opts.outcomeRevision !== undefined
           ? { outcomeRevision: opts.outcomeRevision as string }
           : {}),
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
         ready: opts.ready === true,
         ...(opts.goal !== undefined ? { goal: opts.goal as string } : {}),
         ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
@@ -3987,6 +4004,74 @@ export function createProgram(
         ]),
         asJson: command.optsWithGlobals().json === true,
       });
+    });
+
+  // —— 可信人工签发（AP-0a / D-2；Owner 2026-11-12 定 SSH 签名）——
+  const trust = program
+    .command("trust")
+    .description(
+      "可信人工签发（AP-0a）：登记 Owner 的 SSH 公钥后，人工点（scaffold confirm / baseline retire|unretire / project-identification confirm / 带成果绑定的 brainstorm decide --accept，以及之后的启动确认与终审）都要一份由 Owner 用私钥签过的签发请求：内容摘要绑定、一次性、有效期。验签不需要本机装 OpenSSH；签名由人在自己的终端用 ssh-keygen -Y sign -n pomaster 完成。没有登记签名人时人工点照旧，并如实记 self_attested",
+    );
+  trust
+    .command("enroll")
+    .description("登记签名人：第一个是首次信任（请核对指纹就是你的密钥）；之后每加一人都要已登记的人签发 trust-enroll 请求。--private 只用来检查私钥有没有口令，不读取、不保存私钥内容")
+    .requiredOption("--key <public-key-file>", "SSH 公钥文件（.pub）")
+    .requiredOption("--principal <name>", "签名人名字（字母、数字和 . _ @ -）")
+    .option("--private <private-key-file>", "对应私钥文件：只检查有没有口令（决定保障等级）")
+    .option("--signoff <SO-id>", "已登记的人签过的 trust-enroll 签发（加第二个及以后的签名人时必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runTrustEnroll(resolveDir(command), {
+        key: opts.key as string,
+        principal: opts.principal as string,
+        ...(opts.private !== undefined ? { private: opts.private as string } : {}),
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
+      });
+      record({ command: "trust enroll", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  trust
+    .command("request")
+    .description("创建签发请求（写明确认什么、内容摘要、有效期），并打印让人签名的命令。人工点被拒时的提示里有确切的这条命令")
+    .argument("<kind>", "kickoff | accept | scaffold-confirm | baseline-retire | project-identification | trust-enroll")
+    .option("--subject <path>", "要确认的项目内文件（摘要按文件字节算）")
+    .option("--ref <ref>", "不是文件时的确认陈述（与 --sha256 一起给）")
+    .option("--sha256 <hex>", "陈述的 sha256（与 --ref 一起给）")
+    .option("--ttl-minutes <n>", "有效期分钟数（缺省 1440，最长 10080）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((kind: string, opts, command) => {
+      const outcome = runTrustRequest(resolveDir(command), {
+        kind,
+        ...(opts.subject !== undefined ? { subject: opts.subject as string } : {}),
+        ...(opts.ref !== undefined ? { ref: opts.ref as string } : {}),
+        ...(opts.sha256 !== undefined ? { sha256: opts.sha256 as string } : {}),
+        ...(opts.ttlMinutes !== undefined ? { ttlMinutes: Number(opts.ttlMinutes) } : {}),
+      });
+      record({ command: "trust request", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  trust
+    .command("sign")
+    .description("给签发请求签名（包一层 ssh-keygen -Y sign -n pomaster；由人在自己的终端运行，口令 / 触碰密钥都在这里完成——agent 不能替你签）")
+    .argument("<id>", "签发编号 SO-…")
+    .requiredOption("--key <private-key-file>", "你的 SSH 私钥文件")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((id: string, opts, command) => {
+      const outcome = runTrustSign(resolveDir(command), { id, key: opts.key as string });
+      record({ command: "trust sign", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  trust
+    .command("verify")
+    .description("只读核验一份签发：签名人、保障等级、是否已被使用、是否过期")
+    .argument("<id>", "签发编号 SO-…")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((id: string, _opts, command) => {
+      record({ command: "trust verify", outcome: runTrustVerify(resolveDir(command), id), asJson: command.optsWithGlobals().json === true });
+    });
+  trust
+    .command("status")
+    .description("签发模式（未登记 = 自报 self_attested / 已登记 = 必须签发）、签名人与指纹、私钥保护与 ssh-agent 暴露、保障等级、未使用的请求；QA 隔离状态")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((_opts, command) => {
+      record({ command: "trust status", outcome: runTrustStatus(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
     });
 
   // —— ToolBinding 统一注册面命令（W1-R1-4 · 09-10 PRD §17 + integration-designs.md
