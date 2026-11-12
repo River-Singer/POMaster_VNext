@@ -9,6 +9,8 @@
  *   业务 package.json 不碰；
  * - 项目里只写启动器 `.pomaster/tools/mcp-launch.mjs`（只含 lock id，无本机路径）、选中宿主的 MCP 条目
  *   和回执 `.pomaster/tools/toolchain.json`；
+ * - 只推荐、不代装（Owner 2026-11-12）：`init --full-auto` 与 `tools prepare --check` 只核验、列推荐命令，
+ *   除回执外不写文件；真正安装只在人或 agent 主动执行 `tools prepare` 时发生；
  * - 每次运行都重新核验（握手、tools/list、隔离浏览器 smoke、runner smoke）；装过的兼容件复用；
  * - 失败保留已完成步骤，下次重跑从缺的那步继续；machine_ready 只在每层都过时为真；
  *   full_auto_ready 要等 AP-3 观察到宿主真实调用，本命令永远不把它置真。
@@ -50,6 +52,8 @@ export type ToolchainRun = (command: string, args: readonly string[], options: R
 export interface ToolchainPrepareOptions {
   readonly hosts?: readonly string[];
   readonly dryRun?: boolean;
+  /** 只核验已装好的部分：不装包、不下浏览器、不写启动器 / 宿主配置 / 托管清单；只写回执。 */
+  readonly check?: boolean;
   /** 托管目录根；缺省 POMASTER_TOOLCHAIN_HOME 或 ~/.pomaster/toolchain。 */
   readonly home?: string;
   readonly run?: ToolchainRun;
@@ -63,7 +67,7 @@ export interface ToolchainPrepareOptions {
 }
 
 export type LayerStatus = "pass" | "fail" | "not_run";
-export type StepStatus = "reused" | "done" | "failed" | "skipped" | "planned";
+export type StepStatus = "reused" | "done" | "failed" | "skipped" | "planned" | "missing";
 
 export interface ToolchainStep {
   readonly step: string;
@@ -85,7 +89,7 @@ export interface ServerReceipt {
 
 export interface HostReceipt {
   readonly file: string;
-  readonly config: "merged" | "unchanged" | "conflict" | "planned";
+  readonly config: "merged" | "unchanged" | "conflict" | "planned" | "missing";
   readonly conflicts: readonly string[];
   readonly trust: HostMergeResult["trust"];
   readonly observed: "unknown";
@@ -110,6 +114,7 @@ export interface ToolchainReceipt {
 
 export interface ToolchainPrepareResult {
   readonly dry_run: boolean;
+  readonly check: boolean;
   readonly receipt: ToolchainReceipt;
 }
 
@@ -145,13 +150,22 @@ export function redact(text: string, keep = 1200): string {
   return cleaned.length > keep ? `…${cleaned.slice(-keep)}` : cleaned;
 }
 
-/** 缺省执行器：Windows 上 npm 是 .cmd，要 shell；参数里不含空格（路径都走 cwd）。 */
+/** cmd.exe 引号：含空白或元字符才加引号，内部双引号翻倍。 */
+export function quoteForCmd(arg: string): string {
+  return /[\s"&|<>^%]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg;
+}
+
+/**
+ * 缺省执行器。Windows 上 npm / node 走 PATH 解析要经 shell（npm 是 .cmd）；Node 24 起「shell + 参数数组」
+ * 会报 DEP0190，所以在这里自己拼成一条命令行再交给 shell（参数是固定的，逐个按 cmd 规则加引号）。
+ */
 export const defaultRun: ToolchainRun = (command, args, options) =>
   new Promise((resolve) => {
-    const child = spawn(command, [...args], {
+    const viaShell = process.platform === "win32" && command !== process.execPath;
+    const child = spawn(viaShell ? [command, ...args].map(quoteForCmd).join(" ") : command, viaShell ? [] : [...args], {
       cwd: options.cwd,
       env: options.env ?? process.env,
-      shell: process.platform === "win32" && command !== process.execPath,
+      shell: viaShell,
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -471,6 +485,9 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
   const now = options.now ?? (() => new Date());
   const platform = options.platform ?? process.platform;
   const dryRun = options.dryRun === true;
+  const check = options.check === true && !dryRun;
+  const hostList = hosts.join(",");
+  const recommend = `推荐：由人或 agent 执行 pomaster tools prepare --host ${hostList}（装进 ${displayPath(root)}，装完实测）`;
   const mcpTimeout = options.mcpTimeoutMs ?? 30_000;
   const steps: ToolchainStep[] = [];
   const blockers: Array<ToolchainReceipt["blockers"][number]> = [];
@@ -501,7 +518,7 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
 
   const lockPath = `${root}.lock`;
   let locked = false;
-  if (!dryRun && !failedSteps.has("node")) {
+  if (!dryRun && !check && !failedSteps.has("node")) {
     mkdirSync(home, { recursive: true });
     locked = acquireLock(lockPath, now);
     if (!locked) {
@@ -514,12 +531,14 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     }
   }
   try {
-    const canInstall = !dryRun && !failedSteps.has("node");
+    const canInstall = !dryRun && !check && !failedSteps.has("node");
     // —— 2 包（精确版本；--ignore-scripts；业务 package.json 不碰）——
     const pkgNames = Object.keys(lock.packages);
     const pkgsOk = () => pkgNames.every((pkg) => installedVersion(root, pkg) === (lock.packages as Record<string, string>)[pkg]);
     await step("packages", async () => {
-      if (!canInstall) return { status: dryRun ? "planned" : "skipped", ...(dryRun ? { reason: pkgsOk() ? "将复用" : `将安装到 ${displayPath(root)}` } : {}) };
+      if (dryRun) return { status: "planned", reason: pkgsOk() ? "已装，将复用" : `将安装到 ${displayPath(root)}` };
+      if (check) return pkgsOk() ? { status: "reused" } : { status: "missing", reason: "锁定版本的包还没装" };
+      if (!canInstall) return { status: "skipped" };
       if (pkgsOk()) return { status: "reused" };
       mkdirSync(root, { recursive: true });
       writeFileSync(join(root, "package.json"), managedPackageJson(lock), "utf8");
@@ -545,7 +564,17 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
       return path !== "" && existsSync(path) ? path : null;
     };
     const chromium = await step<string | null>("browsers", async () => {
-      if (!canInstall || failedSteps.has("packages")) return { status: dryRun ? "planned" : "skipped", value: null };
+      if (dryRun) {
+        const recorded = readJson(join(root, "manifest.json")) as { chromium?: unknown } | null;
+        const present = typeof recorded?.chromium === "string" && existsSync(join(root, recorded.chromium));
+        return { status: "planned", reason: present ? "已装，将复用" : "将下载 Chromium", value: null };
+      }
+      if (check) {
+        if (!pkgsOk()) return { status: "missing", reason: "包没装，浏览器也没有", value: null };
+        const existing = await resolveChromium();
+        return existing !== null ? { status: "reused", value: existing } : { status: "missing", reason: "Chromium 还没下载", value: null };
+      }
+      if (!canInstall || failedSteps.has("packages")) return { status: "skipped", value: null };
       const existing = await resolveChromium();
       if (existing !== null) return { status: "reused", value: existing };
       for (const copy of playwrightCoreCopies(root)) {
@@ -559,7 +588,7 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
       const installed = await resolveChromium();
       return installed === null ? { status: "failed", reason: "装完后仍找不到 Chromium 可执行文件", value: null } : { status: "done", value: installed };
     });
-    browsers = chromium !== null && chromium !== undefined ? { chromium: "pass" } : failedSteps.has("browsers") ? { chromium: "fail", reason: steps.at(-1)?.reason ?? "" } : { chromium: "not_run" };
+    browsers = chromium !== null && chromium !== undefined ? { chromium: "pass" } : failedSteps.has("browsers") || steps.at(-1)?.status === "missing" ? { chromium: "fail", reason: steps.at(-1)?.reason ?? "" } : { chromium: "not_run" };
     if (failedSteps.has("browsers")) blockers.push({ what: "Chromium 没装上", who: "pomaster", fix: "检查网络 / 代理后重跑；若报系统依赖缺失，由有管理员权限的人运行一次 playwright install-deps chromium" });
 
     // —— 4 托管清单 + 启动器（项目里只有 lock id，没有本机路径）——
@@ -590,6 +619,7 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     const launcherPath = join(rootDir, TOOLCHAIN_LAUNCHER_RELATIVE);
     await step("launcher", async () => {
       if (dryRun) return { status: "planned" };
+      if (check) return existsSync(launcherPath) && readFileSync(launcherPath, "utf8") === renderLauncher(lockId) ? { status: "reused" } : { status: "missing", reason: `项目里没有本锁的启动器 ${TOOLCHAIN_LAUNCHER_RELATIVE}` };
       if (chromium === null || chromium === undefined) return { status: "skipped" };
       writeManifest(sandbox, previous?.sandbox_reason);
       const text = renderLauncher(lockId);
@@ -604,10 +634,10 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     await step("hosts", async () => {
       const conflicts: string[] = [];
       for (const host of hosts) {
-        const merged = mergeHostConfig(rootDir, host, entries, `pomaster tools prepare（toolchain lock ${lockId}）：全 auto 浏览器工具链`, dryRun);
+        const merged = mergeHostConfig(rootDir, host, entries, `pomaster tools prepare（toolchain lock ${lockId}）：全 auto 浏览器工具链`, dryRun || check);
         hostReceipts[host] = {
           file: merged.file,
-          config: dryRun && merged.status === "merged" ? "planned" : merged.status,
+          config: merged.status !== "merged" ? merged.status : dryRun ? "planned" : check ? "missing" : "merged",
           conflicts: merged.conflicts,
           trust: merged.trust,
           observed: "unknown",
@@ -615,7 +645,12 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
         if (merged.status === "conflict") conflicts.push(`${host}（${merged.file}）：${merged.conflicts.join("；")}`);
       }
       if (dryRun) return { status: "planned" };
-      return conflicts.length > 0 ? { status: "failed", reason: conflicts.join("；") } : { status: "done" };
+      if (conflicts.length > 0) return { status: "failed", reason: conflicts.join("；") };
+      if (check) {
+        const absent = Object.entries(hostReceipts).filter(([, receipt]) => receipt.config === "missing").map(([host]) => host);
+        return absent.length > 0 ? { status: "missing", reason: `${absent.join("、")} 的配置里还没有这两个 MCP` } : { status: "reused" };
+      }
+      return { status: "done" };
     });
     for (const [host, receipt] of Object.entries(hostReceipts)) {
       if (receipt.config === "conflict") blockers.push({ what: `${host} 的 ${receipt.file} 里已有不同配置的同名条目`, who: "human", fix: `看过后删掉或改名那个条目，再重跑 pomaster tools prepare（不会替你覆盖）` });
@@ -627,7 +662,9 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     }
 
     // —— 6 实测（每次都跑；本地夹具 + 隔离临时 profile）——
-    const verifiable = !dryRun && chromium !== null && chromium !== undefined && existsSync(launcherPath);
+    // 启动器必须是本锁的（旧锁的启动器会去起旧版本，不能拿来证明本锁）。
+    const launcherCurrent = existsSync(launcherPath) && readFileSync(launcherPath, "utf8") === renderLauncher(lockId);
+    const verifiable = !dryRun && chromium !== null && chromium !== undefined && launcherCurrent;
     const fixture = verifiable ? await startFixture() : null;
     try {
       for (const def of lock.servers) {
@@ -640,7 +677,7 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
         let sandboxNote: "enabled" | "disabled" | undefined;
         if (def.name === "chrome-devtools") {
           sandboxNote = sandbox;
-          const blocker = platform === "linux" && result.protocol === "pass" && result.browser === "fail" && sandbox === "enabled"
+          const blocker = !check && platform === "linux" && result.protocol === "pass" && result.browser === "fail" && sandbox === "enabled"
             ? SANDBOX_SIGNATURE.test(result.reason ?? "") ? "Chrome 报沙箱不可用" : (options.probeSandbox ?? linuxSandboxBlocker)()
             : null;
           if (blocker !== null) {
@@ -674,7 +711,7 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
       if (protocolFailed) failedSteps.add("protocol");
       if (browserFailed) failedSteps.add("browser_smoke");
       for (const [name, server] of Object.entries(servers)) {
-        if (server.protocol === "fail" || server.browser === "fail") blockers.push({ what: `${name} MCP ${server.protocol === "fail" ? "握手 / 工具清单" : "浏览器 smoke"}没过：${server.reason ?? ""}`, who: "pomaster", fix: "看原因修复后重跑；装好的包和浏览器会复用" });
+        if (server.protocol === "fail" || server.browser === "fail") blockers.push({ what: `${name} MCP ${server.protocol === "fail" ? "握手 / 工具清单" : "浏览器 smoke"}没过：${server.reason ?? ""}`, who: "pomaster", fix: check ? `看原因修复；${recommend}` : "看原因修复后重跑；装好的包和浏览器会复用" });
       }
       // runner 单列：治理 smoke，不冒充业务验收
       await step("runner", async () => {
@@ -696,7 +733,11 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     Object.values(servers).every((server) => server.installed === "pass" && server.protocol === "pass" && server.browser === "pass") &&
     browsers.chromium === "pass" &&
     runner.status === "pass" &&
-    Object.values(hostReceipts).every((host) => host.config !== "conflict");
+    Object.values(hostReceipts).every((host) => host.config !== "conflict" && host.config !== "missing");
+  const missingSteps = steps.filter((entry) => entry.status === "missing");
+  if (missingSteps.length > 0) {
+    blockers.unshift({ what: `浏览器工具链没装全：${missingSteps.map((entry) => entry.reason ?? entry.step).join("；")}`, who: "human", fix: recommend });
+  }
   blockers.push({ what: "还没有观察到宿主会话真实加载并调用这两个 MCP（AP-3 负责）", who: "host", fix: "宿主批准 / 信任后由 autopilot 在会话里调用一次" });
   const receipt: ToolchainReceipt = {
     schema: TOOLCHAIN_RECEIPT_SCHEMA,
@@ -719,25 +760,32 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
     mkdirSync(dirname(receiptPath), { recursive: true });
     writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
   }
-  const human = renderHuman(receipt, dryRun);
-  const result: ToolchainPrepareResult = { dry_run: dryRun, receipt };
+  const human = renderHuman(receipt, dryRun, check);
+  const result: ToolchainPrepareResult = { dry_run: dryRun, check, receipt };
   if (dryRun || machineReady) return okOutcome("tools prepare", result, human);
-  const errors: CliError[] = [...failedSteps].map((name) => ({
+  const errors: CliError[] = [];
+  if (missingSteps.length > 0) errors.push({ code: "TOOLCHAIN_NOT_INSTALLED", message: missingSteps.map((entry) => entry.reason ?? entry.step).join("；"), hint: recommend });
+  errors.push(...[...failedSteps].map((name) => ({
     code: ERROR_FOR_STEP[name] ?? "TOOLCHAIN_NOT_READY",
     message: steps.find((entry) => entry.step === name)?.reason ?? `${name} 没有通过（见回执 servers / blockers）`,
-    hint: "修复后重跑 pomaster tools prepare；已完成的步骤会复用",
-  }));
+    hint: check ? recommend : "修复后重跑 pomaster tools prepare；已完成的步骤会复用",
+  })));
   if (errors.length === 0) errors.push({ code: "TOOLCHAIN_NOT_READY", message: "有层没有通过", hint: "看 blockers" });
   return failOutcome("tools prepare", result, errors, human);
 }
 
-const MARK: Readonly<Record<string, string>> = { pass: "✓", fail: "✗", not_run: "·", reused: "↺", done: "✓", failed: "✗", skipped: "·", planned: "…" };
+const MARK: Readonly<Record<string, string>> = { pass: "✓", fail: "✗", not_run: "·", reused: "↺", done: "✓", failed: "✗", skipped: "·", planned: "…", missing: "○" };
 
-export function renderHuman(receipt: ToolchainReceipt, dryRun: boolean): string[] {
+export function renderHuman(receipt: ToolchainReceipt, dryRun: boolean, check = false): string[] {
+  const mode = dryRun ? "（预演，未安装、未写入）" : check ? "（只核验，不安装）" : "";
   const lines = [
-    `tools prepare${dryRun ? "（预演，未安装、未写入）" : ""}：toolchain lock ${receipt.lock_id} → ${receipt.home}`,
+    `tools prepare${mode}：toolchain lock ${receipt.lock_id} → ${receipt.home}`,
+    `  锁定版本：${Object.entries(receipt.versions).map(([pkg, version]) => `${pkg} ${version}`).join("，")}`,
     `  步骤：${receipt.steps.map((entry) => `${MARK[entry.status] ?? "?"} ${entry.step}`).join("  ")}`,
   ];
+  for (const entry of receipt.steps.filter((item) => (item.status === "planned" || item.status === "missing") && item.reason !== undefined)) {
+    lines.push(`  ${entry.step}：${entry.reason}`);
+  }
   for (const [name, server] of Object.entries(receipt.servers)) {
     lines.push(`  ${name}：安装 ${MARK[server.installed]}  握手 ${MARK[server.protocol]}  浏览器 ${MARK[server.browser]}${server.sandbox === "disabled" ? "（去沙箱）" : ""}${server.reason !== undefined && (server.protocol === "fail" || server.browser === "fail") ? ` — ${server.reason.slice(0, 160)}` : ""}`);
   }
@@ -750,7 +798,9 @@ export function renderHuman(receipt: ToolchainReceipt, dryRun: boolean): string[
       ? "  本机工具链就绪（machine_ready）。全 auto 还要等宿主批准 / 信任并观察到一次真实调用。"
       : dryRun
         ? "  预演结束：去掉 --dry-run 执行。"
-        : "  本机工具链未就绪：",
+        : check
+          ? "  本机工具链未就绪（只核验，未安装任何东西）："
+          : "  本机工具链未就绪：",
   );
   if (!receipt.machine_ready && !dryRun) {
     for (const blocker of receipt.blockers.filter((entry) => entry.who !== "host")) lines.push(`    - ${blocker.what}；${blocker.fix}`);
@@ -770,11 +820,12 @@ export const TOOLCHAIN_WARNING_NOT_READY = "TOOLCHAIN_NOT_READY";
 export function toolchainWarnings(outcome: CommandOutcome<ToolchainPrepareResult | null>): CliWarning[] {
   if (outcome.ok && outcome.result?.receipt.machine_ready === true) return [];
   const first = outcome.errors[0];
-  return [{ code: TOOLCHAIN_WARNING_NOT_READY, message: `全 auto 浏览器工具链未就绪${first !== undefined ? `：${first.code} ${first.message.slice(0, 200)}` : ""}`, hint: "pomaster tools prepare 重跑；回执在 .pomaster/tools/toolchain.json" }];
+  return [{ code: TOOLCHAIN_WARNING_NOT_READY, message: `全 auto 浏览器工具链未就绪${first !== undefined ? `：${first.code} ${first.message.slice(0, 200)}` : ""}`, hint: first?.hint ?? "推荐：pomaster tools prepare；回执在 .pomaster/tools/toolchain.json" }];
 }
 
 /**
- * init --full-auto：init 成功后对选中的 claude / codex 平台跑 prepare，回执挂在 result.toolchain 上。
+ * init --full-auto：init 成功后对选中的 claude / codex 平台做只核验的 prepare（--check：不装、不改配置，
+ * 只写回执），回执挂在 result.toolchain 上；缺的给推荐命令，由人或 agent 决定执行（Owner：只推荐、不代装）。
  * 不改 init 自己的结局：工具链没就绪只加 TOOLCHAIN_NOT_READY 警告（init 治理产物已落盘是事实）。
  * init 失败不跑；选的平台里没有 claude / codex 时警告，不替人猜宿主。
  */
@@ -797,7 +848,7 @@ export async function attachToolchain<T extends object>(
       human: [...initOutcome.human, "  全 auto 浏览器工具链：未准备（选的平台里没有 claude / codex）"],
     };
   }
-  const prepared = await runToolsPrepare(rootDir, { ...options, hosts });
+  const prepared = await runToolsPrepare(rootDir, { ...options, hosts, check: true });
   return {
     ...initOutcome,
     result: { ...initOutcome.result, toolchain: prepared.result?.receipt ?? null },

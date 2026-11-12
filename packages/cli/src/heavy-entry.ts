@@ -512,7 +512,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster session        # 治理速览（无子命令形态；SessionStart 注入源，≤10k 字符）",
   "pomaster alerts         # 可行动项过滤器 + workflow 路由段（干净=非空但极简；UserPromptSubmit 源）",
   "pomaster doctor",
-  "pomaster tools prepare [--host claude,codex] [--dry-run]   # 全 auto 装眼睛：两个 MCP + runner + Chromium 装好、接好、实测（init --full-auto 自动跑）",
+  "pomaster tools prepare [--host claude,codex] [--check] [--dry-run]   # 推荐的装眼睛命令：两个 MCP + runner + Chromium 装好、接好、实测；--check 只核验（init --full-auto 只做这一步）",
   "pomaster portability bootstrap/check",
   "pomaster update --check/--yes",
   "pomaster baseline set/confirm        # set = 单键后补销账；confirm = 基线确认 gate（阻塞集清零后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）",
@@ -706,7 +706,8 @@ const SKILL_BROWSER_EYES_LINES: readonly string[] = [
   "",
   "- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。",
   "- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动。",
-  "- 可用性自检：`pomaster tools prepare` 的回执 `.pomaster/tools/toolchain.json` 分层记录安装、握手、浏览器 smoke 与 runner（全 auto 时 `init --full-auto` 自动跑）；`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行只看配置在不在，是线索不是就绪证据。",
+  "- 推荐安装（POMaster 不代装）：`pomaster tools prepare --host <claude|codex>` 按兼容锁装 chrome-devtools-mcp 1.12.0、@playwright/mcp 0.0.83 与 Chromium 到 `~/.pomaster/toolchain/`，接好所选宿主并实测；不用它时手动配置也要锁版本（`npx -y chrome-devtools-mcp@1.12.0`、`npx -y @playwright/mcp@0.0.83`），不要写 `@latest`。",
+  "- 可用性自检：`pomaster tools prepare --check`（`init --full-auto` 用的就是它）只核验不安装，回执 `.pomaster/tools/toolchain.json` 分层记录安装、握手、浏览器 smoke 与 runner；`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行只看配置在不在，是线索不是就绪证据。",
 ];
 
 /** 单一事实源对账段（每份卡片保留；防文档漂移的钉版测试锚 + 双镜像重复发现缓解）。 */
@@ -833,7 +834,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 建立或修复治理基线（幂等，重复执行 NO_CHANGE）。",
       "- 会话开场要看治理状态、要确认工具链/MCP 是否就绪、要自更新 CLI 时。",
       "",
-      "先用 `status`/`session` 读取现状；未初始化或生成物缺失时再运行 `init`，环境探针失败时按 `doctor --json` 的 error/hint 修复后复测。全 auto 用 `init --full-auto`（或单独 `tools prepare`）把浏览器工具链装好、接好、实测；看回执的 `machine_ready` 与 blockers，宿主批准 / 信任不代办。`portability` 和 `update` 只在对应迁移或升级目标下执行。",
+      "先用 `status`/`session` 读取现状；未初始化或生成物缺失时再运行 `init`，环境探针失败时按 `doctor --json` 的 error/hint 修复后复测。全 auto 用 `init --full-auto` 核验浏览器工具链（只核验、不安装）；没装全时按回执里的推荐，经人同意或按授权执行 `tools prepare`，再看 `machine_ready` 与 blockers。宿主批准 / 信任不代办。`portability` 和 `update` 只在对应迁移或升级目标下执行。",
       "",
       "交付初始化/修复是否实际发生、doctor 尚缺的工具，以及下一张阶段卡；`NO_CHANGE` 表示幂等重放无需重复修复。",
       "",
