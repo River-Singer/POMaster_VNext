@@ -58,6 +58,8 @@ export interface ToolchainPrepareOptions {
   readonly now?: () => Date;
   /** 单个 MCP 请求的超时；浏览器冷启动按 4 倍给。 */
   readonly mcpTimeoutMs?: number;
+  /** Linux 上内核是否挡住 Chrome 沙箱（返回原因或 null）；缺省读 /proc/sys/kernel。测试注入。 */
+  readonly probeSandbox?: () => string | null;
 }
 
 export type LayerStatus = "pass" | "fail" | "not_run";
@@ -293,6 +295,24 @@ async function startFixture(): Promise<Fixture> {
 }
 
 const SANDBOX_SIGNATURE = /sandbox/i;
+
+/**
+ * Linux 内核是否挡住非特权用户命名空间（Chrome 沙箱靠它）：Ubuntu 23.10+ 的 AppArmor 限制
+ * （apparmor_restrict_unprivileged_userns = 1，GitHub ubuntu-24.04 runner 即如此）或老内核的
+ * unprivileged_userns_clone = 0。此时 Chrome 往往直接崩成「Target closed」，报错里不带 sandbox 字样
+ * （PR #52 ubuntu CI 实证），所以按内核设置认，不按报错文字猜。
+ */
+export function linuxSandboxBlocker(read: (path: string) => string | null = (path) => {
+  try {
+    return readFileSync(path, "utf8").trim();
+  } catch {
+    return null;
+  }
+}): string | null {
+  if (read("/proc/sys/kernel/apparmor_restrict_unprivileged_userns") === "1") return "kernel.apparmor_restrict_unprivileged_userns = 1";
+  if (read("/proc/sys/kernel/unprivileged_userns_clone") === "0") return "kernel.unprivileged_userns_clone = 0";
+  return null;
+}
 
 /** 从 chrome-devtools-mcp 的页面清单里找夹具页的 id（优先 [selected]）。 */
 export function pageIdOf(text: string, url: string): number | null {
@@ -620,14 +640,17 @@ export async function runToolsPrepare(rootDir: string, options: ToolchainPrepare
         let sandboxNote: "enabled" | "disabled" | undefined;
         if (def.name === "chrome-devtools") {
           sandboxNote = sandbox;
-          if (platform === "linux" && result.protocol === "pass" && result.browser === "fail" && sandbox === "enabled" && SANDBOX_SIGNATURE.test(result.reason ?? "")) {
-            const reason = `带沙箱启动失败：${(result.reason ?? "").slice(0, 300)}`;
+          const blocker = platform === "linux" && result.protocol === "pass" && result.browser === "fail" && sandbox === "enabled"
+            ? SANDBOX_SIGNATURE.test(result.reason ?? "") ? "Chrome 报沙箱不可用" : (options.probeSandbox ?? linuxSandboxBlocker)()
+            : null;
+          if (blocker !== null) {
+            const reason = `带沙箱启动失败（${blocker}）：${(result.reason ?? "").slice(0, 300)}`;
             writeManifest("disabled", reason);
             const retried = await smokeServer(rootDir, def, fixture, mcpTimeout, home);
             if (retried.browser === "pass") {
               sandbox = "disabled";
               sandboxNote = "disabled";
-              result = { ...retried, reason: "本机不给 Chrome 沙箱（Linux 用户命名空间受限），已按 Playwright 的默认做法去沙箱运行" };
+              result = { ...retried, reason: `本机不给 Chrome 沙箱（${blocker}），已按 Playwright 的默认做法去沙箱运行` };
             } else {
               writeManifest("enabled");
             }

@@ -2,8 +2,9 @@
 // 测试用假 MCP 服务（tools-prepare.spec / toolchain.spec）：真进程、真 stdio JSON-RPC，浏览器动作改成
 // 用 fetch 取夹具页正文。按参数认身份：带 --executablePath = chrome-devtools，带 --browser = playwright。
 // 行为开关读托管根下的 fake-behavior.json（假 npm 把本文件拷到 <root>/node_modules/… 里）：
-//   { "fail": "handshake" | "tools" | "browser" | "sandbox" }
-//   sandbox = 不带 --chromeArg=--no-sandbox 时 new_page 报 Chrome 沙箱错误。
+//   { "fail": "handshake" | "tools" | "browser" | "sandbox" | "crash" }
+//   sandbox = 不带 --chromeArg=--no-sandbox 时 new_page 报 Chrome 沙箱错误；
+//   crash = 同样条件下报「Target closed」（Ubuntu 24.04 的真实样子，不带 sandbox 字样）。
 import { existsSync, readFileSync } from "node:fs";
 import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +38,7 @@ async function call(name, args) {
   if (kind === "chrome-devtools") {
     if (name === "new_page") {
       if (behavior.fail === "sandbox" && !noSandbox) return text("Failed to launch the browser process! No usable sandbox! Update your kernel or see …", true);
+      if (behavior.fail === "crash" && !noSandbox) return text("Protocol error (Target.setDiscoverTargets): Target closed\nCause: ", true);
       await open(args.url);
       return text(`# new_page response\n## Pages\n1: about:blank\n2: ${page.title} (${page.url}) [selected]`);
     }

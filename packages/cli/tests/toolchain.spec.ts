@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TOOLCHAIN_LOCK, lockIdOf, managedPackageJson, satisfiesRange } from "../src/toolchain-lock.js";
 import { detectHosts, mergeClaudeMcpJson, mergeCodexToml } from "../src/toolchain-hosts.js";
 import { handshake, startMcp } from "../src/toolchain-mcp.js";
-import { pageIdOf, redact } from "../src/toolchain.js";
+import { linuxSandboxBlocker, pageIdOf, redact } from "../src/toolchain.js";
 
 const FAKE_MCP = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "toolchain", "fake-mcp.mjs");
 const entries = [
@@ -46,6 +46,14 @@ describe("toolchain lock", () => {
     expect(satisfiesRange("v24.1.0", range)).toBe(true);
     expect(satisfiesRange("garbage", range)).toBe(false);
     expect(satisfiesRange("v22.12.0", "~22.12")).toBe(false);
+  });
+
+  it("Linux 内核挡住非特权用户命名空间时认出 Chrome 沙箱不可用", () => {
+    const kernel = (values: Record<string, string>) => (path: string) => values[path] ?? null;
+    expect(linuxSandboxBlocker(kernel({ "/proc/sys/kernel/apparmor_restrict_unprivileged_userns": "1" }))).toContain("apparmor");
+    expect(linuxSandboxBlocker(kernel({ "/proc/sys/kernel/unprivileged_userns_clone": "0" }))).toContain("userns_clone");
+    expect(linuxSandboxBlocker(kernel({ "/proc/sys/kernel/apparmor_restrict_unprivileged_userns": "0" }))).toBeNull();
+    expect(linuxSandboxBlocker(kernel({}))).toBeNull();
   });
 
   it("输出里的凭据抹掉、过长截尾", () => {

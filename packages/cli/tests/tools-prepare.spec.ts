@@ -214,6 +214,20 @@ describe("tools prepare · 失败与恢复", () => {
     expect(next.result?.receipt.servers["chrome-devtools"]).toMatchObject({ browser: "pass", sandbox: "disabled" });
   });
 
+  it("Linux 上 Chrome 直接崩（报错不带 sandbox 字样）：按内核设置认出沙箱被挡才重试；内核没挡就如实报失败", async () => {
+    await prepare({ calls: [] });
+    writeFileSync(join(root(), "fake-behavior.json"), JSON.stringify({ fail: "crash" }));
+    const run = fakeRun({ calls: [] });
+    const unblocked = await runToolsPrepare(project, { hosts: ["claude"], home, run, mcpTimeoutMs: 10_000, platform: "linux", probeSandbox: () => null });
+    expect(unblocked.result?.receipt.servers["chrome-devtools"]).toMatchObject({ browser: "fail", sandbox: "enabled" });
+    expect(unblocked.errors.map((error) => error.code)).toContain("TOOLCHAIN_BROWSER_SMOKE_FAILED");
+    const blocked = await runToolsPrepare(project, { hosts: ["claude"], home, run, mcpTimeoutMs: 10_000, platform: "linux", probeSandbox: () => "kernel.apparmor_restrict_unprivileged_userns = 1" });
+    expect(blocked.ok, JSON.stringify(blocked.errors)).toBe(true);
+    expect(blocked.result?.receipt.servers["chrome-devtools"]).toMatchObject({ browser: "pass", sandbox: "disabled" });
+    expect(blocked.result?.receipt.servers["chrome-devtools"]?.reason).toContain("apparmor_restrict_unprivileged_userns");
+    expect(JSON.parse(readFileSync(join(root(), "manifest.json"), "utf8")).sandbox_reason).toContain("Target closed");
+  });
+
   it("runner smoke 没过：TOOLCHAIN_RUNNER_FAILED，MCP 两层不受影响", async () => {
     const outcome = await prepare({ calls: [], runnerFail: true });
     expect(outcome.errors.map((error) => error.code)).toContain("TOOLCHAIN_RUNNER_FAILED");
