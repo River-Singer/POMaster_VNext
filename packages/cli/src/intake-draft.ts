@@ -184,12 +184,12 @@ function enumValuesOf(row: Record<string, string>, type: FieldType | null): stri
   const explicit = cellBy(row, /(可选值|枚举值?|取值|选项)/);
   const note = cellBy(row, /(说明|备注|描述)/);
   // 说明里写成「人民币 / 美元」这样的短值列表，也当枚举（类型列没写时）
-  const listLike = note !== null && /^[^，。,;；]{1,10}(\s*[\/、]\s*[^，。,;；]{1,10})+$/.test(note);
+  const listLike = note !== null && /^[^，。,;；]{1,10}(\s*[/、]\s*[^，。,;；]{1,10})+$/.test(note);
   const source = explicit ?? ((type === "enum" || type === null) && listLike ? note : null);
   if (source === null) return [];
   return source
     .replace(/（[^）]*）|\([^)]*\)/g, "")
-    .split(/\s*[\/、,，|；;]\s*/)
+    .split(/\s*[/、,，|；;]\s*/)
     .map((value) => normalizeText(value))
     .filter((value) => value !== "" && value.length <= 20);
 }
