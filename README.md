@@ -72,6 +72,11 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 
 `pomaster init` 会在项目里装三样东西：AGENTS.md / CLAUDE.md（项目入口说明与能力地图）、一组技能卡（每个阶段一张，Claude Code 与通用 Agent 各一份镜像）、宿主钩子（会话开始注入状态速览，每轮提示附带可行动项，写文件前过 `exec-guard`）。钩子注入的内容都是状态的投影。宿主不支持钩子时，AGENTS.md 里的约定仍然要求 Agent 先跑 `next-action` 再动手。
 
+**全 auto 的浏览器工具链**：`pomaster init --full-auto`（或单独 `pomaster tools prepare`）把 Chrome DevTools MCP、Playwright MCP、Playwright runner 和 Chromium 按兼容锁装进 `~/.pomaster/toolchain/<lock>/`，业务依赖不碰。它只给选中的宿主写 MCP 条目（Claude Code → `.mcp.json`，Codex → `.codex/config.toml`），同名而配置不同时报冲突，不覆盖。每次运行都真跑握手、工具清单、隔离浏览器 smoke 和 runner smoke，结果分层写进 `.pomaster/tools/toolchain.json`。
+- 每层都过，才算 `machine_ready`。
+- 宿主那边的批准或信任列在 blockers 里，由人去做。
+- 宿主会话真实加载并调用一次之前，`full_auto_ready` 一直是 false。
+
 ### 7. 基线与漂移
 
 技术栈、目录约定、设计 token 这类长期决定写在 `.pomaster/baseline/`。Owner 用 `baseline confirm` 确认后，确认时的内容摘要被记下来；之后任何改动都会在 closeout 时被检出（`BASELINE_DRIFT`），要么挂一个变更对象重新确认，要么由 Owner 显式声明。已有项目接入时，init 先建一个「项目识别」任务，让 Agent 从仓库里找证据报告用途、架构、技术栈和未知项，Owner 确认后才回填基线。
@@ -171,7 +176,7 @@ benchmarks/  变异测试、宪法回归、整体基准
 npm install -g pomaster
 
 # 初始化：新项目指定架构；已有项目直接 init，会先建一个项目识别任务
-pomaster init                                   # 新项目：pomaster init --architecture vue|react
+pomaster init                                   # 新项目：pomaster init --architecture vue|react；全 auto 加 --full-auto
 pomaster project-identification report/confirm  # 已有项目：Agent 报告用途、架构、技术栈与证据；confirm 只接受 human:<名字>
 pomaster status                                 # 对象计数、基线确认态、许可活性
 pomaster alerts                                 # 当前可行动项与工作流路由（钩子每轮注入）
@@ -203,7 +208,7 @@ pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 �
 pomaster plan compile/run                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待
-pomaster tools init/list/validate               # 工具绑定：init 按已声明的 vitest / vue-tsc / tsc / eslint 写起步注册面
+pomaster tools init/list/validate/prepare       # 工具绑定：init 按已声明的 vitest / vue-tsc / tsc / eslint 写起步注册面；prepare 是全 auto 浏览器工具链（两个 MCP、runner、Chromium 装好、接好、实测）
 pomaster check --fast/--gates                   # 局部自检 / 全部门禁定义派发并入账
 pomaster record gate-run/claim/verification/requalify   # 收据、验收、复核、证据过期后的重绑
 pomaster task reassess-baseline TASK.*          # 基线合法变更后重算任务的基线依赖

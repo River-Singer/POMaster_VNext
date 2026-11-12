@@ -477,7 +477,7 @@ function renderThickRulesBody(platformNote: string): string {
     "",
     "- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。",
     "- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动。",
-    "- 可用性自检：`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行。",
+    "- 可用性自检：`pomaster tools prepare` 的回执 `.pomaster/tools/toolchain.json` 分层记录安装、握手、浏览器 smoke 与 runner（全 auto 时 `init --full-auto` 自动跑）；`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行只看配置在不在，是线索不是就绪证据。",
   ].join("\n");
 }
 
