@@ -363,6 +363,7 @@ import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
+import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -1384,6 +1385,8 @@ export {
   runToolsValidate,
 } from "./tools.js";
 export { packageRunner, runToolsInit } from "./tools-init.js";
+export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
+export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
 export type { ToolsInitInput, ToolsInitResult } from "./tools-init.js";
 export type {
   BindingStateRow,
@@ -1772,6 +1775,10 @@ export function createProgram(
       "--architecture <architecture>",
       "显式前端架构 profile（vue|react）；写入 baseline 选型、profile 指纹和对应治理内容",
     )
+    .option(
+      "--full-auto",
+      "全 auto：init 完成后对选中的 claude / codex 平台准备并实测浏览器工具链（= pomaster tools prepare）；未就绪只加 TOOLCHAIN_NOT_READY 警告，不改 init 结局",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
       const platformsArg = command.opts().platforms as string | undefined;
@@ -1780,13 +1787,18 @@ export function createProgram(
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
       // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
       // R-M：两形态在平台选择后都接技术栈逐键问卷（TTY 必答 / 非交互跳过后补）。
-      const outcome =
+      const initOutcome =
         platformsArg === undefined && architectureArg === undefined && !asJson && process.stdin.isTTY === true
           ? await initInteractiveOutcome(resolveDir(command), io)
           : await runInit(resolveDir(command), {
               platforms: platformsArg,
               ...(architectureArg !== undefined ? { architecture: architectureArg } : {}),
             });
+      // 全 auto（D-15）：按 init 实际装上的平台准备浏览器工具链；交互与非交互同一来源。
+      const outcome =
+        command.opts().fullAuto === true
+          ? await attachToolchain(resolveDir(command), initOutcome, initOutcome.result.platforms.map((platform) => platform.name))
+          : initOutcome;
       record({ command: "init", outcome, asJson });
     });
 
@@ -3989,6 +4001,21 @@ export function createProgram(
         outcome: runToolsInit(resolveDir(command), { dryRun: opts.dryRun === true }),
         asJson: command.optsWithGlobals().json === true,
       });
+    });
+  tools
+    .command("prepare")
+    .description(
+      "全 auto 浏览器工具链（D-15）：按兼容锁把 Chrome DevTools MCP、Playwright MCP、Playwright runner 与 Chromium 装进托管目录（~/.pomaster/toolchain/<lock>，业务依赖不碰）；只合并选中宿主的 MCP 配置（claude → .mcp.json，codex → .codex/config.toml；同名异配报冲突、不覆盖）；每次都真跑握手、工具清单、隔离浏览器 smoke 与 runner smoke，回执写 .pomaster/tools/toolchain.json。machine_ready 只在每层都过时为真；宿主批准 / 信任与真实加载另列，不代办。错误：TOOLCHAIN_HOST_REQUIRED / NODE_UNSUPPORTED / BUSY / INSTALL_FAILED / BROWSER_INSTALL_FAILED / CONFIG_CONFLICT / PROTOCOL_FAILED / BROWSER_SMOKE_FAILED / RUNNER_FAILED",
+    )
+    .option("--host <hosts>", "claude、codex 或 claude,codex（缺省按 init 产物认：.claude/settings.json / .codex/hooks.json）")
+    .option("--dry-run", "只列计划：不联网、不起进程、不写文件")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runToolsPrepare(resolveDir(command), {
+        ...(opts.host !== undefined ? { hosts: [opts.host as string] } : {}),
+        dryRun: opts.dryRun === true,
+      });
+      record({ command: "tools prepare", outcome, asJson: command.optsWithGlobals().json === true });
     });
   tools
     .command("list")

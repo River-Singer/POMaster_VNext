@@ -984,6 +984,14 @@
       "packages/cli/tests/intake.spec.ts": {
         "layer": "L2",
         "note": "需求读取 · 命令全链：三版结构与布局都不同的合成材料依次读入——第一版分类与待判读；第二版改名 / 删除带依据、交接文档未随交付、字段表仅表述变化、示例数据不进差异；第三版内容重合认改名、拆分、移动、原型条目沿用；NO_CHANGE 与纯读命令字节零写、半截修订恢复、坏身份表拒绝不覆盖；反向追溯闸门与判读沿用；--json 信封。"
+      },
+      "packages/cli/tests/toolchain.spec.ts": {
+        "layer": "L1",
+        "note": "浏览器工具链 · 单元（INIT-C）：兼容锁只锁精确版本、MCP 与 runner 共用同一 Playwright、lock_id 规范化；Node 范围按段判、认不出不满足；凭据抹除；claude .mcp.json 与 codex config.toml 合并（新增 / 不变 / 同名异配与坏文件冲突 / 其他内容保留 / TOML 只追加）；按 init 产物认宿主；页面 id 解析；MCP stdio 客户端对真进程假服务握手、调工具、忽略日志行、回 ping、关闭。无域（工具链准备面）。"
+      },
+      "packages/cli/tests/tools-prepare.spec.ts": {
+        "layer": "L2",
+        "note": "浏览器工具链 · 命令全链（INIT-C）：注入执行器替代 npm / 浏览器下载 / runner，MCP 服务经生成的启动器真进程起——首跑每层真跑 machine_ready 而 full_auto_ready 仍 false；重跑复用且宿主配置字节不动；安装失败凭据抹除、重跑恢复；单宿主同名异配零写入；握手 / 工具清单 / 浏览器 smoke / runner 各自失败归因；Linux 沙箱重试并记进清单；锁忙与陈旧锁接管；预演零写入；宿主缺失与认出；Node 不满足；init --full-auto 只加警告。"
       }
     },
     "notes": {
