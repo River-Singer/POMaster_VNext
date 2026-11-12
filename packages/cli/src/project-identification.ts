@@ -8,6 +8,7 @@
 import { applyTransaction, createStore, envelopeFromTaskBody, loadTruthIndex, type Store } from "@pomaster/kernel";
 import { readBodyEnvelope } from "./projection-common.js";
 import { failOutcome, okOutcome, type CliError, type CliWarning, type CommandOutcome } from "./envelope.js";
+import { requireHumanSignoff, statementSubject, type SignoffRecord } from "./trust.js";
 import type { InitModeDetection, InitReconReport } from "./init-mode.js";
 import { architectureAnswers, parseArchitectureId, writeArchitectureProfile, type ArchitectureId, type ArchitectureProfile } from "./architecture-profile.js";
 import { applyStackAnswers } from "./baseline.js";
@@ -179,6 +180,8 @@ export interface ProjectIdentificationReportInput {
 export interface ProjectIdentificationConfirmInput {
   readonly taskId: string;
   readonly actor: string;
+  /** 签发编号 SO-…（项目登记了签名人后必填）：主体是「project-identification <TASK> → <架构>」这句陈述。 */
+  readonly signoff?: string;
 }
 
 export interface ProjectIdentificationCommandResult {
@@ -292,6 +295,19 @@ export async function runProjectIdentificationConfirm(
     return failure("project-identification confirm", input, { code: "PROJECT_IDENTIFICATION_REPORT_REQUIRED", message: "项目识别报告尚未提交", hint: `先运行 pomaster project-identification report ${input.taskId} ...` });
   }
   if (!architecture.ok) return failure("project-identification confirm", input, { code: "SCHEMA_INVALID", message: architecture.message, hint: architecture.hint });
+  // 可信签发（AP-0a）：首次确认才要；已完成的重跑只是幂等补写治理文件，不是新的决定。
+  let signoff: SignoffRecord | null = null;
+  if (loaded.payload.identification_status !== "completed") {
+    const proof = requireHumanSignoff(rootDir, {
+      kind: "project-identification",
+      ...statementSubject(`project-identification ${input.taskId} → ${architecture.id}`),
+      by: input.actor,
+      consumedBy: "project-identification confirm",
+      ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+    });
+    if (!proof.ok) return failure("project-identification confirm", input, proof.error);
+    signoff = proof.record;
+  }
   const files: InitFileReport[] = [];
   // Keep the task active until every architecture-bound governance write has
   // succeeded. A conflict or I/O failure must not hide the identification task
@@ -311,7 +327,7 @@ export async function runProjectIdentificationConfirm(
   if (loaded.payload.identification_status !== "completed") {
     try {
       await applyTransaction(loaded.store, {
-        ops: [{ op: "upsert_object", envelope: envelopeFromTaskBody(loaded.body, { ...loaded.payload, identification_status: "completed", owner_confirmation: { actor: input.actor, architecture: architecture.id } }, input.taskId) }],
+        ops: [{ op: "upsert_object", envelope: envelopeFromTaskBody(loaded.body, { ...loaded.payload, identification_status: "completed", owner_confirmation: { actor: input.actor, architecture: architecture.id, ...(signoff !== null ? { signoff } : {}) } }, input.taskId) }],
         authorityRef: input.taskId as never,
         note: "Owner 确认项目识别报告与架构 profile",
       });

@@ -81,6 +81,27 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 
 技术栈、目录约定、设计 token 这类长期决定写在 `.pomaster/baseline/`。Owner 用 `baseline confirm` 确认后，确认时的内容摘要被记下来；之后任何改动都会在 closeout 时被检出（`BASELINE_DRIFT`），要么挂一个变更对象重新确认，要么由 Owner 显式声明。已有项目接入时，init 先建一个「项目识别」任务，让 Agent 从仓库里找证据报告用途、架构、技术栈和未知项，Owner 确认后才回填基线。
 
+### 8. 人工点要 Owner 签名
+
+确认脚手架规格、标记基线某项不适用、确认已有项目的识别结果、接受成果（closeout 消费的 ACCEPT），这些都是 Owner 的决定。`--by human:<名字>` 谁都能打，所以登记签名人之后，这些人工点要 Owner 用自己的 SSH 私钥签名：
+
+1. 登记一次：`pomaster trust enroll --key ~/.ssh/id_ed25519.pub --principal <名字> --private ~/.ssh/id_ed25519`。
+   - 第一个签名人按首次信任登记，请核对打印出的指纹就是你的密钥。
+   - 之后再加人，要由已登记的人签发。
+   - `--private` 只用来检查私钥有没有口令，不读取、不保存私钥内容。
+2. 人工点被拒时，提示里有确切的 `pomaster trust request …` 命令。它生成一份签发请求，写明确认什么、内容摘要和有效期（默认 24 小时）。
+3. 在你自己的终端签名：`ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n pomaster .pomaster/trust/requests/<SO-…>.json`。Windows 10 起自带 OpenSSH。也可以用 `pomaster trust sign <SO-…> --key <私钥>`。
+4. 带 `--signoff <SO-…>` 重跑那个人工点。
+
+规则：
+- 每份签发只能用一次；内容变了、过期了，旧签发都作废。
+- 验签在 POMaster 里完成，运行它的机器不需要装 OpenSSH。
+- 保障等级如实记录：硬件密钥，或带口令且没放在 ssh-agent 里，是 strong；无口令或已在 ssh-agent 里（agent 也能用它签）是 weak。
+- 有人改了签名人登记表、或删掉它想退回自报模式，所有人工点都会拒绝。
+- 没登记签名人时，人工点照旧接受 `--by human:`，记为 `self_attested`。
+
+用 `pomaster trust status` 看当前模式和每个签名人的保障等级。QA 与实现分会话的隔离还没做，状态里如实显示「QA 未隔离」。
+
 ## 前端：设计规范、Storybook 与原型转换
 
 前端的规范不再是一堆文档，而是一份结构化的设计规范（`pomaster.design-standard/v1`），同一份源生成三样东西，三样盖同一个指纹：
@@ -177,7 +198,7 @@ npm install -g pomaster
 
 # 初始化：新项目指定架构；已有项目直接 init，会先建一个项目识别任务
 pomaster init                                   # 新项目：pomaster init --architecture vue|react；全 auto 加 --full-auto
-pomaster project-identification report/confirm  # 已有项目：Agent 报告用途、架构、技术栈与证据；confirm 只接受 human:<名字>
+pomaster project-identification report/confirm  # 已有项目：Agent 报告用途、架构、技术栈与证据；confirm 只接受 human:<名字>（登记签名人后还要 --signoff）
 pomaster status                                 # 对象计数、基线确认态、许可活性
 pomaster alerts                                 # 当前可行动项与工作流路由（钩子每轮注入）
 pomaster doctor                                 # 工具链与 MCP 是否就绪，缺什么提示装什么
@@ -208,6 +229,7 @@ pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 �
 pomaster plan compile/run                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待
+pomaster trust enroll/request/sign/verify/status   # 人工点的 Owner 签名：登记 SSH 公钥、建签发请求、在你自己的终端签名、核验
 pomaster tools init/list/validate/prepare       # 工具绑定：init 按已声明的 vitest / vue-tsc / tsc / eslint 写起步注册面；prepare 是全 auto 浏览器工具链（两个 MCP、runner、Chromium 装好、接好、实测）
 pomaster check --fast/--gates                   # 局部自检 / 全部门禁定义派发并入账
 pomaster record gate-run/claim/verification/requalify   # 收据、验收、复核、证据过期后的重绑

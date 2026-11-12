@@ -34,6 +34,8 @@ import {
 } from "@pomaster/cli";
 import { baselineTargetsForLanes } from "../src/baseline.js";
 import { readTaskBaselineDependencies } from "../src/evidence-qualification.js";
+import { runTrustEnroll, runTrustRequest } from "../src/trust.js";
+import { makeKey, opensshPrivateKeyText, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 
 let dir: string;
 
@@ -280,5 +282,45 @@ describe("baseline retire × 任务范围（V2-6 × V2-7）", () => {
     expect(reassessed.result.excluded_targets).toContain(target);
     const declaration = await readTaskBaselineDependencies(dir, "TASK.T0601");
     expect((await baselineGateAssessment(dir, declaration as never)).errors).toEqual([]);
+  });
+});
+
+function enrollAndSigner(root: string) {
+  const key = makeKey("ssh-ed25519");
+  const keyDir = mkdtempSync(join(tmpdir(), "pomaster-keys-"));
+  writeFileSync(join(keyDir, "owner.pub"), `${key.line}\n`);
+  writeFileSync(join(keyDir, "owner"), opensshPrivateKeyText("aes256-ctr"));
+  expect(runTrustEnroll(root, { key: join(keyDir, "owner.pub"), principal: "owner", private: join(keyDir, "owner") }, { listAgentKeys: () => [] }).ok).toBe(true);
+  rmSync(keyDir, { recursive: true, force: true });
+  /** 按人工点被拒时的提示建请求并让「人」签名，返回签发编号。 */
+  return (hint: string): string => {
+    const ref = /--ref "((?:[^"\\]|\\.)*)"/.exec(hint)?.[1]?.replace(/\\"/g, '"') ?? "";
+    const sha = /--sha256 ([0-9a-f]{64})/.exec(hint)?.[1] ?? "";
+    const kind = /pomaster trust request (\S+)/.exec(hint)?.[1] ?? "";
+    const id = (runTrustRequest(root, { kind, ref, sha256: sha }, { listAgentKeys: () => [] }).result as { id: string }).id;
+    const path = join(root, ".pomaster", "trust", "requests", `${id}.json`);
+    writeFileSync(`${path}.sig`, signSshsig(key, readFileSync(path)));
+    return id;
+  };
+}
+
+describe("baseline retire / unretire · 可信签发（AP-0a / D-2）", () => {
+  it("登记签名人后：--by human: 单独不算；签发主体是带理由的陈述；签发后退役并记入证据；撤销同样要签", async () => {
+    expect((await runInit(dir, { platforms: "claude" })).ok).toBe(true);
+    const sign = enrollAndSigner(dir);
+    const target = BACKEND_TARGETS[0] as string;
+    const refused = await retire(target);
+    expect(refused.errors[0]?.code).toBe("TRUST_SIGNOFF_REQUIRED");
+    expect(refused.errors[0]?.hint).toContain(`baseline:${target} not-applicable — 纯前端项目`);
+    const id = sign(refused.errors[0]?.hint ?? "");
+    const retired = await retire(target, { signoff: id });
+    expect(retired.ok, JSON.stringify(retired.errors)).toBe(true);
+    expect(retired.result.signoff).toMatchObject({ signoff: id, principal: "owner" });
+    const otherReason = await retire(BACKEND_TARGETS[1] as string, { signoff: id });
+    expect(otherReason.errors[0]?.code).toBe("TRUST_SIGNOFF_MISMATCH");
+    const unrefused = await unretire(target);
+    expect(unrefused.errors[0]?.code).toBe("TRUST_SIGNOFF_REQUIRED");
+    const back = await unretire(target, { signoff: sign(unrefused.errors[0]?.hint ?? "") });
+    expect(back.ok, JSON.stringify(back.errors)).toBe(true);
   });
 });

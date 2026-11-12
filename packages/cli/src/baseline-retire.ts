@@ -43,6 +43,7 @@ import {
 } from "./baseline.js";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { requireHumanSignoff, signoffEvidenceRef, statementSubject, type SignoffRecord } from "./trust.js";
 import { governanceErrorToCliError, parseActorArgv, requireInitialized } from "./permit.js";
 import { BASELINE_MANIFEST_RELATIVE, POMASTER_DIR } from "./store-layout.js";
 
@@ -54,14 +55,18 @@ export interface BaselineRetireInput {
   /** --not-applicable（当前唯一退役种类，显式声明）。 */
   readonly notApplicable?: boolean;
   readonly reason: string;
-  /** --by human:<owner>（目标适用性是 Owner 决定；V5-4 前过渡口径只接受 human）。 */
+  /** --by human:<owner>（目标适用性是 Owner 决定）。项目登记了签名人后还要 --signoff（AP-0a / D-2）。 */
   readonly by: string;
+  /** 签发编号 SO-…：主体是「baseline:<目标> not-applicable — <理由>」这句陈述。 */
+  readonly signoff?: string;
 }
 
 export interface BaselineUnretireInput {
   readonly target: string;
   readonly reason: string;
   readonly by: string;
+  /** 签发编号 SO-…：主体是「baseline:<目标> unretire — <理由>」这句陈述。 */
+  readonly signoff?: string;
 }
 
 export interface BaselineRetireResult {
@@ -76,6 +81,8 @@ export interface BaselineRetireResult {
    * unretire = 声明未覆盖该目标的任务（须 task reassess-baseline）。
    */
   readonly affected_tasks: readonly string[];
+  /** 本次决定的签发证明（AP-0a；没有登记签名人时 assurance = self_attested）；NO_CHANGE / 失败时缺省。 */
+  readonly signoff?: SignoffRecord;
 }
 
 type Command = "baseline retire" | "baseline unretire";
@@ -214,6 +221,14 @@ export async function runBaselineRetire(
       `${command} → NO_CHANGE ${input.target}（已退役；零写入）`,
     ]);
   }
+  const retireProof = requireHumanSignoff(rootDir, {
+    kind: "baseline-retire",
+    ...statementSubject(`baseline:${input.target} not-applicable — ${input.reason}`),
+    by: input.by,
+    consumedBy: command,
+    ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+  });
+  if (!retireProof.ok) return fail(retireProof.error);
 
   const confirmation = await readBaselineConfirmation(rootDir);
   if (confirmation.kind === "record-valid") {
@@ -233,7 +248,7 @@ export async function runBaselineRetire(
   const scopes = await declaredTaskScopes(rootDir, store);
   const affectedTasks = [...scopes].filter(([, declaration]) => listed(declaration, "relevant_targets").includes(input.target)).map(([id]) => id).sort();
 
-  const evidenceRefs = evidenceRefsFor(rootDir, command, input.target, " --not-applicable");
+  const evidenceRefs = [...evidenceRefsFor(rootDir, command, input.target, " --not-applicable"), ...signoffEvidenceRef(rootDir, retireProof.record)];
   const advance = buildAdvance({
     basis: "explicit-evidence",
     actor,
@@ -285,7 +300,7 @@ export async function runBaselineRetire(
   }
   const after = BASELINE_CONFIRM_TARGETS.filter((target) => target === input.target || retired.includes(target));
   const adv = latestAdvanceFor(pathsOf(store), "baseline_target", `${input.target}#applicability`)?.adv ?? null;
-  return okOutcome(command, { target: input.target, change: "RETIRED", applied_seq: appliedSeq, advance: adv, retired_targets: after, affected_tasks: affectedTasks }, [
+  return okOutcome(command, { target: input.target, change: "RETIRED", applied_seq: appliedSeq, advance: adv, retired_targets: after, affected_tasks: affectedTasks, signoff: retireProof.record }, [
     `${command} → RETIRED ${input.target}（不适用；${adv ?? "ADVANCE"} 留痕；已退役 ${String(after.length)} 个目标）`,
     "  该目标不再进入确认 / 漂移 / 阻塞分母与任务范围划分；重新适用时 pomaster baseline unretire。",
     ...(affectedTasks.length > 0
@@ -310,12 +325,20 @@ export async function runBaselineUnretire(
       `${command} → NO_CHANGE ${input.target}（未退役；零写入）`,
     ]);
   }
+  const unretireProof = requireHumanSignoff(rootDir, {
+    kind: "baseline-retire",
+    ...statementSubject(`baseline:${input.target} unretire — ${input.reason}`),
+    by: input.by,
+    consumedBy: command,
+    ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+  });
+  if (!unretireProof.ok) return fail(unretireProof.error);
   const scopes = await declaredTaskScopes(rootDir, store);
   const affectedTasks = [...scopes]
     .filter(([, declaration]) => !listed(declaration, "relevant_targets").includes(input.target) && !listed(declaration, "excluded_targets").includes(input.target))
     .map(([id]) => id)
     .sort();
-  const evidenceRefs = evidenceRefsFor(rootDir, command, input.target, "");
+  const evidenceRefs = [...evidenceRefsFor(rootDir, command, input.target, ""), ...signoffEvidenceRef(rootDir, unretireProof.record)];
   const advance = buildAdvance({
     basis: "explicit-evidence",
     actor,
@@ -348,7 +371,7 @@ export async function runBaselineUnretire(
   }
   const after = retired.filter((target) => target !== input.target);
   const adv = latestAdvanceFor(pathsOf(store), "baseline_target", `${input.target}#applicability`)?.adv ?? null;
-  return okOutcome(command, { target: input.target, change: "UNRETIRED", applied_seq: appliedSeq, advance: adv, retired_targets: after, affected_tasks: affectedTasks }, [
+  return okOutcome(command, { target: input.target, change: "UNRETIRED", applied_seq: appliedSeq, advance: adv, retired_targets: after, affected_tasks: affectedTasks, signoff: unretireProof.record }, [
     `${command} → UNRETIRED ${input.target}（重新进入确认分母；${adv ?? "ADVANCE"} 留痕）`,
     '  退役期间文件有变化或从未确认过 → baseline 判漂移：pomaster baseline confirm --change <CHANGE-id> 或 --ack-drifted --note "<理由>"。',
     ...(affectedTasks.length > 0

@@ -46,6 +46,7 @@ import {
   type NormalizedDomainSpec,
 } from "./scaffold-spec.js";
 import { SURFACE_DECISION_SLOT_SPECS, type ScaffoldSurfaceKey, type SurfaceDecisionSlot } from "./scaffold-surfaces.js";
+import { fileSha256, requireHumanSignoff, type SignoffRecord } from "./trust.js";
 import {
   SCAFFOLD_CONFIRMATION_RELATIVE,
   SCAFFOLD_DIR_RELATIVE,
@@ -69,6 +70,8 @@ export interface ScaffoldConfirmationEntry {
   readonly at_seq: number;
   /** 确认人（human:<owner>）。 */
   readonly by: string;
+  /** 签发证明（AP-0a）：assurance + 签发编号 / 签名人 / 指纹；旧记录没有此键。 */
+  readonly signoff?: SignoffRecord;
   /** 授权本次确认的 CHANGE.*；首次确认为 null。 */
   readonly change_ref: string | null;
   /** 归一化规格 canonical-JSON 摘要（判漂移只看它）。 */
@@ -336,8 +339,10 @@ export async function scaffoldGateErrors(rootDir: string, deps?: ScaffoldGoverna
 // ============================================================
 
 export interface ScaffoldConfirmInput {
-  /** human:<owner>（规格确认是 Owner 决定；V5-4 前只接受 human）。 */
+  /** human:<owner>（规格确认是 Owner 决定）。项目登记了签名人后还要 --signoff（AP-0a / D-2）。 */
   readonly by: string;
+  /** 签发编号 SO-…：Owner 用 SSH 私钥签过、主体是当前规格文件字节摘要的签发请求。 */
+  readonly signoff?: string;
   /** 治理通道：确认后语义变了，重确认必须挂活性 CHANGE.*。 */
   readonly change?: string;
   readonly catalogRoot?: string;
@@ -350,6 +355,8 @@ export interface ScaffoldConfirmResult {
   readonly semantic_sha256: string | null;
   readonly raw_sha256: string | null;
   readonly change_ref: string | null;
+  /** 本次确认的签发证明（没有登记签名人时 assurance = self_attested）；NO_CHANGE 时缺省。 */
+  readonly signoff?: SignoffRecord;
   /** 确认后仍待项目决定的决策位（呈现，不阻断确认）。 */
   readonly open_decisions: Readonly<Partial<Record<ScaffoldSurfaceKey, readonly SurfaceDecisionSlot[]>>>;
 }
@@ -514,10 +521,23 @@ export async function runScaffoldConfirm(
     if (changeError !== null) return failConfirm(changeError, { state_before: stateBefore });
   }
 
+  // 可信签发（AP-0a）：登记了签名人就要 Owner 对当前规格文件字节的 SSH 签名，一次性消费。
+  const proof = requireHumanSignoff(rootDir, {
+    kind: "scaffold-confirm",
+    ref: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
+    sha256: fileSha256(join(rootDir, ...SCAFFOLD_DOMAIN_SPEC_RELATIVE.split("/"))),
+    subjectPath: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
+    by: input.by,
+    consumedBy: "scaffold confirm",
+    ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+  });
+  if (!proof.ok) return failConfirm(proof.error, { state_before: stateBefore });
+
   const spec = assessment.normalized;
   const entry: ScaffoldConfirmationEntry = {
     at_seq: initialized.seq,
     by: input.by,
+    signoff: proof.record,
     change_ref: input.change ?? null,
     semantic_sha256: assessment.semantic_sha256,
     raw_sha256: assessment.raw_sha256,
@@ -565,6 +585,7 @@ export async function runScaffoldConfirm(
     raw_sha256: entry.raw_sha256,
     change_ref: entry.change_ref,
     open_decisions: openDecisions,
+    signoff: proof.record,
   };
   const warnings: CliWarning[] = [];
   if (assessment.record_malformed !== null) {
@@ -579,6 +600,9 @@ export async function runScaffoldConfirm(
     result,
     [
       `scaffold confirm: CONFIRMED（${entry.summary.entities.length} 个实体、面 ${entry.summary.surfaces.join(" / ")}；at_seq=${entry.at_seq}${entry.change_ref === null ? "" : `；授权 ${entry.change_ref}`}）——此后语义变化即漂移，closeout 阻断`,
+      proof.record.assurance === "self_attested"
+        ? "  签发：未登记签名人，本次确认只是自报（self_attested）；登记后需 SSH 签名：pomaster trust enroll"
+        : `  签发：${proof.record.signoff}，签名人 ${proof.record.principal}（${proof.record.fingerprint}），保障 ${proof.record.assurance}`,
       ...openDecisionLines(openDecisions),
     ],
     warnings,
