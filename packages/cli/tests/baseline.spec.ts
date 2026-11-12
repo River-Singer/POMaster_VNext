@@ -53,7 +53,7 @@
  * - 程序面：非 TTY init --json 问卷跳过（skipped=non_interactive）；baseline
  *   set/confirm 命令注册与词形闸（runCli 实跑；confirm 三旗标注册）。
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -91,6 +91,7 @@ import {
   type StackAnswer,
 } from "@pomaster/cli";
 import { seedsRootCandidates } from "../src/seed-manifest.js";
+import { casTargetInFlight } from "../src/fs-cas.js";
 import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET, baselineAuthorityText, baselineTargetSeq, baselineTargetsForLanes, normalizeBaselineText } from "../src/baseline.js";
 import { PRESET_DRAFT_HEADING } from "../src/baseline-preset.js";
 import { readDesignTokens } from "../src/baseline-tokens.js";
@@ -850,6 +851,38 @@ describe("baseline set 缺席读分类（ADR-21 补：manifest 在座性为锚�
     expect(outcome.errors[0]?.code).toBe("NOT_CONFIGURED");
     expect(outcome.errors[0]?.message).toContain(`${BASELINE_MANIFEST_RELATIVE} 缺席`);
     expect(outcome.errors[0]?.hint).toContain("pomaster init");
+  });
+
+  it("manifest 在对手认领位（stack.yaml 在座）→ 首读按在途重试，不冒充 NOT_CONFIGURED；耗尽点名 manifest、认领位零触碰（09-12 CI 实证 round3 B）", async () => {
+    await runInit(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const claim = `${manifest}.r1claim-99999-1`;
+    // 对手 casSwapFile 认领-回装窗口内读者可见盘面的确定性等价形态：manifest 换名到认领位。
+    renameSync(manifest, claim);
+    const claimed = readFileSync(claim, "utf8");
+    const outcome = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("BASELINE_WRITE_CONFLICT");
+    expect(outcome.errors[0]?.message).toContain("4 轮");
+    expect(outcome.errors[0]?.message).toContain(`${BASELINE_MANIFEST_RELATIVE} 持续缺席`);
+    expect(outcome.errors[0]?.message).toContain("认领窗口未收敛");
+    expect(outcome.errors[0]?.hint).toContain("从 git 恢复");
+    expect(readFileSync(claim, "utf8")).toBe(claimed);
+    expect(existsSync(manifest)).toBe(false);
+  });
+
+  it("casTargetInFlight：目标在座或同目录有它的认领位 = 在途；只有别的文件的认领位、近似名不算", () => {
+    const target = join(dir, "manifest.yaml");
+    expect(casTargetInFlight(target)).toBe(false);
+    writeFileSync(join(dir, "stack.yaml.r1claim-1-1"), "x");
+    writeFileSync(join(dir, "manifest.yaml.bak"), "x");
+    expect(casTargetInFlight(target)).toBe(false);
+    writeFileSync(`${target}.r1claim-42-7`, "x");
+    expect(casTargetInFlight(target)).toBe(true);
+    rmSync(`${target}.r1claim-42-7`);
+    writeFileSync(target, "x");
+    expect(casTargetInFlight(target)).toBe(true);
+    expect(casTargetInFlight(join(dir, "missing-dir", "manifest.yaml"))).toBe(false);
   });
 });
 

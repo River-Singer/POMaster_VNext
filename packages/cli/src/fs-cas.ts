@@ -64,7 +64,8 @@
  * 真实 node:fs；测试脚本化每步故障做确定性回归钉，禁真并发碰运气，见
  * tests/integration/baseline-set-contention.spec.ts「全步错误归类」describe）。
  */
-import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { basename, dirname } from "node:path";
 
 /**
  * casSwapFile 显式结局空间（09-11 fs-cas-install-enoent 起五态）：swapped = 认领-
@@ -185,6 +186,29 @@ function removeBestEffort(fs: CasSwapFs, path: string): void {
   }
 }
 
+/** 认领位标签：认领文件 = `<target>.r1claim-<pid>-<n>`（与 target 同目录邻接）。 */
+const CLAIM_TAG = "r1claim";
+
+/**
+ * 读面缺席判定（09-12 baseline-claim-window）：目标缺席时，同目录是否有它的认领位。
+ * casSwapFile 的认领是 rename(target→claim) 原子换名，回装 link 之后才退役 claim——任一
+ * 时刻 target 与 claim 至少一个在座。所以同一次目录快照里「target 不在、claim 在」= 认领-
+ * 回装窗口在途（并发写方持有），不是真缺席；两者都不在才是真缺席。目录快照里 target 又
+ * 回来了也算在途（窗口刚收敛）。认领残片（失败路径「claim 原样留盘」）同判在途：调用方的
+ * 有界重试耗尽后如实呈现「窗口未收敛或文件被真实删除」两可能，不冒充未播种。
+ */
+export function casTargetInFlight(target: string): boolean {
+  const name = basename(target);
+  const prefix = `${name}.${CLAIM_TAG}-`;
+  let entries: string[];
+  try {
+    entries = readdirSync(dirname(target));
+  } catch {
+    return false;
+  }
+  return entries.some((entry) => entry === name || entry.startsWith(prefix));
+}
+
 /** 唯一邻接名（locks.ts uniqueAdjacentPath 同构：pid + 同进程单调计数，跨/同进程唯一）。 */
 let casSequence = 0;
 function uniqueAdjacentPath(target: string, tag: string): string {
@@ -236,7 +260,7 @@ export function casSwapFile(
     removeBestEffort(fs, tmp);
     return classifyContentionOrFault(error, "tmp 落盘失败（认领前落盘位）");
   }
-  const claim = uniqueAdjacentPath(target, "r1claim");
+  const claim = uniqueAdjacentPath(target, CLAIM_TAG);
   // —— 步 2 认领（矩阵行 2；ENOENT = 认领胜负语义，其余按矩阵归类）——
   try {
     renameWithLiarDefense(fs, () => fs.renameSync(target, claim), claim);
