@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh"><head><title>订单管理</title><script src="../_shared/mock-data.js"></script></head>
+<body>
+<main>
+  <section class="card"><h2>18</h2><p>订单总数</p></section>
+  <section aria-label="订单列表">
+    <form>
+      <div><label>客户</label><select name="customer"><option>华东一号</option><option>华南二号</option></select></div>
+      <button type="button">查询</button>
+    </form>
+    <table><thead><tr><th>订单编号</th><th>客户名称</th><th>金额</th><th>操作</th></tr></thead><tbody></tbody></table>
+    <div class="alert alert-info" role="note">金额超过 100 万的订单需要主管审核后才能生效。</div>
+  </section>
+</main>
+</body></html>

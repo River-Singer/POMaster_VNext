@@ -94,6 +94,14 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 
 **BA 给的原型怎么用**：BA 交来的 spec 和 HTML 原型，结构、风格各不相同。`prototype ingest` 只抽四层：业务事实（字段、选项、必填、状态、提示）、信息结构（页面、区域、分组、顺序）、交互意图（点什么打开什么）原样保留，样式、栅格、字体、组件长相丢掉；原型里用样式表达的事实（红色星号、删除线、右对齐、固定列）翻译成语义；spec 与原型对不上的地方列成问题。按规范重绘后，`prototype check` 用同一个抽取器读新页面，和原来的事实逐条对账，缺失、改动、新增、调序都为零才算还原。
 
+**需求材料会一版一版地来**：每版的目录、文件名、文档结构都可能不同。`intake read <材料目录>` 整套读入，按内容分类（需求文档、变更文档、原型页面、示例数据、设计文档、接口契约、项目约定），把文档按结构无关的方式切块，落成带出处的需求条目，并和上一版对齐。编号只发一次：
+- 行号、顺序、排版不影响编号；
+- 改名要有变更文档明文或内容高度重合；
+- 这一版没带来的材料记「本次未随交付」，不当删除；
+- 示例数据（下拉选项、行数）变化单列，不进需求差异。
+
+`intake changes` 列出两版之间的新增、修改、删除（附依据）、改名、移动、拆分、合并。读取器认不出的段落列进 `intake pending`，由 agent 用 `intake resolve` 逐条给出去向；`intake check` 在每段都有去向时才通过。产物是候选，只写 `.pomaster/prototype/<工作区>/`。
+
 详见 [docs/design-standard.md](docs/design-standard.md)。在线 Storybook：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)。
 
 ## 脚手架
@@ -168,6 +176,7 @@ pomaster baseline set/confirm/retire/unretire   # 回填基线键 / 确认基线
 # ① 需求：追问到可判断的决策图，再提升为任务
 pomaster brainstorm start/question-gate/status/decide/promote
 pomaster prototype ingest/check                 # BA 原型 → 业务事实与信息结构（ingest）；重绘页面与事实对账（check）
+pomaster intake read/status/pending/resolve/changes/check   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门
 
 # ② 许可
 pomaster permit issue/check/steal/renew/widen/list
