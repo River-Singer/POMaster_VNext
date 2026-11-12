@@ -153,9 +153,8 @@ function sampleDataOnly(before: IntakeItem, after: CandidateItem, enumLabels: Re
   const left = before.attrs["options"];
   const right = after.attrs["options"];
   if (!Array.isArray(left) || !Array.isArray(right)) return false;
-  const { options: _left, ...restBefore } = before.attrs;
-  const { options: _right, ...restAfter } = after.attrs;
-  if (JSON.stringify(restBefore) !== JSON.stringify(restAfter)) return false;
+  const withoutOptions = (attrs: Record<string, unknown>) => Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== "options"));
+  if (JSON.stringify(withoutOptions(before.attrs)) !== JSON.stringify(withoutOptions(after.attrs))) return false;
   if (enumLabels.has(after.label)) return false;
   const kept = right.filter((value) => left.includes(value)).length;
   return left.length > 0 && kept <= Math.max(left.length, right.length) / 2;
