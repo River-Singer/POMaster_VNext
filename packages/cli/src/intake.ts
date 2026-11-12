@@ -99,7 +99,7 @@ function workspaceRoot(dir: string): string {
   return join(dir, ".pomaster", PROTOTYPE_DIR);
 }
 
-function writeJsonAtomic(path: string, value: unknown): void {
+export function writeJsonAtomic(path: string, value: unknown): void {
   const temp = `${path}.tmp`;
   writeFileSync(temp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   renameSync(temp, path);
@@ -174,7 +174,7 @@ function emptyResolutions(): IntakeResolutions {
   return { schema: INTAKE_RESOLUTIONS_SCHEMA, blocks: {}, files: {} };
 }
 
-interface Workspace {
+export interface Workspace {
   readonly name: string;
   readonly dir: string;
   readonly identity: IdentityTable | null;
@@ -215,7 +215,7 @@ function revisionDir(wsDir: string, revision: number): string {
   return join(wsDir, "revisions", `r${revision}`);
 }
 
-interface RevisionData {
+export interface RevisionData {
   readonly files: IntakeFilesSnapshot;
   readonly blocks: readonly StoredBlock[];
   readonly items: readonly IntakeItem[];
@@ -529,7 +529,12 @@ export async function runIntakeRead(dir: string, input: IntakeReadInput): Promis
   return okOutcome("intake read", { ...summary, no_change: false, out_dir: relative(dir, workspace.dir).replace(/\\/g, "/") }, human, warnings);
 }
 
-type LatestLoaded = { ok: true; workspace: Workspace; data: RevisionData } | { ok: false; errors: CliError[] };
+export type LatestLoaded = { ok: true; workspace: Workspace; data: RevisionData } | { ok: false; errors: CliError[] };
+
+/** 最新修订（给 intake draft 等下游读；纯读）。 */
+export function loadIntakeLatest(dir: string, name: string | undefined): LatestLoaded {
+  return loadLatest(dir, name);
+}
 
 function loadLatest(dir: string, name: string | undefined): LatestLoaded {
   const picked = pickWorkspace(dir, name);
