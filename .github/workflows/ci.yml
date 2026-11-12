@@ -293,7 +293,6 @@ jobs:
     timeout-minutes: 30
     env:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
-      POMASTER_TOOLCHAIN_HOME: ${{ runner.temp }}/pomaster-toolchain
     defaults:
       run:
         shell: bash
@@ -312,6 +311,7 @@ jobs:
 
       - name: init --full-auto only checks and recommends
         run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
           CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
           PROJECT="$RUNNER_TEMP/toolchain-project"
           mkdir -p "$PROJECT"
@@ -333,6 +333,7 @@ jobs:
 
       - name: tools prepare (the recommended install)
         run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
           CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
           cd "$RUNNER_TEMP/toolchain-project"
           set +e
@@ -356,6 +357,7 @@ jobs:
 
       - name: tools prepare --check (reuse, nothing changed)
         run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
           CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
           cd "$RUNNER_TEMP/toolchain-project"
           cp .mcp.json mcp.before
