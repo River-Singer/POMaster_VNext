@@ -102,6 +102,15 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 
 `intake changes` 列出两版之间的新增、修改、删除（附依据）、改名、移动、拆分、合并。读取器认不出的段落列进 `intake pending`，由 agent 用 `intake resolve` 逐条给出去向；`intake check` 在每段都有去向时才通过。产物是候选，只写 `.pomaster/prototype/<工作区>/`。
 
+`intake draft` 从最新修订生成交给启动确认单的草案，写进 `<工作区>/draft/`：
+- 业务草案：每个模块的用途、角色、场景，关键规则按权限、计算、审批、金额、状态、校验打标；
+- 领域草案：domain-spec 形状，用脚手架同一个校验器校验，材料里没写的缺省值逐条写明；
+- 歧义清单：进行中的变更提议问范围，spec 与原型对不上的问保留，字段英文名、类型按实体汇成一条；
+- 非功能线索：只收带对口单位的数值，没写的项记「未定」；
+- 技术线索：前端、后端技术栈对照脚手架支持面，标出支持、部分支持或不支持。
+
+草案绑定修订号和判读；两者都没变时 `NO_CHANGE`，不重写。
+
 详见 [docs/design-standard.md](docs/design-standard.md)。在线 Storybook：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)。
 
 ## 脚手架
@@ -176,7 +185,7 @@ pomaster baseline set/confirm/retire/unretire   # 回填基线键 / 确认基线
 # ① 需求：追问到可判断的决策图，再提升为任务
 pomaster brainstorm start/question-gate/status/decide/promote
 pomaster prototype ingest/check                 # BA 原型 → 业务事实与信息结构（ingest）；重绘页面与事实对账（check）
-pomaster intake read/status/pending/resolve/changes/check   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门
+pomaster intake read/status/pending/resolve/changes/check/draft   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门；draft 从最新修订出可签草案
 
 # ② 许可
 pomaster permit issue/check/steal/renew/widen/list
