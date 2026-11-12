@@ -1779,7 +1779,7 @@ export function createProgram(
     )
     .option(
       "--full-auto",
-      "全 auto：init 完成后对选中的 claude / codex 平台准备并实测浏览器工具链（= pomaster tools prepare）；未就绪只加 TOOLCHAIN_NOT_READY 警告，不改 init 结局",
+      "全 auto：init 完成后对选中的 claude / codex 平台核验浏览器工具链（= pomaster tools prepare --check，不安装、不改配置）；没装全时给推荐命令并加 TOOLCHAIN_NOT_READY 警告，不改 init 结局",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
@@ -4016,15 +4016,17 @@ export function createProgram(
   tools
     .command("prepare")
     .description(
-      "全 auto 浏览器工具链（D-15）：按兼容锁把 Chrome DevTools MCP、Playwright MCP、Playwright runner 与 Chromium 装进托管目录（~/.pomaster/toolchain/<lock>，业务依赖不碰）；只合并选中宿主的 MCP 配置（claude → .mcp.json，codex → .codex/config.toml；同名异配报冲突、不覆盖）；每次都真跑握手、工具清单、隔离浏览器 smoke 与 runner smoke，回执写 .pomaster/tools/toolchain.json。machine_ready 只在每层都过时为真；宿主批准 / 信任与真实加载另列，不代办。错误：TOOLCHAIN_HOST_REQUIRED / NODE_UNSUPPORTED / BUSY / INSTALL_FAILED / BROWSER_INSTALL_FAILED / CONFIG_CONFLICT / PROTOCOL_FAILED / BROWSER_SMOKE_FAILED / RUNNER_FAILED",
+      "全 auto 浏览器工具链（D-15；POMaster 只推荐、不代装：init 只核验，这条命令由人或 agent 主动执行才安装）：按兼容锁把 Chrome DevTools MCP、Playwright MCP、Playwright runner 与 Chromium 装进托管目录（~/.pomaster/toolchain/<lock>，业务依赖不碰）；只合并选中宿主的 MCP 配置（claude → .mcp.json，codex → .codex/config.toml；同名异配报冲突、不覆盖）；每次都真跑握手、工具清单、隔离浏览器 smoke 与 runner smoke，回执写 .pomaster/tools/toolchain.json。machine_ready 只在每层都过时为真；宿主批准 / 信任与真实加载另列，不代办。错误：TOOLCHAIN_HOST_REQUIRED / NODE_UNSUPPORTED / NOT_INSTALLED（--check）/ BUSY / INSTALL_FAILED / BROWSER_INSTALL_FAILED / CONFIG_CONFLICT / PROTOCOL_FAILED / BROWSER_SMOKE_FAILED / RUNNER_FAILED",
     )
     .option("--host <hosts>", "claude、codex 或 claude,codex（缺省按 init 产物认：.claude/settings.json / .codex/hooks.json）")
     .option("--dry-run", "只列计划：不联网、不起进程、不写文件")
+    .option("--check", "只核验已装好的部分：不装包、不下浏览器、不改启动器与宿主配置，只写回执；缺的给推荐命令（init --full-auto 用的就是它）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runToolsPrepare(resolveDir(command), {
         ...(opts.host !== undefined ? { hosts: [opts.host as string] } : {}),
         dryRun: opts.dryRun === true,
+        check: opts.check === true,
       });
       record({ command: "tools prepare", outcome, asJson: command.optsWithGlobals().json === true });
     });

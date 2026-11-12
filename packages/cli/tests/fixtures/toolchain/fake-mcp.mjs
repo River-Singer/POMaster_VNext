@@ -4,7 +4,8 @@
 // 行为开关读托管根下的 fake-behavior.json（假 npm 把本文件拷到 <root>/node_modules/… 里）：
 //   { "fail": "handshake" | "tools" | "browser" | "sandbox" | "crash" }
 //   sandbox = 不带 --chromeArg=--no-sandbox 时 new_page 报 Chrome 沙箱错误；
-//   crash = 同样条件下报「Target closed」（Ubuntu 24.04 的真实样子，不带 sandbox 字样）。
+//   crash = 同样条件下报「Target closed」（Ubuntu 24.04 的真实样子，不带 sandbox 字样）；
+//   abort-once = 第一次 new_page 报 net::ERR_ABORTED（Windows CI 的偶发样子），之后正常。
 import { existsSync, readFileSync } from "node:fs";
 import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +22,7 @@ const tools =
     : ["browser_navigate", "browser_snapshot", "browser_close", "browser_click"];
 if (behavior.fail === "tools") tools.splice(1, 1);
 let page = null;
+let abortedOnce = false;
 
 const send = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
 const text = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...(isError ? { isError: true } : {}) });
@@ -39,6 +41,10 @@ async function call(name, args) {
     if (name === "new_page") {
       if (behavior.fail === "sandbox" && !noSandbox) return text("Failed to launch the browser process! No usable sandbox! Update your kernel or see …", true);
       if (behavior.fail === "crash" && !noSandbox) return text("Protocol error (Target.setDiscoverTargets): Target closed\nCause: ", true);
+      if (behavior.fail === "abort-once" && !abortedOnce) {
+        abortedOnce = true;
+        return text(`Error: net::ERR_ABORTED at ${args.url}`, true);
+      }
       await open(args.url);
       return text(`# new_page response\n## Pages\n1: about:blank\n2: ${page.title} (${page.url}) [selected]`);
     }

@@ -278,10 +278,11 @@ jobs:
           node benchmarks/run-all.mjs
 
   # 全 auto 浏览器工具链（INIT-C / D-15；code-spec browser-toolchain §6）：三平台真装、真接、真跑。
-  # - 干净项目里 `init --full-auto` 按兼容锁把两个 MCP、runner 与 Chromium 装进临时托管目录，
-  #   合并 claude / codex 两份宿主配置，真跑握手、工具清单、隔离浏览器 smoke 与 runner smoke；
-  # - 断言 machine_ready = true、full_auto_ready = false（宿主加载归 AP-3）；
-  # - 再跑一次 `tools prepare`（宿主按 init 产物认）：包与浏览器必须复用、宿主配置不变。
+  # POMaster 只推荐、不代装（Owner 2026-11-12），所以分三步验：
+  # 1. 干净项目里 `init --full-auto` 只核验：必须报未就绪、给出推荐命令，且托管目录与宿主配置都不存在；
+  # 2. 采纳推荐 `tools prepare --host claude,codex`：按兼容锁装进临时托管目录、合并两份宿主配置，
+  #    真跑握手、工具清单、隔离浏览器 smoke 与 runner smoke；machine_ready = true、full_auto_ready = false；
+  # 3. `tools prepare --check` 复核：包与浏览器复用、宿主配置字节不变、照样就绪。
   # 托管目录放 RUNNER_TEMP，不碰 runner 的 HOME 与个人浏览器 profile。
   toolchain:
     strategy:
@@ -308,20 +309,38 @@ jobs:
       - name: Build workspace packages
         run: corepack pnpm -r build
 
-      - name: init --full-auto in a clean project
-        env:
-          POMASTER_TOOLCHAIN_HOME: ${{ runner.temp }}/pomaster-toolchain
+      - name: init --full-auto only checks and recommends
         run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
           CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
           PROJECT="$RUNNER_TEMP/toolchain-project"
           mkdir -p "$PROJECT"
           cd "$PROJECT"
-          set +e
           node "$CLI" init --platforms claude,codex --architecture vue --full-auto --json > init.json
+          node -e '
+            const fs = require("node:fs");
+            const out = JSON.parse(fs.readFileSync("init.json", "utf8"));
+            const r = JSON.parse(fs.readFileSync(".pomaster/tools/toolchain.json", "utf8"));
+            const bad = [];
+            if (out.ok !== true) bad.push("init itself must stay ok");
+            if (!out.warnings.some((w) => w.code === "TOOLCHAIN_NOT_READY" && /tools prepare --host/.test(w.hint))) bad.push("missing recommendation warning");
+            if (r.machine_ready !== false) bad.push("must not be ready before install");
+            if (fs.existsSync(".mcp.json") || fs.existsSync(".codex/config.toml")) bad.push("host config written by init");
+            if (fs.existsSync(".pomaster/tools/mcp-launch.mjs")) bad.push("launcher written by init");
+            if (fs.existsSync(process.env.POMASTER_TOOLCHAIN_HOME)) bad.push("toolchain installed by init");
+            if (bad.length) { console.error("::error::" + bad.join(", ")); process.exit(1); }
+          '
+
+      - name: tools prepare (the recommended install)
+        run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
+          CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
+          cd "$RUNNER_TEMP/toolchain-project"
+          set +e
+          node "$CLI" tools prepare --host claude,codex --json > prepare.json
           code=$?
           set -e
-          echo "init exit $code"
-          cat .pomaster/tools/toolchain.json || true
+          cat .pomaster/tools/toolchain.json
           node -e '
             const fs = require("node:fs");
             const r = JSON.parse(fs.readFileSync(".pomaster/tools/toolchain.json", "utf8"));
@@ -336,25 +355,23 @@ jobs:
           '
           test "$code" = "0"
 
-      - name: Rerun tools prepare (reuse, unchanged host config)
-        env:
-          POMASTER_TOOLCHAIN_HOME: ${{ runner.temp }}/pomaster-toolchain
+      - name: tools prepare --check (reuse, nothing changed)
         run: |
+          export POMASTER_TOOLCHAIN_HOME="$RUNNER_TEMP/pomaster-toolchain"
           CLI="$GITHUB_WORKSPACE/packages/cli/dist/bin.js"
           cd "$RUNNER_TEMP/toolchain-project"
           cp .mcp.json mcp.before
           cp .codex/config.toml toml.before
-          node "$CLI" tools prepare --json > prepare.json
+          node "$CLI" tools prepare --check --json > check.json
           node -e '
             const fs = require("node:fs");
             const r = JSON.parse(fs.readFileSync(".pomaster/tools/toolchain.json", "utf8"));
             const step = (n) => r.steps.find((s) => s.step === n)?.status;
             const bad = [];
             if (r.machine_ready !== true) bad.push("machine_ready");
-            if (step("packages") !== "reused") bad.push("packages " + step("packages"));
-            if (step("browsers") !== "reused") bad.push("browsers " + step("browsers"));
-            for (const host of ["claude", "codex"]) if (r.hosts[host]?.config !== "unchanged") bad.push(`${host} ${r.hosts[host]?.config}`);
-            if (bad.length) { console.error("::error::rerun did not reuse: " + bad.join(", ")); process.exit(1); }
+            for (const n of ["packages", "browsers", "launcher", "hosts"]) if (step(n) !== "reused") bad.push(`${n} ${step(n)}`);
+            for (const n of ["protocol", "browser_smoke", "runner"]) if (step(n) !== "done") bad.push(`${n} ${step(n)}`);
+            if (bad.length) { console.error("::error::check did not reuse: " + bad.join(", ")); process.exit(1); }
           '
           cmp .mcp.json mcp.before
           cmp .codex/config.toml toml.before
