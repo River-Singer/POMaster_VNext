@@ -210,6 +210,15 @@
  *   （重跑收敛 / git 恢复或 init 重播种），禁静默吞掉。确定性测试钉 =
  *   baseline.spec.ts「缺席读分类」describe（禁靠真并发碰运气）。
  *
+ *   认领位在途判定（09-12 baseline-claim-window，PR #49 ubuntu CI 实证 round3 B）：
+ *   stack.yaml 在座而 manifest 首读缺席时，manifest 也可能正处在对手的认领窗口（提交序
+ *   manifest 先行），按上述规则会被判 NOT_CONFIGURED。认领是 rename(target→claim)
+ *   原子换名、回装后才退役 claim，任一时刻 target 与 claim 至少一个在座——所以缺席读
+ *   再看一眼同目录目录快照（fs-cas.ts casTargetInFlight）：认领位在座 = 在途 → contended
+ *   有界重试；认领位也不在 = 真缺席 → NOT_CONFIGURED 语义不变（既有钉「manifest 也缺席 →
+ *   NOT_CONFIGURED」照旧成立）。stack 缺席分支的 manifest 探测同用此判定。耗尽呈现按
+ *   最后一次缺席读的文件点名（viaAbsent）。
+ *
  *   全步错误归类（09-11 fs-cas-install-enoent，CI run 34610508238 实证缺口）：回装步
  *   （claim → target）rename 的 ENOENT（认领文件被对手交错取走——liar 防御首次尝试
  *   物理归位被伪报 EPERM，退避窗口内对手认领走归位世代）曾裸逃成子进程 CRASH。
@@ -230,7 +239,7 @@ import { load as loadYaml } from "js-yaml";
 import { GovernanceError, buildStorePaths, createStore, listActiveRetirements, loadTruthIndex, sha256OfCanonical, sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError, CliWarning } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
-import { casSwapFile, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
+import { casSwapFile, casTargetInFlight, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
 import {
   CHECKLIST_KEYS,
   INTERACTIVE_BACKSPACE_KEY,
@@ -1445,15 +1454,16 @@ const BASELINE_SET_TX_BACKOFF_MS: readonly number[] = [20, 50, 100];
 /**
  * 单轮事务结局：settled = 判卷失败或成功提交（信封即终局）；contended = 提交认领
  * 到并发新世代（或吃到认领窗口缺席读）——退避后整链重读重算（ADR-21）。
- * viaStackAbsent = 本次 contended 源于 stack.yaml 缺席读（认领-回装窗口或真实删除
- * ——重试耗尽须显式呈现两种可能，与认领冲突路径的报错词形区分，禁静默吞掉）。
+ * viaAbsent = 本次 contended 源于该文件（stack.yaml 或 manifest.yaml，工作区相对路径）
+ * 缺席读（认领-回装窗口或真实删除——重试耗尽须显式呈现两种可能，与认领冲突路径的
+ * 报错词形区分，禁静默吞掉）。
  * viaCasCause = 本次 contended 源于 casSwapFile 瞬时/交错类 fs 故障（09-11
  * fs-cas-install-enoent 全步错误归类：附步位成因词形——耗尽呈现里点名，禁裸 fs
  * 错误逃逸成 CRASH）。
  */
 type BaselineSetAttemptOutcome =
   | { readonly kind: "settled"; readonly outcome: CommandOutcome<BaselineSetResult> }
-  | { readonly kind: "contended"; readonly viaStackAbsent?: true; readonly viaCasCause?: string };
+  | { readonly kind: "contended"; readonly viaAbsent?: string; readonly viaCasCause?: string };
 
 function settled(outcome: CommandOutcome<BaselineSetResult>): BaselineSetAttemptOutcome {
   return { kind: "settled", outcome };
@@ -1481,13 +1491,16 @@ async function baselineSetAttempt(
     // → stack.yaml 缺席物理上只可能是认领窗口或真实删除 → 按 contended 有界重试；
     // manifest 也缺席 → 工作区未播种（NOT_CONFIGURED 合法触发面，语义不变）。
     // attempt>0 缺席读 = contended（ADR-21 既定；不冒充 NOT_CONFIGURED）。
+    // 09-12 baseline-claim-window：认领位在座（target 在并发写方手里）同判在途——
+    // 三个以上写方时 manifest 探测本身也可能撞进对手窗口。
     if (stackFile.kind === "absent") {
-      if (attempt > 0) {
-        return { kind: "contended", viaStackAbsent: true };
+      if (attempt > 0 || casTargetInFlight(`${rootDir}/${stackRelative}`)) {
+        return { kind: "contended", viaAbsent: stackRelative };
       }
-      const manifestProbe = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
-      if (manifestProbe.kind === "ok") {
-        return { kind: "contended", viaStackAbsent: true };
+      const manifestPath = `${rootDir}/${BASELINE_MANIFEST_RELATIVE}`;
+      const manifestProbe = await readTextFile(manifestPath);
+      if (manifestProbe.kind === "ok" || casTargetInFlight(manifestPath)) {
+        return { kind: "contended", viaAbsent: stackRelative };
       }
     }
     const error = baselineFileError(stackRelative, stackFile);
@@ -1495,8 +1508,11 @@ async function baselineSetAttempt(
   }
   const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
   if (manifestFile.kind !== "ok") {
-    if (attempt > 0 && manifestFile.kind === "absent") {
-      return { kind: "contended" };
+    // manifest 缺席（stack.yaml 在座）：首读也可能撞进对手的 manifest 认领窗口
+    // （提交序 manifest 先行；CI 实证 round3 B 首读 NOT_CONFIGURED）。认领位在座 = 在途 →
+    // contended 有界重试；认领位也不在 = 真缺席 → NOT_CONFIGURED 语义不变（未播种合法触发面）。
+    if (manifestFile.kind === "absent" && (attempt > 0 || casTargetInFlight(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`))) {
+      return { kind: "contended", viaAbsent: BASELINE_MANIFEST_RELATIVE };
     }
     const error = baselineFileError(BASELINE_MANIFEST_RELATIVE, manifestFile);
     return settled(failBaselineSet(error.code, error.message, error.hint, input));
@@ -1763,14 +1779,14 @@ export async function runBaselineSet(
   // 两可能诚实呈现（错误码仍复用 BASELINE_WRITE_CONFLICT：manifest 在座即已播种，
   // NOT_CONFIGURED 会谎报工作区状态；且 hint 指路「重跑 / git 恢复或 init 重播种」
   // 两条修复路径，与认领冲突路径的纯重跑路标区分）。
-  let lastContendedViaStackAbsent = false;
+  let lastContendedViaAbsent: string | null = null;
   let lastContendedCasCause: string | null = null;
   for (let attempt = 0; ; attempt += 1) {
     if (attempt >= BASELINE_SET_TX_ATTEMPTS) {
-      if (lastContendedViaStackAbsent) {
+      if (lastContendedViaAbsent !== null) {
         return failBaselineSet(
           "BASELINE_WRITE_CONFLICT",
-          `baseline 写入链未收敛（${BASELINE_SET_TX_ATTEMPTS} 轮有界重试内 ${baselineStackRelative(lane)} 持续缺席）：可能为并发 CAS 认领窗口未收敛，也可能为该文件被真实删除——缺席不猜测重写`,
+          `baseline 写入链未收敛（${BASELINE_SET_TX_ATTEMPTS} 轮有界重试内 ${lastContendedViaAbsent} 持续缺席）：可能为并发 CAS 认领窗口未收敛，也可能为该文件被真实删除——缺席不猜测重写`,
           "稍后重跑本命令即可：认领窗口收敛后重跑在新鲜盘面上按串行语义落盘；若重跑仍报本错误，该文件很可能已被真实删除——从 git 恢复或重跑 pomaster init 播种（seed-once-missing-only）。",
           input,
         );
@@ -1795,7 +1811,7 @@ export async function runBaselineSet(
     }
     // kind === "contended"：确定性退避后整链重读重算（ADR-21）；缺席读/认领交错
     // 成因记账供耗尽分流呈现。
-    lastContendedViaStackAbsent = attemptOutcome.viaStackAbsent === true;
+    lastContendedViaAbsent = attemptOutcome.viaAbsent ?? null;
     lastContendedCasCause = attemptOutcome.viaCasCause ?? null;
   }
 }
