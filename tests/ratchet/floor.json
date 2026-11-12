@@ -996,6 +996,14 @@
       "packages/cli/tests/intake-draft.spec.ts": {
         "layer": "L2",
         "note": "需求读取 · 草案：合成材料 v1 → v2 读入后出业务草案（规则多标签打标）、领域草案（domain-spec 形状，脚手架校验器校验，缺省值写明）、歧义清单（变更提议问范围、spec 与原型差异、命名按实体汇总）、非功能线索（对口单位才收，没写记未定）、技术线索（对照脚手架支持面）；修订与判读不变 NO_CHANGE 字节零写，判读变了重生成；catalog 不可用仍出草案并警告；无工作区报错。"
+      },
+      "packages/cli/tests/sshsig.spec.ts": {
+        "layer": "L1",
+        "note": "可信签发 · SSHSIG 验签（AP-0a）：ed25519 / sk-ed25519 / ecdsa-p256 / sk-ecdsa / rsa 逐一验过，篡改、换命名空间、换人都不过；sha256 与 rsa-sha2-256 也认；硬件密钥缺用户在场标志不过；外壳错误一律 ok:false 不抛；指纹形态；私钥口令检测；有 ssh-keygen 时与之双向互通（CI 三平台）。无域（签名格式面）。"
+      },
+      "packages/cli/tests/trust.spec.ts": {
+        "layer": "L2",
+        "note": "可信签发 · 登记与人工点（AP-0a / D-2）：首次信任 → 链式登记（新人自签不算）；手改登记表塞公钥、删登记表退回自报都判不成立且人工点全拒；请求 → 签名 → 一次性消费，重放、内容不符、种类不符、过期、改字节、没签、别人签；并发只一个成功；trust sign 包 ssh-keygen、verify 只读；保障等级五档；scaffold confirm 未登记记 self_attested、登记后不带签发拒、签旧版规格拒、签发后确认记录带证明。"
       }
     },
     "notes": {
