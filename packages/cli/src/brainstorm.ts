@@ -110,6 +110,7 @@ import {
 } from "@pomaster/kernel";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { acceptStatement, loadRegistry, requireHumanSignoff, statementSubject, writeAcceptSidecar, type SignoffRecord } from "./trust.js";
 import { acceptRevisionFingerprint } from "./closeout.js";
 import { runMaintain } from "./maintain.js";
 import { allocateEvidenceRef } from "./evidence.js";
@@ -1578,6 +1579,8 @@ export interface BrainstormDecideInput {
   readonly outcomeChange?: string;
   /** SP-W1-a --outcome-revision <sha256:…>：消费端对账指纹（与对象行 body_sha256 全等）。 */
   readonly outcomeRevision?: string;
+  /** --signoff SO-…（AP-0a）：登记了签名人后，成果 ACCEPT 须带 Owner 对该绑定陈述的 SSH 签发。 */
+  readonly signoff?: string;
   /** --ready：收敛判定（§15 sufficiency）。 */
   readonly ready?: boolean;
   /** --goal <text>：Task Contract goal 文本申报（--ready 必答非空——intent 投影源）。 */
@@ -2300,6 +2303,32 @@ export async function runBrainstormDecide(
               : {}),
           }
         : undefined;
+    // 可信签发（AP-0a / D-2）：带成果绑定的 ACCEPT 是人工点（closeout 消费它）。登记了签名人后
+    // 须绑定内容修订（签名才盖得住内容），并带 Owner 对这句绑定陈述的签发，一次性消费。
+    let acceptProof: SignoffRecord | null = null;
+    if (answer === "ACCEPT" && outcomeBinding !== undefined && (outcomeBinding.task_ref !== undefined || outcomeBinding.change_ref !== undefined)) {
+      if (loadRegistry(rootDir).state !== "absent" && outcomeBinding.revision_fingerprint === undefined) {
+        return fail(
+          {
+            code: "TRUST_SIGNOFF_REQUIRES_REVISION",
+            message: "本项目已登记签名人：成果 ACCEPT 必须绑定内容修订，签名才盖得住内容",
+            hint: "加 --outcome-revision current 重跑（按提示创建签发请求并签名后带 --signoff）",
+          },
+          ["brainstorm decide --answer: FAILED — TRUST_SIGNOFF_REQUIRES_REVISION"],
+        );
+      }
+      const proof = requireHumanSignoff(rootDir, {
+        kind: "accept",
+        ...statementSubject(acceptStatement(input.discoveryId, decisionId, outcomeBinding)),
+        by: "(决策应答，无 --by)",
+        consumedBy: "brainstorm decide",
+        ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+      });
+      if (!proof.ok) {
+        return fail(proof.error, [`brainstorm decide --answer: FAILED — ${proof.error.code}`, `  ${proof.error.message}`, `  hint: ${proof.error.hint ?? ""}`]);
+      }
+      acceptProof = proof.record;
+    }
     const resolveOutcome = resolveDecision(graph, {
       decisionId,
       answer,
@@ -2333,6 +2362,9 @@ export async function runBrainstormDecide(
       return fail(cliError(err), [
         `brainstorm decide --answer: FAILED — decision-graph.json 回写失败`,
       ]);
+    }
+    if (acceptProof !== null && acceptProof.signoff !== null && outcomeBinding !== undefined) {
+      writeAcceptSidecar(rootDir, input.discoveryId, decisionId, outcomeBinding, acceptProof);
     }
     const nextVerdicts = groundingVerdictsOf(resolveOutcome.graph, inputs, frontier.set);
     const targetEntry = nextVerdicts.find((v) => v.decision_id === decisionId);

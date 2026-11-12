@@ -46,6 +46,8 @@ import {
   type BrainstormStartResult,
   type BrainstormStatusResult,
 } from "@pomaster/cli";
+import { runTrustEnroll, runTrustRequest } from "../src/trust.js";
+import { makeKey, opensshPrivateKeyText, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 
 let root: string;
 
@@ -1582,5 +1584,52 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     });
     expect(unreadable.ok).toBe(false);
     expect(unreadable.errors[0]?.code).toBe("IO_ERROR");
+  });
+});
+
+describe("brainstorm decide · 成果 ACCEPT 的可信签发（AP-0a / D-2）", () => {
+  const noAgent = { listAgentKeys: () => [] as string[] };
+  const revision = `sha256:${"a".repeat(64)}`;
+
+  async function decisionReady(id: string): Promise<void> {
+    await runBrainstormStart(root, { id });
+    const { runInit } = await import("@pomaster/cli");
+    await runInit(root);
+    const candidatesPath = join(root, `${id}-candidates.json`);
+    writeFileSync(candidatesPath, `${JSON.stringify([decideCandidate("DECISION.SIGNED_ACCEPT")], null, 2)}\n`, "utf8");
+    expect((await runBrainstormDecide(root, { discoveryId: id, set: candidatesPath, retrieved: ["CURRENT_TRUTH"] })).ok).toBe(true);
+  }
+
+  it("登记签名人后：不带 --signoff 拒（提示确切命令）；没绑修订也拒；签发后通过，签发旁记录落盘；同一签发不能再用", async () => {
+    await decisionReady("idea-signed");
+    const key = makeKey("ssh-ed25519");
+    writeFileSync(join(root, "owner.pub"), `${key.line}\n`);
+    writeFileSync(join(root, "owner"), opensshPrivateKeyText("aes256-ctr"));
+    expect(runTrustEnroll(root, { key: join(root, "owner.pub"), principal: "owner", private: join(root, "owner") }, noAgent).ok).toBe(true);
+    const base = { discoveryId: "idea-signed", answer: "DECISION.SIGNED_ACCEPT", accept: true, outcomeTask: "TASK.T0001" } as const;
+    const noRevision = await runBrainstormDecide(root, base);
+    expect(noRevision.errors[0]?.code).toBe("TRUST_SIGNOFF_REQUIRES_REVISION");
+    const refused = await runBrainstormDecide(root, { ...base, outcomeRevision: revision });
+    expect(refused.errors[0]?.code).toBe("TRUST_SIGNOFF_REQUIRED");
+    const hint = refused.errors[0]?.hint ?? "";
+    const ref = /--ref "([^"]+)"/.exec(hint)?.[1] ?? "";
+    const sha = /--sha256 ([0-9a-f]{64})/.exec(hint)?.[1] ?? "";
+    expect(ref).toBe(`accept idea-signed/DECISION.SIGNED_ACCEPT → TASK.T0001 @ ${revision}`);
+    const id = (runTrustRequest(root, { kind: "accept", ref, sha256: sha }, noAgent).result as { id: string }).id;
+    const requestPath = join(root, ".pomaster", "trust", "requests", `${id}.json`);
+    writeFileSync(`${requestPath}.sig`, signSshsig(key, readFileSync(requestPath)));
+    const accepted = await runBrainstormDecide(root, { ...base, outcomeRevision: revision, signoff: id });
+    expect(accepted.ok, JSON.stringify(accepted.errors)).toBe(true);
+    const sidecar = JSON.parse(readFileSync(join(root, ".pomaster", "trust", "accepts", "idea-signed--DECISION.SIGNED_ACCEPT.json"), "utf8"));
+    expect(sidecar).toMatchObject({ binding: { task_ref: "TASK.T0001", revision_fingerprint: revision }, signoff: { signoff: id, principal: "owner" } });
+    const replay = await runBrainstormDecide(root, { ...base, outcomeRevision: revision, signoff: id });
+    expect(replay.errors[0]?.code).toBe("TRUST_SIGNOFF_REPLAYED");
+  });
+
+  it("没登记签名人：带成果绑定的 ACCEPT 照旧，不写签发旁记录", async () => {
+    await decisionReady("idea-legacy");
+    const accepted = await runBrainstormDecide(root, { discoveryId: "idea-legacy", answer: "DECISION.SIGNED_ACCEPT", accept: true, outcomeTask: "TASK.T0001" });
+    expect(accepted.ok, JSON.stringify(accepted.errors)).toBe(true);
+    expect(existsSync(join(root, ".pomaster", "trust"))).toBe(false);
   });
 });

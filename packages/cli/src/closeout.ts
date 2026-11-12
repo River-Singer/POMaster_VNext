@@ -156,6 +156,7 @@ import {
 import { semanticFingerprint } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { checkAcceptSignoff } from "./trust.js";
 import {
   governanceErrorToCliError,
   parseErrorToCliError,
@@ -670,6 +671,7 @@ async function acceptReceiptGate(
     return { error: missingError }; // 目录缺席 = 零回执（fail-closed，非放行）
   }
   const staleDecisions: string[] = [];
+  let unsignedError: CliError | null = null;
   for (const padId of padIds) {
     const graphPath = join(padsDir, padId, "decision-graph.json");
     let parsed: unknown;
@@ -727,9 +729,22 @@ async function acceptReceiptGate(
         staleDecisions.push(node.decision_id); // 内容漂移——该回执失效，继续找其他回执
         continue;
       }
+      // 可信签发复核（AP-0a / D-2）：登记了签名人后，覆盖成果的 ACCEPT 要有仍成立的签发；
+      // 没登记时照旧（self_attested，trust status 如实报告）。登记表不成立 → 一律阻断。
+      const signed = checkAcceptSignoff(rootDir, padId, node.decision_id, {
+        ...(taskRef !== null ? { task_ref: taskRef } : {}),
+        ...(changeRef !== null ? { change_ref: changeRef } : {}),
+        ...(fingerprint !== null ? { revision_fingerprint: fingerprint } : {}),
+      });
+      if (!signed.ok) {
+        if (signed.error.code === "TRUST_REGISTRY_INVALID") return { error: signed.error };
+        unsignedError ??= signed.error; // 继续找其他已签的回执
+        continue;
+      }
       return { receipt: { decision_id: node.decision_id, graph: graphRel } };
     }
   }
+  if (unsignedError !== null) return { error: unsignedError };
   if (staleDecisions.length > 0) {
     return {
       error: {
@@ -789,7 +804,7 @@ export async function scanAcceptReceiptStatus(
   const status: AcceptReceiptScanStatus =
     outcome.error.code === "CLOSEOUT_ACCEPT_STALE"
       ? "stale"
-      : outcome.error.code === "CLOSEOUT_ACCEPT_DAMAGED"
+      : outcome.error.code === "CLOSEOUT_ACCEPT_DAMAGED" || outcome.error.code === "TRUST_REGISTRY_INVALID"
         ? "damaged"
         : "missing";
   return { status, receipt: null, error: outcome.error };

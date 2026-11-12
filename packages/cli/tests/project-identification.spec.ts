@@ -10,6 +10,8 @@ import {
   runProjectIdentificationConfirm,
   runProjectIdentificationReport,
 } from "@pomaster/cli";
+import { runTrustEnroll, runTrustRequest } from "../src/trust.js";
+import { makeKey, opensshPrivateKeyText, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 
 let dir: string;
 
@@ -159,5 +161,44 @@ describe("brownfield project identification", () => {
     expect(vue.text).toContain("Vue SFC");
     expect(react.text).toContain("React component/tree");
     expect(vue.digest).not.toBe(react.digest);
+  });
+});
+
+function enrollAndSigner(root: string) {
+  const key = makeKey("ssh-ed25519");
+  const keyDir = mkdtempSync(join(tmpdir(), "pomaster-keys-"));
+  writeFileSync(join(keyDir, "owner.pub"), `${key.line}\n`);
+  writeFileSync(join(keyDir, "owner"), opensshPrivateKeyText("aes256-ctr"));
+  expect(runTrustEnroll(root, { key: join(keyDir, "owner.pub"), principal: "owner", private: join(keyDir, "owner") }, { listAgentKeys: () => [] }).ok).toBe(true);
+  rmSync(keyDir, { recursive: true, force: true });
+  /** 按人工点被拒时的提示建请求并让「人」签名，返回签发编号。 */
+  return (hint: string): string => {
+    const ref = /--ref "((?:[^"\\]|\\.)*)"/.exec(hint)?.[1]?.replace(/\\"/g, '"') ?? "";
+    const sha = /--sha256 ([0-9a-f]{64})/.exec(hint)?.[1] ?? "";
+    const kind = /pomaster trust request (\S+)/.exec(hint)?.[1] ?? "";
+    const id = (runTrustRequest(root, { kind, ref, sha256: sha }, { listAgentKeys: () => [] }).result as { id: string }).id;
+    const path = join(root, ".pomaster", "trust", "requests", `${id}.json`);
+    writeFileSync(`${path}.sig`, signSshsig(key, readFileSync(path)));
+    return id;
+  };
+}
+
+describe("project-identification confirm · 可信签发（AP-0a / D-2）", () => {
+  it("登记签名人后：首次确认要签发（主体写明 TASK 与架构），签发后确认；已完成的重放不再要签", async () => {
+    hostFile("package.json", '{"dependencies":{"vue":"^3.5.0"}}\n');
+    await runInit(dir, { brownfield: { confirmed: false } });
+    expect((await runProjectIdentificationReport(dir, report)).ok).toBe(true);
+    const sign = enrollAndSigner(dir);
+    const refused = await runProjectIdentificationConfirm(dir, { taskId: report.taskId, actor: "human:owner" });
+    expect(refused.errors[0]?.code).toBe("TRUST_SIGNOFF_REQUIRED");
+    expect(refused.errors[0]?.hint).toContain(`project-identification ${report.taskId} → vue`);
+    expect(existsSync(join(dir, ".pomaster", "state", "architecture-profile.json"))).toBe(false);
+    const confirmed = await runProjectIdentificationConfirm(dir, { taskId: report.taskId, actor: "human:owner", signoff: sign(refused.errors[0]?.hint ?? "") });
+    expect(confirmed.ok, JSON.stringify(confirmed.errors)).toBe(true);
+    const payload = identificationBodies()[0]?.payload as { owner_confirmation?: { signoff?: { principal?: string } } };
+    expect(payload.owner_confirmation?.signoff?.principal).toBe("owner");
+    const replay = await runProjectIdentificationConfirm(dir, { taskId: report.taskId, actor: "human:owner" });
+    expect(replay.ok).toBe(true);
+    expect(replay.result.change).toBe("NO_CHANGE");
   });
 });

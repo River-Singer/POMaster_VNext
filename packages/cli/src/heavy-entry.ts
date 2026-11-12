@@ -527,6 +527,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "",
   "# ② FRAMEWORK —— 许可签发/判卷/显式接管/台账",
   "pomaster permit issue/check/steal/list",
+  "pomaster trust enroll/request/sign/verify/status   # 人工点的 Owner 签名：登记 SSH 公钥 → 建签发请求 → 人在自己终端签 → 人工点带 --signoff；agent 不能替人签",
   "",
   "# ③ PROJECTION —— 最小充分上下文投影",
   "pomaster context compile/explain",
