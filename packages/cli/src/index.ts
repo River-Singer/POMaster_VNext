@@ -332,6 +332,7 @@ import { runSpecUpdate } from "./spec-update.js";
 import { runSpecLint } from "./spec-writing.js";
 import { runStandards } from "./standards-map.js";
 import { runPrototypeCheck, runPrototypeIngest } from "./prototype.js";
+import { runIntakeChanges, runIntakeCheck, runIntakePending, runIntakeRead, runIntakeResolve, runIntakeStatus } from "./intake.js";
 import type { DesignSystem } from "./design-standard.js";
 import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -1085,6 +1086,7 @@ export type { DrawerState, StandardsDrawer, StandardsResult, StandardsSpace, Sta
 export type { SpecUpdateResult, SpecCandidate, SpecModality } from "./spec-update.js";
 export type { DesignCheckReport, DesignCheckRow, DesignFinding, DesignCheckInput } from "./design-check.js";
 export { runPrototypeIngest, runPrototypeCheck, PROTOTYPE_FACTS_SCHEMA, UX_IR_SCHEMA } from "./prototype.js";
+export { runIntakeRead, runIntakeStatus, runIntakePending, runIntakeResolve, runIntakeChanges, runIntakeCheck } from "./intake.js";
 export { parseHtml, outlineOf, factsOf, specFactsOf, questionsOf, diffFacts, extractPrototype, outlineMarkdown } from "./prototype-extract.js";
 export type {
   DesignInputs,
@@ -3265,6 +3267,98 @@ export function createProgram(
     .action(async (facts: string, html: string[], opts, command) => {
       const outcome = await runPrototypeCheck(resolveDir(command), { facts, html, render: opts.render === true, allowNetwork: opts.allowNetwork === true });
       record({ command: "prototype check", outcome, asJson: command.opts().json === true });
+    });
+
+  // —— 需求读取（code-spec requirement-intake；旧 what-bp-should-do 在 VNext 的对应物） ——
+  // 材料每版结构都不同：按内容分类、结构无关切块、稳定编号、反向追溯闸门。产物是候选，只写 .pomaster/prototype/<工作区>/。
+  const intake = program
+    .command("intake")
+    .description(
+      "需求读取：read = 整目录读入原型 HTML、需求 md、变更文档、设计文档与项目约定，按内容分类、切块、落成带出处的需求条目，与上一版对齐出稳定编号与差异；status / pending / changes 纯读；resolve = agent 给读不懂的段落或未分类文件写去向；check = 反向追溯闸门（每段都有去向才通过）",
+    );
+  intake
+    .command("read")
+    .description("读入一版材料（目录或文件，可多个）。所有摘要与判读都没变时 NO_CHANGE 零写入。错误码：INTAKE_INPUT_MISSING / INTAKE_INPUT_NOT_FOUND / INTAKE_STATE_UNREADABLE；警告：PROTOTYPE_RENDER_UNAVAILABLE / INTAKE_PROTOTYPE_UNREAD")
+    .argument("<path...>", "材料目录或文件")
+    .option("--name <name>", "工作区名字（缺省取第一个路径的名字）")
+    .option("--render", "原型页面用 Playwright 渲染后再读（脚本生成的内容）")
+    .option("--allow-network", "渲染时允许联网")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (paths: string[], opts, command) => {
+      const outcome = await runIntakeRead(resolveDir(command), {
+        paths,
+        ...(opts.name !== undefined ? { name: opts.name as string } : {}),
+        render: opts.render === true,
+        allowNetwork: opts.allowNetwork === true,
+      });
+      record({ command: "intake read", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("status")
+    .description("最新修订的概况：文件分类、条目数、与上一版的变化、待判读数（纯读）。错误码：INTAKE_WORKSPACE_NOT_FOUND / INTAKE_WORKSPACE_AMBIGUOUS / INTAKE_STATE_UNREADABLE")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakeStatus(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "intake status", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("pending")
+    .description("列出待判读的段落与未分类的文件（纯读）")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakePending(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "intake pending", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("resolve")
+    .description("给一个段落写去向（--block … --as item --kind <类> --text <条目> | --as gap --text <缺口> | --as presentation | --as skip --reason <理由>），或改判文件类别（--file <路径> --class <类别> --reason <理由>）；下次 read 生效。错误码：INTAKE_RESOLVE_INVALID / INTAKE_BLOCK_NOT_FOUND / INTAKE_FILE_NOT_FOUND")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--block <id>", "段落编号（B-…，见 intake pending；可重复，多个段落同一去向时只能 presentation / skip）", collectValues)
+    .option("--file <path>", "文件路径（见 intake pending）")
+    .option("--as <destination>", "item / gap / presentation / skip")
+    .option("--kind <kind>", "--as item 时的条目类（rule / field / scenario / enum / operation / dependency / description / open_question / non_goal / tech_hint / module）")
+    .option("--text <text>", "条目或缺口的内容")
+    .option("--reason <text>", "理由（skip 与改判文件类别时必填）")
+    .option("--class <class>", "改判的文件类别")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakeResolve(resolveDir(command), {
+        ...(opts.name !== undefined ? { name: opts.name as string } : {}),
+        ...(opts.block !== undefined ? { block: opts.block as string[] } : {}),
+        ...(opts.file !== undefined ? { file: opts.file as string } : {}),
+        ...(opts.as !== undefined ? { as: opts.as as string } : {}),
+        ...(opts.kind !== undefined ? { kind: opts.kind as string } : {}),
+        ...(opts.text !== undefined ? { text: opts.text as string } : {}),
+        ...(opts.reason !== undefined ? { reason: opts.reason as string } : {}),
+        ...(opts.class !== undefined ? { fileClass: opts.class as string } : {}),
+      });
+      record({ command: "intake resolve", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("changes")
+    .description("两版之间的语义差异（缺省最新一版对上一版）：新增 / 修改 / 删除（附依据）/ 改名 / 移动 / 拆分 / 合并 / 本次未随交付 / 示例数据变化（纯读）。错误码：INTAKE_REVISION_NOT_FOUND")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--from <n>", "起始修订号")
+    .option("--to <n>", "目标修订号")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakeChanges(resolveDir(command), {
+        ...(opts.name !== undefined ? { name: opts.name as string } : {}),
+        ...(opts.from !== undefined ? { from: Number.parseInt(String(opts.from), 10) } : {}),
+        ...(opts.to !== undefined ? { to: Number.parseInt(String(opts.to), 10) } : {}),
+      });
+      record({ command: "intake changes", outcome, asJson: command.opts().json === true });
+    });
+  intake
+    .command("check")
+    .description("反向追溯闸门：每个段落都有去向、每个文件都已分类才通过（纯读；通过 ≠ 需求被接受）。错误码：INTAKE_PENDING / INTAKE_FILE_UNCLASSIFIED")
+    .option("--name <name>", "工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runIntakeCheck(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "intake check", outcome, asJson: command.opts().json === true });
     });
 
   // —— Agent Behavioral Eval（PRD §44.10；§94.3 触发面配套） ——

@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   diffFacts,
   extractPrototype,
+  isDataDerivedText,
   outlineMarkdown,
   parseHtml,
   questionsOf,
@@ -161,5 +162,19 @@ describe("pomaster prototype ingest / diff", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("原型转换 · 数据派生的文字不进事实的键", () => {
+  it("计数卡片、行数、日期不当区域标题或页面上下文：示例数据从 18 行变 367 行，列的键不变", () => {
+    const page = (count: string) => `<html><body><main><h2>${count}</h2><section class="card"><h3>${count}</h3><p>订单总数</p></section><section aria-label="订单列表"><table><thead><tr><th>订单编号</th><th>金额</th></tr></thead></table></section></main></body></html>`;
+    const keys = (count: string) => extractPrototype(page(count), "html:p.html").facts.filter((fact) => fact.kind === "column").map((fact) => fact.key);
+    expect(keys("18")).toEqual(["column:订单列表/订单编号", "column:订单列表/金额"]);
+    expect(keys("367")).toEqual(keys("18"));
+  });
+
+  it("isDataDerivedText：纯数字、计数、百分比、日期是；有字的标题不是", () => {
+    for (const text of ["367", "1,234", "12.5%", "共 18 条", "2026-08-25", "2026年8月"]) expect(isDataDerivedText(text)).toBe(true);
+    for (const text of ["订单列表", "Q3 汇总", "5.1 审核规则"]) expect(isDataDerivedText(text)).toBe(false);
   });
 });

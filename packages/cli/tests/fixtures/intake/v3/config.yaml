@@ -1,0 +1,8 @@
+schema: spec-driven
+
+context: |
+  技术栈:
+    前端: Vue 3 + Vite + TypeScript
+    后端: FastAPI + Python, 测试 pytest + locust
+  rules:
+    - 单次任务不得同时修改前端和后端

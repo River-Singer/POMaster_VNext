@@ -261,6 +261,18 @@ function labelTextOf(node: HtmlElement): { text: string; hint: string | null } {
   return { text, hint: hint === null || hint === clean(text) ? null : hint };
 }
 
+/**
+ * 数据派生的文字：纯数字、计数（「共 367 条」）、百分比、日期。原型里的计数卡片、行数会随示例数据变，
+ * 拿它们当区域标题，示例数据一换，区域下所有事实的键都跟着换（真实材料 v1→v2 的 SET 表 11 列因此全部换键）。
+ */
+export function isDataDerivedText(text: string): boolean {
+  const value = clean(text);
+  if (value === "") return false;
+  if (/^[\d\s,.，、:/%+\-–—()（）]+$/.test(value)) return true;
+  if (/^(共|合计|总计|total)?\s*[\d,.]+\s*(条|项|个|行|人|件|笔|records?|items?|rows?)?$/i.test(value)) return true;
+  return /^\d{4}\s*[-/年.]\s*\d{1,2}\s*月?(\s*[-/.]?\s*\d{1,2}\s*日?)?$/.test(value);
+}
+
 /** 标签文字归一：去掉必填星号、冒号与空白（「客户名称 *：」→「客户名称」）。 */
 export function normalizeLabel(text: string): string {
   return clean(text).replace(/[*＊]/g, "").replace(/[:：]\s*$/, "").trim();
@@ -734,7 +746,7 @@ function regionTitle(node: HtmlElement, role: RegionRole): string | null {
       if (!self && titleBarrier(child)) continue;
       if (isTitleish(child)) {
         const text = clean(textOf(child));
-        if (text !== "" && text.length <= 40) found = text;
+        if (text !== "" && text.length <= 40 && !isDataDerivedText(text)) found = text;
       } else walk(child, depth + 1, false);
     }
   };
@@ -1053,7 +1065,7 @@ export function factsOf(outline: PrototypeOutline, source: string): PrototypeFac
         case "heading":
           // 页面或区域自己的标题成为上下文，不再单记一条文案；其余标题是分组名
           if (node.text === local.at(-1)) break;
-          if (node.level <= 3 && local.length === context.length && context.length === 0) {
+          if (node.level <= 3 && local.length === context.length && context.length === 0 && !isDataDerivedText(node.text)) {
             local = [node.text];
             break;
           }
