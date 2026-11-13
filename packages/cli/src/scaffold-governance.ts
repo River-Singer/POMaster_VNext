@@ -72,6 +72,8 @@ export interface ScaffoldConfirmationEntry {
   readonly by: string;
   /** 签发证明（AP-0a）：assurance + 签发编号 / 签名人 / 指纹；旧记录没有此键。 */
   readonly signoff?: SignoffRecord;
+  /** 由更大的已签确认单覆盖时的来源（IN-2a：`kickoff KO-…`）；单独确认时缺省。 */
+  readonly authorized_by?: string;
   /** 授权本次确认的 CHANGE.*；首次确认为 null。 */
   readonly change_ref: string | null;
   /** 归一化规格 canonical-JSON 摘要（判漂移只看它）。 */
@@ -346,6 +348,11 @@ export interface ScaffoldConfirmInput {
   /** 治理通道：确认后语义变了，重确认必须挂活性 CHANGE.*。 */
   readonly change?: string;
   readonly catalogRoot?: string;
+  /**
+   * 仅内部调用（不进 CLI）：启动确认单已由 Owner 签过、签名覆盖了这份规格的字节摘要，就不再要第二次签名。
+   * 摘要对不上当前文件字节时不生效，照常走签发门。
+   */
+  readonly authorization?: { readonly kind: "kickoff"; readonly sheet: string; readonly sha256: string; readonly record: SignoffRecord };
 }
 
 export interface ScaffoldConfirmResult {
@@ -522,15 +529,20 @@ export async function runScaffoldConfirm(
   }
 
   // 可信签发（AP-0a）：登记了签名人就要 Owner 对当前规格文件字节的 SSH 签名，一次性消费。
-  const proof = requireHumanSignoff(rootDir, {
-    kind: "scaffold-confirm",
-    ref: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
-    sha256: fileSha256(join(rootDir, ...SCAFFOLD_DOMAIN_SPEC_RELATIVE.split("/"))),
-    subjectPath: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
-    by: input.by,
-    consumedBy: "scaffold confirm",
-    ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
-  });
+  // 启动确认单（IN-2a）签过这份字节摘要时由它覆盖；摘要不符就照常要签发。
+  const specSha = fileSha256(join(rootDir, ...SCAFFOLD_DOMAIN_SPEC_RELATIVE.split("/")));
+  const covered = input.authorization !== undefined && input.authorization.sha256 === specSha && input.authorization.record.signoff !== null ? input.authorization : null;
+  const proof = covered !== null
+    ? { ok: true as const, record: covered.record }
+    : requireHumanSignoff(rootDir, {
+        kind: "scaffold-confirm",
+        ref: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
+        sha256: specSha,
+        subjectPath: SCAFFOLD_DOMAIN_SPEC_RELATIVE,
+        by: input.by,
+        consumedBy: "scaffold confirm",
+        ...(input.signoff !== undefined ? { signoff: input.signoff } : {}),
+      });
   if (!proof.ok) return failConfirm(proof.error, { state_before: stateBefore });
 
   const spec = assessment.normalized;
@@ -538,6 +550,7 @@ export async function runScaffoldConfirm(
     at_seq: initialized.seq,
     by: input.by,
     signoff: proof.record,
+    ...(covered !== null ? { authorized_by: `${covered.kind} ${covered.sheet}` } : {}),
     change_ref: input.change ?? null,
     semantic_sha256: assessment.semantic_sha256,
     raw_sha256: assessment.raw_sha256,
