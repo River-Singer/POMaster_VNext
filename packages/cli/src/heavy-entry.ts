@@ -521,6 +521,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster brainstorm start/question-gate/status/decide/promote",
   "pomaster prototype ingest <html...> --spec <md>   # BA 的 HTML 原型 + spec → 业务事实 / 信息结构 / 冲突提问（去掉表现）",
   "pomaster intake read <材料目录> --name <工作区> [--render]   # 整套需求材料每来一版读一次 → 带出处的需求条目、稳定编号、与上一版的差异；pending / resolve / check 是反向追溯闸门",
+  "pomaster kickoff draft/status/confirm   # 启动确认单：读取草案 + 工具链 + 签名人汇成一张单子；Owner 在 choices.yaml 里答问题、签一次 → 落库领域规格、技术栈、答案与自主边界",
   'pomaster update spec "<一句规范>" --scope … --why … --check-by … --do … --dont … --by <actor>    # 新规范落位（写前按写入契约校验）：界面呈现进设计规范，其余进硬规范主题文档',
   "pomaster spec-lint    # 按写入契约复核已有规范条文（引用 / 版本号 / 时间戳 / 记录人）",
   "pomaster standards [id]    # 规范的空间与抽屉：哪些抽屉对本项目生效、文档在哪、怎么写入",

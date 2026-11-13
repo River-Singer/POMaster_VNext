@@ -1004,6 +1004,10 @@
       "packages/cli/tests/trust.spec.ts": {
         "layer": "L2",
         "note": "可信签发 · 登记与人工点（AP-0a / D-2）：首次信任 → 链式登记（新人自签不算）；手改登记表塞公钥、删登记表退回自报都判不成立且人工点全拒；请求 → 签名 → 一次性消费，重放、内容不符、种类不符、过期、改字节、没签、别人签；并发只一个成功；trust sign 包 ssh-keygen、verify 只读；保障等级五档；scaffold confirm 未登记记 self_attested、登记后不带签发拒、签旧版规格拒、签发后确认记录带证明。"
+      },
+      "packages/cli/tests/kickoff.spec.ts": {
+        "layer": "L2",
+        "note": "启动确认单（IN-2a / D-3 / D-4）：合成材料读入、判读清空（一段记缺口 → 阻断类问题）后出确认单：九部分齐全、不支持的 FastAPI 是必选项不被悄悄替换、没写的阈值记未定、预检只在 preflight.json；choices.yaml 只生成一次不覆盖、改它摘要跟着变、新修订沿用上一版修改、写错拒绝或记为还差；status 列出还差什么与是否最新；confirm 未登记签名人拒、没签 / 种类不对 / 内容旧 / 没刷新都拒；一次落库（领域规格确认记 authorized_by、技术栈键、答案 / 阈值 / 自主边界，current.json 最后写），重跑 NO_CHANGE、签发不可重放；中途失败续做不再消费签发；新修订取代中断的旧落库且领域语义没变不算冲突；手写的未确认规格不覆盖且签发不消费。"
       }
     },
     "notes": {

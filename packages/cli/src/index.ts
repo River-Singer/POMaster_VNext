@@ -365,6 +365,7 @@ import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
+import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
@@ -1389,6 +1390,7 @@ export {
 } from "./tools.js";
 export { packageRunner, runToolsInit } from "./tools-init.js";
 export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, requireHumanSignoff, loadRegistry, SIGNOFF_KINDS } from "./trust.js";
+export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCHEMA, KICKOFF_CURRENT_SCHEMA } from "./kickoff.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4072,6 +4074,44 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action((_opts, command) => {
       record({ command: "trust status", outcome: runTrustStatus(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+
+  // —— 启动确认单（IN-2a / D-3 / D-4）：两个人工点里的第一个 ——
+  const kickoff = program
+    .command("kickoff")
+    .description(
+      "启动确认单（IN-2a）：把需求读取的草案、工具链回执和签名人登记组织成一张确认单——业务、问题、技术基线、领域、非功能阈值、自主边界、预算与有效期、预检、签名人。Owner 签一次（trust kind = kickoff），confirm 一次可恢复地落库：领域规格并确认、技术栈键、答案 / 阈值 / 自主边界；最后写 .pomaster/kickoff/current.json 才算生效",
+    );
+  kickoff
+    .command("draft")
+    .description("生成 / 刷新确认单：.pomaster/kickoff/<KO-…>/sheet.json（被签的字节）+ sheet.md（阅读版）+ preflight.json（预检，不进签名）。Owner 的修改写 choices.yaml（不会被覆盖；新修订沿用上一版的）。错误码：KICKOFF_INTAKE_MISSING / KICKOFF_INTAKE_NOT_READY / KICKOFF_CHOICES_INVALID")
+    .option("--name <name>", "需求读取工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runKickoffDraft(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "kickoff draft", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  kickoff
+    .command("status")
+    .description("纯读：确认单能不能签（阻断类问题未答、不支持的技术栈未选、领域草案未通过、没登记签名人、确认单不是最新）、中断未完成的落库、生效中的启动确认")
+    .option("--name <name>", "需求读取工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runKickoffStatus(resolveDir(command), { ...(opts.name !== undefined ? { name: opts.name as string } : {}) });
+      record({ command: "kickoff status", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  kickoff
+    .command("confirm")
+    .description("核验 Owner 对 sheet.json 的签名（一次性消费）后落库；中途失败重跑即续做，已完成的步骤不重做。没有登记签名人时拒绝（启动确认不接受自报）。错误码：KICKOFF_SHEET_STALE / KICKOFF_NOT_READY / KICKOFF_DOMAIN_CONFLICT / TRUST_NOT_ENROLLED / TRUST_SIGNOFF_REQUIRED / TRUST_*")
+    .option("--signoff <SO-id>", "Owner 签过的 kickoff 签发（pomaster trust request kickoff --subject .pomaster/kickoff/<KO-…>/sheet.json）")
+    .option("--name <name>", "需求读取工作区名字（只有一个时可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runKickoffConfirm(resolveDir(command), {
+        ...(opts.name !== undefined ? { name: opts.name as string } : {}),
+        ...(opts.signoff !== undefined ? { signoff: opts.signoff as string } : {}),
+      });
+      record({ command: "kickoff confirm", outcome, asJson: command.optsWithGlobals().json === true });
     });
 
   // —— ToolBinding 统一注册面命令（W1-R1-4 · 09-10 PRD §17 + integration-designs.md

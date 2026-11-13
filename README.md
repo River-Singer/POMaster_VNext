@@ -101,9 +101,32 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 - 验签在 POMaster 里完成，运行它的机器不需要装 OpenSSH。
 - 保障等级如实记录：硬件密钥，或带口令且没放在 ssh-agent 里，是 strong；无口令或已在 ssh-agent 里（agent 也能用它签）是 weak。
 - 有人改了签名人登记表、或删掉它想退回自报模式，所有人工点都会拒绝。
-- 没登记签名人时，人工点照旧接受 `--by human:`，记为 `self_attested`。
+- 没登记签名人时，人工点照旧接受 `--by human:`，记为 `self_attested`。启动确认例外：它必须签名（见下一节）。
 
 用 `pomaster trust status` 看当前模式和每个签名人的保障等级。QA 与实现分会话的隔离还没做，状态里如实显示「QA 未隔离」。
+
+### 9. 开工前 Owner 签一次启动确认单
+
+需求读完、草案生成后，`pomaster kickoff draft` 把草案、浏览器工具链回执和签名人汇成一张启动确认单，写进 `.pomaster/kickoff/<KO-…>/`：
+- `sheet.md` 是阅读版，依次是：业务与本轮范围、待答问题、技术基线、领域、非功能阈值、自主边界（agent 可以自己决定什么、什么必须停下来问）、预算与有效期、预检、签名人。
+- `sheet.json` 是被签的内容。
+- `choices.yaml` 是你改的地方：答问题、选技术栈、填阈值、排除模块、改自主边界和预算。它只生成一次，不会被覆盖；材料来了新版本，新确认单沿用上一版的修改。
+
+签之前要齐：
+- 阻断类问题都答了；
+- 材料要的技术栈脚手架不支持时（比如 FastAPI），要选「按材料，这一层手写」或「改用脚手架默认栈」，不会被悄悄换掉；
+- 领域草案通过校验；
+- 签名人已登记；
+- 确认单是最新的。
+
+`kickoff status` 列出还差什么。预检（Node、浏览器工具链、Java / Maven、数据库环境、签名人保障等级）只提示，不挡签名。
+
+齐了以后按单子末尾的三步签：`pomaster trust request kickoff --subject .pomaster/kickoff/<KO-…>/sheet.json`，在你自己的终端用 `ssh-keygen -Y sign` 签名，再 `pomaster kickoff confirm --signoff <SO-…>`。confirm 依次落库：
+1. 领域规格放到脚手架位置并确认。启动确认的签名已经覆盖它，不用再签一次。
+2. 技术栈逐键写进基线。
+3. 答案、阈值、自主边界写进确认单目录。
+
+最后才写 `.pomaster/kickoff/current.json`，有它才算生效，默认有效 14 天。中途失败时修好再重跑：已完成的步骤不重做，签发也不再消费。没登记签名人时 confirm 直接拒绝，启动确认不接受自报。
 
 ## 前端：设计规范、Storybook 与原型转换
 
@@ -215,6 +238,7 @@ pomaster baseline set/confirm/retire/unretire   # 回填基线键 / 确认基线
 pomaster brainstorm start/question-gate/status/decide/promote
 pomaster prototype ingest/check                 # BA 原型 → 业务事实与信息结构（ingest）；重绘页面与事实对账（check）
 pomaster intake read/status/pending/resolve/changes/check/draft   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门；draft 从最新修订出可签草案
+pomaster kickoff draft/status/confirm           # 启动确认单：草案 + 工具链 + 签名人汇成一张单子；Owner 在 choices.yaml 里答问题、签一次，confirm 落库领域规格、技术栈、答案与自主边界
 
 # ② 许可
 pomaster permit issue/check/steal/renew/widen/list
