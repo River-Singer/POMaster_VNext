@@ -1,5 +1,5 @@
 /**
- * kickoff.ts —— 启动确认单（code-spec kickoff；IN-2a / D-3 / D-4）：两个人工点里的第一个。
+ * kickoff.ts —— 启动确认单（code-spec kickoff；IN-2a / IN-2b / D-3 / D-4 / D-5）：两个人工点里的第一个。
  *
  * 把读取阶段的草案（IN-1b）、工具链回执（INIT-C）和签名人登记（AP-0a）组织成一张确认单，Owner 签一次
  * （trust kind = kickoff），然后一次可恢复的落库把签过的内容放到位：
@@ -8,9 +8,15 @@
  *   重新 draft 时保留；
  * - `kickoff status`：纯读，列出签名前还差什么；
  * - `kickoff confirm --signoff`：核验签名 → 先写 apply.json 记下签发 → 逐步落库（领域规格并确认、技术栈键、
- *   答案 / 阈值 / 自主边界）→ 最后写 current.json。只有 current.json 才表示启动确认生效；中途崩溃重跑续做。
+ *   样式候选（D-5，IN-2b：两套候选、Storybook 同一组代表页比较，选定结果进设计规范）、答案 / 阈值 / 自主边界）
+ *   → 最后写 current.json。只有 current.json 才表示启动确认生效；中途崩溃重跑续做。
  *
- * 不做：整体 baseline confirm、设计样式选择（IN-2b）、开工派发（AP-2）。
+ * 样式候选（IN-2b）：设计体系跟着技术基线的前端框架走（vue3 → antd，react → geist），体系内两套密度方案
+ * （standard 预设原样 / compact 官方紧凑算法）， Owner 不选就按 standard 落库；落库 = 复用 design adopt 把
+ * 预设写进 `.pomaster/baseline/frontend/design-standard.yaml`，compact 再把有官方词形的 token 键收紧并翻
+ * customized。项目里已有另一体系的设计规范时，confirm 在消费签发前如实拒绝（KICKOFF_STYLE_CONFLICT）。
+ *
+ * 不做：整体 baseline confirm、开工派发（AP-2）。
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -25,9 +31,20 @@ import { INTAKE_DRAFT_GENERATOR, INTAKE_DRAFT_SCHEMA, type IntakeDraft } from ".
 import { loadIntakeLatest, runIntakeCheck } from "./intake.js";
 import { requireInitialized } from "./permit.js";
 import { loadCatalogArchetypes, resolveCatalogRoot } from "@pomaster/kernel";
+import { runDesignAdopt } from "./design-adopt.js";
 import { assessScaffoldSpec, runScaffoldConfirm, scaffoldSemanticDigest } from "./scaffold-governance.js";
 import { readDomainSpecFile, validateDomainSpec, type ArchetypeCatalogEntry } from "./scaffold-spec.js";
-import { SCAFFOLD_DIR_RELATIVE, SCAFFOLD_DOMAIN_SPEC_RELATIVE } from "./store-layout.js";
+import { POMASTER_DIR, SCAFFOLD_DIR_RELATIVE, SCAFFOLD_DOMAIN_SPEC_RELATIVE } from "./store-layout.js";
+import { DESIGN_STANDARD_RELATIVE, DESIGN_TOKENS_RELATIVE, readDesignStandardFile } from "./design-standard.js";
+import {
+  applyTokenDeltas,
+  KICKOFF_STYLE_SCHEMA,
+  resolveStyleChoice,
+  styleCatalogFor,
+  styleChoiceProblem,
+  systemOfFramework,
+  type KickoffStyleSection,
+} from "./style-candidates.js";
 import { loadToolchainReceipt, quoteForCmd } from "./toolchain.js";
 import { assuranceOf, fileSha256, loadRegistry, verifySignoff, type SignoffRecord, type TrustEnv } from "./trust.js";
 
@@ -96,13 +113,15 @@ export interface KickoffChoices {
   readonly stack: Readonly<Record<string, string>>;
   /** 材料要求脚手架不支持的栈时必须选：material = 按材料（后端手写）；scaffold = 改用脚手架默认栈。 */
   readonly stack_decision: Readonly<Partial<Record<"frontend" | "backend", "material" | "scaffold">>>;
+  /** 样式候选编号（standard / compact）；不写 = 缺省 standard。 */
+  readonly style: string | null;
   readonly thresholds: Readonly<Record<string, string>>;
   readonly exclude_modules: readonly string[];
   readonly autonomy: { readonly allow?: readonly string[]; readonly stop?: readonly string[] };
   readonly budget: { readonly valid_days?: number; readonly max_rework_rounds?: number };
 }
 
-const EMPTY_CHOICES: KickoffChoices = { answers: {}, stack: {}, stack_decision: {}, thresholds: {}, exclude_modules: [], autonomy: {}, budget: {} };
+const EMPTY_CHOICES: KickoffChoices = { answers: {}, stack: {}, stack_decision: {}, style: null, thresholds: {}, exclude_modules: [], autonomy: {}, budget: {} };
 
 export interface SheetQuestion {
   readonly key: string;
@@ -145,6 +164,8 @@ export interface KickoffSheet {
   readonly scope: { readonly in: readonly string[]; readonly out: ReadonlyArray<{ key: string; reason: string }> };
   readonly questions: readonly SheetQuestion[];
   readonly stack: { readonly architecture: ArchitectureId; readonly frontend: StackLane; readonly backend: StackLane };
+  /** 样式候选（D-5 / IN-2b）：体系跟着前端框架走，体系内两套方案（第一轮 geist 待补，如实标注）。 */
+  readonly style: KickoffStyleSection;
   readonly domain: { readonly file: string; readonly sha256: string; readonly entities: number; readonly validated: boolean; readonly defaults: readonly string[] };
   readonly thresholds: ReadonlyArray<{ topic: string; value: string | null; source: string }>;
   readonly autonomy: { readonly allow: readonly string[]; readonly stop: readonly string[] };
@@ -202,12 +223,15 @@ export function parseChoices(text: string): { ok: true; choices: KickoffChoices 
   const number = (value: unknown) => (typeof value === "number" && Number.isInteger(value) && value > 0 ? value : undefined);
   const validDays = number(budget["valid_days"]);
   const rework = number(budget["max_rework_rounds"]);
+  const styleRaw = record["style"];
+  const style = typeof styleRaw === "string" && styleRaw.trim() !== "" ? styleRaw.trim() : null;
   return {
     ok: true,
     choices: {
       answers: asStringRecord(record["answers"]),
       stack: asStringRecord(record["stack"]),
       stack_decision: decision as KickoffChoices["stack_decision"],
+      style,
       thresholds: asStringRecord(record["thresholds"]),
       exclude_modules: list(record["exclude_modules"]),
       autonomy: { ...(Array.isArray(autonomy["allow"]) ? { allow: list(autonomy["allow"]) } : {}), ...(Array.isArray(autonomy["stop"]) ? { stop: list(autonomy["stop"]) } : {}) },
@@ -230,6 +254,10 @@ function choicesTemplate(questions: readonly SheetQuestion[], needDecision: read
     "",
     "# 覆盖推荐的技术栈键，写成 <lane>.<key>: <值>，例如 backend.database: postgresql",
     "stack: {}",
+    "",
+    "# 样式候选编号（确认单第 4 节；Storybook「样式候选」分区可预览同一组代表页面）。",
+    "# 不写 = 缺省 standard（预设原样）。写成其他值会列在「签名前还差」里。",
+    'style: ""',
     "",
     "# 非功能阈值，例如 response_time: 500ms、concurrency: 200 人、capacity: 10000 条",
     "thresholds: {}",
@@ -319,6 +347,23 @@ function buildStack(draft: IntakeDraft, choices: KickoffChoices): { stack: Kicko
   return { stack: { architecture, frontend: lane("frontend", front, frontendDefaults), backend: lane("backend", back, backendDefaults) }, unresolved };
 }
 
+/** 样式段（D-5 / IN-2b）：体系跟有效的前端框架推荐值走（材料线索、Owner 覆盖都算），候选来自工具目录。 */
+function buildStyleSection(stack: KickoffSheet["stack"], choices: KickoffChoices): { style: KickoffStyleSection; problem: string | null } {
+  const framework = stack.frontend.recommended.find((entry) => entry.key === "framework");
+  const system = systemOfFramework(framework?.value ?? null);
+  const catalog = system === null ? null : styleCatalogFor(system);
+  const problem = styleChoiceProblem(choices.style, catalog);
+  const style: KickoffStyleSection = {
+    design_system: system,
+    ui_library: catalog?.ui_library ?? null,
+    system_source: framework === undefined || system === null ? null : `${framework.source}:${framework.value}`,
+    candidates: catalog?.candidates ?? [],
+    choice: choices.style,
+    note_zh: catalog?.note_zh ?? (system === null ? "前端框架还没定（材料没给、Owner 也没覆盖）：定了框架再出样式候选，落库先跳过样式" : null),
+  };
+  return { style, problem };
+}
+
 interface Context {
   readonly dir: string;
   readonly workspace: string;
@@ -392,6 +437,8 @@ function buildSheet(ctx: Context, choices: KickoffChoices, choicesSha: string): 
     });
   for (const key of Object.keys(choices.answers)) if (!questions.some((question) => question.key === key)) warnings.push(`answers 里的 ${key} 在本版确认单上没有对应问题，已忽略`);
   const { stack, unresolved } = buildStack(draft, choices);
+  const { style, problem } = buildStyleSection(stack, choices);
+  if (problem !== null) unresolved.push(problem);
   for (const question of questions) {
     if (question.classification === "BLOCKING_AUTHORITY" && question.answer === null) unresolved.push(`阻断类问题未答：${question.key} ${question.question.slice(0, 60)}`);
   }
@@ -415,6 +462,7 @@ function buildSheet(ctx: Context, choices: KickoffChoices, choicesSha: string): 
     scope: { in: business.map((module) => module.key), out: scopeOut },
     questions,
     stack,
+    style,
     domain: { file: posix(relative(ctx.dir, ctx.domainPath)), sha256: existsSync(ctx.domainPath) ? fileSha256(ctx.domainPath) : "", entities: draft.domain.entities, validated: draft.domain.validated && draft.domain.ok, defaults: draft.domain.defaults },
     thresholds,
     autonomy: { allow: [...(choices.autonomy.allow ?? DEFAULT_ALLOW)], stop: stopOn },
@@ -498,12 +546,24 @@ function renderMarkdown(sheet: KickoffSheet, unresolved: readonly string[], pref
     for (const key of entry.recommended) out.push(`- ${key.key}: ${key.value}（${key.source}）`);
     out.push("");
   }
-  out.push("## 4. 领域", "", `- 草案 ${sheet.domain.file}（sha256 ${sheet.domain.sha256.slice(0, 12)}…），${sheet.domain.entities} 个实体，${sheet.domain.validated ? "已通过脚手架校验" : "未通过校验"}`, ...sheet.domain.defaults.map((entry) => `- 缺省：${entry}`), "");
-  out.push("## 5. 非功能阈值", "", ...sheet.thresholds.map((entry) => `- ${entry.topic}：${entry.value ?? "未定"}（${entry.source}）`), "");
-  out.push("## 6. 自主边界", "", ...sheet.autonomy.allow.map((entry) => `- 可以自己决定：${entry}`), ...sheet.autonomy.stop.map((entry) => `- 必须停下来问：${entry}`), "");
-  out.push("## 7. 预算与有效期", "", `- 有效 ${sheet.budget.valid_days} 天；同一处返工最多 ${sheet.budget.max_rework_rounds} 轮`, "");
-  out.push("## 8. 预检（不在签名范围内，签之前看一眼）", "", ...preflight.map((item) => `- ${item.status === "pass" ? "✓" : item.status === "fail" ? "✗" : "?"} ${item.item}：${item.detail}${item.fix !== undefined ? `——${item.fix}` : ""}`), "");
-  out.push("## 9. 签名人", "");
+  out.push("## 4. 样式（两套候选，同一组代表页面在 Storybook 比较）", "");
+  if (sheet.style.design_system === null || sheet.style.candidates.length === 0) {
+    out.push(`- 设计体系未定${sheet.style.note_zh === null ? "" : `：${sheet.style.note_zh}`}`, "- 落库时先跳过样式，规范以后按 design adopt 落", "");
+  } else {
+    out.push(`- 设计体系：${sheet.style.design_system}（${sheet.style.ui_library ?? ""}）——由前端框架决定（${sheet.style.system_source ?? ""}）`);
+    for (const candidate of sheet.style.candidates) {
+      out.push(`- 候选 ${candidate.id}　${candidate.title_zh}：${candidate.summary_zh}`);
+      for (const delta of candidate.token_deltas) out.push(`  - ${delta.path} → ${delta.value}（${delta.wordform}；${delta.note_zh}）`);
+    }
+    if (sheet.style.note_zh !== null) out.push(`- ${sheet.style.note_zh}`);
+    out.push(`- 选择：${sheet.style.choice !== null ? `${sheet.style.choice}（choices.yaml 的 style）` : "未选，缺省 standard"}。预览：在工具仓跑 node packages/studio/run.mjs dev，侧栏「样式候选」下列表页 / 复杂表单 / 详情页两个候选各有一份；改 choices.yaml 的 style 后重跑 pomaster kickoff draft`, "");
+  }
+  out.push("## 5. 领域", "", `- 草案 ${sheet.domain.file}（sha256 ${sheet.domain.sha256.slice(0, 12)}…），${sheet.domain.entities} 个实体，${sheet.domain.validated ? "已通过脚手架校验" : "未通过校验"}`, ...sheet.domain.defaults.map((entry) => `- 缺省：${entry}`), "");
+  out.push("## 6. 非功能阈值", "", ...sheet.thresholds.map((entry) => `- ${entry.topic}：${entry.value ?? "未定"}（${entry.source}）`), "");
+  out.push("## 7. 自主边界", "", ...sheet.autonomy.allow.map((entry) => `- 可以自己决定：${entry}`), ...sheet.autonomy.stop.map((entry) => `- 必须停下来问：${entry}`), "");
+  out.push("## 8. 预算与有效期", "", `- 有效 ${sheet.budget.valid_days} 天；同一处返工最多 ${sheet.budget.max_rework_rounds} 轮`, "");
+  out.push("## 9. 预检（不在签名范围内，签之前看一眼）", "", ...preflight.map((item) => `- ${item.status === "pass" ? "✓" : item.status === "fail" ? "✗" : "?"} ${item.item}：${item.detail}${item.fix !== undefined ? `——${item.fix}` : ""}`), "");
+  out.push("## 10. 签名人", "");
   if (sheet.signers.length === 0) out.push("- （还没有登记：pomaster trust enroll --key <你的公钥.pub> --principal <名字>）", "");
   else out.push(...sheet.signers.map((signer) => `- ${signer.bootstrap ? "★ " : ""}${signer.principal} ${signer.fingerprint}`), ...(sheet.signers.some((signer) => signer.bootstrap) ? ["", "★ = 首次信任登记：请确认这就是你自己的密钥。"] : []), "");
   out.push(unresolved.length > 0 ? "## 签名前还差" : "## 可以签了", "");
@@ -564,6 +624,7 @@ export function runKickoffDraft(dir: string, input: { readonly name?: string }, 
   writeFileSync(join(outDir, "preflight.json"), `${JSON.stringify({ schema: "pomaster.kickoff-preflight/v1", sheet: id, items: preflight }, null, 2)}\n`, "utf8");
   writeFileSync(join(outDir, "sheet.md"), renderMarkdown(sheet, unresolved, preflight), "utf8");
   const rel = posix(relative(dir, outDir));
+  const styleLine = sheet.style.candidates.length > 0 ? `样式候选 ${sheet.style.candidates.length} 套（${sheet.style.candidates.map((candidate) => `${candidate.id} ${candidate.title_zh}`).join("；")}）${sheet.style.choice !== null ? `，已选 ${sheet.style.choice}` : "，未选按 standard"}` : `样式候选待补${sheet.style.note_zh === null ? "" : `——${sheet.style.note_zh}`}`;
   const result: KickoffDraftResult = { id, change, ready: unresolved.length === 0, unresolved, sheet_sha256: sha256(text), preflight };
   const cliWarnings: CliWarning[] = warnings.map((message) => ({ code: "KICKOFF_CHOICES_IGNORED", message }));
   return okOutcome(
@@ -572,6 +633,7 @@ export function runKickoffDraft(dir: string, input: { readonly name?: string }, 
     [
       `kickoff draft: ${change} — ${id}（${rel}/sheet.md）`,
       `  ${sheet.business.length} 个模块、${sheet.questions.length} 个问题（阻断类 ${sheet.questions.filter((question) => question.classification === "BLOCKING_AUTHORITY").length}）、架构 ${sheet.stack.architecture}`,
+      `  ${styleLine}`,
       `  预检：${preflight.filter((item) => item.status === "pass").length} 过、${preflight.filter((item) => item.status === "fail").length} 不过、${preflight.filter((item) => item.status === "unknown").length} 未知（不挡签名，挡全 auto 就绪）`,
       ...(unresolved.length > 0 ? ["  签名前还差：", ...unresolved.map((entry) => `    - ${entry}`), `  改 ${rel}/choices.yaml 后重跑 pomaster kickoff draft`] : ["  可以签了：", `    pomaster trust request kickoff --subject ${rel}/sheet.json`, "    （在你自己的终端用 ssh-keygen -Y sign 签名）", "    pomaster kickoff confirm --signoff <SO-…>"]),
     ],
@@ -611,6 +673,23 @@ async function domainConflict(dir: string, draftPath: string): Promise<CliError 
   const ours = readdirSync(join(dir, ...KICKOFF_DIR.split("/"))).some((name) => name.startsWith("KO-") && readJson<KickoffSheet>(join(sheetDir(dir, name), "sheet.json"))?.domain.sha256 === existingSha);
   if (ours) return null;
   return { code: "KICKOFF_DOMAIN_CONFLICT", message: `项目里已有一份没确认过的领域规格（${SCAFFOLD_DOMAIN_SPEC_RELATIVE}），不覆盖`, hint: "这份手写规格要用就把内容放进需求材料重新读取；不用就挪走它" };
+}
+
+/**
+ * 样式落库前置冲突（IN-2b）：项目里已有的设计规范体系和确认单要落的不一致（或读不了）时，
+ * 确认单不覆盖它——换体系是已签范围的变化，先解决已有规范再 confirm。
+ */
+function styleConflict(dir: string, style: KickoffStyleSection): CliError | null {
+  if (style.design_system === null) return null;
+  const standardPath = join(dir, POMASTER_DIR, ...DESIGN_STANDARD_RELATIVE.split("/"));
+  if (!existsSync(standardPath)) return null;
+  const read = readDesignStandardFile(standardPath);
+  if (!read.ok) return { code: "KICKOFF_STYLE_CONFLICT", message: `项目里已有一份读不了的设计规范（${DESIGN_STANDARD_RELATIVE}），确认单不覆盖它`, hint: "修好或挪走这份规范后再 pomaster kickoff confirm" };
+  const meta = (read.raw as { meta?: { design_system?: unknown } }).meta;
+  const existing = typeof meta?.design_system === "string" ? meta.design_system : null;
+  if (existing === null) return { code: "KICKOFF_STYLE_CONFLICT", message: `项目里已有的设计规范（${DESIGN_STANDARD_RELATIVE}）没写明设计体系（meta.design_system），确认单不覆盖它`, hint: "修好 meta.design_system 或挪走这份规范后再 confirm" };
+  if (existing !== style.design_system) return { code: "KICKOFF_STYLE_CONFLICT", message: `项目里已有 ${existing} 体系的设计规范（${DESIGN_STANDARD_RELATIVE}），确认单按前端框架要落 ${style.design_system}`, hint: "样式体系跟着前端框架走：改 choices.yaml 的 stack.frontend.framework，或挪走已有规范后重签" };
+  return null;
 }
 
 /** 草案的语义摘要（与 scaffold confirm 判漂移同一算法）；草案不通过校验时 null。 */
@@ -711,6 +790,11 @@ export async function runKickoffConfirm(dir: string, input: { readonly name?: st
     const conflict = await domainConflict(dir, ctx.domainPath);
     if (conflict !== null) return fail([conflict]);
   }
+  // 样式冲突同样在消费签发前拦：已有的另一体系设计规范不被确认单覆盖
+  if (earlyJournal?.steps["style"] !== "done") {
+    const conflict = styleConflict(dir, built.sheet.style);
+    if (conflict !== null) return fail([conflict]);
+  }
   const registry = loadRegistry(dir);
   if (registry.state !== "ok") return fail([{ code: registry.state === "absent" ? "TRUST_NOT_ENROLLED" : "TRUST_REGISTRY_INVALID", message: registry.state === "absent" ? "启动确认必须由 Owner 用 SSH 私钥签名，项目还没有登记签名人" : `签名人登记表不成立：${registry.reason}`, hint: registry.state === "absent" ? "pomaster trust enroll --key <公钥.pub> --principal <名字>，然后 pomaster kickoff draft 把签名人写进确认单" : "看过 .pomaster/trust/ 的 git 历史后恢复" }]);
   if (built.unresolved.length > 0) return fail([{ code: "KICKOFF_NOT_READY", message: built.unresolved.join("；"), hint: "改 choices.yaml → pomaster kickoff draft → 重新签" }]);
@@ -765,7 +849,43 @@ export async function runKickoffConfirm(dir: string, input: { readonly name?: st
     }
     mark("stack");
   }
-  // 3 权威记录：答案 / 阈值 / 自主边界（PL-1、TS-2、AP-2 消费）
+  // 3 样式（D-5 / IN-2b）：确认单选定的候选落设计规范——预设不在座就按 design adopt 同一路径拷预设；
+  //   紧凑候选再把有官方词形的 token 键收紧并翻 customized；style.json 记下决定。没有体系/候选时如实跳过
+  if (steps["style"] !== "done") {
+    const resolved = resolveStyleChoice(sheet.style);
+    if (resolved.system !== null) {
+      const standardPath = join(dir, POMASTER_DIR, ...DESIGN_STANDARD_RELATIVE.split("/"));
+      if (!existsSync(standardPath)) {
+        const adopted = runDesignAdopt(dir, { system: resolved.system });
+        if (!adopted.ok) return stepFail("style", adopted.errors);
+      }
+      if (resolved.candidate !== null && resolved.candidate.token_deltas.length > 0) {
+        const tokensPath = join(dir, POMASTER_DIR, ...DESIGN_TOKENS_RELATIVE.split("/"));
+        if (!existsSync(tokensPath)) {
+          return stepFail("style", [{ code: "KICKOFF_TOKENS_MISSING", message: `token 合同不在座（${DESIGN_TOKENS_RELATIVE}），紧凑候选没有可写的落点`, hint: "pomaster init 只补缺席的文件，重跑 init 或 pomaster design adopt 后再 confirm" }]);
+        }
+        const before = readFileSync(tokensPath, "utf8");
+        const applied = applyTokenDeltas(before, `${id} 选定 ${resolved.candidate.id}`, resolved.candidate.token_deltas);
+        if (applied.missing.length > 0) {
+          return stepFail("style", [{ code: "KICKOFF_STYLE_TOKENS_DRIFT", message: `design-tokens.yaml 里找不到 ${applied.missing.join("、")} 的键行（种子被改过）`, hint: "核对 token 合同把键对上，或恢复 design-tokens.yaml 后重跑 confirm（已完成的步骤不会重做）" }]);
+        }
+        if (applied.text !== before) writeFileSync(tokensPath, applied.text, "utf8");
+      }
+    }
+    const styleRecord = {
+      schema: KICKOFF_STYLE_SCHEMA,
+      sheet: id,
+      design_system: sheet.style.design_system,
+      ui_library: sheet.style.ui_library,
+      system_source: sheet.style.system_source,
+      choice: resolved.candidate?.id ?? null,
+      disposition: resolved.disposition,
+      candidate: resolved.candidate,
+    };
+    writeFileSync(join(outDir, "style.json"), `${JSON.stringify(styleRecord, null, 2)}\n`, "utf8");
+    mark("style");
+  }
+  // 4 权威记录：答案 / 阈值 / 自主边界（PL-1、TS-2、AP-2 消费）
   if (steps["authority"] !== "done") {
     const write = (name: string, value: unknown) => writeFileSync(join(outDir, name), `${JSON.stringify({ schema: `pomaster.kickoff-${name.replace(/\.json$/, "")}/v1`, sheet: id, ...value as object }, null, 2)}\n`, "utf8");
     write("decisions.json", { answers: sheet.questions.map((question) => ({ key: question.key, classification: question.classification, question: question.question, answer: question.answer, default: question.default, disposition: question.answer !== null ? "answered" : "default" })) });
@@ -773,7 +893,7 @@ export async function runKickoffConfirm(dir: string, input: { readonly name?: st
     write("autonomy.json", { allow: sheet.autonomy.allow, stop: sheet.autonomy.stop, budget: sheet.budget, scope: sheet.scope });
     mark("authority");
   }
-  // 4 提交：current.json 最后写，是启动确认生效的唯一标志；之后再给日志记提交、给被取代的旧落库记去向
+  // 5 提交：current.json 最后写，是启动确认生效的唯一标志；之后再给日志记提交、给被取代的旧落库记去向
   const appliedAt = new Date();
   const validUntil = new Date(appliedAt.getTime() + sheet.budget.valid_days * 86_400_000).toISOString();
   writeFileSync(
@@ -787,10 +907,11 @@ export async function runKickoffConfirm(dir: string, input: { readonly name?: st
     const oldJournal = old.sheet === id ? null : readJson<ApplyJournal>(oldPath);
     if (oldJournal !== null && oldJournal.committed !== true) writeFileSync(oldPath, `${JSON.stringify({ ...oldJournal, superseded_by: id }, null, 2)}\n`, "utf8");
   }
+  const styleApplied = resolveStyleChoice(sheet.style);
   return okOutcome("kickoff confirm", { id, change, signoff: journal.signoff, steps, valid_until: validUntil }, [
     `kickoff confirm: ${change} — ${id} 生效至 ${validUntil}`,
     `  签名人 ${journal.signoff.principal}（${journal.signoff.fingerprint}），保障 ${journal.signoff.assurance}`,
-    "  已落库：领域规格（并确认）、技术栈键、答案 / 阈值 / 自主边界",
+    `  已落库：领域规格（并确认）、技术栈键、样式（${styleApplied.candidate === null ? "没有候选，先跳过" : `${styleApplied.candidate.title_zh}，设计规范在 ${DESIGN_STANDARD_RELATIVE}`}）、答案 / 阈值 / 自主边界`,
     "  下一步：按业务场景规划（PL-1）",
   ]);
 }

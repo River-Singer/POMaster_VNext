@@ -1,5 +1,6 @@
 // 启动确认单钉测（code-spec kickoff §6；IN-2a）：合成材料 v1 → v2 读入、判读清空、生成草案后出确认单；
 // Owner 在 choices.yaml 里答阻断类问题、选不支持的技术栈，签名后一次可恢复地落库。
+// （IN-2b 起确认单第 4 节是样式候选，本文件仅有的变化是 sheet.md 小节顺延后的标题钉。）
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -123,7 +124,7 @@ describe("kickoff draft · 确认单", () => {
     const preflight = readJson(join(kickoffDir(result.id), "preflight.json")) as { items: Array<{ item: string; status: string }> };
     expect(preflight.items.find((item) => item.item === "Node.js")?.status).toBe("fail");
     const markdown = readFileSync(join(kickoffDir(result.id), "sheet.md"), "utf8");
-    expect(markdown).toContain("## 8. 预检");
+    expect(markdown).toContain("## 9. 预检");
     expect(markdown).toContain("## 签名前还差");
   });
 
