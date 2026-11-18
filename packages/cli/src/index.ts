@@ -367,6 +367,7 @@ import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
+import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
 import { runAutopilotEscalateList, runAutopilotEscalateRecord } from "./autopilot-escalate.js";
 import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
@@ -1396,6 +1397,7 @@ export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrust
 export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCHEMA, KICKOFF_CURRENT_SCHEMA } from "./kickoff.js";
 export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
 export { runAutopilotEscalateRecord, runAutopilotEscalateList, ESCALATION_SCHEMA, ESCALATION_CONTEXTS } from "./autopilot-escalate.js";
+export { runAutopilotDispatch, runAutopilotStatus, runAutopilotSuspend, runAutopilotResume, runAutopilotBudgetRecord, DISPATCH_SCHEMA, AUTOPILOT_STOP_CONSECUTIVE_FAILURES } from "./autopilot-dispatch.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4193,17 +4195,90 @@ export function createProgram(
       record({ command: "qa cases check", outcome: runQaCasesCheck(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
     });
 
-  // —— 自驱流程命令面（TC-1b；D-7） ——
-  // escalate = 追加式纠错出口台账：有依据的呈报，不等于实现失败；不能抹已有失败、
-  // 删测试或绕授权。append-only（唯一写通路 appendFileSync；无 resolve/删改口——处置
-  // 在人侧队列）。削弱检查链复用 audit test-weakening（判定权威在 kernel，AC-08）：
-  // audit 命中 → driver 链 escalate record --context test-weakening 挂账；链式而不
-  // 嵌入（audit 写 OBS sidecar、escalate 是另一条追加面——各自单一写口）。
+  // —— 自驱流程命令面（TC-1b + AP-2；D-7/D-8） ——
+  // dispatch = 协调器派发（D-8：消费既有 WorkflowRouteProjection/授权/上下文/任务
+  // 事实；派发包带 task/session/run、route、actor、必读 skill/spec 引用、context/
+  // permit、版本面、执行编号、允许写范围、必需产物、退出义务、失败恢复；必读缺失
+  // 阻断该单元；幂等靠包指纹；QA 真值被改全拒）。status = 纯读呈现（单元状态表/
+  // 预算/熔断/下一动作）。suspend/resume = 局部挂起账。budget record = 驱动轮次/
+  // 墙钟/花费/失败记账（花费不可测显式 unknown；连续失败 ≥3 熔断该单元）。
+  // escalate = 追加式纠错出口台账（D-7：有依据的呈报；不等于实现失败；不能抹已有
+  // 失败/删测试/绕授权；处置在人侧队列）。削弱检查链复用 audit test-weakening
+  // （判定权威在 kernel，AC-08）：audit 命中 → driver 链 escalate record 挂账。
   const autopilot = program
     .command("autopilot")
     .description(
-      "自驱流程命令面（TC-1b）：escalate = 追加式纠错出口台账（D-7：有依据的呈报；不等于实现失败；不能抹已有失败/删测试/绕授权；处置在人侧队列）",
+      "自驱流程命令面（AP-2/TC-1b）：dispatch = 协调器派发（消费既有路由；派发包字段面见 code-spec autopilot-dispatch.md；幂等派发账 DISP-####），status = 纯读状态呈现（单元/预算/熔断/下一动作），suspend/resume = 局部挂起（只挂受影响单元，其余继续），budget record = 预算/失败记账（花费不可测显式 unknown），escalate = 纠错出口台账（append-only）。错误码：AUTOPILOT_PLAN_MISSING / AUTOPILOT_EXECUTION_NOT_FOUND / AUTOPILOT_INTAKE_MISSING / AUTOPILOT_REVISION_AHEAD / AUTOPILOT_BUDGET_EXHAUSTED / AUTOPILOT_STOP_REQUIRED / AUTOPILOT_READING_MISSING / AUTOPILOT_PERMIT_ABSENT(warning)",
     );
+  autopilot
+    .command("dispatch")
+    .description(
+      "协调器派发：生效确认单 + plan 已提交 + QA 冻结 digest 对账 → 预算熔断筛 → 逐单元（挂起筛/指纹幂等筛/路由投影+必读 skill paths 存在性）→ .pomaster/autopilot/dispatches/DISP-####.json + 账（append-only；换代 supersedes）",
+    )
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>（S1 禁自造；pomaster execution begin 登记）")
+    .option("--unit <task-id>", "只派一个单元（TASK.*；缺省派 plan 全部未挂起单元）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotDispatch(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+      });
+      record({ command: "autopilot dispatch", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("status")
+    .description(
+      "纯读呈现：生效轮次 + QA 冻结 digest 态 + 逐单元状态表（PENDING/DISPATCHED/SUSPENDED/STOP_REQUIRED）+ 预算（caps vs 已用；花费不可测显式 unknown）+ 熔断态 + escalations open + 下一动作（正常续跑不需要用户再发一句话）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot status", outcome: runAutopilotStatus(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("suspend")
+    .description("局部挂起：--unit TASK.* + --reason 有依据 → suspensions.jsonl 账行（append-only；该单元暂停派发，其余照常）")
+    .requiredOption("--unit <task-id>", "挂起的单元 TASK.*")
+    .requiredOption("--reason <text>", "挂起依据（呈现面要能回答为什么挂）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot suspend", outcome: runAutopilotSuspend(resolveDir(command), { unit: opts.unit as string, reason: opts.reason as string }), asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("resume")
+    .description("恢复挂起单元：--unit TASK.* → 账行 resume（历史保留；该单元重新可派）")
+    .requiredOption("--unit <task-id>", "恢复的单元 TASK.*")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot resume", outcome: runAutopilotResume(resolveDir(command), { unit: opts.unit as string }), asJson: command.optsWithGlobals().json === true });
+    });
+  const budget = autopilot.command("budget").description("预算/失败记账（.pomaster/autopilot/budget.jsonl；append-only；caps 来自确认单 budget 字段）");
+  budget
+    .command("record")
+    .description(
+      "驱动记账：spend = --rounds/--minutes/--cost-known/--cost-unknown（花费不可测显式 unknown，禁伪造精确成本）；failure = --unit + --reason（连续失败 ≥3 → STOP_REQUIRED 该单元拒绝再派）",
+    )
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .option("--rounds <n>", "本轮驱动轮数", parsePositiveInt)
+    .option("--minutes <n>", "墙钟分钟", parsePositiveInt)
+    .option("--cost-known <text>", "可计量花费（原文申报）")
+    .option("--cost-unknown", "花费不可计量（显式未知）")
+    .option("--failure", "记单元失败（须 --unit + --reason）")
+    .option("--unit <task-id>", "失败锚定单元 TASK.*")
+    .option("--reason <text>", "失败依据（失败面与证据引用）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runAutopilotBudgetRecord(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.rounds !== undefined ? { rounds: opts.rounds as number } : {}),
+        ...(opts.minutes !== undefined ? { minutes: opts.minutes as number } : {}),
+        ...(opts.costKnown !== undefined ? { costKnown: opts.costKnown as string } : {}),
+        costUnknown: opts.costUnknown === true,
+        failure: opts.failure === true,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+        ...(opts.reason !== undefined ? { reason: opts.reason as string } : {}),
+      });
+      record({ command: "autopilot budget record", outcome, asJson: command.optsWithGlobals().json === true });
+    });
   const escalate = autopilot
     .command("escalate")
     .description(
@@ -5939,6 +6014,15 @@ export function createProgram(
  */
 function collectValues(value: string, previous: string[] | undefined): string[] {
   return [...(previous ?? []), value];
+}
+
+/** 正整数 argv 解析（autopilot budget record 的 --rounds/--minutes；非法词形在 option 解析层即拒）。 */
+function parsePositiveInt(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`须为正整数：${value}`);
+  }
+  return parsed;
 }
 
 /**
