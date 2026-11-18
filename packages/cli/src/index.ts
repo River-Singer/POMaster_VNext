@@ -370,6 +370,7 @@ import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.
 import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
 import { runAutopilotEscalateList, runAutopilotEscalateRecord } from "./autopilot-escalate.js";
 import { runAutopilotHookInstall, runAutopilotHookStop, runAutopilotHookUninstall, runAutopilotRun } from "./autopilot-run.js";
+import { runAutopilotRevisionAdopt, runAutopilotRevisionAssess, runAutopilotStaleCheck } from "./autopilot-revision.js";
 import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
@@ -1400,6 +1401,7 @@ export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, Q
 export { runAutopilotEscalateRecord, runAutopilotEscalateList, ESCALATION_SCHEMA, ESCALATION_CONTEXTS } from "./autopilot-escalate.js";
 export { runAutopilotDispatch, runAutopilotStatus, runAutopilotSuspend, runAutopilotResume, runAutopilotBudgetRecord, DISPATCH_SCHEMA, AUTOPILOT_STOP_CONSECUTIVE_FAILURES } from "./autopilot-dispatch.js";
 export { runAutopilotRun, runAutopilotHookStop, runAutopilotHookInstall, runAutopilotHookUninstall, ROUND_SCHEMA, AUTOPILOT_DRIVERS, ROUND_DEFAULT_TIMEOUT_SECONDS, buildRoundPrompt } from "./autopilot-run.js";
+export { runAutopilotRevisionAssess, runAutopilotRevisionAdopt, runAutopilotStaleCheck, REVISION_SCHEMA, assessRevisionDiff } from "./autopilot-revision.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4338,6 +4340,48 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action((opts, command) => {
       record({ command: "autopilot hook uninstall", outcome: runAutopilotHookUninstall(resolveDir(command), { host: opts.host as string | undefined, dryRun: opts.dryRun === true }), asJson: command.optsWithGlobals().json === true });
+    });
+  // —— IN-3 活输入修订面（D-1b：assess 纯读影响传播+分流；adopt 两阶段可恢复记录
+  // （SCOPE_CHANGE 自动挂起受影响单元 + escalate 呈报；阶段 2 编排既有链 qa draft/
+  // revise/freeze + dispatch——幂等续跑）；stale-check 迟到拒收对账） ——
+  const revision = autopilot.command("revision").description("活输入修订面（D-1b；RVC-#### 可恢复变更记录）：assess 纯读（差异/影响四层/分流 verdict），adopt 两阶段（登记 → Owner 增量重签后编排既有链）。错误码：AUTOPILOT_REVISION_NONE / AUTOPILOT_REVISION_AWAITING_SIGNOFF / AUTOPILOT_RECORD_NOT_FOUND");
+  revision
+    .command("assess")
+    .description(
+      "纯读评估：生效确认单修订快照 vs 当前修订逐 REQ 对比（changed/added/carried——缺席不等于删除）→ 语义/排版/范围三分（新增 module 或超规格实体 = SCOPE_CHANGE）→ 影响传播四层（REQ/单元/用例/证据）→ 增量重签路标",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRevisionAssess(resolveDir(command), {});
+      record({ command: "autopilot revision assess", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  revision
+    .command("adopt")
+    .description(
+      "两阶段接线（RVC-#### append-only）：无 --confirm-round = 登记（SCOPE_CHANGE 自动挂起受影响单元 + escalate 呈报）；--confirm-round <新KO> = Owner 增量重签生效后编排既有链（qa cases draft → revise/freeze 谱系接旧锚 → autopilot dispatch 换代 supersedes；每步按状态幂等跳过，中断重跑不漏步不重复扣账）",
+    )
+    .option("--execution-id <agx-id>", "已登记执行身份（阶段 2 必填——dispatch 同执行身份）")
+    .option("--confirm-round <ko-id>", "阶段 2：Owner 重签后生效的新轮次 KO-…")
+    .option("--record <rvc-id>", "阶段 2：变更记录（缺省取最新 awaiting_resign）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRevisionAdopt(resolveDir(command), {
+        ...(opts.executionId !== undefined ? { executionId: opts.executionId as string } : {}),
+        ...(opts.confirmRound !== undefined ? { confirmRound: opts.confirmRound as string } : {}),
+        ...(opts.record !== undefined ? { record: opts.record as string } : {}),
+      });
+      record({ command: "autopilot revision adopt", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("stale-check")
+    .description(
+      "迟到拒收对账（纯读）：DISP 包 versions 对当前输入面逐项比对（sheet sha/plan 指纹/QA digest/intake revision）→ OK/STALE + supersedes 链；STALE = 该包轮次结果按 evidence-qualification 既有轴判失效",
+    )
+    .requiredOption("--disp <disp-id>", "派发包号 DISP-####")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotStaleCheck(resolveDir(command), { disp: opts.disp as string });
+      record({ command: "autopilot stale-check", outcome, asJson: command.optsWithGlobals().json === true });
     });
   const escalate = autopilot
     .command("escalate")
