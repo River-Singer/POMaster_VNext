@@ -369,6 +369,7 @@ import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrust
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
 import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
 import { runAutopilotEscalateList, runAutopilotEscalateRecord } from "./autopilot-escalate.js";
+import { runAutopilotHookInstall, runAutopilotHookStop, runAutopilotHookUninstall, runAutopilotRun } from "./autopilot-run.js";
 import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
@@ -1398,6 +1399,7 @@ export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCH
 export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
 export { runAutopilotEscalateRecord, runAutopilotEscalateList, ESCALATION_SCHEMA, ESCALATION_CONTEXTS } from "./autopilot-escalate.js";
 export { runAutopilotDispatch, runAutopilotStatus, runAutopilotSuspend, runAutopilotResume, runAutopilotBudgetRecord, DISPATCH_SCHEMA, AUTOPILOT_STOP_CONSECUTIVE_FAILURES } from "./autopilot-dispatch.js";
+export { runAutopilotRun, runAutopilotHookStop, runAutopilotHookInstall, runAutopilotHookUninstall, ROUND_SCHEMA, AUTOPILOT_DRIVERS, ROUND_DEFAULT_TIMEOUT_SECONDS, buildRoundPrompt } from "./autopilot-run.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4278,6 +4280,64 @@ export function createProgram(
         ...(opts.reason !== undefined ? { reason: opts.reason as string } : {}),
       });
       record({ command: "autopilot budget record", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  // —— AP-3 无头驱动与 Stop hook（D-8：一次性 spawn 记账退出，不驻留进程不建 daemon；
+  // worker 租约 = kernel unit_write 锁——blocked 显式拒，同一单元不重复调度；交付判定
+  // 归既有 handoff/plan run 判卷，worker 文字声明与 exit 0 不作完成依据） ——
+  autopilot
+    .command("run")
+    .description(
+      "无头轮次驱动（--driver claude-code|codex|script；runtime 词表同源）：目标单元已派发 → 轮次预算（caps = max_rework_rounds+1）→ unit_write 锁租约（blocked = 重复调度防护）→ spawn（claude -p dontAsk / codex exec / 有界命令）→ RND-#### 轮账 + budget 记账 → 释放锁；verdict completed|failed|timeout 如实，driver 缺席诚实 UNAVAILABLE 零伪造轮次。错误码：AUTOPILOT_UNIT_NOT_DISPATCHED / AUTOPILOT_UNIT_LOCKED / AUTOPILOT_UNIT_NOT_ATTACHED / AUTOPILOT_DRIVER_UNAVAILABLE / AUTOPILOT_CMD_REQUIRED / AUTOPILOT_BUDGET_EXHAUSTED",
+    )
+    .requiredOption("--driver <driver>", "驱动词形：claude-code | codex | script（runtime 词表同源）")
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .requiredOption("--session-key <key>", "worker 会话（必须已 attach——租约锚定会话）")
+    .option("--unit <task-id>", "目标单元 TASK.*（缺省取首个已派发未跑单元）")
+    .option("--round-timeout <seconds>", "单轮超时秒（缺省 600；到点杀进程 verdict=timeout）", parsePositiveInt)
+    .option("--cmd <command>", "script 驱动的有界命令（必填 when --driver script）")
+    .option("--sandbox <mode>", "codex 沙箱档透传（-s）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRun(resolveDir(command), {
+        driver: opts.driver as string,
+        executionId: opts.executionId as string,
+        sessionKey: opts.sessionKey as string,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+        ...(opts.roundTimeout !== undefined ? { roundTimeout: opts.roundTimeout as number } : {}),
+        ...(opts.cmd !== undefined ? { cmd: opts.cmd as string } : {}),
+        ...(opts.sandbox !== undefined ? { sandbox: opts.sandbox as string } : {}),
+      });
+      record({ command: "autopilot run", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("hook-stop")
+    .description(
+      "宿主 Stop hook 回灌入口（受控 Ralph；纯读零写）：路由重查 + 轮次账 → {action: refeed|complete}——连续失败 ≥3 / QA 真值异常 / 出口达成 → complete（带原因）；否则按原 DISP 包 prompt 回灌。宿主 hook 协议侧只消费 stdout JSON",
+    )
+    .requiredOption("--session-key <key>", "worker 会话键（rounds 账按会话归属）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotHookStop(resolveDir(command), { sessionKey: opts.sessionKey as string });
+      record({ command: "autopilot hook-stop", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  const hook = autopilot.command("hook").description("Stop hook 配置接线（tools prepare 同款合并纪律：保留人改字段；同命令幂等；异命令冲突显式拒）");
+  hook
+    .command("install")
+    .description("把 Stop hook（pomaster autopilot hook-stop）合并进宿主配置：claude → .claude/settings.json；codex → .codex/hooks.json（matcher-group JSON 同构）；--dry-run 零写")
+    .option("--host <host>", "claude | codex（缺省 claude）")
+    .option("--dry-run", "只列将做的合并，零写")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot hook install", outcome: runAutopilotHookInstall(resolveDir(command), { host: opts.host as string | undefined, dryRun: opts.dryRun === true }), asJson: command.optsWithGlobals().json === true });
+    });
+  hook
+    .command("uninstall")
+    .description("从宿主配置移除 autopilot hook-stop 条目（人改字段保留；幂等 NO_CHANGE）")
+    .option("--host <host>", "claude | codex（缺省 claude）")
+    .option("--dry-run", "只列将做的移除，零写")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot hook uninstall", outcome: runAutopilotHookUninstall(resolveDir(command), { host: opts.host as string | undefined, dryRun: opts.dryRun === true }), asJson: command.optsWithGlobals().json === true });
     });
   const escalate = autopilot
     .command("escalate")

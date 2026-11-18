@@ -168,7 +168,7 @@ function unitInPlan(plan: PlanFile, unit: string): boolean {
 }
 
 /** AGX 在册校验（S1 禁自造身份；词形检 + 档案存在性检——两检分离同 record 通路）。 */
-function resolveRegisteredExecution(dir: string, executionId: string | undefined): { readonly ok: true; readonly id: string } | { readonly ok: false; readonly error: CliError } {
+export function resolveRegisteredExecution(dir: string, executionId: string | undefined): { readonly ok: true; readonly id: string } | { readonly ok: false; readonly error: CliError } {
   const resolved = resolveExecutionId(executionId, undefined);
   if ("fail" in resolved || resolved.executionId === null) {
     return { ok: false, error: { code: "SCHEMA_INVALID", message: "fail" in resolved ? resolved.fail : "--execution-id 缺席（派发必须锚定在册执行身份）", hint: "pomaster execution begin 登记后以 --execution-id AGX-… 传入（S1 禁自造身份）。" } };
@@ -181,7 +181,7 @@ function resolveRegisteredExecution(dir: string, executionId: string | undefined
 }
 
 /** QA 冻结 digest 对账（验收真值被改全拒——TC-1 同一锚）。 */
-function verifyQaFrozen(dir: string): { readonly digest: string } | { readonly error: CliError } {
+export function verifyQaFrozen(dir: string): { readonly digest: string } | { readonly error: CliError } {
   const pointer = readJson<{ schema: string; round: string; cases_frozen_sha256: string }>(join(dir, ...QA_DIR.split("/"), "current.json"));
   if (pointer === null || pointer.schema !== QA_CURRENT_SCHEMA) {
     return { error: { code: "QA_CASES_NOT_FROZEN", message: "还没有冻结的 QA 用例集（qa/current.json 缺席）", hint: "先跑 pomaster qa cases draft → freeze；验收分母冻结前不派工" } };
