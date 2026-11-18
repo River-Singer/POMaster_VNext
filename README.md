@@ -253,7 +253,7 @@ pomaster design validate/show/adopt/set/check   # 设计规范：校验 / 查 / 
 pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 → 数据库迁移、OpenAPI、管理侧前端；check = 一致性门禁
 
 # ⑤ 验证
-pomaster plan compile/run                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
+pomaster plan compile/run/scenarios                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待
 pomaster trust enroll/request/sign/verify/status   # 人工点的 Owner 签名：登记 SSH 公钥、建签发请求、在你自己的终端签名、核验

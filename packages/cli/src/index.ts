@@ -360,6 +360,7 @@ import {
   runPresetPreview,
 } from "./preset-probe.js";
 import { runPlanCompile } from "./plan.js";
+import { runPlanScenarios } from "./plan-scenarios.js";
 import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
@@ -3941,6 +3942,24 @@ export function createProgram(
       });
       record({
         command: "plan compile",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  plan
+    .command("scenarios")
+    .description(
+      "PL-1 场景规划（11-11-agent-autopilot D-6）：消费生效中的启动确认单与已确认领域规格，编译场景依赖候选、跑 scaffold generate 并把 contract/DB/BE/FE 单元落成 TASK 对象（kernel applyTransaction 唯一写路径；journal PLAN_COMPILED）",
+    )
+    .option("--name <ws>", "需求读取工作区名（缺省取生效确认单上的工作区）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPlanScenarios(resolveDir(command), {
+        name: opts.name as string | undefined,
+      });
+      record({
+        command: "plan scenarios",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

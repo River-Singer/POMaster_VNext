@@ -55,6 +55,16 @@ export interface StyleCandidate {
   readonly token_deltas: readonly StyleTokenDelta[];
 }
 
+/** 启动确认单 sheet.json 的 style 段（kickoff.ts buildSheet 产出、被签名的字节之一）。 */
+export interface KickoffStyleSection {
+  readonly design_system: KickoffDesignSystem | null;
+  readonly ui_library: string | null;
+  readonly system_source: string | null;
+  readonly candidates: readonly StyleCandidate[];
+  readonly choice: string | null;
+  readonly note_zh: string | null;
+}
+
 export interface StyleCatalog {
   readonly design_system: KickoffDesignSystem;
   readonly ui_library: string;
