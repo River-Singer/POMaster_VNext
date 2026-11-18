@@ -239,7 +239,8 @@ pomaster brainstorm start/question-gate/status/decide/promote
 pomaster prototype ingest/check                 # BA 原型 → 业务事实与信息结构（ingest）；重绘页面与事实对账（check）
 pomaster intake read/status/pending/resolve/changes/check/draft   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门；draft 从最新修订出可签草案
 pomaster kickoff draft/status/confirm           # 启动确认单：草案 + 工具链 + 签名人汇成一张单子；Owner 在 choices.yaml 里答问题、签一次，confirm 落库领域规格、技术栈、答案与自主边界
-pomaster qa cases draft/freeze/check            # QA 用例集：原文复核三查 + 12 类完整分母（每类有场景或有依据不适用）；freeze 冻结「需求版本+场景+预期结果」不可变版本（实现者只读），check 以 digest 对账（重生成文件、换身份不能豁免）
+pomaster qa cases draft/freeze/revise/check      # QA 用例集：原文复核三查 + 12 类完整分母（每类有场景或有依据不适用）；freeze 冻结「需求版本+场景+预期结果」不可变版本（实现者只读），revise 活输入变化后续谱重冻结（旧用例保留、replaces/retired 替代关系），check 以 digest+谱系链对账（重生成文件、换身份不能豁免）
+pomaster autopilot escalate record/list          # 纠错出口台账（append-only）：有依据的呈报，不等于实现失败，不能抹已有失败/删测试/绕授权；处置在人侧队列
 
 # ② 许可
 pomaster permit issue/check/steal/renew/widen/list

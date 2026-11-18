@@ -367,7 +367,8 @@ import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
-import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze } from "./qa-cases.js";
+import { runAutopilotEscalateList, runAutopilotEscalateRecord } from "./autopilot-escalate.js";
+import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
@@ -1393,7 +1394,8 @@ export {
 export { packageRunner, runToolsInit } from "./tools-init.js";
 export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, requireHumanSignoff, loadRegistry, SIGNOFF_KINDS } from "./trust.js";
 export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCHEMA, KICKOFF_CURRENT_SCHEMA } from "./kickoff.js";
-export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
+export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
+export { runAutopilotEscalateRecord, runAutopilotEscalateList, ESCALATION_SCHEMA, ESCALATION_CONTEXTS } from "./autopilot-escalate.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4140,18 +4142,18 @@ export function createProgram(
   // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
   // 授权（红线）。registry 落点 .pomaster/tools/bindings.json（SP-W1-e 提案待追认；
   // 命令名/错误码 = SP 提案待 Owner 追认）。
-  // —— QA 用例集命令面（TC-1a；11-11-agent-autopilot D-7 / code-spec qa-cases.md） ——
+  // —— QA 用例集命令面（TC-1a/TC-1b；11-11-agent-autopilot D-7 / code-spec qa-cases.md） ——
   // D-2 留存隔离边界：intake / truth / plan 面纯读，唯一写口 = .pomaster/qa/ 平面。
   // draft = 原文复核三查（files sha256 / blocks 覆盖 / items 回溯，C-08 防线）+ 12 类
   // 分母推导（tagsOf/nfrHints 既有词表零新词族）；freeze = 不可变冻结 + current.json
-  // 指针（唯一生效凭证；isolation 如实标 not_isolated，AP-0b 接独立会话）；check =
-  // digest 对账（重生成文件、换 QA 身份不能豁免——锚是指针 digest，AC-08 同款
-  // fail-closed：未冻结/被篡改 exit 1）。TC-1b 追加 revise（替代谱系）与
-  // autopilot escalate。
+  // 指针（唯一生效凭证；isolation 如实标 not_isolated，AP-0b 接独立会话）；revise =
+  // 活输入变化后的替代修订（replaces/retired 谱系，祖先字节零改动留谱系）；check =
+  // digest 对账（含 parent 链逐级验祖——重生成文件、换 QA 身份不能豁免，AC-08 同款
+  // fail-closed：未冻结/被篡改 exit 1）。
   const qa = program
     .command("qa")
     .description(
-      "QA 用例集命令面（TC-1a）：draft = 完整分母用例 + 原文复核（12 类逐类有场景或有依据不适用；N/A 不覆盖生效义务），freeze = 不可变用例版本冻结（需求版本+场景+预期结果；实现者只读），check = 对账（digest 锚，身份无关）。错误码：QA_KICKOFF_NOT_IN_FORCE / QA_CASES_REVISION_AHEAD / QA_CASES_PLAN_MISSING / QA_CASES_SOURCE_DRIFT / QA_CASES_ORIGIN_BROKEN / QA_CASES_DRAFT_MISSING / QA_CASES_INPUTS_DRIFTED / QA_CASES_REVIEW_OPEN / QA_CASES_FREEZE_INCOMPLETE / QA_CASES_ALREADY_FROZEN / QA_CASES_NOT_FROZEN / QA_CASES_TAMPERED",
+      "QA 用例集命令面（TC-1）：draft = 完整分母用例 + 原文复核（12 类逐类有场景或有依据不适用；N/A 不覆盖生效义务），freeze = 不可变用例版本冻结（需求版本+场景+预期结果；实现者只读），revise = 活输入变化的替代修订（旧用例留谱系、替代关系带需求差异），check = 对账（digest 锚 + 谱系链，身份无关）。错误码：QA_KICKOFF_NOT_IN_FORCE / QA_CASES_REVISION_AHEAD / QA_CASES_PLAN_MISSING / QA_CASES_SOURCE_DRIFT / QA_CASES_ORIGIN_BROKEN / QA_CASES_DRAFT_MISSING / QA_CASES_INPUTS_DRIFTED / QA_CASES_REVIEW_OPEN / QA_CASES_FREEZE_INCOMPLETE / QA_CASES_ALREADY_FROZEN / QA_CASES_REVISE_SAME_ROUND / QA_CASES_NOT_FROZEN / QA_CASES_TAMPERED",
     );
   const qaCases = qa.command("cases").description("QA 用例集（.pomaster/qa/<轮次>/；冻结集是实现者只读的验收真值）");
   qaCases
@@ -4173,13 +4175,73 @@ export function createProgram(
       record({ command: "qa cases freeze", outcome: runQaCasesFreeze(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
     });
   qaCases
+    .command("revise")
+    .description(
+      "替代修订（活输入合法变化、新轮次增量重签后）：对新轮次过 freeze 全部门禁 + 谱系计算（replaces 按 source_ref 交集 / retired 带变更词形）→ 新冻结集（parent 锚旧 digest）；旧文件字节零改动留谱系；祖先被改拒绝续谱",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases revise", outcome: runQaCasesRevise(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
     .command("check")
     .description(
-      "对账（纯读零写入）：未冻结 / 冻结集字节 ≠ 指针 digest → exit 1（重生成文件、换身份不能豁免）；草案漂移 / intake 修订超前 / 确认单字节漂移 → warning 不抬 exit",
+      "对账（纯读零写入）：未冻结 / 冻结集字节 ≠ 指针 digest / 谱系祖先被改或缺席 → exit 1（重生成文件、换身份不能豁免）；草案漂移 / intake 修订超前 / 确认单字节漂移 → warning 不抬 exit",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action((opts, command) => {
       record({ command: "qa cases check", outcome: runQaCasesCheck(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+
+  // —— 自驱流程命令面（TC-1b；D-7） ——
+  // escalate = 追加式纠错出口台账：有依据的呈报，不等于实现失败；不能抹已有失败、
+  // 删测试或绕授权。append-only（唯一写通路 appendFileSync；无 resolve/删改口——处置
+  // 在人侧队列）。削弱检查链复用 audit test-weakening（判定权威在 kernel，AC-08）：
+  // audit 命中 → driver 链 escalate record --context test-weakening 挂账；链式而不
+  // 嵌入（audit 写 OBS sidecar、escalate 是另一条追加面——各自单一写口）。
+  const autopilot = program
+    .command("autopilot")
+    .description(
+      "自驱流程命令面（TC-1b）：escalate = 追加式纠错出口台账（D-7：有依据的呈报；不等于实现失败；不能抹已有失败/删测试/绕授权；处置在人侧队列）",
+    );
+  const escalate = autopilot
+    .command("escalate")
+    .description(
+      "escalation 台账（.pomaster/autopilot/escalations.jsonl；append-only）：record 追加一行（seq 连号、status 恒 open），list 纯读呈现。错误码：AUTOPILOT_ESCALATE_SUBJECT_REQUIRED / AUTOPILOT_ESCALATE_REASON_REQUIRED / SCHEMA_INVALID（context 越界）/ NOT_INITIALIZED",
+    );
+  escalate
+    .command("record")
+    .description(
+      "记账呈报：--context 闭集 qa/plan/execution/test-weakening/other + --subject 指向具体对象 + --reason 有依据（写清发现什么、为何超出 agent 权限、建议人怎么裁）；可重复 --ref 挂关联 id",
+    )
+    .option("--context <context>", "词形闭集：qa | plan | execution | test-weakening | other（缺席 = other）")
+    .option("--subject <ref>", "呈报对象（CASE-… / TASK.… / 文件 / 代码位）")
+    .option("--reason <text>", "依据（发现什么、为何超出 agent 权限、建议人怎么裁）")
+    .option("--ref <id>", "关联 id（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "autopilot escalate record",
+        outcome: runAutopilotEscalateRecord(resolveDir(command), {
+          context: opts.context as string | undefined,
+          subject: opts.subject as string | undefined,
+          reason: opts.reason as string | undefined,
+          ...(opts.ref !== undefined ? { refs: opts.ref as string[] } : {}),
+        }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  escalate
+    .command("list")
+    .description("纯读呈现：全部或 --open 仅 open；空台账显式呈现（非空白假绿）")
+    .option("--open", "只列 status=open（当前全部条目都恒 open——TC-1b 无 resolve 写口）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "autopilot escalate list",
+        outcome: runAutopilotEscalateList(resolveDir(command), { open: opts.open === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
     });
 
   const tools = program

@@ -405,12 +405,15 @@ interface ScenarioModulesFile {
 
 export interface QaCommandResult {
   readonly round: string;
-  readonly change: "CREATED" | "FROZEN" | "OK";
+  readonly change: "CREATED" | "FROZEN" | "REVISED" | "OK";
   readonly categories?: Readonly<Record<string, QaCategoryReport>>;
   readonly case_count?: number;
   readonly review?: SourceReview;
   readonly frozen_sha256?: string;
   readonly isolation?: string;
+  readonly continued?: number;
+  readonly retired_count?: number;
+  readonly added?: number;
 }
 
 interface LoadedInputs {
@@ -422,6 +425,8 @@ interface LoadedInputs {
   readonly files: QaFilesSnapshot;
   readonly blocks: readonly StoredBlock[];
   readonly items: readonly IntakeItem[];
+  /** 新修订的差异记录（ItemChangeRecord 词形——retired 的 change 引用它）。 */
+  readonly changes: Readonly<Record<string, string>>;
   readonly resolutions: QaResolutions;
   readonly planFingerprint: string;
 }
@@ -474,6 +479,7 @@ function loadQaInputs(dir: string, command: string): LoadedInputs | CommandOutco
     files: loaded.data.files,
     blocks: loaded.data.blocks,
     items: loaded.data.items,
+    changes: Object.fromEntries(loaded.data.changes.items.map((record) => [record.id, record.change])),
     resolutions: loaded.workspace.resolutions,
     planFingerprint: plan.fingerprint,
   };
@@ -547,6 +553,9 @@ export function runQaCasesDraft(dir: string, _input: { readonly name?: string } 
 
 // ─────────────────────────────── qa cases freeze ───────────────────────────────
 
+interface FrozenCase extends QaCase {
+  readonly replaces?: readonly string[];
+}
 interface CasesFile {
   readonly schema: string;
   readonly round: string;
@@ -557,7 +566,61 @@ interface CasesFile {
   readonly fingerprint: string;
   readonly review: SourceReview;
   readonly categories: Readonly<Record<string, QaCategoryReport>>;
-  readonly cases: readonly QaCase[];
+  readonly cases: readonly FrozenCase[];
+  readonly parent?: Readonly<{ readonly round: string; readonly cases_frozen_sha256: string }> | null;
+  readonly retired?: readonly { readonly id: string; readonly source_ref: string; readonly change: string }[];
+  readonly frozen_at?: string;
+  readonly isolation?: string;
+}
+
+/**
+ * freeze 与 revise 共用的判卷（零第二算法）：复核重算（drift/断链 → SOURCE_DRIFT；
+ * uncovered → REVIEW_OPEN）+ 分母逐类完备（从 cases 数组重算，报表谎报绕不过）+
+ * 词形闭包 + 出处非空。调用方已各自先过指纹门。
+ */
+function freezeGateErrors(loaded: LoadedInputs, draft: CasesFile): CliError[] {
+  const errors: CliError[] = [];
+  const review = reviewSources(loaded.files.inputs, loaded.files.files, loaded.blocks, loaded.items, loaded.resolutions, loaded.revision);
+  if (review.files.drift.length > 0 || review.items.broken.length > 0) {
+    errors.push({ code: "QA_CASES_SOURCE_DRIFT", message: "冻结前复核发现材料漂移或出处断链（重跑 draft 看明细）", hint: "材料在 draft 之后又变过：intake read → 增量重签 → 重新 draft" });
+    return errors;
+  }
+  if (review.blocks.uncovered.length > 0) {
+    errors.push({
+      code: "QA_CASES_REVIEW_OPEN",
+      message: `原文复核未收口：${review.blocks.uncovered.length} 个块没有被任何条目消费也没有 resolve 记录（如 ${review.blocks.uncovered[0]?.id} · ${review.blocks.uncovered[0]?.heading_path.join(" > ")}）`,
+      hint: "提取可能漏检（C-08）：回 pomaster intake resolve 逐块收口（收为条目/缺口/跳过），再 draft → freeze；收不了口就 autopilot escalate record --context qa 挂人阅",
+    });
+    return errors;
+  }
+  const incomplete: string[] = [];
+  for (const category of QA_CATEGORIES) {
+    const actual = draft.cases.filter((entry) => entry.category === category).length;
+    const reported = draft.categories[category];
+    if (reported === undefined) {
+      incomplete.push(`${QA_CATEGORY_ZH[category]}（categories 缺行）`);
+      continue;
+    }
+    if (reported.count !== actual) {
+      incomplete.push(`${QA_CATEGORY_ZH[category]}（报表 count=${reported.count} ≠ 实际 ${actual}）`);
+      continue;
+    }
+    if (actual === 0 && reported.na === null) incomplete.push(`${QA_CATEGORY_ZH[category]}（0 条且无 N/A 依据——不适用要有据）`);
+  }
+  if (incomplete.length > 0) {
+    errors.push({ code: "QA_CASES_FREEZE_INCOMPLETE", message: `分母不完备：${incomplete.join("；")}`, hint: "12 类逐类要有场景或有依据不适用（D-7）；补推导源或回 intake 收口后重跑 draft" });
+    return errors;
+  }
+  const orphan = draft.cases.filter((entry) => !QA_CATEGORIES.includes(entry.category));
+  if (orphan.length > 0) {
+    errors.push({ code: "QA_CASES_FREEZE_INCOMPLETE", message: `${orphan.length} 条用例的 category 不在 12 类词形内（如 ${orphan[0]?.id} ${String(orphan[0]?.category)}）`, hint: "分母词形固定（code-spec qa-cases.md）；换 QA 身份改词形不能绕分母" });
+    return errors;
+  }
+  const unanchored = draft.cases.filter((entry) => entry.source_refs.length === 0);
+  if (unanchored.length > 0) {
+    errors.push({ code: "QA_CASES_FREEZE_INCOMPLETE", message: `${unanchored.length} 条用例没有出处（source_refs 空，如 ${unanchored[0]?.id}）`, hint: "先立后证：没有出处的用例不存在" });
+  }
+  return errors;
 }
 
 export function runQaCasesFreeze(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
@@ -583,54 +646,17 @@ export function runQaCasesFreeze(dir: string, _input: {} = {}): CommandOutcome<Q
     return fail(command, [{ code: "QA_CASES_INPUTS_DRIFTED", message: `草案指纹与当前输入不一致（草案 ${draft.fingerprint.slice(0, 12)}… ≠ 重算 ${fingerprint.slice(0, 12)}…）`, hint: "draft 之后材料/规格/plan 变过：重跑 pomaster qa cases draft 再冻结" }]);
   }
 
-  // 复核重算（手改草案报表绕不过）：uncovered 必须清零；drift/断链 fail-closed
-  const review = reviewSources(loaded.files.inputs, loaded.files.files, loaded.blocks, loaded.items, loaded.resolutions, loaded.revision);
-  if (review.files.drift.length > 0 || review.items.broken.length > 0) {
-    return fail(command, [{ code: "QA_CASES_SOURCE_DRIFT", message: "冻结前复核发现材料漂移或出处断链（重跑 draft 看明细）", hint: "材料在 draft 之后又变过：intake read → 增量重签 → 重新 draft" }]);
-  }
-  if (review.blocks.uncovered.length > 0) {
-    return fail(command, [{
-      code: "QA_CASES_REVIEW_OPEN",
-      message: `原文复核未收口：${review.blocks.uncovered.length} 个块没有被任何条目消费也没有 resolve 记录（如 ${review.blocks.uncovered[0]?.id} · ${review.blocks.uncovered[0]?.heading_path.join(" > ")}）`,
-      hint: "提取可能漏检（C-08）：回 pomaster intake resolve 逐块收口（收为条目/缺口/跳过），再 draft → freeze",
-    }]);
-  }
-
-  // 分母逐类校验（从 cases 数组重算，手改 categories 报表绕不过）
-  const incomplete: string[] = [];
-  for (const category of QA_CATEGORIES) {
-    const actual = draft.cases.filter((entry) => entry.category === category).length;
-    const reported = draft.categories[category];
-    if (reported === undefined) {
-      incomplete.push(`${QA_CATEGORY_ZH[category]}（categories 缺行）`);
-      continue;
-    }
-    if (reported.count !== actual) {
-      incomplete.push(`${QA_CATEGORY_ZH[category]}（报表 count=${reported.count} ≠ 实际 ${actual}）`);
-      continue;
-    }
-    if (actual === 0 && reported.na === null) incomplete.push(`${QA_CATEGORY_ZH[category]}（0 条且无 N/A 依据——不适用要有据）`);
-  }
-  if (incomplete.length > 0) {
-    return fail(command, [{ code: "QA_CASES_FREEZE_INCOMPLETE", message: `分母不完备：${incomplete.join("；")}`, hint: "12 类逐类要有场景或有依据不适用（D-7）；补推导源或回 intake 收口后重跑 draft" }]);
-  }
-  const orphan = draft.cases.filter((entry) => !QA_CATEGORIES.includes(entry.category));
-  if (orphan.length > 0) {
-    return fail(command, [{ code: "QA_CASES_FREEZE_INCOMPLETE", message: `${orphan.length} 条用例的 category 不在 12 类词形内（如 ${orphan[0]?.id} ${String(orphan[0]?.category)}）`, hint: "分母词形固定（code-spec qa-cases.md）；换 QA 身份改词形不能绕分母" }]);
-  }
-  const unanchored = draft.cases.filter((entry) => entry.source_refs.length === 0);
-  if (unanchored.length > 0) {
-    return fail(command, [{ code: "QA_CASES_FREEZE_INCOMPLETE", message: `${unanchored.length} 条用例没有出处（source_refs 空，如 ${unanchored[0]?.id}）`, hint: "先立后证：没有出处的用例不存在" }]);
-  }
+  const gateErrors = freezeGateErrors(loaded, draft);
+  if (gateErrors.length > 0) return fail(command, gateErrors);
 
   // 冻结一次性
   const currentPath = join(dir, ...QA_DIR.split("/"), "current.json");
   if (readJson<unknown>(currentPath) !== null) {
-    return fail(command, [{ code: "QA_CASES_ALREADY_FROZEN", message: "已有冻结中的用例集（qa/current.json 在座）", hint: "冻结集不可变；材料/规格变化走 qa cases revise（TC-1b）重冻结并留谱系" }]);
+    return fail(command, [{ code: "QA_CASES_ALREADY_FROZEN", message: "已有冻结中的用例集（qa/current.json 在座）", hint: "冻结集不可变；活输入变化走 qa cases revise 重冻结并留谱系（旧用例保留、replaces/retired 带替代关系）" }]);
   }
 
   const frozenAt = new Date().toISOString();
-  const frozenData = { ...draft, frozen_at: frozenAt, isolation: "not_isolated" };
+  const frozenData = { ...draft, frozen_at: frozenAt, isolation: "not_isolated", parent: null, retired: [], cases: draft.cases.map((entry) => ({ ...entry, replaces: [] })) };
   const frozenPath = join(dir, ...QA_DIR.split("/"), round, "cases-frozen.json");
   mkdirSync(join(dir, ...QA_DIR.split("/"), round), { recursive: true });
   const frozenBytes = Buffer.from(`${JSON.stringify(frozenData, null, 2)}\n`, "utf8");
@@ -660,7 +686,7 @@ export function runQaCasesFreeze(dir: string, _input: {} = {}): CommandOutcome<Q
   return okOutcome(command, { round, change: "FROZEN", categories: draft.categories, case_count: total, frozen_sha256: pointer.cases_frozen_sha256, isolation: pointer.isolation }, human);
 }
 
-// ─────────────────────────────── qa cases check ───────────────────────────────
+// ─────────────────────────────── qa cases revise ───────────────────────────────
 
 interface QaCurrentPointer {
   readonly schema: string;
@@ -668,10 +694,110 @@ interface QaCurrentPointer {
   readonly sheet: string;
   readonly sheet_sha256: string;
   readonly cases_frozen_sha256: string;
+  readonly frozen_at: string;
   readonly revision: number;
+  readonly parent: Readonly<{ readonly round: string; readonly cases_frozen_sha256: string }> | null;
 }
 
-/** 纯读对账：指针缺席 / digest 不一致 → fail（exit 1 门禁）；其余漂移 → warning（不抬 exit）。 */
+/**
+ * 活输入合法变化 → 新轮次（增量重签出 KO-…）替代修订：对新轮次过 freeze 全部门禁
+ * （同一判卷函数）+ 谱系计算（replaces 按 source_ref 交集 / retired 带变更词形）→
+ * 新冻结集（parent 锚旧 digest）+ 新指针。旧 cases-frozen.json 字节零改动（留谱系）。
+ * 祖先被改/被删 → 拒绝续谱（谱系锚在被验证的祖先上）。
+ */
+export function runQaCasesRevise(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
+  const command = "qa cases revise";
+  const pointer = readJson<QaCurrentPointer>(join(dir, ...QA_DIR.split("/"), "current.json"));
+  if (pointer === null || pointer.schema !== QA_CURRENT_SCHEMA) {
+    return fail(command, [{ code: "QA_CASES_NOT_FROZEN", message: "还没有冻结的用例集（qa/current.json 缺席）——没有在冻结的集合就无所谓替代", hint: "首轮直接 pomaster qa cases draft → freeze" }]);
+  }
+  // 祖先完整性：谱系续在被验证的祖先上
+  const ancestorPath = join(dir, ...QA_DIR.split("/"), pointer.round, "cases-frozen.json");
+  if (!existsSync(ancestorPath) || sha256(readFileSync(ancestorPath)) !== pointer.cases_frozen_sha256) {
+    return fail(command, [{ code: "QA_CASES_TAMPERED", message: `现行冻结集与指针 digest 不一致（${pointer.round}/cases-frozen.json 缺席或被改）——谱系不许续在被篡改的祖先上`, hint: "先查清冻结集去向（autopilot escalate record --context qa 挂人阅）；恢复字节后再 revise" }]);
+  }
+
+  // 新轮次全链（与 freeze 同前置）
+  const loaded = loadQaInputs(dir, command);
+  if (!("sheetId" in loaded)) return loaded;
+  if (loaded.sheetId === pointer.round) {
+    return fail(command, [{ code: "QA_CASES_REVISE_SAME_ROUND", message: `现行冻结集就是轮次 ${pointer.round}——同轮次同输入，revise 无意义`, hint: "活输入变化后走增量重签出新轮次（新 KO-…）再 revise；同轮次要重算用例就重跑 qa cases draft" }]);
+  }
+  const draftPath = join(dir, ...QA_DIR.split("/"), loaded.sheetId, "cases.json");
+  const draft = readJson<CasesFile>(draftPath);
+  if (draft === null || draft.schema !== QA_CASES_SCHEMA) {
+    return fail(command, [{ code: "QA_CASES_DRAFT_MISSING", message: `新轮次 ${loaded.sheetId} 还没有用例草案（cases.json 缺席）`, hint: "先跑 pomaster qa cases draft（新轮次）再 revise" }]);
+  }
+  const fingerprint = casesFingerprint({ sheet_bytes: loaded.sheetBytes, revision: loaded.revision, resolutions_sha256: loaded.resolutionsSha, plan_fingerprint: loaded.planFingerprint, cases: draft.cases });
+  if (fingerprint !== draft.fingerprint) {
+    return fail(command, [{ code: "QA_CASES_INPUTS_DRIFTED", message: `新轮次草案指纹与当前输入不一致（${draft.fingerprint.slice(0, 12)}… ≠ ${fingerprint.slice(0, 12)}…）`, hint: "draft 之后材料/规格/plan 变过：重跑 pomaster qa cases draft（新轮次）再 revise" }]);
+  }
+  const gateErrors = freezeGateErrors(loaded, draft);
+  if (gateErrors.length > 0) return fail(command, gateErrors);
+
+  // 谱系计算（机械、可对账）：replaces = source_ref 交集；retired = 无延续旧用例
+  const ancestor = readJson<CasesFile>(ancestorPath);
+  if (ancestor === null) {
+    return fail(command, [{ code: "QA_CASES_TAMPERED", message: `祖先冻结集读不了（${pointer.round}/cases-frozen.json 损坏）`, hint: "恢复字节后再 revise（autopilot escalate record --context qa 挂人阅）" }]);
+  }
+  const refToOld = new Map<string, string[]>();
+  for (const oldCase of ancestor.cases) {
+    for (const ref of oldCase.source_refs) {
+      const bucket = refToOld.get(ref);
+      if (bucket === undefined) refToOld.set(ref, [oldCase.id]);
+      else if (!bucket.includes(oldCase.id)) bucket.push(oldCase.id);
+    }
+  }
+  const oldCaseIds = new Set(ancestor.cases.map((entry) => entry.id));
+  const cases = draft.cases.map((entry) => ({
+    ...entry,
+    replaces: [...new Set(entry.source_refs.flatMap((ref) => refToOld.get(ref) ?? []).filter((id) => oldCaseIds.has(id)))],
+  }));
+  const continuedOld = new Set(cases.flatMap((entry) => entry.replaces));
+  const retired = ancestor.cases
+    .filter((entry) => !continuedOld.has(entry.id))
+    .map((entry) => {
+      const anchor = entry.source_refs[0] ?? "";
+      return { id: entry.id, source_ref: anchor, change: loaded.changes[anchor] ?? "not_in_revision" };
+    });
+
+  const frozenAt = new Date().toISOString();
+  const frozenData = { ...draft, frozen_at: frozenAt, isolation: "not_isolated", parent: { round: pointer.round, cases_frozen_sha256: pointer.cases_frozen_sha256 }, retired, cases };
+  const frozenPath = join(dir, ...QA_DIR.split("/"), loaded.sheetId, "cases-frozen.json");
+  mkdirSync(join(dir, ...QA_DIR.split("/"), loaded.sheetId), { recursive: true });
+  const frozenBytes = Buffer.from(`${JSON.stringify(frozenData, null, 2)}\n`, "utf8");
+  writeFileSync(frozenPath, frozenBytes);
+  const nextPointer = {
+    schema: QA_CURRENT_SCHEMA,
+    round: loaded.sheetId,
+    sheet: loaded.sheetId,
+    sheet_sha256: sha256(loaded.sheetBytes),
+    cases_frozen_sha256: sha256(frozenBytes),
+    frozen_at: frozenAt,
+    revision: loaded.revision,
+    resolutions_sha256: loaded.resolutionsSha,
+    isolation: "not_isolated",
+    parent: { round: pointer.round, cases_frozen_sha256: pointer.cases_frozen_sha256 },
+  };
+  writeFileSync(join(dir, ...QA_DIR.split("/"), "current.json"), `${JSON.stringify(nextPointer, null, 2)}\n`, "utf8");
+
+  const continued = new Set(cases.flatMap((entry) => entry.replaces)).size;
+  const added = cases.filter((entry) => entry.replaces.length === 0).length;
+  const human = [
+    `qa cases revise: REVISED — ${pointer.round} → ${loaded.sheetId}（r${pointer.revision} → r${loaded.revision}）`,
+    `  新冻结集 ${frozenPath}（sha256 ${nextPointer.cases_frozen_sha256.slice(0, 12)}…）；用例 ${cases.length} 条`,
+    `  谱系：延续 ${continued}（replaces）/ 退役 ${retired.length}（retired 带变更词形）/ 新增 ${added}；祖先 ${pointer.round} 字节未动（留谱系）`,
+    "  未变义务及留存检查继续有效；相关旧证据的失效判定在 closeout 面接线（evidence-qualification）",
+  ];
+  if (retired.length > 0) {
+    human.push(`  退役：${retired.map((entry) => `${entry.id}（${entry.change}）`).join("、")}`);
+  }
+  return okOutcome(command, { round: loaded.sheetId, change: "REVISED", categories: draft.categories, case_count: cases.length, frozen_sha256: nextPointer.cases_frozen_sha256, isolation: nextPointer.isolation, continued, retired_count: retired.length, added }, human);
+}
+
+// ─────────────────────────────── qa cases check ───────────────────────────────
+
+/** 纯读对账：指针缺席 / digest 不一致 → fail（exit 1 门禁）；谱系链逐级验祖；其余漂移 → warning（不抬 exit）。 */
 export function runQaCasesCheck(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
   const command = "qa cases check";
   const pointer = readJson<QaCurrentPointer>(join(dir, ...QA_DIR.split("/"), "current.json"));
@@ -681,7 +807,23 @@ export function runQaCasesCheck(dir: string, _input: {} = {}): CommandOutcome<Qa
 
   const frozenPath = join(dir, ...QA_DIR.split("/"), pointer.round, "cases-frozen.json");
   if (!existsSync(frozenPath) || sha256(readFileSync(frozenPath)) !== pointer.cases_frozen_sha256) {
-    return fail(command, [{ code: "QA_CASES_TAMPERED", message: `冻结集与指针 digest 不一致（${pointer.round}/cases-frozen.json 被改过或缺席；指针锚 ${pointer.cases_frozen_sha256.slice(0, 12)}…）`, hint: "重生成文件、换 QA 身份不能豁免（D-7）：恢复冻结字节，或走 qa cases revise（TC-1b）重冻结留谱系" }]);
+    return fail(command, [{ code: "QA_CASES_TAMPERED", message: `冻结集与指针 digest 不一致（${pointer.round}/cases-frozen.json 被改过或缺席；指针锚 ${pointer.cases_frozen_sha256.slice(0, 12)}…）`, hint: "重生成文件、换 QA 身份不能豁免（D-7）：恢复冻结字节，或走 qa cases revise 重冻结留谱系；查不清就 autopilot escalate record --context qa 挂人阅" }]);
+  }
+
+  // 谱系链逐级验祖（祖先 frozen 文件的 parent 头续链；删/改任何一级祖先都逮）
+  let cursorParent = pointer.parent;
+  let depth = 0;
+  while (cursorParent !== null) {
+    depth += 1;
+    if (depth > 64) {
+      return fail(command, [{ code: "QA_CASES_TAMPERED", message: "谱系链深超 64（parent 链异常）", hint: "谱系数据损坏：autopilot escalate record --context qa 挂人阅" }]);
+    }
+    const ancestorPath = join(dir, ...QA_DIR.split("/"), cursorParent.round, "cases-frozen.json");
+    if (!existsSync(ancestorPath) || sha256(readFileSync(ancestorPath)) !== cursorParent.cases_frozen_sha256) {
+      return fail(command, [{ code: "QA_CASES_TAMPERED", message: `谱系祖先被改或缺席（${cursorParent.round}/cases-frozen.json ≠ 链锚 ${cursorParent.cases_frozen_sha256.slice(0, 12)}…）——旧用例留谱系是 D-7 义务`, hint: "恢复祖先字节；查不清就 autopilot escalate record --context qa 挂人阅" }]);
+    }
+    const ancestor = readJson<CasesFile>(ancestorPath);
+    cursorParent = ancestor?.parent ?? null;
   }
 
   const warnings: CliWarning[] = [];
@@ -694,7 +836,7 @@ export function runQaCasesCheck(dir: string, _input: {} = {}): CommandOutcome<Qa
   }
   const loaded = loadIntakeLatest(dir, readJson<KickoffSheet>(join(dir, ...KICKOFF_DIR.split("/"), pointer.sheet, "sheet.json"))?.workspace);
   if (loaded.ok && loaded.data.files.revision !== pointer.revision) {
-    warnings.push({ code: "REVISION_AHEAD", message: `intake 修订（r${loaded.data.files.revision}）已超前冻结集（r${pointer.revision}）`, hint: "TC-1b qa cases revise 的触发面：材料变化要重冻结并留谱系（旧用例保留、替代关系带需求差异）" });
+    warnings.push({ code: "REVISION_AHEAD", message: `intake 修订（r${loaded.data.files.revision}）已超前冻结集（r${pointer.revision}）`, hint: "活输入变化：新轮次增量重签后 qa cases revise 续谱重冻结（旧用例保留、替代关系带需求差异）" });
   }
   const sheetPath = join(dir, ...KICKOFF_DIR.split("/"), pointer.sheet, "sheet.json");
   if (existsSync(sheetPath) && sha256(readFileSync(sheetPath)) !== pointer.sheet_sha256) {

@@ -2,7 +2,7 @@
 // 原文复核三查（files sha256 / blocks 覆盖 / items 回溯）+ 12 类分母推导（tagsOf/
 // nfrHints 既有词表零新词族）+ 不可变冻结（current.json 指针 digest 锚）+ check
 // 对账（未冻结/被篡改 exit 1；重生成文件、换身份不能豁免）。
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, cpSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, cpSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,7 +13,7 @@ import { runIntakeDraft } from "../src/intake-draft.js";
 import { loadIntakeLatest, runIntakePending, runIntakeRead, runIntakeResolve } from "../src/intake.js";
 import { runKickoffConfirm, runKickoffDraft, type KickoffEnv } from "../src/kickoff.js";
 import { runPlanScenarios } from "../src/plan-scenarios.js";
-import { QA_CATEGORIES, deriveCases, reviewSources, runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, type QaDerivationInput } from "../src/qa-cases.js";
+import { QA_CATEGORIES, deriveCases, reviewSources, runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, type QaDerivationInput } from "../src/qa-cases.js";
 import { runTrustEnroll, runTrustRequest, type TrustEnv } from "../src/trust.js";
 import { makeKey, opensshPrivateKeyText, signSshsig, type TestKey } from "./fixtures/trust/sshsig-signer.js";
 
@@ -81,18 +81,52 @@ function answer(id: string, extra = ""): void {
 }
 
 /** 签好、confirm 完、plan scenarios 已提交的轮次（QA draft 的前置全绿）。 */
+let ownerKey: TestKey | null = null;
 async function plannedRound(materialRoot?: string): Promise<string> {
   await readyIntake(materialRoot);
-  const key = enrollOwner();
+  ownerKey = enrollOwner();
   const { id } = draft();
   answer(id);
   expect(draft().ready).toBe(true);
-  const signoff = sign(key, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
+  const signoff = sign(ownerKey as TestKey, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
   const confirmed = await runKickoffConfirm(dir, { signoff }, bareMachine);
   expect(confirmed.ok, JSON.stringify(confirmed.errors)).toBe(true);
   const planned = await runPlanScenarios(dir, {});
   expect(planned.ok, JSON.stringify(planned.errors)).toBe(true);
   return id;
+}
+
+/** 第二轮：活输入合法变化（materialRoot/v2 已备好）→ 读取 → 收口 → 重签 → 规划 → 草案。 */
+async function nextRound(materialRoot: string): Promise<string> {
+  {
+    const md = (function findMd(base: string): string {
+      for (const entry of readdirSync(base, { withFileTypes: true })) {
+        const full = join(base, entry.name);
+        if (entry.isDirectory()) {
+          const hit = findMd(full);
+          if (hit !== "") return hit;
+        } else if (entry.name.endsWith(".md")) return full;
+      }
+      return "";
+    })(join(materialRoot, "v2"));
+    expect(md).not.toBe("");
+    writeFileSync(md, `${readFileSync(md, "utf8")}\n订单金额必填且不超过 10 万\n`, "utf8");
+    expect((await runIntakeRead(dir, { paths: [join(materialRoot, "v2")], name: "orders" })).ok).toBe(true);
+    const pending = runIntakePending(dir, {}).result?.blocks ?? [];
+    if (pending.length > 0) expect(runIntakeResolve(dir, { block: pending.map((block) => block.id), as: "skip", reason: "测试收口" }).ok).toBe(true);
+    expect((await runIntakeRead(dir, { paths: [join(materialRoot, "v2")], name: "orders" })).ok).toBe(true);
+    expect(runIntakeDraft(dir, {}).ok).toBe(true);
+    const { id } = draft();
+    answer(id);
+    expect(draft().ready).toBe(true);
+    const signoff = sign(ownerKey as TestKey, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
+    const confirmed = await runKickoffConfirm(dir, { signoff }, bareMachine);
+    expect(confirmed.ok, JSON.stringify(confirmed.errors)).toBe(true);
+    const planned = await runPlanScenarios(dir, {});
+    expect(planned.ok, JSON.stringify(planned.errors)).toBe(true);
+    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    return id;
+  }
 }
 
 const ruleOf = (id: string, text: string) => ({ id, text, file: "doc.md", locator: "L1" });
@@ -344,5 +378,67 @@ describe("qa cases 端到端", () => {
     const result = outcome.result as NonNullable<typeof outcome.result>;
     // fixtures v1→v2 有沿用条目（v2 明确沿用的部分）；无 carried 时该类 N/A 有据
     expect(result.categories?.regression.count).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("qa cases revise 谱系（TC-1b）", () => {
+  it("替代修订：parent 锚旧 digest、replaces 按 source_ref 交集、旧文件字节不动、check 过链、同轮拒绝、祖先篡改逮住", async () => {
+    await plannedRound();
+    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    const oldPointer = JSON.parse(readFileSync(qaPath("current.json"), "utf8")) as { round: string; cases_frozen_sha256: string };
+    const oldFrozenPath = qaPath(oldPointer.round, "cases-frozen.json");
+    const oldFrozenBefore = readFileSync(oldFrozenPath, "utf8");
+
+    // 材料目录由测试本体管理（revise 复核要重读材料文件——目录必须活到断言结束）
+    const material = mkdtempSync(join(tmpdir(), "pomaster-qa-r2-"));
+    cpSync(join(FIXTURES, "v2"), join(material, "v2"), { recursive: true });
+    const newRound = await nextRound(material);
+    expect(newRound).not.toBe(oldPointer.round);
+
+    const revised = runQaCasesRevise(dir, {});
+    expect(revised.ok, JSON.stringify(revised.errors)).toBe(true);
+    const result = revised.result as NonNullable<typeof revised.result>;
+    expect(result).toMatchObject({ round: newRound, change: "REVISED" });
+
+    // 指针换代：parent 精确锚在旧 digest 上
+    const pointer = JSON.parse(readFileSync(qaPath("current.json"), "utf8")) as { round: string; parent: { round: string; cases_frozen_sha256: string } };
+    expect(pointer.round).toBe(newRound);
+    expect(pointer.parent).toEqual({ round: oldPointer.round, cases_frozen_sha256: oldPointer.cases_frozen_sha256 });
+
+    // 旧文件零改动（留谱系）；新冻结集带谱系字段
+    expect(readFileSync(oldFrozenPath, "utf8")).toBe(oldFrozenBefore);
+    const frozen = JSON.parse(readFileSync(qaPath(newRound, "cases-frozen.json"), "utf8")) as { parent: unknown; retired: unknown[]; cases: { id: string; replaces: string[] }[] };
+    expect(frozen.parent).toEqual(pointer.parent);
+    expect(Array.isArray(frozen.retired)).toBe(true);
+    // 未变义务的 REQ 锚跨修订稳定 → 至少一条用例延续（replaces 非空）
+    expect(frozen.cases.filter((entry) => entry.replaces.length > 0).length).toBeGreaterThan(0);
+
+    // check 过链（parent 验祖）；同轮 revise 拒绝
+    expect(runQaCasesCheck(dir, {}).ok, JSON.stringify(runQaCasesCheck(dir, {}).errors)).toBe(true);
+    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_REVISE_SAME_ROUND");
+
+    // 祖先篡改（删谱系义务）→ check 逮住
+    writeFileSync(oldFrozenPath, `${oldFrozenBefore}x`, "utf8");
+    expect(runQaCasesCheck(dir, {}).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+    rmSync(material, { recursive: true, force: true });
+  });
+
+  it("没冻结就 revise：QA_CASES_NOT_FROZEN（没有在冻结的集合就无所谓替代）", async () => {
+    await plannedRound();
+    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_NOT_FROZEN");
+  });
+
+  it("祖先冻结集被删：拒绝续谱（谱系锚在被验证的祖先上）", async () => {
+    await plannedRound();
+    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    const oldPointer = JSON.parse(readFileSync(qaPath("current.json"), "utf8")) as { round: string };
+    const material = mkdtempSync(join(tmpdir(), "pomaster-qa-r2-"));
+    cpSync(join(FIXTURES, "v2"), join(material, "v2"), { recursive: true });
+    await nextRound(material);
+    rmSync(qaPath(oldPointer.round, "cases-frozen.json"));
+    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+    rmSync(material, { recursive: true, force: true });
   });
 });
