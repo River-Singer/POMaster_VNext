@@ -367,6 +367,7 @@ import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
+import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
@@ -1392,6 +1393,7 @@ export {
 export { packageRunner, runToolsInit } from "./tools-init.js";
 export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, requireHumanSignoff, loadRegistry, SIGNOFF_KINDS } from "./trust.js";
 export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCHEMA, KICKOFF_CURRENT_SCHEMA } from "./kickoff.js";
+export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -4138,6 +4140,48 @@ export function createProgram(
   // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
   // 授权（红线）。registry 落点 .pomaster/tools/bindings.json（SP-W1-e 提案待追认；
   // 命令名/错误码 = SP 提案待 Owner 追认）。
+  // —— QA 用例集命令面（TC-1a；11-11-agent-autopilot D-7 / code-spec qa-cases.md） ——
+  // D-2 留存隔离边界：intake / truth / plan 面纯读，唯一写口 = .pomaster/qa/ 平面。
+  // draft = 原文复核三查（files sha256 / blocks 覆盖 / items 回溯，C-08 防线）+ 12 类
+  // 分母推导（tagsOf/nfrHints 既有词表零新词族）；freeze = 不可变冻结 + current.json
+  // 指针（唯一生效凭证；isolation 如实标 not_isolated，AP-0b 接独立会话）；check =
+  // digest 对账（重生成文件、换 QA 身份不能豁免——锚是指针 digest，AC-08 同款
+  // fail-closed：未冻结/被篡改 exit 1）。TC-1b 追加 revise（替代谱系）与
+  // autopilot escalate。
+  const qa = program
+    .command("qa")
+    .description(
+      "QA 用例集命令面（TC-1a）：draft = 完整分母用例 + 原文复核（12 类逐类有场景或有依据不适用；N/A 不覆盖生效义务），freeze = 不可变用例版本冻结（需求版本+场景+预期结果；实现者只读），check = 对账（digest 锚，身份无关）。错误码：QA_KICKOFF_NOT_IN_FORCE / QA_CASES_REVISION_AHEAD / QA_CASES_PLAN_MISSING / QA_CASES_SOURCE_DRIFT / QA_CASES_ORIGIN_BROKEN / QA_CASES_DRAFT_MISSING / QA_CASES_INPUTS_DRIFTED / QA_CASES_REVIEW_OPEN / QA_CASES_FREEZE_INCOMPLETE / QA_CASES_ALREADY_FROZEN / QA_CASES_NOT_FROZEN / QA_CASES_TAMPERED",
+    );
+  const qaCases = qa.command("cases").description("QA 用例集（.pomaster/qa/<轮次>/；冻结集是实现者只读的验收真值）");
+  qaCases
+    .command("draft")
+    .description(
+      "编译用例草案：生效确认单 + 已提交 plan 轮次 + intake 修订快照 → 原文复核三查 → 12 类分母推导（CASE-#### 连号、每条带出处 source_refs）→ .pomaster/qa/<轮次>/cases.json（可重跑覆盖）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases draft", outcome: runQaCasesDraft(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
+    .command("freeze")
+    .description(
+      "冻结用例集：指纹重算一致 + 复核收口（uncovered 清零）+ 分母逐类完备 + 未冻结过 → cases-frozen.json（write-once）+ qa/current.json 指针（isolation 如实标 not_isolated）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases freeze", outcome: runQaCasesFreeze(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
+    .command("check")
+    .description(
+      "对账（纯读零写入）：未冻结 / 冻结集字节 ≠ 指针 digest → exit 1（重生成文件、换身份不能豁免）；草案漂移 / intake 修订超前 / 确认单字节漂移 → warning 不抬 exit",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases check", outcome: runQaCasesCheck(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+
   const tools = program
     .command("tools")
     .description(
