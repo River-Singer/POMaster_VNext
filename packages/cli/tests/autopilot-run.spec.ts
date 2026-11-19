@@ -166,7 +166,9 @@ describe("autopilot run 无头轮次", () => {
 
   it("timeout：round-timeout 1s 杀睡眠命令 → verdict timeout", async () => {
     await greenRound();
-    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, cmd: "sleep 30", roundTimeout: 1 });
+    // 夹具跨平台：Windows cmd 无 sleep（秒退 exit 1 → verdict failed 假红）——用 node 睡眠。
+    // 杀壳进程后孙进程仍持管道直至自退——5s 自退兜底，测试尾延 ≤4s。
+    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, cmd: "node -e \"setTimeout(() => {}, 5000)\"", roundTimeout: 1 });
     expect(outcome.ok).toBe(true);
     expect((outcome.result as { verdict: string }).verdict).toBe("timeout");
     void ROUND_DEFAULT_TIMEOUT_SECONDS;
