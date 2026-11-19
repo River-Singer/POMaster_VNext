@@ -1041,6 +1041,10 @@
       },
       "packages/studio/tests/style-candidates.spec.ts": {
         "layer": "L1"
+      },
+      "packages/cli/tests/sit.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
       }
     },
     "notes": {
