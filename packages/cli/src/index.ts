@@ -366,6 +366,7 @@ import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runSitBuild, runSitUp, runSitRun, runSitDown } from "./sit.js";
+import { runPerfBuild, runPerfRun } from "./perf.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
 import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
@@ -433,6 +434,7 @@ export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { resolveCliVersion } from "./version.js";
 export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
+export * from "./perf.js";
 export * from "./sit.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
@@ -4474,6 +4476,32 @@ export function createProgram(
       record({
         command: "sit down",
         outcome: await runSitDown(resolveDir(command), {}),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+
+  const perf = program
+    .command("perf")
+    .description(
+      "后端性能（TS-2；Gatling）：build = 生成/复用独立 perf/ 模块（manifest 驱动基准负载仿真，首次生成后归项目；自动发现在座 *Simulation.scala）+ test-compile + 清单指纹；run = 消费 SIT 环境与合并构建产物（指纹对账陈旧拒跑）→ 起双 jar → capacity 种子（词形命中时 docker exec 批量灌）→ 逐仿真 gatling:test → stats.json 摘要 vs 确认单阈值结构化词形（concurrency= / capacity= / p95<=ms / p99<=ms / rps>= / error_rate<%）判卷；零可判阈值 → verdict=recorded（负载照跑指标照记，呈现不猜）。PERF-#### 台账 + PERFORMANCE gate（AC-1 同面聚合）",
+    );
+  perf
+    .command("build")
+    .description("生成/复用 perf/ 模块 + 发现在座仿真 + mvn test-compile → .pomaster/perf/build.json（sims + 指纹）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({ command: "perf build", outcome: await runPerfBuild(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  perf
+    .command("run")
+    .description("负载 + 判卷：SIT env.json / sit build 产物指纹对账 → 起双 jar → capacity 种子 → 逐仿真 gatling:test（BASE_URL/CONCURRENCY/DURATION 注入）→ stats.json 合同解析 → 四类阈值判定（p95/p99/rps/error_rate）→ PERF-#### 台账 + 明细；judged-failed → exit 1；零判定 → recorded + THRESHOLDS_UNDETERMINED warning")
+    .option("--duration <seconds>", "负载时长秒（缺省 60）", parseInt)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "perf run",
+        outcome: await runPerfRun(resolveDir(command), { ...(opts.duration !== undefined && !Number.isNaN(opts.duration) ? { durationSeconds: opts.duration as number } : {}) }),
         asJson: command.optsWithGlobals().json === true,
       });
     });

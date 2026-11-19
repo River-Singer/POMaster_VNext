@@ -1045,6 +1045,10 @@
       "packages/cli/tests/sit.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
+      },
+      "packages/cli/tests/perf.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
       }
     },
     "notes": {

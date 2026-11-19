@@ -180,7 +180,7 @@ function defaultProcessSpawn(): SitProcessSpawn {
   };
 }
 
-function sitIo(container: string, schema: string, port: number, inject?: Partial<SitIo>): SitIo {
+export function makeSitIo(container: string, schema: string, port: number, inject?: Partial<SitIo>): SitIo {
   const spawnFn = inject?.spawn ?? defaultSpawn();
   return {
     spawn: spawnFn,
@@ -243,7 +243,7 @@ interface SitManifest {
   readonly appKey: string;
 }
 
-async function loadSitManifest(rootDir: string): Promise<SitManifest | CliError> {
+export async function loadSitManifest(rootDir: string): Promise<SitManifest | CliError> {
   const manifest = await readGenerationManifest(rootDir);
   if (manifest.kind !== "ok") {
     return {
@@ -320,7 +320,7 @@ export async function runSitBuild(
   inject?: Partial<SitIo>,
 ): Promise<CommandOutcome<SitBuildResult>> {
   const command = "sit build";
-  const io = sitIo("", "", SIT_DEFAULT_HOST_PORT, inject);
+  const io = makeSitIo("", "", SIT_DEFAULT_HOST_PORT, inject);
   const manifest = await loadSitManifest(rootDir);
   if (isCliError(manifest)) return failOutcome(command, emptyBuild(), [manifest], [manifest.message]);
 
@@ -464,7 +464,7 @@ export async function runSitUp(
   const manifest = await loadSitManifest(rootDir);
   if (isCliError(manifest)) return failOutcome(command, sitUnavailableResult(), [manifest], [manifest.message]);
   const port = input.port ?? SIT_DEFAULT_HOST_PORT;
-  const io = sitIo("", "", port, inject);
+  const io = makeSitIo("", "", port, inject);
 
   const docker = probeDocker(io);
   if (!docker.ok) {
@@ -957,7 +957,7 @@ export interface SitRunResult {
 
 interface SitBuildFile extends SitBuildResult {}
 
-function startApps(
+export function startBackendApps(
   rootDir: string,
   io: SitIo,
   spec: NormalizedDomainSpec,
@@ -994,7 +994,7 @@ function startApps(
   return { processes, error: null };
 }
 
-async function waitHealthy(io: SitIo, surface: string, intervalMs: number): Promise<boolean> {
+export async function waitAppHealthy(io: SitIo, surface: string, intervalMs: number): Promise<boolean> {
   const url = `http://127.0.0.1:${String(SIT_MANAGEMENT_PORTS[surface as "admin" | "public"] ?? 8081)}/actuator/health`;
   for (let attempt = 0; attempt < SIT_HEALTH_TIMEOUT_SECONDS; attempt += 1) {
     try {
@@ -1033,7 +1033,7 @@ export async function runSitRun(
   if (isCliError(manifest)) {
     return failOutcome(command, { run_id: "", verdict: "failed", entity: "", counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: build.fingerprint }, [manifest], [manifest.message]);
   }
-  const io = sitIo(envPointer.container, envPointer.schema_name, envPointer.port, inject);
+  const io = makeSitIo(envPointer.container, envPointer.schema_name, envPointer.port, inject);
 
   const ledgerLines = existsSync(join(rootDir, ...SIT_LEDGER.split("/"))) ? readFileSync(join(rootDir, ...SIT_LEDGER.split("/")), "utf8").split("\n").filter((line) => line.trim() !== "") : [];
   const runId = `SIT-${String(ledgerLines.length + 1).padStart(4, "0")}`;
@@ -1043,13 +1043,13 @@ export async function runSitRun(
     return failOutcome(command, { run_id: runId, verdict: "failed", entity: "", counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: build.fingerprint }, [{ code: "SIT_ENTITY_ABSENT", message: "规格里没有可跑 SIT 的实体（需要 exposure.admin 带 create 权限码）", hint: "领域规格给实体补 admin exposure" }], ["无场景实体"]);
   }
 
-  const apps = startApps(rootDir, io, manifest.spec, manifest.appKey, envPointer);
+  const apps = startBackendApps(rootDir, io, manifest.spec, manifest.appKey, envPointer);
   const human: string[] = [];
   if (apps.error !== null) {
     return failOutcome(command, { run_id: runId, verdict: "failed", entity: entity.key, counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: build.fingerprint }, [apps.error], ["应用启动失败"]);
   }
   for (const surface of apps.processes) {
-    const ready = await waitHealthy(io, surface.surface, input.healthIntervalMs ?? 1000);
+    const ready = await waitAppHealthy(io, surface.surface, input.healthIntervalMs ?? 1000);
     if (!ready) {
       for (const process of apps.processes) process.kill();
       return failOutcome(command, { run_id: runId, verdict: "failed", entity: entity.key, counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: build.fingerprint }, [{ code: "SIT_APP_NOT_READY", message: `${surface.surface} 面 ${String(SIT_HEALTH_TIMEOUT_SECONDS)}s 未就绪（log: backend/${manifest.appKey}-${surface.surface}-api/target/sit-run.log）`, hint: "看 log tail；DB 连接参数取自 env.json" }], ["应用未就绪"]);
@@ -1126,7 +1126,7 @@ export async function runSitDown(
   const command = "sit down";
   const pointerPath = join(rootDir, ...SIT_ENV_POINTER.split("/"));
   const pointer = readJsonFile(pointerPath) as SitEnvPointer | null;
-  const io = sitIo("", "", pointer?.port ?? SIT_DEFAULT_HOST_PORT, inject);
+  const io = makeSitIo("", "", pointer?.port ?? SIT_DEFAULT_HOST_PORT, inject);
   const human: string[] = [];
 
   let container = pointer?.container ?? "";
