@@ -256,7 +256,7 @@ pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 �
 
 # ⑤ 验证
 pomaster plan compile/run/scenarios                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
-pomaster sit build/up/run/down                           # 一次性 SIT 环境（TS-1）：build 合并构建（双 jar + 前端）产物指纹落账；up 起 mysql:8.4 容器+建库建号+Flyway 迁移+授权（幂等，docker/mvn/java 缺席各自诚实拒绝）；run 起双 jar 跑通用跨层不变量（鉴权/权限/校验/版本并发/KEYSET/ETag，manifest 驱动零硬编码实体）+ 接口→DB 一致性断言（docker exec mysql 回查），SIT-#### 轮账+明细，failed 即 exit 1 不粉饰；down 拆容器留台账（GRN 接线归 AC-1）
+pomaster sit build/up/run/down/zap                            # 一次性 SIT 环境（TS-1）+ ZAP 动态扫描（TS-3）：build 合并构建（双 jar+前端）产物指纹落账；up mysql:8.4 容器+建库建号+Flyway 迁移+授权（幂等；docker/mvn/java 缺席诚实拒绝）；run 起双 jar 跑通用跨层不变量（鉴权/权限/校验/版本并发/KEYSET/ETag）+接口→DB 一致性断言+属主档跨 owner 隔离专块（ownership=user），SIT-#### 轮账+明细，failed 即 exit 1；down 拆容器留台账（GRN 接线归 AC-1）；zap baseline 被动扫两基址/api 逐面导入 OpenAPI 主动扫（只对一次性环境跑），security-zap.json 逐插件 IGNORE/WARN/FAIL 映射判卷，ZAP-#### 轮 gate SECURITY
 pomaster perf build/run                                      # 后端性能（TS-2；Gatling）：build 生成/复用独立 perf/ 模块（manifest 驱动基准负载仿真+发现在座仿真）+编译落清单；run 消费 SIT 环境（指纹对账陈旧拒跑）起双 jar 跑负载 → stats.json 摘要 vs 确认单阈值结构化词形（p95<=ms/rps>=/error_rate<%/concurrency=/capacity=）判卷，PERF-#### 台账 + PERFORMANCE gate；零可判阈值 verdict=recorded 不猜
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待

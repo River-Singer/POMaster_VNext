@@ -238,12 +238,14 @@ const LEG_IDENTITIES = [
   { grn: "GRN-0001", ranAtSeq: 10 },
   { grn: "GRN-0002", ranAtSeq: 11 },
   { grn: "GRN-0003", ranAtSeq: 12 },
+  { grn: "GRN-EXT-4", ranAtSeq: 9003 },
+  { grn: "GRN-EXT-5", ranAtSeq: 9004 },
 ] as const;
 
 function runLegs(
   reports: Partial<Record<"gitleaks" | "pip-audit" | "semgrep", string>>,
   presence: LegPresence = {},
-): readonly [GateResultRecord, GateResultRecord, GateResultRecord] {
+): readonly GateResultRecord[] {
   return runSecurityGateLegs(
     { projectRoot: root, subjectId: null, denominatorRefs: [] },
     LEG_IDENTITIES,

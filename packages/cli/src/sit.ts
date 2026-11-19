@@ -587,6 +587,7 @@ export interface SitRunState {
   readonly codes: string[];
   createdId: number | null;
   disabledId: number | null;
+  ownedId: number | null;
   updatedVersion: number | null;
 }
 
@@ -828,7 +829,8 @@ export function buildSitScenario(spec: NormalizedDomainSpec, runSeq: number): { 
   });
 
   // —— public 面（exposure.public 在座才跑）——
-  const publicNa = pub === undefined ? "实体无 public 面" : null;
+  const ownershipUser = entity.ownership === "user";
+  const publicNa = pub === undefined ? "实体无 public 面" : ownershipUser ? "属主实体——通用匿名公开块不适用（ownership 专块覆盖，见 SIT-CHK 属主档段）" : null;
   const codeAt = (json: unknown): string => (uniqueField === null ? "" : String(asRecord(json)[uniqueField.property] ?? ""));
   const pageItem = (json: unknown): readonly Record<string, unknown>[] => {
     const items = asRecord(json).items;
@@ -927,7 +929,69 @@ export function buildSitScenario(spec: NormalizedDomainSpec, runSeq: number): { 
     return apiCheck(() => ctx.http(`${ctx.adminBase}/${String(ctx.state.createdId ?? 0)}`, { headers: { "X-Test-Actor": ctx.actorAdmin } }), { status: 404, code: "NOT_FOUND" });
   });
 
-  return { entity, steps };
+  // —— 属主档专块（ownership=user；§5.3 权限与数据范围——跨 owner 不可见，ZAP 测不出的业务安全）——
+  const userActor1 = "user-1|101|";
+  const userActor2 = "user-2|102|";
+  const ownerField = entity.fields.find((field) => field.column === "owner_id") ?? null;
+  const publicCreateSupported = pub !== undefined && (pub.operations ?? []).includes("create");
+  const ownershipBlockApplicable = ownershipUser && publicCreateSupported;
+  if (ownershipBlockApplicable) {
+  step("public", "api", "属主档未登录读列表 → 401 UNAUTHENTICATED", (ctx) => {
+    if (!ownershipBlockApplicable) return Promise.resolve(na("非属主实体或公开面无 create——属主档块不适用"));
+    return apiCheck(() => ctx.http(`${ctx.publicBase}?limit=20`, { headers: publicHeaders }), { status: 401, code: "UNAUTHENTICATED" });
+  });
+
+  step("public", "api", "user-1 本人新建 → 201（属主档明文读回）", async (ctx) => {
+    if (!ownershipBlockApplicable) return na("非属主实体或公开面无 create——属主档块不适用");
+    const response = await ctx.http(`${ctx.publicBase}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Test-Actor": userActor1 }, body: JSON.stringify(createBody(ctx.entity, ctx.runSeq, "U1")) });
+    const shape = await apiCheck(async () => response, { status: 201 });
+    if (shape.verdict !== "passed") return shape;
+    const id = jsonId(response.json);
+    if (id === null) return fail("缺 id");
+    ctx.state.ownedId = id;
+    return pass(`id=${String(id)}（owner 101）`);
+  });
+
+  step("db", "db", ownerField === null ? "属主落库：行在座（owner 列缺席——规格未带 owner 列，断言降级）" : "属主落库：owner_id=101（actor 中段即属主）", async (ctx) => {
+    if (!ownershipBlockApplicable || ctx.state.ownedId === null) return na("非属主实体或上游未建行");
+    const sql = ownerField === null
+      ? `SELECT COUNT(*) FROM ${ctx.entity.table} WHERE id = ${String(ctx.state.ownedId)};`
+      : `SELECT owner_id FROM ${ctx.entity.table} WHERE id = ${String(ctx.state.ownedId)};`;
+    const rows = await ctx.db(sql);
+    const row = rows[0];
+    if (row === undefined) return { verdict: "failed", detail: "行缺席", sql, observed: "0 行" };
+    if (ownerField === null) return { verdict: "passed", detail: "行在座（owner 列规格缺席——降级只证在座）", sql, observed: row.join(" | ") };
+    return row[0] === "101" ? { verdict: "passed", detail: "owner_id=101 已落", sql, observed: row.join(" | ") } : { verdict: "failed", detail: `owner_id ${row[0] ?? ""} ≠ 101`, sql, observed: row.join(" | ") };
+  });
+
+  step("public", "api", "跨 owner：user-2 读 user-1 的行 → 404 NOT_FOUND", (ctx) => {
+    if (!ownershipBlockApplicable || ctx.state.ownedId === null) return Promise.resolve(na("非属主实体或上游未建行"));
+    return apiCheck(() => ctx.http(`${ctx.publicBase}/${String(ctx.state.ownedId ?? 0)}`, { headers: { ...publicHeaders, "X-Test-Actor": userActor2 } }), { status: 404, code: "NOT_FOUND" });
+  });
+
+  step("public", "api", "跨 owner：user-2 列表 → 只含本人（items=0）", async (ctx) => {
+    if (!ownershipBlockApplicable) return na("非属主实体或公开面无 create——属主档块不适用");
+    const response = await ctx.http(`${ctx.publicBase}?limit=20`, { headers: { ...publicHeaders, "X-Test-Actor": userActor2 } });
+    if (response.status !== 200) return fail(`status ${String(response.status)} ≠ 200`);
+    const items = pageItem(response.json);
+    return items.length === 0 ? pass("user-2 列表为空（别人的行不可见）") : fail(`user-2 列表出现 ${String(items.length)} 行——跨 owner 泄漏`);
+  });
+
+  step("public", "api", "user-1 列表 → 本人可见（items ≥1）", async (ctx) => {
+    if (!ownershipBlockApplicable) return na("非属主实体或公开面无 create——属主档块不适用");
+    const response = await ctx.http(`${ctx.publicBase}?limit=20`, { headers: { ...publicHeaders, "X-Test-Actor": userActor1 } });
+    if (response.status !== 200) return fail(`status ${String(response.status)} ≠ 200`);
+    const items = pageItem(response.json);
+    return items.length >= 1 ? pass(`本人列表 ${String(items.length)} 行`) : fail("本人列表为空——自己的行自己看不见");
+  });
+
+  step("admin", "api", "admin 全见：读属主行 → 200（管理侧不受属主过滤）", (ctx) => {
+    if (!ownershipBlockApplicable || ctx.state.ownedId === null) return Promise.resolve(na("非属主实体或上游未建行"));
+    return apiCheck(() => ctx.http(`${ctx.adminBase}/${String(ctx.state.ownedId ?? 0)}`, { headers: { "X-Test-Actor": ctx.actorAdmin } }), { status: 200 });
+  });
+
+  }
+    return { entity, steps };
 }
 
 // ============================================================
@@ -1063,7 +1127,7 @@ export async function runSitRun(
     publicBase: `http://127.0.0.1:${String(SIT_APP_PORTS.public)}${joinPath(manifest.spec.surfaces.public?.base_path)}/${entity.resource}`,
     actorAdmin: `ops-1||${Object.values(entity.exposure.admin?.permission_codes ?? {}).join(",")}`,
     actorNone: `ops-2||${manifest.spec.app.key}:${entity.key}:sit_probe_none`,
-    state: { createdIds: [], codes: [], createdId: null, disabledId: null, updatedVersion: null },
+    state: { createdIds: [], codes: [], createdId: null, disabledId: null, ownedId: null, updatedVersion: null },
     entity,
     appKey: manifest.appKey,
     runSeq: ledgerLines.length + 1,

@@ -367,6 +367,7 @@ import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
 import { runSitBuild, runSitUp, runSitRun, runSitDown } from "./sit.js";
 import { runPerfBuild, runPerfRun } from "./perf.js";
+import { runSitZap } from "./zap.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
 import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
@@ -435,6 +436,7 @@ export { resolveCliVersion } from "./version.js";
 export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
 export * from "./perf.js";
+export * from "./zap.js";
 export * from "./sit.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
@@ -4480,6 +4482,23 @@ export function createProgram(
       });
     });
 
+
+
+  const zap = sit.command("zap").description("ZAP 动态扫描腿（TS-3）：baseline 被动扫（两基址）/ api OpenAPI 导入主动扫（逐面）——只对一次性 SIT 环境跑（主动扫会改数据）；ZAP-#### 轮落 .pomaster/sit/ 台账；security-zap.json 逐插件 IGNORE/WARN/FAIL 映射判卷（缺省 riskcode>=3 → FAIL），gate SECURITY；zap 脚本退出码非判卷锚（报告重算同律）");
+  for (const mode of ["baseline", "api"] as const) {
+    zap
+      .command(mode)
+      .description(mode === "baseline" ? "被动基线扫：起双 jar 等 health → zap-baseline.py 扫 admin/public 两基址 → JSON 报告 alerts × 规则映射判卷" : "主动 API 扫：消费 api/openapi/<面>.openapi.json 逐面主动测试（会改数据——只对一次性环境）→ 同上判卷")
+      .option("--duration <minutes>", "扫描时长上限（分钟，透传 zap）", parseInt)
+      .option("--json", "machine-readable JSON output (§45)")
+      .action(async (opts, command) => {
+        record({
+          command: `sit zap ${mode}`,
+          outcome: await runSitZap(resolveDir(command), { mode, ...(opts.duration !== undefined && !Number.isNaN(opts.duration) ? { durationMinutes: opts.duration as number } : {}) }),
+          asJson: command.optsWithGlobals().json === true,
+        });
+      });
+  }
 
   const perf = program
     .command("perf")

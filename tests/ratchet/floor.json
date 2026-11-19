@@ -1049,6 +1049,10 @@
       "packages/cli/tests/perf.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
+      },
+      "packages/cli/tests/zap.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
       }
     },
     "notes": {
