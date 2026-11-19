@@ -365,6 +365,7 @@ import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
+import { runSitBuild, runSitUp, runSitRun, runSitDown } from "./sit.js";
 import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
 import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
@@ -432,6 +433,7 @@ export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { resolveCliVersion } from "./version.js";
 export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
+export * from "./sit.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
 // 裁决 19③（Owner 2026-09-09，owner-adjudications.md#裁决19）TRIAGE 引擎物理删除：
@@ -4423,6 +4425,59 @@ export function createProgram(
       });
     });
 
+
+  const sit = program
+    .command("sit")
+    .description(
+      "一次性 SIT 环境与跨层场景证据（TS-1）：build = 最终合并构建（mvn package 双 jar + 前端 build，产物指纹落 build.json）；up = 起 MySQL 8.4 容器（专用端口）+建库建号+Flyway 迁移+整份授权（幂等复用）；run = 起双 jar 跑通用跨层不变量（鉴权/权限/校验/版本并发/KEYSET/ETag）+ 接口→DB 一致性断言（docker exec mysql 回查），SIT-#### 轮账+逐轮明细；down = 拆容器（台账与明细留存）。前置 docker+mvn+java，缺席各自诚实报错；GRN 接线归 AC-1",
+    );
+  sit
+    .command("build")
+    .description("最终合并构建：backend mvn -DskipTests package（找双 jar 记 sha256）+ frontend/admin build（在座时）→ .pomaster/sit/build.json（artifacts 指纹，run 侧对账锚）")
+    .option("--skip-frontend", "跳过前端构建（纯后端轮次）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit build",
+        outcome: await runSitBuild(resolveDir(command), { skipFrontend: opts.skipFrontend === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("up")
+    .description("起一次性环境：docker run mysql:8.4（宿主 33306→3306，--port 覆盖）→ 等健康 → 建库三账号 → grants 迁移账号子集 → Flyway migrate → 整份 grants → env.json；容器已在跑且健康 → 幂等 NO_CHANGE")
+    .option("--port <n>", "宿主 MySQL 端口（缺省 33306）", parseInt)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit up",
+        outcome: await runSitUp(resolveDir(command), { ...(opts.port !== undefined && !Number.isNaN(opts.port) ? { port: opts.port as number } : {}) }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("run")
+    .description("跨层场景证据：build.json 产物指纹对账（陈旧拒跑）→ 起双 jar 等 health → 通用不变量矩阵（manifest 驱动零硬编码实体：401/403/201/409/400/版本并发/KEYSET/ETag/停用可见）+ 接口→DB 一致性断言（docker exec mysql 回查行）→ finally 停 jar → SIT-#### 台账+明细；有 failed → exit 1 证据不粉饰")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit run",
+        outcome: await runSitRun(resolveDir(command), {}),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("down")
+    .description("拆环境：docker rm -f 容器 + 摘 env.json（幂等；runs 台账与明细不删——证据不随环境走；无指针按确定性容器名兜底清）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit down",
+        outcome: await runSitDown(resolveDir(command), {}),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   const tools = program
     .command("tools")
     .description(
@@ -4431,7 +4486,7 @@ export function createProgram(
   tools
     .command("init")
     .description(
-      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、maven…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
+      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、gradle…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
     )
     .option("--dry-run", "只列出将登记的绑定，不写文件")
     .option("--json", "machine-readable JSON output (§45)")
