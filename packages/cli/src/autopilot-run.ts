@@ -330,7 +330,9 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
       const result = spawnSync(input.cmd as string, { shell: true, timeout: timeoutMs, encoding: "utf8" });
       outputTail = `${result.stdout ?? ""}${result.stderr ?? ""}`.slice(-ROUND_OUTPUT_TAIL_CAP);
       exitCode = result.status;
-      verdict = result.status === 0 ? "completed" : result.signal !== null || result.error !== undefined ? "timeout" : "failed";
+      // Windows 无 signal 语义：timeout kill 走 TerminateProcess（exit code 1、signal=null），
+      // 只认 signal 会把超时误判 failed——墙钟 ≥ timeoutMs 兜底（2026-11-18 Windows 全量逮到）。
+      verdict = result.status === 0 ? "completed" : result.signal !== null || result.error !== undefined || Date.now() - startedMs >= timeoutMs ? "timeout" : "failed";
     } else {
       const prompt = buildRoundPrompt(pack);
       const binary = driver === "claude-code" ? "claude" : "codex";
@@ -344,7 +346,7 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
       const result = spawnSync(binary, args, { timeout: timeoutMs, encoding: "utf8" });
       outputTail = `${result.stdout ?? ""}${result.stderr ?? ""}`.slice(-ROUND_OUTPUT_TAIL_CAP);
       exitCode = result.status;
-      verdict = result.status === 0 ? "completed" : result.signal !== null ? "timeout" : "failed";
+      verdict = result.status === 0 ? "completed" : result.signal !== null || Date.now() - startedMs >= timeoutMs ? "timeout" : "failed";
     }
   } finally {
     // 轮终释放锁（finally——崩溃靠 TTL stale + lock steal 人阅接管）
