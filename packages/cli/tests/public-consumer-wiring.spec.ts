@@ -130,7 +130,11 @@ process.on("exit", () => writeFileSync(${JSON.stringify(file("launcher-fixture/s
 describe("generated launcher production regressions", () => {
   it.each(["slow piped stderr", "deterministic Writable backpressure", "a real file descriptor"] as const)(
     "drains every bounded mixed-target diagnostic and the full final overflow reason to %s", async mode => {
-    const ordinaryDir = join("src", ...Array.from({ length: 12 }, (_, n) => `${n}-${"x".repeat(120)}`));
+    const ordinaryDir = join("src", ...Array.from({ length: 6 }, (_, n) => `${n}-${"x".repeat(120)}`));
+    // Keep the deepest metadata probe plus Darwin's /private alias below PATH_MAX.
+    expect(
+      Buffer.byteLength(file(join(ordinaryDir, ".pomaster/state/truth-index.json"))) + Buffer.byteLength("/private"),
+    ).toBeLessThan(1024);
     fs.mkdirSync(file(ordinaryDir), { recursive: true });
     const protectedTarget = file(".pomaster/state/truth-index.json");
     const before = fs.readFileSync(protectedTarget);
@@ -151,6 +155,7 @@ describe("generated launcher production regressions", () => {
     expect(run.code).toBe(2);
     expect(run.signal).toBeNull();
     expect(run.stdout).toBe("");
+    expect(Buffer.byteLength(run.stderr)).toBeGreaterThan(128 * 1024);
     const faults = readGuardFaults(root);
     expect(faults.errors).toEqual([]);
     expect(faults.events).toHaveLength(257);
