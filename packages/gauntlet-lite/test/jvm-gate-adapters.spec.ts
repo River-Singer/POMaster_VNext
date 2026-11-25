@@ -4,20 +4,21 @@ const addFormats = createRequire(import.meta.url)("ajv-formats") as (ajv: Ajv) =
 import { describe, expect, it, vi } from "vitest";
 import { existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { gateResultSchema } from "@pomaster/schemas";
 import {
   buildPitCommand, createArchitectureAdapter, createMutationAdapter, parsePitReport, summarizeMutants,
   bindingAdapterContractMatches, runBindingGate,
   toGateResultJson, type GatePolicy, type JvmReportIO, type SpawnFn, type SpawnOutcome, type ToolBindingRecord,
 } from "@pomaster/gauntlet-lite";
-import { fakeFacts, posixJoin } from "./helpers.js";
+import { fakeFacts } from "./helpers.js";
 import { platformDetectorFacts } from "../src/detectors.js";
 import { platformJvmReportIO, runJvmMavenReports } from "../src/jvm-report.js";
 import { runArchUnitLeg } from "../src/archunit-leg.js";
 import { runPitLeg } from "../src/pit-leg.js";
 
-const ROOT = "D:/fixture project";
+// In-memory fixture only: use the host path semantics without creating this directory.
+const ROOT = resolve(tmpdir(), "pomaster JVM fixture project");
 const PIT_REPORT = "target/pit-reports/mutations.xml";
 const ARCH_REPORT = "target/surefire-reports/TEST-com.acme.LayerTest.xml";
 const JAVA_FILE = "src/main/java/com/acme/Calc.java";
@@ -38,27 +39,30 @@ function junit(status = "passed", classname = "com.acme.LayerTest", failures = s
   const body = status === "failed" ? '<failure message="layer violation">Service imports Controller</failure>' : status === "skipped" ? '<skipped message="disabled"/>' : "";
   return `<?xml version="1.0"?><testsuite tests="1" failures="${failures}" errors="0"><testcase name="layers" classname="${classname}">${body}</testcase></testsuite>`;
 }
-function harness(report: string | null, options: { version?: string; run?: Partial<SpawnOutcome>; noRunner?: boolean; stale?: boolean; invalidateFails?: boolean; reports?: Record<string, string> } = {}) {
-  const files = new Map<string, string>(Object.entries(options.reports ?? {}));
-  if (options.stale) { files.set(posixJoin(ROOT, PIT_REPORT), pitXml(mutant("KILLED"))); files.set(posixJoin(ROOT, ARCH_REPORT), junit()); }
+function harness(report: string | null, options: { version?: string; run?: Partial<SpawnOutcome>; noRunner?: boolean; stale?: boolean; invalidateFails?: boolean; reports?: Record<string, string> } = {}, projectRoot = ROOT) {
+  const files = new Map<string, string>(Object.entries(options.reports ?? {}).map(([path, text]) => [resolve(path), text]));
+  if (options.stale) { files.set(resolve(projectRoot, PIT_REPORT), pitXml(mutant("KILLED"))); files.set(resolve(projectRoot, ARCH_REPORT), junit()); }
   const calls: { command: string; timeoutMs: number }[] = [];
   const removed: string[] = [];
   const reportIO: JvmReportIO = {
-    readTextFile: (path) => files.get(path.replaceAll("\\", "/")) ?? null,
-    fileExists: (path) => files.has(path.replaceAll("\\", "/")),
-    removeFile: (path) => { removed.push(path); if (options.invalidateFails) throw new Error("EBUSY"); files.delete(path.replaceAll("\\", "/")); },
+    readTextFile: (path) => files.get(path) ?? null,
+    fileExists: (path) => files.has(path),
+    removeFile: (path) => { removed.push(path); if (options.invalidateFails) throw new Error("EBUSY"); files.delete(path); },
   };
   const spawn: SpawnFn = (command, spawnOptions) => {
     calls.push({ command, timeoutMs: spawnOptions.timeoutMs });
     if (command.includes("--version")) return { status: 0, stdout: options.version ?? "Apache Maven 3.9.6", stderr: "", error: null, externalMs: 2 };
-    if (report !== null) files.set(posixJoin(ROOT, command.includes("pitest-maven") ? PIT_REPORT : ARCH_REPORT), report);
-    for (const [path, text] of Object.entries(options.reports ?? {})) files.set(path, text);
+    if (report !== null) files.set(resolve(spawnOptions.cwd, command.includes("pitest-maven") ? PIT_REPORT : ARCH_REPORT), report);
+    for (const [path, text] of Object.entries(options.reports ?? {})) files.set(resolve(path), text);
     return { status: 0, stdout: "BUILD SUCCESS", stderr: "", error: null, externalMs: 3, ...options.run };
   };
-  return { reportIO, spawn, calls, removed, probe: () => options.noRunner ? null : "D:/tools/mvn.cmd" };
+  return { reportIO, spawn, calls, removed, files, probe: () => options.noRunner ? null : resolve(tmpdir(), "pomaster JVM tools", process.platform === "win32" ? "mvn.cmd" : "mvn") };
 }
-function facts(configName: string, config: unknown, pom: string | null = POM) {
-  return fakeFacts(ROOT, { files: { [posixJoin(ROOT, configName)]: JSON.stringify(config), ...(pom === null ? {} : { [posixJoin(ROOT, "pom.xml")]: pom }) } });
+function facts(configName: string, config: unknown, pom: string | null = POM, projectRoot = ROOT) {
+  return {
+    ...fakeFacts(projectRoot, { files: { [resolve(projectRoot, configName)]: JSON.stringify(config), ...(pom === null ? {} : { [resolve(projectRoot, "pom.xml")]: pom }) } }),
+    joinPath: resolve,
+  };
 }
 function runPit(report: string | null, options: Parameters<typeof harness>[1] = {}, config: unknown = pitConfig, policy = POLICY) {
   const h = harness(report, options);
@@ -80,6 +84,46 @@ function runArch(report: string | null, options: Parameters<typeof harness>[1] =
 }
 
 describe("JVM generated report boundary", () => {
+  it("uses a native absolute, space-containing fake fixture root independent of checkout cwd", () => {
+    expect(ROOT).toBe(resolve(tmpdir(), "pomaster JVM fixture project"));
+    expect(isAbsolute(ROOT)).toBe(true);
+    expect(ROOT).toContain(" ");
+  });
+  it.each([
+    { runner: "pit", projectRoot: ROOT },
+    { runner: "archunit", projectRoot: ROOT },
+    { runner: "pit", projectRoot: resolve(ROOT, "backend module") },
+    { runner: "archunit", projectRoot: resolve(ROOT, "backend module") },
+  ])("$runner fake producer and report consumer agree on exact native paths in $projectRoot", ({ runner, projectRoot }) => {
+    const report = runner === "pit" ? PIT_REPORT : ARCH_REPORT;
+    const xml = runner === "pit" ? pitXml(mutant("KILLED")) : junit();
+    const expectedPath = resolve(projectRoot, report);
+    const h = harness(xml, {}, projectRoot);
+    const readTextFile = vi.fn(h.reportIO.readTextFile);
+    const fileExists = vi.fn(h.reportIO.fileExists);
+    const spawn = vi.fn(h.spawn);
+    const reportIO = { ...h.reportIO, readTextFile, fileExists };
+    const configName = runner === "pit" ? "mutation-gate.json" : "architecture-gate.json";
+    const f = facts(configName, runner === "pit" ? pitConfig : archConfig, POM, projectRoot);
+    expect(f.joinPath(projectRoot, configName)).toBe(resolve(projectRoot, configName));
+    expect(f.fileExists(resolve(projectRoot, configName))).toBe(true);
+    const record = runner === "pit"
+      ? (() => { const adapter = createMutationAdapter({ spawnFn: spawn, executableProbe: h.probe, reportIO }); return adapter.normalize(adapter.run(adapter.prepare({ projectRoot }, POLICY, f)), {}); })()
+      : (() => { const adapter = createArchitectureAdapter({ archunitSpawnFn: spawn, archunitExecutableProbe: h.probe, archunitReportIO: reportIO }); return adapter.normalize(adapter.run(adapter.prepare({ projectRoot }, POLICY, f)), {}); })();
+    expect(record.verdict).toBe("passed");
+    expect(isAbsolute(expectedPath)).toBe(true);
+    expect(spawn).toHaveBeenCalledTimes(2);
+    expect(spawn.mock.calls.map(([, options]) => options.cwd)).toEqual([projectRoot, projectRoot]);
+    expect(h.removed).toEqual([expectedPath]);
+    expect(fileExists).toHaveBeenCalledWith(expectedPath);
+    expect(readTextFile).toHaveBeenCalledTimes(1);
+    expect(readTextFile).toHaveBeenCalledWith(expectedPath);
+    expect([...h.files.keys()]).toEqual([expectedPath]);
+    expect(h.reportIO.readTextFile(expectedPath)).toBe(xml);
+    const unknownPath = resolve(projectRoot, "other", report);
+    expect(h.reportIO.fileExists(unknownPath)).toBe(false);
+    expect(h.reportIO.readTextFile(unknownPath)).toBeNull();
+  });
   const badArchReports = [
     "pom.xml", "src/main/resources/beans.xml", "src/test/resources/TEST-com.acme.LayerTest.xml",
     "reports/TEST-com.acme.LayerTest.xml", "backend/target/surefire-reports/TEST-com.acme.LayerTest.xml",
@@ -212,7 +256,7 @@ describe("JVM generated report boundary", () => {
       mkdirSync(join(root, "target"));
       symlinkSync(source, join(root, "target", runner === "pit" ? "pit-reports" : "surefire-reports"), process.platform === "win32" ? "junction" : "dir");
       const spawn = vi.fn(harness(null).spawn);
-      const f = facts(runner === "pit" ? "mutation-gate.json" : "architecture-gate.json", runner === "pit" ? pitConfig : archConfig);
+      const f = facts(runner === "pit" ? "mutation-gate.json" : "architecture-gate.json", runner === "pit" ? pitConfig : archConfig, POM, root);
       const scope = { projectRoot: root };
       const record = runner === "pit"
         ? (() => { const adapter = createMutationAdapter({ spawnFn: spawn, executableProbe: () => "mvn" }); return adapter.normalize(adapter.run(adapter.prepare(scope, POLICY, f)), {}); })()
@@ -312,7 +356,7 @@ describe("BE-2 PIT production mutation adapter", () => {
         writeFileSync(join(root, PIT_REPORT), pitXml(mutant("SURVIVED")));
         return { status: 1, stdout: "BUILD FAILURE", stderr: "", error: null, externalMs: 1 };
       } });
-      const f = fakeFacts(root, { files: { [posixJoin(root, "pom.xml")]: "<project/>", [posixJoin(root, "mutation-gate.json")]: JSON.stringify(pitConfig) } });
+      const f = facts("mutation-gate.json", pitConfig, "<project/>", root);
       const record = adapter.normalize(adapter.run(adapter.prepare({ projectRoot: root }, POLICY, f)), {});
       expect(record.verdict).toBe("failed");
       expect(record.counts.applicableScanned).toBe(1);
@@ -343,7 +387,7 @@ describe("BE-2 PIT production mutation adapter", () => {
         }
         return { status: 0, stdout: "BUILD SUCCESS", stderr: "", error: null, externalMs: 1 };
       } });
-      const f = facts("mutation-gate.json", pitConfig);
+      const f = facts("mutation-gate.json", pitConfig, POM, root);
       const record = adapter.normalize(adapter.run(adapter.prepare({ projectRoot: root }, POLICY, f)), {});
       if (unsupported) { context.skip(); return; }
       expect(record.verdict).toBe("not_run");
@@ -413,7 +457,7 @@ describe("BE-2 ArchUnit production architecture adapter", () => {
     expect(record.trust.recomputed.matchesAsserted).toBe(false);
   });
   it("all skipped is skipped_blindspot, not passing unrelated Java tests", () => {
-    const { record } = runArch(junit("skipped"), { reports: { [posixJoin(ROOT, "target/surefire-reports/TEST-com.acme.BusinessTest.xml")]: junit("passed", "com.acme.BusinessTest") } });
+    const { record } = runArch(junit("skipped"), { reports: { [resolve(ROOT, "target/surefire-reports/TEST-com.acme.BusinessTest.xml")]: junit("passed", "com.acme.BusinessTest") } });
     expect(record.verdict).toBe("skipped_blindspot");
     expect(record.counts.uncheckedInBlindspotEstimated).toBe(1);
     expect(record.blindspot.fixtureRegression).toBeTruthy();
@@ -424,7 +468,7 @@ describe("BE-2 ArchUnit production architecture adapter", () => {
   it("known report set requires every declared class and never reads arbitrary tests", () => {
     const config = { ...archConfig, tests: ["com.acme.LayerTest", "com.acme.OtherLayerTest"] };
     expect(runArch(junit(), {}, config).record.verdict).toBe("not_run");
-    const reports = { [posixJoin(ROOT, "target/surefire-reports/TEST-com.acme.OtherLayerTest.xml")]: junit("failed", "com.acme.OtherLayerTest") };
+    const reports = { [resolve(ROOT, "target/surefire-reports/TEST-com.acme.OtherLayerTest.xml")]: junit("failed", "com.acme.OtherLayerTest") };
     const { record } = runArch(junit(), { reports }, config);
     expect(record.verdict).toBe("failed"); expect(record.counts.scanned).toBe(2); expect(record.counts.violations).toBe(1);
   });

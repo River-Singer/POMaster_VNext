@@ -1,6 +1,8 @@
 import * as fs from "node:fs";
+import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, beginExecution, createStore, loadStoreReadOnly, loadTruthIndex, type GovernedId, type ObjectEnvelopeInput, type KeybindingRow } from "@pomaster/kernel";
 import * as publicApi from "../src/index.js";
@@ -15,6 +17,8 @@ import { makeKey, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 import { assessCloseoutMachine } from "../src/closeout.js";
 import { runAlerts, ALERTS_OUTPUT_HARD_CAP } from "../src/alerts.js";
 import { runDoctor } from "../src/doctor.js";
+import { renderExecGuardLauncher } from "../src/heavy-entry.js";
+import { readGuardFaults } from "../src/guard-faults.js";
 
 let root: string;
 const file = (path: string) => join(root, path);
@@ -38,6 +42,229 @@ const binding: KeybindingRow = { id: "KEYBINDING.PAGE.TEST", binding_class: "pag
 
 beforeEach(async () => { root = fs.mkdtempSync(join(tmpdir(), "pomaster-public-")); await createStore(root); put(".pomaster/state/authority.json", { version: 1, authorities: { BOOTSTRAP_OWNER: {} } }); await applyTransaction(loadStoreReadOnly(root), { ops: [{ op: "upsert_object", envelope: envelope() }] }); });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 30 }));
+
+async function faultLauncher(payload: unknown, slowStderr = false, closedStderr = false,
+  options: { transport?: "backpressure" | "invalid-fd"; stderrFile?: boolean } = {}) {
+  put("launcher-fixture/exec-guard-launcher.mjs", renderExecGuardLauncher(null));
+  put("launcher-fixture/exec-guard-hook.py", fs.readFileSync(new URL("../../../hooks/exec-guard-hook.py", import.meta.url), "utf8"));
+  const args: string[] = [];
+  if (options.transport) {
+    // Only replace child I/O, never the generated protection assessment. A standard
+    // Writable deterministically queues every note; this does not assume fd 2 is nonblocking.
+    put("launcher-fixture/stderr-loader.mjs", `
+import { closeSync, openSync, write, writeFileSync } from "node:fs";
+import { Writable } from "node:stream";
+const original = process.stderr;
+const invalidFd = ${options.transport === "invalid-fd"};
+const trace = { queued: 0, completed: 0, backpressure: 0, errors: [] };
+const transport = new Writable({
+  highWaterMark: 1,
+  write(chunk, encoding, callback) {
+    setTimeout(() => {
+      const done = error => {
+        if (error) trace.errors.push(error.code);
+        else trace.completed++;
+        callback(error);
+      };
+      if (invalidFd) {
+        // Close immediately before writing, so assessment file I/O cannot reuse the fd.
+        const fd = openSync(new URL(import.meta.url), "r");
+        closeSync(fd);
+        write(fd, chunk, done);
+      } else original.write(chunk, done);
+    }, 2);
+  },
+});
+const queuedWrite = transport.write.bind(transport);
+transport.write = (...args) => {
+  trace.queued++;
+  const ready = queuedWrite(...args);
+  if (!ready) trace.backpressure++;
+  return ready;
+};
+Object.defineProperty(process, "stderr", { value: transport });
+process.on("exit", () => writeFileSync(${JSON.stringify(file("launcher-fixture/stderr-trace.json"))}, JSON.stringify(trace)));
+`);
+    args.push("--import", pathToFileURL(file("launcher-fixture/stderr-loader.mjs")).href);
+  }
+  args.push(file("launcher-fixture/exec-guard-launcher.mjs"));
+  const stderrFd = options.stderrFile ? fs.openSync(file("launcher-fixture/stderr.txt"), "w") : undefined;
+  const child = spawn(process.execPath, args, {
+    cwd: root,
+    env: { PATH: file("no-such-bin"), SystemRoot: process.env.SystemRoot ?? "" },
+    stdio: ["pipe", "pipe", stderrFd ?? "pipe"],
+  });
+  if (stderrFd !== undefined) fs.closeSync(stderrFd);
+  const stdout: Buffer[] = [], stderr: Buffer[] = [];
+  let resume: ReturnType<typeof setTimeout> | undefined;
+  child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+  child.stderr?.on("data", (chunk: Buffer) => {
+    stderr.push(chunk);
+    if (slowStderr) {
+      child.stderr?.pause();
+      resume = setTimeout(() => child.stderr?.resume(), 5);
+    }
+  });
+  if (slowStderr) {
+    child.stderr?.pause();
+    resume = setTimeout(() => child.stderr?.resume(), 3_000);
+  }
+  const result = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code, signal) => resolve({ code, signal }));
+    child.stdin.once("error", reject);
+  });
+  const timeout = setTimeout(() => child.kill(), 15_000);
+  if (closedStderr) child.stderr?.destroy();
+  child.stdin.end(JSON.stringify(payload));
+  try {
+    return { ...await result, stdout: Buffer.concat(stdout).toString("utf8"),
+      stderr: options.stderrFile ? fs.readFileSync(file("launcher-fixture/stderr.txt"), "utf8") : Buffer.concat(stderr).toString("utf8") };
+  } finally {
+    clearTimeout(timeout);
+    clearTimeout(resume);
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+  }
+}
+
+describe("generated launcher production regressions", () => {
+  it.each(["slow piped stderr", "deterministic Writable backpressure", "a real file descriptor"] as const)(
+    "drains every bounded mixed-target diagnostic and the full final overflow reason to %s", async mode => {
+    const ordinaryDir = join("src", ...Array.from({ length: 12 }, (_, n) => `${n}-${"x".repeat(120)}`));
+    fs.mkdirSync(file(ordinaryDir), { recursive: true });
+    const protectedTarget = file(".pomaster/state/truth-index.json");
+    const before = fs.readFileSync(protectedTarget);
+    const edits = [
+      ...Array.from({ length: 255 }, (_, n) => ({ file_path: file(join(ordinaryDir, `ordinary-${n}.ts`)) })),
+      { file_path: protectedTarget },
+      { file_path: file("src/beyond-bound.ts") },
+    ];
+    const run = await faultLauncher({ tool_name: "MultiEdit", tool_input: { edits }, cwd: root },
+      mode === "slow piped stderr", false, {
+        transport: mode === "deterministic Writable backpressure" ? "backpressure" : undefined,
+        stderrFile: mode === "a real file descriptor",
+      });
+    if (mode === "deterministic Writable backpressure") {
+      const trace = JSON.parse(fs.readFileSync(file("launcher-fixture/stderr-trace.json"), "utf8"));
+      expect(trace).toEqual({ queued: 258, completed: 258, backpressure: 258, errors: [] });
+    }
+    expect(run.code).toBe(2);
+    expect(run.signal).toBeNull();
+    expect(run.stdout).toBe("");
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(257);
+    expect(faults.events.filter(event => !event.protected)).toHaveLength(255);
+    expect(faults.events.at(-2)).toMatchObject({ target: protectedTarget, protected: true, disposition: "fail_closed" });
+    const last = faults.events.at(-1)!;
+    expect(last).toMatchObject({ target: "<unknown>", protected: true, disposition: "fail_closed" });
+    expect(last.reason).toContain("Target/edit inventory budget exhausted; assessment truncated; protected target cannot be excluded");
+    expect(run.stderr).toContain(`[pomaster exec-guard launcher] GUARD_FAULT_OBSERVED fail_closed: <unknown>: ${last.reason}\n`);
+    expect(run.stderr.match(/GUARD_FAULT_OBSERVED /g)).toHaveLength(257);
+    for (const event of faults.events) expect(run.stderr).toContain(`GUARD_FAULT_OBSERVED ${event.disposition}: ${event.target}: ${event.reason}\n`);
+    expect(run.stderr).toMatch(/DENY: no Python 3\.8\+ found[^\n]+execution audit\n$/);
+    expect(fs.readFileSync(protectedTarget)).toEqual(before);
+  }, 20_000);
+
+  it("keeps a protected refusal at exit 2 when the actual stderr pipe reader closes", async () => {
+    const target = file(".pomaster/state/truth-index.json");
+    const before = fs.readFileSync(target);
+    const run = await faultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root }, false, true);
+    expect(run.code).toBe(2);
+    expect(run.signal).toBeNull();
+    expect(run.stdout).toBe("");
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(1);
+    expect(faults.events[0]).toMatchObject({ target, protected: true, disposition: "fail_closed" });
+    expect(fs.readFileSync(target)).toEqual(before);
+  });
+
+  it.each([false, true])("keeps invalid-fd diagnostics separate from the protected=%s exit disposition", async protectedTarget => {
+    const target = file(protectedTarget ? ".pomaster/state/truth-index.json" : "src/ordinary.ts");
+    put("src/ordinary.ts", "original ordinary bytes\n");
+    const before = fs.readFileSync(file(".pomaster/state/truth-index.json"));
+    const edits = [{ file_path: target }, { file_path: file("src/another.ts") }];
+    const run = await faultLauncher({ tool_name: "MultiEdit", tool_input: { edits }, cwd: root }, false, false,
+      { transport: "invalid-fd" });
+    expect(run.code).toBe(protectedTarget ? 2 : 0);
+    expect(run.signal).toBeNull();
+    expect(run.stdout).toBe("");
+    expect(run.stderr).toBe("");
+    const trace = JSON.parse(fs.readFileSync(file("launcher-fixture/stderr-trace.json"), "utf8"));
+    expect(trace).toEqual({ queued: 3, completed: 0, backpressure: 3, errors: ["EBADF"] });
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(2);
+    expect(faults.events[0]).toMatchObject({ target, protected: protectedTarget,
+      disposition: protectedTarget ? "fail_closed" : "fail_open" });
+    expect(faults.events[1]).toMatchObject({ protected: false, disposition: "fail_open" });
+    expect(fs.readFileSync(file(".pomaster/state/truth-index.json"))).toEqual(before);
+    expect(fs.readFileSync(file("src/ordinary.ts"), "utf8")).toBe("original ordinary bytes\n");
+  });
+
+  it.each([
+    ["src/ordinary.ts", false],
+    ["src/page/new.ts", true],
+    [".pomaster/state/truth-index.json", true],
+  ] as const)("records one same-store alias fault for %s without losing protection", async (relative, protectedTarget) => {
+    put("src/ordinary.ts", "original ordinary bytes\n");
+    put("src/page/existing.ts", "original protected bytes\n");
+    put(".pomaster/truth/keybindings/page.json", binding);
+    const alias = file("store-alias");
+    fs.symlinkSync(root, alias, process.platform === "win32" ? "junction" : "dir");
+    const target = join(alias, relative);
+    const before = fs.readFileSync(file(".pomaster/state/truth-index.json"));
+    const run = await faultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root });
+    expect(run.code, run.stderr).toBe(protectedTarget ? 2 : 0);
+    expect(run.stdout).toBe("");
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(1);
+    expect(faults.events[0]).toMatchObject({ target, protected: protectedTarget, disposition: protectedTarget ? "fail_closed" : "fail_open" });
+    expect(run.stderr.match(/GUARD_FAULT_OBSERVED /g)).toHaveLength(1);
+    expect(fs.readFileSync(file(".pomaster/state/truth-index.json"))).toEqual(before);
+    expect(fs.readFileSync(file("src/ordinary.ts"), "utf8")).toBe("original ordinary bytes\n");
+    expect(fs.readFileSync(file("src/page/existing.ts"), "utf8")).toBe("original protected bytes\n");
+  });
+
+  it("reads same-store alias metadata once without falsely exhausting the entry budget", async () => {
+    put("src/ordinary.ts", "original\n");
+    for (let n = 0; n < 512; n++) put(`.pomaster/truth/keybindings/${n}.json`, { binding_class: "contract_operation_to_operationId" });
+    const alias = file("store-alias");
+    fs.symlinkSync(root, alias, process.platform === "win32" ? "junction" : "dir");
+    const target = join(alias, "src/ordinary.ts");
+    const run = await faultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root });
+    expect(run.code, run.stderr).toBe(0);
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(1);
+    expect(faults.events[0]).toMatchObject({ target, protected: false, disposition: "fail_open" });
+    expect(run.stderr).not.toContain("inventory budget exhausted");
+  });
+
+  it("still closes a lexical control-plane redirect into a different ordinary store", async () => {
+    const other = file("other-store");
+    fs.mkdirSync(other);
+    await createStore(other);
+    put("other-store/src/ordinary.ts", "original destination bytes\n");
+    const link = file(".pomaster/state/redirect");
+    fs.symlinkSync(join(other, "src"), link, process.platform === "win32" ? "junction" : "dir");
+    const target = join(link, "ordinary.ts");
+    const before = [root, other].map(project => fs.readFileSync(join(project, ".pomaster/state/truth-index.json")));
+    const run = await faultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root });
+    expect(run.code, run.stderr).toBe(2);
+    expect(run.stdout).toBe("");
+    for (const [project, protectedTarget] of [[root, true], [other, false]] as const) {
+      const faults = readGuardFaults(project);
+      expect(faults.errors).toEqual([]);
+      expect(faults.events).toHaveLength(1);
+      expect(faults.events[0]).toMatchObject({ target, protected: protectedTarget, disposition: protectedTarget ? "fail_closed" : "fail_open" });
+    }
+    [root, other].forEach((project, n) => expect(fs.readFileSync(join(project, ".pomaster/state/truth-index.json"))).toEqual(before[n]));
+    expect(fs.readFileSync(file("other-store/src/ordinary.ts"), "utf8")).toBe("original destination bytes\n");
+  });
+});
 
 describe("PUBLIC production wiring", () => {
   it("exports the actual production admission, review and bootstrap functions", () => {

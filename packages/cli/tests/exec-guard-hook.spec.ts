@@ -49,9 +49,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { beginExecution, createStore, endExecution, type Store } from "@pomaster/kernel";
 import {
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
@@ -62,6 +62,11 @@ import {
 } from "@pomaster/cli";
 import { readGuardFaults } from "../src/guard-faults.js";
 import { renderExecGuardLauncher } from "../src/heavy-entry.js";
+import { createTrustedCliFixture, expectTrustedCliInstallation, type TrustedCliFixture } from "../../../tests/integration/trusted-cli-fixture.js";
+
+let trustedCli: TrustedCliFixture;
+beforeAll(() => { trustedCli = createTrustedCliFixture(); });
+afterAll(() => { trustedCli?.dispose(); });
 
 // ---------------------------------------------------------------------------
 // 被测脚本与 CLI 入口定位（repo 内相对锚——CI fresh clone 同构可达）
@@ -203,17 +208,15 @@ function runHook(payload: HookPayload, script: string = canonicalHook, envOverri
   if (!py.available) {
     return { spawned: false, exitCode: null, stdout: "", stderr: py.reason };
   }
-  const [file, ...rest] = py.cmd;
-  if (file === undefined) {
-    return { spawned: false, exitCode: null, stdout: "", stderr: "python cmd empty" };
+  const file = trustedCli.python;
+  if (file === null) {
+    return { spawned: false, exitCode: null, stdout: "", stderr: "Python 3.8+ prerequisite missing" };
   }
-  const res = spawnSync(file, [...rest, script], {
+  const res = spawnSync(file, [script], {
     input: JSON.stringify(payload),
     encoding: "utf8",
     env: {
-      ...process.env,
-      PYTHONIOENCODING: "utf-8",
-      POMASTER_CLI_ENTRY: cliEntry,
+      ...trustedCli.env,
       ...envOverrides,
     },
   });
@@ -236,7 +239,7 @@ function bashPayload(command: string): HookPayload {
 }
 
 function runLauncherWithoutInjectedCli(script: string, payload: HookPayload): HookRun {
-  const env: NodeJS.ProcessEnv = { ...process.env, PYTHONIOENCODING: "utf-8" };
+  const env: NodeJS.ProcessEnv = { ...trustedCli.env };
   delete env.POMASTER_CLI_ENTRY;
   const res = spawnSync(process.execPath, [script], {
     input: JSON.stringify(payload),
@@ -250,6 +253,49 @@ function runLauncherWithoutInjectedCli(script: string, payload: HookPayload): Ho
 }
 
 describe("exec-guard hook distribution installed by init", () => {
+  it("withoutCLI PATH exposes real Python/Node only, never original runtime directories or a colocated CLI", () => {
+    expect(trustedCli.python, "real Python prerequisite").not.toBeNull();
+    const env = trustedCli.withoutCliEnv;
+    expect(env.POMASTER_CLI_ENTRY).toBeUndefined();
+    const discovery = spawnSync(trustedCli.python!, ["-c", "import json, shutil; print(json.dumps(shutil.which('pomaster')))"], {
+      cwd: root, env, encoding: "utf8",
+    });
+    expect(discovery.error).toBeUndefined();
+    expect(discovery.status, discovery.stderr).toBe(0);
+    expect(JSON.parse(discovery.stdout)).toBeNull();
+    const runtimeDirs = env.PATH!.split(delimiter);
+    expect(runtimeDirs).toEqual([join(trustedCli.root, "runtime-bin")]);
+    expect(env.HOME).toBe(join(trustedCli.root, "home"));
+    expect(env.USERPROFILE).toBe(env.HOME);
+    expect(runtimeDirs).not.toContain(dirname(process.execPath));
+    expect(runtimeDirs).not.toContain(dirname(trustedCli.python!));
+    const node = spawnSync("node", ["--version"], { cwd: root, env, encoding: "utf8" });
+    expect(node.error).toBeUndefined();
+    expect(node.status, node.stderr).toBe(0);
+    expect(node.stdout.trim()).toBe(process.version);
+    const argv = ["path with spaces", "single'quote", 'double"quote', "semi;colon"];
+    const args = spawnSync("node", ["-e", "console.log(JSON.stringify(process.argv.slice(1)))", ...argv], {
+      cwd: root, env, encoding: "utf8",
+    });
+    expect(args.error).toBeUndefined();
+    expect(args.status, args.stderr).toBe(0);
+    expect(JSON.parse(args.stdout)).toEqual(argv);
+    if (process.platform === "win32") {
+      const prefix = spawnSync(trustedCli.python!, ["-I", "-c", "import sys; print(sys.prefix)"], { encoding: "utf8" });
+      expect(prefix.error).toBeUndefined();
+      expect(prefix.status, prefix.stderr).toBe(0);
+      expect(env.PYTHONHOME).toBe(prefix.stdout.trim());
+    }
+    const script = "import sys; assert sys.version_info >= (3, 8); print(sys.version)";
+    const python = spawnSync("python", ["-c", script], { cwd: root, env, encoding: "utf8" });
+    const actual = spawnSync(trustedCli.python!, ["-c", script], { cwd: root, env, encoding: "utf8" });
+    expect(python.error).toBeUndefined();
+    expect(actual.error).toBeUndefined();
+    expect(actual.status, actual.stderr).toBe(0);
+    expect(python.status, python.stderr).toBe(0);
+    expect(python.stdout).toBe(actual.stdout);
+  });
+
   it("clean external project path with spaces: launcher resolves CLI entry and delegates to canonical guard", async () => {
     if (!py.available) {
       expectPendingRecorded("distributed.launcher.python_missing", py.reason);
@@ -259,6 +305,7 @@ describe("exec-guard hook distribution installed by init", () => {
     try {
       const init = await runInit(externalRoot);
       expect(init.ok).toBe(true);
+      expectTrustedCliInstallation(trustedCli, externalRoot);
       const distributedHook = join(externalRoot, CLAUDE_EXEC_GUARD_HOOK_RELATIVE);
       const launcher = join(externalRoot, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
       expect(existsSync(distributedHook)).toBe(true);
@@ -305,6 +352,42 @@ describe("exec-guard hook distribution installed by init", () => {
       expect(run.exitCode).toBe(2);
       expect(run.stderr).toContain("PERMIT_UNKNOWN");
       expect(run.stderr).toContain("pomaster exec-guard hook");
+      expect(readGuardFaults(externalRoot)).toEqual({ events: [], errors: [] });
+
+      // Installed hook has no adjacent package. A target PATH entry and env entry
+      // must not hide the later genuine external installation or execute poison.
+      const poisonDir = join(externalRoot, "packages/cli/dist");
+      mkdirSync(poisonDir, { recursive: true });
+      writeFileSync(join(externalRoot, "packages/cli/package.json"), JSON.stringify({ name: "@pomaster/cli", type: "module" }));
+      const marker = join(externalRoot, "poison-executed");
+      const poison = join(poisonDir, "bin.js");
+      writeFileSync(poison, `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(marker)}, "executed"); throw new Error("target CLI executed");`);
+      writeFileSync(join(poisonDir, process.platform === "win32" ? "pomaster.cmd" : "pomaster"),
+        process.platform === "win32" ? `@"${process.execPath}" "${poison}" %*\r\n` : `#!/bin/sh\n"${process.execPath}" "${poison}" "$@"\n`, { mode: 0o755 });
+      const poisonedEnv = runHook({ tool_name: "Write", tool_input: { file_path: join(externalRoot, "src-target.ts") }, cwd: externalRoot }, distributedHook, {
+        PATH: [poisonDir, trustedCli.env.PATH].join(delimiter), POMASTER_CLI_ENTRY: poison,
+      });
+      expect(poisonedEnv.exitCode, poisonedEnv.stderr).toBe(2);
+      expect(poisonedEnv.stderr).toContain("PERMIT_UNKNOWN");
+      expect(poisonedEnv.stderr).not.toContain("GUARD_FAULT_OBSERVED");
+      expect(existsSync(marker)).toBe(false);
+      expect(readFileSync(join(externalRoot, "src-target.ts"), "utf8")).toBe("export const target = 1;\n");
+
+      // Removing the prerequisite is an honest protected fault, not permit DENY
+      // or a green ALLOW from the launcher's baked environment entry.
+      const missing = spawnSync(process.execPath, [launcher], {
+        input: JSON.stringify({ tool_name: "Write", tool_input: { file_path: join(externalRoot, "src-target.ts") }, cwd: externalRoot }),
+        encoding: "utf8", env: trustedCli.withoutCliEnv,
+      });
+      expect(missing.error).toBeUndefined();
+      expect(missing.status, missing.stderr).toBe(2);
+      expect(missing.stderr).toContain("Trusted package-local/PATH exec-guard launcher unavailable");
+      expect(missing.stderr).toContain("GUARD_FAULT_OBSERVED fail_closed");
+      expect(missing.stderr).not.toContain("ALLOW");
+      expect(missing.stderr).not.toContain("PERMIT_UNKNOWN");
+      expect(readGuardFaults(externalRoot).events).toHaveLength(1);
+      expect(readGuardFaults(externalRoot).events[0]).toMatchObject({ protected: true, disposition: "fail_closed" });
+      expect(existsSync(marker)).toBe(false);
     } finally {
       rmSync(externalRoot, { recursive: true, force: true });
     }
@@ -639,6 +722,7 @@ describe("exec-guard hook Node launcher（init 分发，Claude + Codex 同一份
             cwd: project,
           }),
           encoding: "utf8",
+          env: trustedCli.env,
         });
         expect(deny.status, deny.stderr.slice(0, 400)).toBe(2);
         if (!py.available) {
@@ -648,6 +732,7 @@ describe("exec-guard hook Node launcher（init 分发，Claude + Codex 同一份
         const allow = spawnSync(process.execPath, [join(project, launcher)], {
           input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "ls" }, cwd: project }),
           encoding: "utf8",
+          env: trustedCli.env,
         });
         expect(allow.status, allow.stderr.slice(0, 400)).toBe(0);
       }
@@ -694,7 +779,7 @@ function runFaultLauncher(
     cwd: executionCwd,
     input: typeof payload === "string" || Buffer.isBuffer(payload) ? payload : JSON.stringify(payload),
     encoding: "utf8",
-    env: availablePython ? { ...process.env, PYTHONIOENCODING: "utf-8" }
+    env: availablePython ? trustedCli.env
       : { PATH: join(root, "no-such-bin"), SystemRoot: process.env.SystemRoot ?? "" },
     timeout: 10000,
   });

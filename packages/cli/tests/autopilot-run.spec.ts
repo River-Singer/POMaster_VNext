@@ -2,7 +2,7 @@
 // script 驱动有界 spawn（RND-#### 轮账 + budget 记账）、kernel unit_write 锁租约
 // （重复调度防护）、driver 缺席诚实 UNAVAILABLE、hook-stop 受控回灌、hook install
 // 合并纪律（保留人改字段/幂等/冲突拒/dry-run 零写）。
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -161,7 +161,7 @@ describe("dogfood worker project cwd", () => {
     expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
   });
 
-  it("DF-RUN-01 actual relative local script succeeds in a project path with spaces, not caller cwd", async () => {
+  it.each(["native", "aliased"] as const)("DF-RUN-01 actual relative local script succeeds in a project path with spaces, not caller cwd (%s root)", async rootKind => {
     // Reinitialize in an isolated space-containing root; no process.chdir or target executable fallback.
     rmSync(dir, { recursive: true, force: true });
     dir = mkdtempSync(join(tmpdir(), "pomaster ap3 project "));
@@ -172,14 +172,28 @@ describe("dogfood worker project cwd", () => {
     expect(dir).toContain(" ");
     expect(existsSync(join(caller, "dogfood-worker.mjs"))).toBe(false);
     writeFileSync(join(dir, "dogfood-worker.mjs"), "console.log(JSON.stringify({ worker_cwd: process.cwd(), project_local: true }));\n");
-    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION,
-      unit: "TASK.KO_ORDERS_R3.BE.ORDERS", cmd: `"${process.execPath}" dogfood-worker.mjs`, roundTimeout: 10 });
-    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
-    expect(outcome.result).toMatchObject({ verdict: "completed", exit_code: 0, rounds_used: 1 });
-    const round = JSON.parse(readFileSync(apPath("rounds.jsonl"), "utf8").trim()) as { output_tail: string };
-    expect(JSON.parse(round.output_tail)).toEqual({ worker_cwd: dir, project_local: true });
-    expect(process.cwd()).toBe(caller);
-    expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
+    const aliasParent = rootKind === "aliased" ? mkdtempSync(join(tmpdir(), "pomaster ap3 alias ")) : null;
+    const projectRoot = aliasParent === null ? dir : join(aliasParent, "project alias");
+    try {
+      if (aliasParent !== null) {
+        symlinkSync(dir, projectRoot, process.platform === "win32" ? "junction" : "dir");
+        expect(projectRoot).not.toBe(dir);
+        expect(realpathSync(projectRoot)).toBe(realpathSync(dir));
+      }
+      const outcome = await runAutopilotRun(projectRoot, { driver: "script", executionId: AGX, sessionKey: SESSION,
+        unit: "TASK.KO_ORDERS_R3.BE.ORDERS", cmd: `"${process.execPath}" dogfood-worker.mjs`, roundTimeout: 10 });
+      expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+      expect(outcome.result).toMatchObject({ verdict: "completed", exit_code: 0, rounds_used: 1 });
+      const round = JSON.parse(readFileSync(apPath("rounds.jsonl"), "utf8").trim()) as { output_tail: string };
+      const worker = JSON.parse(round.output_tail) as { worker_cwd: string; project_local: boolean };
+      expect(worker).toEqual({ worker_cwd: expect.any(String), project_local: true });
+      // macOS /var may become /private/var in the child; compare actual directory identity.
+      expect(realpathSync(worker.worker_cwd)).toBe(realpathSync(projectRoot));
+      expect(process.cwd()).toBe(caller);
+      expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
+    } finally {
+      if (aliasParent !== null) rmSync(aliasParent, { recursive: true, force: true });
+    }
   });
 });
 

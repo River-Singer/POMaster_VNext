@@ -583,39 +583,53 @@ function runtimeFault(reason) {
       for (const raw of extracted.paths) {
         const absolute = resolve(cwd, raw), implicated = new Map();
         let real = null, realityError = null;
+        function implicate(root) {
+          if (root === null) return;
+          let actualRoot = null, identityError = null;
+          try { actualRoot = realpathSync(root); }
+          catch (error) { identityError = error.message; }
+          // Identity is physical; protection still checks every lexical alias independently.
+          const key = actualRoot === null ? Symbol() : fold(actualRoot);
+          const existing = implicated.get(key);
+          if (existing) existing.aliases.push(root);
+          else implicated.set(key, { root, actualRoot, aliases: [root], identityError });
+        }
         // A symlink must not replace the lexical store's independent protection scope.
-        const lexicalRoot = storeRoot(dirname(absolute));
-        if (lexicalRoot !== null) implicated.set(fold(lexicalRoot), lexicalRoot);
+        implicate(storeRoot(dirname(absolute)));
         try {
           real = physical(absolute);
-          const physicalRoot = storeRoot(dirname(real));
-          if (physicalRoot !== null && !implicated.has(fold(physicalRoot))) implicated.set(fold(physicalRoot), physicalRoot);
+          implicate(storeRoot(dirname(real)));
         } catch (error) { realityError = error.message; }
         if (implicated.size === 0) {
           observations.push({ root: fallback, target: absolute,
             protectedTarget: realityError !== null && (fallback !== null || realityError.includes("search budget exhausted")),
             reason: reason + (realityError === null ? "" : "; Target reality unresolved: " + realityError) });
         }
-        for (const [key, root] of implicated) {
+        for (const [key, scope] of implicated) {
+          const { root, actualRoot, aliases, identityError } = scope;
           fallback ??= root;
           let protectedTarget = realityError !== null, targetReason = reason;
           if (real !== null && fold(real) !== fold(absolute)) targetReason += "; Target resolves to " + real;
           if (realityError !== null) targetReason += "; Target reality unresolved: " + realityError;
           try {
+            if (identityError !== null) throw new Error("Store identity unresolved: " + identityError);
             if (!metadata.has(key)) {
-              try { metadata.set(key, { anchors: roots(root, budget) }); }
+              try { metadata.set(key, { root: actualRoot, anchors: roots(actualRoot, budget) }); }
               catch (error) { metadata.set(key, { error: error.message }); }
             }
             const known = metadata.get(key);
             if (known.error) { protectedTarget = true; targetReason += "; Protected root metadata unreadable: " + known.error; }
-            else if (real !== null) protectedTarget = protectedTarget || control(absolute, root) || control(real, physical(root)) || known.anchors.some(row =>
-              row.directory ? within(fold(absolute), fold(row.anchor)) || within(fold(real), fold(row.real))
-                : fold(absolute) === fold(row.anchor) || fold(real) === fold(row.real));
+            else if (real !== null) protectedTarget = protectedTarget || control(real, actualRoot)
+              || known.anchors.some(row => row.directory ? within(real, row.real) : fold(real) === fold(row.real))
+              || aliases.some(alias => control(absolute, alias) || known.anchors.some(row => {
+                const anchor = resolve(alias, relative(known.root, row.anchor));
+                return row.directory ? within(absolute, anchor) : fold(absolute) === fold(anchor);
+              }));
           } catch (error) {
             protectedTarget = true;
             targetReason += "; Target reality unresolved: " + error.message;
           }
-          // Record each implicated store's own disposition; the final decision ORs all refusals.
+          // One observation per actual store; independent stores still OR all refusals.
           observations.push({ root, target: absolute, protectedTarget, reason: targetReason.slice(0, 1024) });
         }
       }
@@ -655,8 +669,18 @@ const CANDIDATES = process.platform === "win32"
   : [["python3", []], ["python", []]];
 const PROBE = "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)";
 
+let stderrUnavailable = false;
+// Install before the first note: an undeliverable diagnostic must not change protection or exit status.
+process.stderr.on("error", () => { stderrUnavailable = true; });
 function note(message) {
-  process.stderr.write(\`[pomaster exec-guard launcher] \${message}\\n\`);
+  if (stderrUnavailable) return;
+  const buffer = Buffer.from(\`[pomaster exec-guard launcher] \${message.slice(0, 8192)}\\n\`);
+  try {
+    // The bounded inventory limits this queue. Node handles backpressure; natural exit drains it.
+    process.stderr.write(buffer, error => { if (error) stderrUnavailable = true; });
+  } catch {
+    stderrUnavailable = true;
+  }
 }
 
 ${faultBoundary}
@@ -668,38 +692,43 @@ try {
   inputError = true;
 }
 
-const env = { ...process.env, PYTHONIOENCODING: process.env.PYTHONIOENCODING ?? "utf-8" };
-if (CLI_ENTRY !== null && existsSync(CLI_ENTRY) && !env.POMASTER_CLI_ENTRY) env.POMASTER_CLI_ENTRY = CLI_ENTRY;
-if (!env.POMASTER_DISTRIBUTED_HOOK) env.POMASTER_DISTRIBUTED_HOOK = HOOK;
+function launch() {
+  const env = { ...process.env, PYTHONIOENCODING: process.env.PYTHONIOENCODING ?? "utf-8" };
+  if (CLI_ENTRY !== null && existsSync(CLI_ENTRY) && !env.POMASTER_CLI_ENTRY) env.POMASTER_CLI_ENTRY = CLI_ENTRY;
+  if (!env.POMASTER_DISTRIBUTED_HOOK) env.POMASTER_DISTRIBUTED_HOOK = HOOK;
 
-if (inputError) process.exit(runtimeFault("hook stdin could not be read"));
-if (!existsSync(HOOK)) {
-  process.exit(runtimeFault("distributed exec-guard hook missing; re-run pomaster init"));
-}
-
-try {
-  for (const [command, prefix] of CANDIDATES) {
-    const probe = spawnSync(command, [...prefix, "-c", PROBE], { stdio: "ignore", timeout: 10000, windowsHide: true });
-    if (probe.error || probe.status !== 0) continue;
-    const run = spawnSync(command, [...prefix, HOOK], {
-      input,
-      stdio: ["pipe", "inherit", "inherit"],
-      env,
-      windowsHide: true,
-    });
-    if (run.error) {
-      process.exit(runtimeFault(\`\${command} could not run the hook (\${run.error.message})\`));
-    }
-    if (run.status !== 0 && run.status !== 2) {
-      process.exit(runtimeFault(\`\${command} hook terminated abnormally (status=\${run.status}, signal=\${run.signal})\`));
-    }
-    process.exit(run.status);
+  if (inputError) return runtimeFault("hook stdin could not be read");
+  if (!existsSync(HOOK)) {
+    return runtimeFault("distributed exec-guard hook missing; re-run pomaster init");
   }
-} catch (error) {
-  process.exit(runtimeFault(\`interpreter delegation failed (\${error.message})\`));
+
+  try {
+    for (const [command, prefix] of CANDIDATES) {
+      const probe = spawnSync(command, [...prefix, "-c", PROBE], { stdio: "ignore", timeout: 10000, windowsHide: true });
+      if (probe.error || probe.status !== 0) continue;
+      const run = spawnSync(command, [...prefix, HOOK], {
+        input,
+        stdio: ["pipe", "inherit", "inherit"],
+        env,
+        windowsHide: true,
+      });
+      if (run.error) {
+        return runtimeFault(\`\${command} could not run the hook (\${run.error.message})\`);
+      }
+      if (run.status !== 0 && run.status !== 2) {
+        return runtimeFault(\`\${command} hook terminated abnormally (status=\${run.status}, signal=\${run.signal})\`);
+      }
+      return run.status;
+    }
+  } catch (error) {
+    return runtimeFault(\`interpreter delegation failed (\${error.message})\`);
+  }
+
+  return runtimeFault("no Python 3.8+ found (tried python3, python, py -3); install Python 3, then run pomaster doctor");
 }
 
-process.exit(runtimeFault("no Python 3.8+ found (tried python3, python, py -3); install Python 3, then run pomaster doctor"));
+// Do not terminate while bounded stderr writes are queued, including the final recovery reason.
+process.exitCode = launch();
 `;
 }
 

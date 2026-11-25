@@ -35,7 +35,7 @@ import {
   truncateSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -46,6 +46,7 @@ import {
   normalizeGateResult,
   sha256OfCanonical,
   type Store,
+  type Transaction,
 } from "@pomaster/kernel";
 import { runCli, type CliEnvelope } from "@pomaster/cli";
 import { AGENT, gid, HUMAN, makeStore, readJournal } from "../../packages/kernel/tests/helpers.js";
@@ -404,6 +405,111 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const childScript = fileURLToPath(new URL("./crash-workload-child.mjs", import.meta.url));
 const kernelDistEntry = join(repoRoot, "packages", "kernel", "dist", "index.js");
 
+async function interruptWorkload(stage?: string, retryFirstIndex = false) {
+  const child = spawn(process.execPath, [childScript, root, "50000", ...(stage ? [stage] : []),
+    ...(retryFirstIndex ? ["index-rename-eperm-once"] : [])], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let stdoutText = "", stderrText = "";
+  child.stdout.on("data", (chunk: Buffer) => { stdoutText += String(chunk); });
+  child.stderr.on("data", (chunk: Buffer) => { stderrText += String(chunk); });
+  // Register before killing and await close (including pipe drainage). Owner PID
+  // must actually be dead before the sanctioned kernel recovery checks it.
+  const closed = new Promise<void>((resolve) => { child.once("close", () => resolve()); });
+  const waitForClose = async (): Promise<void> => {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([closed, new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("workload did not close within 15s after SIGKILL")), 15000);
+      })]);
+    } finally { clearTimeout(timer); }
+  };
+  const waitFor = (needle: string): Promise<void> => new Promise((resolve, reject) => {
+    const check = () => { if (stdoutText.includes(needle)) finish(); };
+    const earlyExit = () => finish(new Error(`workload exited before ${needle}: ${stdoutText}\n${stderrText}`));
+    const failed = (error: Error) => finish(error);
+    const timer = setTimeout(() => finish(new Error(`workload did not reach ${needle}: ${stdoutText}\n${stderrText}`)), 20000);
+    const finish = (error?: Error) => {
+      clearTimeout(timer);
+      child.stdout.off("data", check);
+      child.off("close", earlyExit);
+      child.off("error", failed);
+      if (error) reject(error); else resolve();
+    };
+    child.stdout.on("data", check);
+    child.once("close", earlyExit);
+    child.once("error", failed);
+    check();
+  });
+  try {
+    await waitFor("READY\n");
+    await waitFor("TX 1\n");
+    if (stage) await waitFor(`INTERRUPT ${stage}\n`);
+    else await new Promise<void>(resolve => setTimeout(resolve, 250)); // Deliberate arbitrary kill window, not recovery polling.
+    expect(child.kill("SIGKILL")).toBe(true);
+    await waitForClose();
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    try { await waitForClose(); }
+    finally { child.removeAllListeners(); }
+  }
+  expect(child.killed).toBe(true);
+  expect(stdoutText).toContain("TX 1\n");
+  expect(stdoutText).not.toContain("DONE");
+  if (process.platform !== "win32") expect(child.signalCode).toBe("SIGKILL");
+  return { child, stdoutText, stderrText };
+}
+
+async function recoverExactPending(reopened: Store, ownerPid: number | undefined): Promise<number> {
+  const path = statePath(root, "pending-admission.json");
+  const rawK = (await loadTruthIndex(reopened)).generation.seq;
+  if (!existsSync(path)) return rawK;
+  // Actual store.ts PendingAdmission schema, not an inferred PAGE.K(k+1) tx:
+  // an interrupted transaction can already have committed its index at rawK.
+  const pending = JSON.parse(readFileSync(path, "utf8")) as {
+    pid: number; intent: string; transaction: Transaction;
+    writes: { path: string; next: string; original: string | null }[];
+    journal: string; journalBefore: string; consumptions: unknown[];
+  };
+  expect(ownerPid).toBeDefined();
+  expect(pending.pid).toBe(ownerPid);
+  expect(pending.intent).toBe(sha256OfCanonical(pending.transaction));
+  expect(Array.isArray(pending.writes)).toBe(true);
+  expect(pending.consumptions).toEqual([]); // This workload has no signoff/nonce consumption.
+  expect(typeof pending.journal).toBe("string");
+  expect(typeof pending.journalBefore).toBe("string");
+  expect(() => process.kill(pending.pid, 0)).toThrowError(expect.objectContaining({ code: "ESRCH" }));
+  const crashState = snapshotTree(join(root, ".pomaster"));
+  for (const unrelated of [
+    { ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }] } satisfies Transaction,
+    { ...pending.transaction, note: "changed interrupted intent" },
+  ]) {
+    await expect(applyTransaction(reopened, unrelated)).rejects.toMatchObject({
+      code: "SCHEMA_INVALID", details: { reason_code: "ADMISSION_RECOVERY_REQUIRED" },
+    });
+    expect(snapshotTree(join(root, ".pomaster"))).toEqual(crashState);
+  }
+  const plannedIndex = pending.writes.find(write => resolve(write.path) === resolve(statePath(root, "truth-index.json")));
+  expect(plannedIndex, "pending admission must declare its actual index write").toBeDefined();
+  const plannedK = (JSON.parse(plannedIndex!.next) as { generation: { seq: number } }).generation.seq;
+  expect(plannedK === rawK || plannedK === rawK + 1).toBe(true);
+  const recovered = await applyTransaction(reopened, pending.transaction);
+  expect(recovered.appliedSeq).toBe(plannedK);
+  expect(recovered.shortCircuited).toBe(false);
+  expect(existsSync(path)).toBe(false); // Removed by sanctioned recovery only.
+  const index = await loadTruthIndex(reopened);
+  expect(index.generation.seq).toBe(plannedK);
+  expect(index.objects.map(row => row.id)).toEqual(Array.from({ length: plannedK }, (_, i) => `PAGE.K${i + 1}`));
+  for (const row of index.objects) {
+    expect(sha256OfCanonical(JSON.parse(readFileSync(join(root, ".pomaster", row.bodyRef), "utf8")))).toBe(row.bodySha256);
+  }
+  expect(journalEvents(root).map(event => event["seq"])).toEqual(Array.from({ length: plannedK }, (_, i) => i + 1));
+  const recoveredState = snapshotTree(join(root, ".pomaster"));
+  expect((await applyTransaction(reopened, pending.transaction)).shortCircuited).toBe(true);
+  expect(snapshotTree(join(root, ".pomaster"))).toEqual(recoveredState);
+  return index.generation.seq;
+}
+
 describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意时点硬中断）", () => {
   it(
     "B1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 0≤k-m≤1（journal 只落后不领先，幽灵行封死）+ 撕裂只许末行 + 碎片形状干净 + 恢复事务干净",
@@ -429,49 +535,7 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
       }
 
       // 子进程工作载荷：dist 二进制重开父进程（src 别名）建的 store，循环 applyTransaction。
-      const child = spawn(process.execPath, [childScript, root, "50000"], {
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let stdoutText = "";
-      let stderrText = "";
-      child.stdout?.on("data", (chunk: Buffer) => {
-        stdoutText += String(chunk);
-      });
-      child.stderr?.on("data", (chunk: Buffer) => {
-        stderrText += String(chunk);
-      });
-      const sleep = (ms: number): Promise<void> =>
-        new Promise((resolve) => setTimeout(resolve, ms));
-      const waitFor = async (needle: string, what: string, timeoutMs: number): Promise<void> => {
-        const deadline = Date.now() + timeoutMs;
-        while (!stdoutText.includes(needle)) {
-          if (Date.now() > deadline) {
-            throw new Error(
-              `子进程 ${timeoutMs}ms 内未出现 ${what}。stdout:\n${stdoutText}\nstderr:\n${stderrText}`,
-            );
-          }
-          await sleep(20);
-        }
-      };
-
-      try {
-        await waitFor("READY", "READY（dist 重开 + 校验完成）", 20000);
-        await waitFor("TX 1", "TX 1（首个事务已 commit，validator 已热）", 20000);
-        await sleep(250); // 再放行一批事务——kill 必落在事务循环中途
-        child.kill("SIGKILL");
-        await new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(() => {
-            child.kill("SIGKILL");
-            reject(new Error("子进程 15s 未退出（kill 失效）"));
-          }, 15000);
-          child.once("exit", () => {
-            clearTimeout(timer);
-            resolve();
-          });
-        });
-      } finally {
-        child.removeAllListeners();
-      }
+      const { child, stdoutText } = await interruptWorkload();
 
       // 中断确认：kill 成功且发生在工作载荷中途（DONE 绝不在场）。
       expect(child.killed).toBe(true);
@@ -537,12 +601,69 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
       walkShapes(join(root, ".pomaster"));
       expect(foreign).toEqual([]);
 
-      // 恢复事务干净：重启后的 store 可继续写，seq 单调推进无空洞。
+      // Raw crash invariants above stay at k. Only the real declared pending tx
+      // may recover; index may already be committed, or recovery may add one beat.
+      const kAfterRecovery = await recoverExactPending(reopened, child.pid);
+      expect(kAfterRecovery >= k && kAfterRecovery <= k + 1).toBe(true);
       const outcome = await applyTransaction(reopened, {
         ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }],
       });
-      expect(outcome.appliedSeq).toBe(k + 1);
+      expect(outcome.appliedSeq).toBe(kAfterRecovery + 1);
       expect(outcome.shortCircuited).toBe(false);
+      expect(journalEvents(root).map(event => event["seq"])).toEqual(Array.from({ length: kAfterRecovery + 1 }, (_, i) => i + 1));
+    },
+    30000,
+  );
+
+  it.each([
+    ["before-index-swap", false], ["after-index-swap", false],
+    ["before-index-swap", true], ["after-index-swap", true],
+  ] as const)(
+    "B2 deterministic SIGKILL at %s (first index EPERM retry=%s) preserves raw crash state before sanctioned recovery",
+    async (stage, retryFirstIndex) => {
+      expect(existsSync(kernelDistEntry), "real kernel dist prerequisite").toBe(true);
+      const { child, stdoutText } = await interruptWorkload(stage, retryFirstIndex);
+      expect(stdoutText).toContain(`INTERRUPT ${stage}\n`);
+      expect(stdoutText).not.toContain("TX 2\n");
+      if (retryFirstIndex) {
+        expect(stdoutText.match(/INJECTED index-rename EPERM/g)).toHaveLength(1);
+        expect(stdoutText).toContain("INDEX_RETRY_SUCCEEDED 1\n");
+        expect(stdoutText.indexOf("INDEX_RETRY_SUCCEEDED 1\n")).toBeLessThan(stdoutText.indexOf("TX 1\n"));
+        expect(stdoutText.indexOf("TX 1\n")).toBeLessThan(stdoutText.indexOf(`INTERRUPT ${stage}\n`));
+      } else {
+        expect(stdoutText).not.toContain("INJECTED");
+        expect(stdoutText).not.toContain("INDEX_RETRY_SUCCEEDED");
+      }
+      const before = snapshotTree(join(root, ".pomaster"));
+      const reopened = await createStore(root);
+      expect(snapshotTree(join(root, ".pomaster"))).toEqual(before);
+      const raw = await loadTruthIndex(reopened);
+      const k = stage === "before-index-swap" ? 1 : 2;
+      expect(raw.generation.seq).toBe(k);
+      expect(raw.objects.map(row => row.id)).toEqual(Array.from({ length: k }, (_, i) => `PAGE.K${i + 1}`));
+      for (const row of raw.objects) {
+        expect(sha256OfCanonical(JSON.parse(readFileSync(join(root, ".pomaster", row.bodyRef), "utf8")))).toBe(row.bodySha256);
+      }
+      expect(journalEvents(root).map(event => event["seq"])).toEqual([1]);
+      const pending = JSON.parse(readFileSync(statePath(root, "pending-admission.json"), "utf8"));
+      expect(pending.pid).toBe(child.pid);
+      expect(pending.intent).toBe(sha256OfCanonical(pending.transaction));
+      expect(pending.transaction).toEqual({
+        ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.K2", "crash-probe-2") }],
+      });
+      // Before-index leaves a complete orphan body; after-index has committed
+      // the body/index pair but not journal. Neither permits unrelated recovery.
+      const orphan = JSON.parse(readFileSync(bodyPath(root, "page-surface", "page.k2.json"), "utf8"));
+      expect(orphan).toMatchObject({ id: "PAGE.K2", title_zh: "crash-probe-2" });
+      const kAfterRecovery = await recoverExactPending(reopened, child.pid);
+      expect(kAfterRecovery).toBe(2);
+      const next = await applyTransaction(reopened, {
+        ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }],
+      });
+      expect(next.appliedSeq).toBe(kAfterRecovery + 1);
+      expect(next.shortCircuited).toBe(false);
+      expect(journalEvents(root).map(event => event["seq"])).toEqual([1, 2, 3]);
+      expect((await loadTruthIndex(reopened)).objects.map(row => row.id)).toEqual(["PAGE.K1", "PAGE.K2", "PAGE.AFTER_CRASH"]);
     },
     30000,
   );
