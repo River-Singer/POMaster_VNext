@@ -204,11 +204,6 @@ function tail(text: string, cap: number): string {
   return text.length <= cap ? text : `…${text.slice(-cap)}`;
 }
 
-function isProblemBody(json: unknown, status: number, code: string): boolean {
-  const body = asRecord(json);
-  return body.status === status && body.code === code && typeof body.trace_id === "string";
-}
-
 function asRecord(json: unknown): Record<string, unknown> {
   return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
 }
@@ -661,7 +656,7 @@ async function apiCheck(
   return pass();
 }
 
-export function buildSitScenario(spec: NormalizedDomainSpec, runSeq: number): { readonly entity: NormalizedEntity | null; readonly steps: readonly SitStep[] } {
+export function buildSitScenario(spec: NormalizedDomainSpec): { readonly entity: NormalizedEntity | null; readonly steps: readonly SitStep[] } {
   const entity =
     spec.entities.find((candidate) => candidate.ownership === null && (candidate.exposure.admin?.permission_codes.create ?? "") !== "") ??
     spec.entities.find((candidate) => (candidate.exposure.admin?.permission_codes.create ?? "") !== "") ??
@@ -670,11 +665,6 @@ export function buildSitScenario(spec: NormalizedDomainSpec, runSeq: number): { 
 
   const admin = entity.exposure.admin;
   const pub = entity.exposure.public;
-  const adminBase = `${spec.surfaces.admin?.base_path ?? ""}/${entity.resource}`;
-  const publicBase = `${spec.surfaces.public?.base_path ?? ""}/${entity.resource}`;
-  const codes = Object.values(admin?.permission_codes ?? {});
-  const actorAdmin = `ops-1||${codes.join(",")}`;
-  const actorNone = `ops-2||${spec.app.key}:${entity.key}:sit_probe_none`;
   const operations = admin?.operations ?? [];
   const has = (op: string): boolean => operations.includes(op);
   const fields = businessFields(entity);
@@ -831,7 +821,6 @@ export function buildSitScenario(spec: NormalizedDomainSpec, runSeq: number): { 
   // —— public 面（exposure.public 在座才跑）——
   const ownershipUser = entity.ownership === "user";
   const publicNa = pub === undefined ? "实体无 public 面" : ownershipUser ? "属主实体——通用匿名公开块不适用（ownership 专块覆盖，见 SIT-CHK 属主档段）" : null;
-  const codeAt = (json: unknown): string => (uniqueField === null ? "" : String(asRecord(json)[uniqueField.property] ?? ""));
   const pageItem = (json: unknown): readonly Record<string, unknown>[] => {
     const items = asRecord(json).items;
     return Array.isArray(items) ? (items as readonly Record<string, unknown>[]) : [];
@@ -1019,8 +1008,6 @@ export interface SitRunResult {
   readonly build_fingerprint: string;
 }
 
-interface SitBuildFile extends SitBuildResult {}
-
 export function startBackendApps(
   rootDir: string,
   io: SitIo,
@@ -1082,7 +1069,7 @@ export async function runSitRun(
   if (envPointer === null) {
     return failOutcome(command, { run_id: "", verdict: "failed", entity: "", counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: "" }, [{ code: "SIT_ENV_NOT_UP", message: "没有在座环境指针（env.json）——先 pomaster sit up", hint: "sit up 起环境后再 run" }], ["环境未起"]);
   }
-  const build = readJsonFile(join(rootDir, ...SIT_BUILD_MANIFEST.split("/"))) as SitBuildFile | null;
+  const build = readJsonFile(join(rootDir, ...SIT_BUILD_MANIFEST.split("/"))) as SitBuildResult | null;
   if (build === null || build.jars.length === 0) {
     return failOutcome(command, { run_id: "", verdict: "failed", entity: "", counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: "" }, [{ code: "SIT_STALE_BUILD", message: "构建清单缺席——先 pomaster sit build", hint: "run 只跑合并构建产物" }], ["构建清单缺席"]);
   }
@@ -1102,7 +1089,7 @@ export async function runSitRun(
   const ledgerLines = existsSync(join(rootDir, ...SIT_LEDGER.split("/"))) ? readFileSync(join(rootDir, ...SIT_LEDGER.split("/")), "utf8").split("\n").filter((line) => line.trim() !== "") : [];
   const runId = `SIT-${String(ledgerLines.length + 1).padStart(4, "0")}`;
 
-  const { entity, steps } = buildSitScenario(manifest.spec, ledgerLines.length + 1);
+  const { entity, steps } = buildSitScenario(manifest.spec);
   if (entity === null) {
     return failOutcome(command, { run_id: runId, verdict: "failed", entity: "", counts: { passed: 0, failed: 0, not_applicable: 0 }, failed_labels: [], detail_path: "", build_fingerprint: build.fingerprint }, [{ code: "SIT_ENTITY_ABSENT", message: "规格里没有可跑 SIT 的实体（需要 exposure.admin 带 create 权限码）", hint: "领域规格给实体补 admin exposure" }], ["无场景实体"]);
   }

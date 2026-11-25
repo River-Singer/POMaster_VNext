@@ -87,12 +87,14 @@ export interface DetectorOptions {
   readonly expectedVersion?: string | null;
 }
 
-/** BUILD adapter 探测结果（复合形态：两个 runner 各持四态，无信息丢失）。 */
+/** BUILD adapter 探测结果（复合形态：三个 runner 各持四态，无信息丢失）。 */
 export interface BuildToolDetection {
-  /** READY = vitest 或 pytest 腿至少一个可执行；NOT_INSTALLED = 双腿全缺席。 */
+  /** READY = vitest / pytest / maven 腿至少一个可执行；NOT_INSTALLED = 全缺席。 */
   readonly status: DetectionStatus;
   readonly vitest: DetectionResult;
   readonly pytest: DetectionResult;
+  /** BE-1：Maven Surefire 腿（pom.xml 探测；版本锚 policy 供给）。 */
+  readonly maven: DetectionResult;
 }
 
 /**
@@ -213,7 +215,7 @@ export interface GatePlan {
   readonly metricDialect: string;
   // W3-S2：扩 "tsc" | "eslint"（TS 族静态分析腿——受信 adapter
   // builtin.gauntlet-lite.typecheck / builtin.gauntlet-lite.lint 同批接线；词形 SP 提案待追认）。
-  readonly runner: "vitest" | "pytest" | "tsc" | "eslint" | "control_data_flow" | "control_data_flow_runtime";
+  readonly runner: "vitest" | "pytest" | "maven" | "tsc" | "eslint" | "control_data_flow" | "control_data_flow_runtime";
   /** spawn 命令串（shell:true 形态——Windows 下 corepack/pnpm 为 .cmd shim，无 shell 不可解析）。 */
   readonly command: string;
   readonly cwd: string;

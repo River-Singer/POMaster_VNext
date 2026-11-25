@@ -386,6 +386,254 @@ export function resolveCurrentCliEntry(moduleUrl: string = import.meta.url): str
  * exec-guard-hook.py and the `pomaster exec-guard` CLI/kernel.
  */
 export function renderExecGuardLauncher(cliEntry: string | null): string {
+  // Data-only emergency boundary, mirroring hooks/exec-guard-hook.py's root/target grammar.
+  // It runs ONLY when delegation fails: no permits, caller flags or target executables are judges.
+  const faultBoundary = String.raw`
+const MAX_BYTES = 1024 * 1024, MAX_TARGETS = 256, MAX_ENTRIES = 512, MAX_WALK = 128;
+const TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "apply_patch", "Bash"]);
+const CONTROL_PREFIXES = ["state", "truth", "evidence", "executions", "runtime", "traces", "production", "sources", "memory"];
+const fold = value => process.platform === "win32" ? value.toLowerCase() : value;
+const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
+const absent = error => error.code === "ENOENT" || error.code === "ENOTDIR";
+
+function storeRoot(start) {
+  let current = resolve(start);
+  for (let depth = 0; depth < MAX_WALK; depth++) {
+    try { statSync(join(current, ".pomaster/state/truth-index.json")); return current; }
+    catch (error) { if (!absent(error)) return current; }
+    const parent = dirname(current);
+    if (parent === current) return null;
+    current = parent;
+  }
+  throw new Error("Project-root search budget exhausted");
+}
+
+// Resolve existing ancestors too: new files inside a physical root still belong to it.
+function physical(file) {
+  let current = resolve(file), suffix = [];
+  for (let depth = 0; depth < MAX_WALK; depth++) {
+    try { return resolve(realpathSync(current), ...suffix); }
+    catch (error) { if (!absent(error)) throw error; }
+    const parent = dirname(current);
+    if (parent === current) throw new Error("Physical path unresolved");
+    suffix.unshift(basename(current));
+    current = parent;
+  }
+  throw new Error("Physical path search budget exhausted");
+}
+
+function within(file, root) {
+  const rel = relative(fold(root), fold(file));
+  return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(".." + sep));
+}
+
+function control(file, root) {
+  const rel = relative(fold(root), fold(file)).replaceAll("\\", "/");
+  return CONTROL_PREFIXES.some(part => rel === ".pomaster/" + part || rel.startsWith(".pomaster/" + part + "/"))
+    || rel === ".pomaster/scaffold/generation-manifest.json"
+    || (rel.startsWith(".pomaster/discovery/scratchpads/") && ["state.json", "meta.json", "decision-graph.json"].includes(basename(rel)));
+}
+
+function jsonFile(file, budget) {
+  const fd = openSync(file, "r");
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.size > MAX_BYTES) throw new Error("Invalid or oversized metadata file");
+    const buffer = Buffer.alloc(MAX_BYTES + 1);
+    let size = 0, count;
+    while (size < buffer.length && (count = readSync(fd, buffer, size, buffer.length - size, null)) > 0) size += count;
+    budget.bytes += size;
+    if (size > MAX_BYTES || budget.bytes > 8 * MAX_BYTES) throw new Error("Metadata read budget exhausted");
+    // Preserve a BOM for JSON.parse to reject, matching strict Python JSON loading.
+    try { return JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(buffer.subarray(0, size))); }
+    catch { throw new Error("Malformed JSON metadata (invalid JSON/UTF-8)"); }
+  } finally { closeSync(fd); }
+}
+
+function roots(root, budget) {
+  const index = jsonFile(join(root, ".pomaster/state/truth-index.json"), budget);
+  // Structural sanity only, not IR/permission adjudication (which stays in the canonical guard).
+  if (!object(index) || typeof index.ir_schema !== "string" || !object(index.generation)
+    || !Number.isSafeInteger(index.generation.seq) || index.generation.seq < 0
+    || !Array.isArray(index.objects) || !Array.isArray(index.denominators) || !Array.isArray(index.producers)) throw new Error("Malformed store metadata");
+  const directory = join(root, ".pomaster/truth/keybindings");
+  if (!within(physical(directory), physical(root))) throw new Error("KEYBINDING directory escapes project");
+  let handle;
+  try { handle = opendirSync(directory); }
+  catch (error) { if (error.code === "ENOENT") return []; throw error; }
+  const anchors = [];
+  try {
+    let entry;
+    while ((entry = handle.readSync()) !== null) {
+      if (++budget.entries > MAX_ENTRIES) throw new Error("KEYBINDING inventory budget exhausted");
+      if (!entry.name.endsWith(".json")) continue;
+      const file = join(directory, entry.name);
+      if (!within(physical(file), physical(root))) throw new Error("KEYBINDING metadata escapes project");
+      const row = jsonFile(file, budget);
+      if (!object(row)) throw new Error("KEYBINDING row is not an object");
+      if (row.binding_class === "contract_operation_to_operationId") continue;
+      if (typeof row.id !== "string" || typeof row.canonical_id !== "string"
+        || !/^[A-Z][A-Z0-9_]*(\.[A-Z0-9_]+)+$/.test(row.canonical_id)
+        || !["capability_to_file", "page_to_dir"].includes(row.binding_class)
+        || typeof row.physical_path !== "string" || !row.physical_path) throw new Error("Malformed KEYBINDING root declaration");
+      if (row.binding_status !== "confirmed") continue;
+      if (!object(row.probe) || !["matched", "not_probed"].includes(row.probe.result)
+        || (row.probe.result === "not_probed" && row.match_rule !== "manual_confirmed")) throw new Error("Invalid confirmed KEYBINDING probe");
+      const path = row.physical_path;
+      if (isAbsolute(path) || /^[A-Za-z]:/.test(path) || path.includes("\\")
+        || path.split("/").some(part => !part || part === "." || part === "..")) throw new Error("Invalid KEYBINDING root path");
+      const anchor = resolve(root, path), real = physical(anchor);
+      if (!within(real, physical(root))) throw new Error("KEYBINDING physical root escapes project");
+      let stat;
+      try { stat = statSync(anchor); }
+      catch (error) { if (absent(error)) continue; throw error; }
+      const directoryAnchor = row.binding_class === "page_to_dir";
+      if (directoryAnchor ? !stat.isDirectory() : !stat.isFile()) continue; // Re-probe: stale saved labels are not roots.
+      anchors.push({ anchor, real, directory: directoryAnchor });
+    }
+  } finally { handle.closeSync(); }
+  return anchors;
+}
+
+function targets(payload) {
+  const paths = new Set();
+  let unknown = false, overflow = false;
+  function add(value) {
+    if (typeof value !== "string" || !value.trim() || value.length > 4096 || value.includes("\0")) { unknown = true; return; }
+    const path = value.trim();
+    if (!paths.has(path) && paths.size >= MAX_TARGETS) { overflow = true; return; }
+    paths.add(path);
+  }
+  const input = payload.tool_input;
+  if (!object(input)) return { paths: [], unknown: true, overflow };
+  if (payload.tool_name === "Bash") {
+    if (typeof input.command !== "string") return { paths: [], unknown: true };
+    // Canonical coarse grammar, plus intact quoted paths (not shell evaluation).
+    const command = input.command;
+    for (const match of command.matchAll(/["']([^"'\r\n]+)["']/g)) {
+      if (/[\\/]|\.[A-Za-z0-9_]+$/.test(match[1]) && !match[1].includes("://")) add(match[1]);
+    }
+    for (let token of command.replace(/["'\x60(){}\[\];|<>&]/g, " ").split(/\s+/)) {
+      token = token.replace(/[.,:!?]+$/, "");
+      if (!token || token.startsWith("-") || token.includes("://")) continue;
+      if (/[\\/]|\.[A-Za-z0-9_]+$/.test(token) && !["/dev/null", "/dev/stdout", "/dev/stderr"].includes(token)) add(token);
+    }
+  } else {
+    for (const key of ["file_path", "notebook_path"]) if (key in input) add(input[key]);
+    if (payload.tool_name === "MultiEdit" && "edits" in input && !Array.isArray(input.edits)) unknown = true;
+    if (payload.tool_name === "MultiEdit" && Array.isArray(input.edits)) {
+      if (input.edits.length > MAX_TARGETS) overflow = true;
+      for (const edit of input.edits.slice(0, MAX_TARGETS)) {
+        if (!object(edit)) { unknown = true; continue; }
+        for (const key of ["file_path", "notebook_path"]) if (key in edit) add(edit[key]);
+      }
+    }
+  }
+  let patchFound = false;
+  for (const key of ["command", "patch", "input"]) {
+    const patch = input[key];
+    if (typeof patch !== "string" || !patch.includes("*** Begin Patch")) continue;
+    patchFound = true;
+    if (!patch.includes("*** End Patch")) unknown = true;
+    let count = 0;
+    for (const line of patch.split(/\r?\n/)) {
+      const match = /^\*\*\* (?:(?:Add|Update|Delete) File|Move to): (.+?)\s*$/.exec(line);
+      if (match) { add(match[1]); count++; }
+      else if (/^\*\*\* (?:(?:Add|Update|Delete) File|Move to)/.test(line)) unknown = true;
+    }
+    if (count === 0) unknown = true;
+  }
+  if (payload.tool_name === "apply_patch" && !patchFound) unknown = true;
+  if (payload.tool_name !== "Bash" && paths.size === 0) unknown = true;
+  // Keep bounded evidence even when the remainder cannot be assessed.
+  return { paths: [...paths], unknown, overflow };
+}
+
+function observeFault(root, target, reason, protectedTarget) {
+  const disposition = protectedTarget ? "fail_closed" : "fail_open";
+  const event = { type: "GUARD_FAULT_OBSERVED", observed_at: new Date().toISOString(), target,
+    reason, protected: protectedTarget, disposition };
+  if (root !== null) {
+    try {
+      const file = join(root, ".pomaster/state/guard-faults.jsonl");
+      if (!within(physical(file), physical(root))) throw new Error("Fault log escapes store");
+      appendFileSync(file, JSON.stringify(event) + "\n", "utf8");
+    } catch (error) { note("GUARD_FAULT_LOG_INVALID: cannot persist fault (" + error.message + ")"); }
+  } else note("No initialized store found for fault telemetry");
+  note("GUARD_FAULT_OBSERVED " + disposition + ": " + target + ": " + reason);
+  return protectedTarget;
+}
+
+function runtimeFault(reason) {
+  let fallback = null, cwd = process.cwd(), closed = false;
+  const observations = [], budget = { bytes: 0, entries: 0 }, metadata = new Map();
+  try {
+    fallback = storeRoot(cwd);
+    if (inputError || input.length > MAX_BYTES) throw new Error("Unreadable or oversized hook input; protected target cannot be excluded");
+    let payload;
+    try { payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(input)); }
+    catch { throw new Error("Hook input is not valid JSON/UTF-8; protected target cannot be excluded"); }
+    if (!object(payload) || typeof payload.tool_name !== "string") throw new Error("Malformed hook input; protected target cannot be excluded");
+    if (typeof payload.cwd === "string" && payload.cwd.trim() && isAbsolute(payload.cwd)) cwd = payload.cwd;
+    fallback = storeRoot(cwd) ?? fallback;
+    if (!TOOLS.has(payload.tool_name)) observations.push({ root: fallback, target: "<unknown>", protectedTarget: false });
+    else {
+      const extracted = targets(payload);
+      if (payload.cwd !== undefined && (typeof payload.cwd !== "string" || !isAbsolute(payload.cwd))) extracted.unknown = true;
+      for (const raw of extracted.paths) {
+        const absolute = resolve(cwd, raw), implicated = new Map();
+        let real = null, realityError = null;
+        // A symlink must not replace the lexical store's independent protection scope.
+        const lexicalRoot = storeRoot(dirname(absolute));
+        if (lexicalRoot !== null) implicated.set(fold(lexicalRoot), lexicalRoot);
+        try {
+          real = physical(absolute);
+          const physicalRoot = storeRoot(dirname(real));
+          if (physicalRoot !== null && !implicated.has(fold(physicalRoot))) implicated.set(fold(physicalRoot), physicalRoot);
+        } catch (error) { realityError = error.message; }
+        if (implicated.size === 0) {
+          observations.push({ root: fallback, target: absolute,
+            protectedTarget: realityError !== null && (fallback !== null || realityError.includes("search budget exhausted")),
+            reason: reason + (realityError === null ? "" : "; Target reality unresolved: " + realityError) });
+        }
+        for (const [key, root] of implicated) {
+          fallback ??= root;
+          let protectedTarget = realityError !== null, targetReason = reason;
+          if (real !== null && fold(real) !== fold(absolute)) targetReason += "; Target resolves to " + real;
+          if (realityError !== null) targetReason += "; Target reality unresolved: " + realityError;
+          try {
+            if (!metadata.has(key)) {
+              try { metadata.set(key, { anchors: roots(root, budget) }); }
+              catch (error) { metadata.set(key, { error: error.message }); }
+            }
+            const known = metadata.get(key);
+            if (known.error) { protectedTarget = true; targetReason += "; Protected root metadata unreadable: " + known.error; }
+            else if (real !== null) protectedTarget = protectedTarget || control(absolute, root) || control(real, physical(root)) || known.anchors.some(row =>
+              row.directory ? within(fold(absolute), fold(row.anchor)) || within(fold(real), fold(row.real))
+                : fold(absolute) === fold(row.anchor) || fold(real) === fold(row.real));
+          } catch (error) {
+            protectedTarget = true;
+            targetReason += "; Target reality unresolved: " + error.message;
+          }
+          // Record each implicated store's own disposition; the final decision ORs all refusals.
+          observations.push({ root, target: absolute, protectedTarget, reason: targetReason.slice(0, 1024) });
+        }
+      }
+      if (extracted.overflow) observations.push({ root: fallback, target: "<unknown>", protectedTarget: true,
+        reason: reason + "; Target/edit inventory budget exhausted; assessment truncated; protected target cannot be excluded" });
+      else if (extracted.unknown) observations.push({ root: fallback, target: "<unknown>", protectedTarget: fallback !== null,
+        reason: reason + "; Malformed write input; protected target cannot be excluded" });
+    }
+  } catch (error) {
+    reason += "; " + error.message;
+    observations.push({ root: fallback, target: "<unknown>", protectedTarget: fallback !== null || error.message.includes("search budget exhausted") });
+  }
+  if (observations.length === 0) observations.push({ root: fallback, target: "<no-path>", protectedTarget: false });
+  for (const item of observations) closed = observeFault(item.root, item.target, item.reason ?? reason, item.protectedTarget) || closed;
+  note((closed ? "DENY: " : "FAIL-OPEN: ") + reason + "; not a permission judgement; repair the guard runtime and run pomaster doctor / execution audit");
+  return closed ? 2 : 0;
+}
+`;
   const cliLine =
     cliEntry === null
       ? "const CLI_ENTRY = null;"
@@ -396,8 +644,8 @@ export function renderExecGuardLauncher(cliEntry: string | null): string {
 // exec-guard-hook.py with this hook's stdin, and returns its exit code (2 = deny).
 // Permission judgment stays in exec-guard-hook.py and the \`pomaster exec-guard\` CLI/kernel.
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { appendFileSync, closeSync, existsSync, fstatSync, openSync, opendirSync, readFileSync, readSync, realpathSync, statSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 ${cliLine}
@@ -411,40 +659,47 @@ function note(message) {
   process.stderr.write(\`[pomaster exec-guard launcher] \${message}\\n\`);
 }
 
+${faultBoundary}
+
+let input = Buffer.alloc(0), inputError = false;
+try {
+  input = readFileSync(0);
+} catch {
+  inputError = true;
+}
+
 const env = { ...process.env, PYTHONIOENCODING: process.env.PYTHONIOENCODING ?? "utf-8" };
 if (CLI_ENTRY !== null && existsSync(CLI_ENTRY) && !env.POMASTER_CLI_ENTRY) env.POMASTER_CLI_ENTRY = CLI_ENTRY;
 if (!env.POMASTER_DISTRIBUTED_HOOK) env.POMASTER_DISTRIBUTED_HOOK = HOOK;
 
+if (inputError) process.exit(runtimeFault("hook stdin could not be read"));
 if (!existsSync(HOOK)) {
-  note("FAIL-OPEN: distributed exec-guard hook missing; re-run \`pomaster init\`");
-  process.exit(0);
+  process.exit(runtimeFault("distributed exec-guard hook missing; re-run pomaster init"));
 }
 
-let input = Buffer.alloc(0);
 try {
-  input = readFileSync(0);
-} catch {
-  // no stdin: the hook reports its own fail-open
-}
-
-for (const [command, prefix] of CANDIDATES) {
-  const probe = spawnSync(command, [...prefix, "-c", PROBE], { stdio: "ignore", timeout: 10000, windowsHide: true });
-  if (probe.error || probe.status !== 0) continue;
-  const run = spawnSync(command, [...prefix, HOOK], {
-    input,
-    stdio: ["pipe", "inherit", "inherit"],
-    env,
-    windowsHide: true,
-  });
-  if (run.error) {
-    note(\`FAIL-OPEN: \${command} could not run the hook (\${run.error.message})\`);
-    process.exit(0);
+  for (const [command, prefix] of CANDIDATES) {
+    const probe = spawnSync(command, [...prefix, "-c", PROBE], { stdio: "ignore", timeout: 10000, windowsHide: true });
+    if (probe.error || probe.status !== 0) continue;
+    const run = spawnSync(command, [...prefix, HOOK], {
+      input,
+      stdio: ["pipe", "inherit", "inherit"],
+      env,
+      windowsHide: true,
+    });
+    if (run.error) {
+      process.exit(runtimeFault(\`\${command} could not run the hook (\${run.error.message})\`));
+    }
+    if (run.status !== 0 && run.status !== 2) {
+      process.exit(runtimeFault(\`\${command} hook terminated abnormally (status=\${run.status}, signal=\${run.signal})\`));
+    }
+    process.exit(run.status);
   }
-  process.exit(run.status ?? 0);
+} catch (error) {
+  process.exit(runtimeFault(\`interpreter delegation failed (\${error.message})\`));
 }
 
-note("FAIL-OPEN: no Python 3.8+ found (tried python3, python, py -3); install Python 3, then run \`pomaster doctor\`");
-process.exit(0);
+process.exit(runtimeFault("no Python 3.8+ found (tried python3, python, py -3); install Python 3, then run pomaster doctor"));
 `;
 }
 
@@ -516,6 +771,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster portability bootstrap/check",
   "pomaster update --check/--yes",
   "pomaster baseline set/confirm        # set = 单键后补销账；confirm = 基线确认 gate（阻塞集清零后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）",
+  "pomaster skills catalog/recommend/audit/lock/check   # 外部技能离线推荐 / 有界本地静态审计 / 字节锁与漂移对账；不安装、不授信、不替代项目规范或许可",
   "",
   "# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate；D-5，裁决 18）",
   "pomaster brainstorm start/question-gate/status/decide/promote",
@@ -550,6 +806,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster record gate-run/claim",
   "pomaster design check              # 设计规范门禁扫前端源码（closeout、check --gates 同一判卷）",
   "pomaster prototype check <facts.json> <page.html...>   # 重绘页面与原型事实逐条对账",
+  "pomaster autopilot review draft/show/statement/decide/apply   # 显式最终 code/build → 机器回执进度与就绪 → Owner 签一次项目 Human ACCEPT → 条件式幂等应用；普通 closeout 人工点不变",
   "",
   "# ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账",
   "pomaster reconcile --permit <PERMIT.*>",
@@ -840,7 +1097,9 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "交付初始化/修复是否实际发生、doctor 尚缺的工具，以及下一张阶段卡；`NO_CHANGE` 表示幂等重放无需重复修复。",
       "",
-      ...commandBlock(COMMAND_PANORAMA_LINES.slice(1, 9)),
+      "外部前端技能先 `skills catalog/recommend`，推荐不替代必读路由 skill、项目设计标准或系统权威。无精确 revision 时安装命令为空；`--pins` 只读项目相对 JSON 的 skill-id → {source,revision,evidence} 映射（独立证据、完整 commit）。已选本地目录可 audit → lock → check；静态字节一致不是安全、上游来源证明或 Human trust，不执行推荐命令、不代下载/安装、不改宿主。",
+      "",
+      ...commandBlock(COMMAND_PANORAMA_LINES.slice(1, 11)),
     ],
     browserEyes: true,
   },
@@ -927,6 +1186,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "## 前端改动",
       "",
       "- 设计规范是标准不是参考：动手前 `pomaster design show --area <领域>`（或 `--rule <编号>`）读条文与已解析的取值，间距、字号、圆角、阴影、颜色、栅格、组件用法、状态反馈、加载、报错、缓存、并发、安全一律照条文；取值是决策位（待定）就停下问 Owner，定了用 `design set` 记下，不自己挑默认值。项目还没有规范时先 `design adopt`。",
+      "- 外部技能只是手动建议：`skills recommend` 不改变设计权威或必读 skill。只审计明确选中的项目内目录；`audit --pin` 是单个独立 pin JSON，`lock` 重审当前字节后 write-once，`check` 检出漂移。无 findings 也不证明安全，不授权安装或宿主改动。",
       "- 有 BA 交来的 HTML 原型：先 `prototype ingest` 抽出业务事实与信息结构（读 `*.outline.md` 与 `facts.json`），按规范重绘；原型的 class、样式、栅格、字体不进实现，事实一条不少。",
       "- 开发中定下了新规范（用户说「以后都这样」「统一改成」）：`update spec` 写到该在的地方，不只留在对话里。",
       ...SPEC_WRITING_CARD_LINES,
@@ -941,8 +1201,16 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       ...commandBlock([
         "pomaster exec-guard --attempt <file|-> --json",
-        "pomaster maintain <change-or-task> --ops <tx-file> [--execution-id <AGX-n>] --json",
-        "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
+        "pomaster maintain <change-or-task> --ops <tx-file> [--execution-id <AGX-n>] [--permit-ref <ref>] [--break-glass-signoff <SO>] [--break-glass-spec <project-relative-json>] --json",
+        "pomaster bindings sync --from <project-relative-json> --dry-run --json",
+        "pomaster bindings statement --from <single-row-json> --json",
+        "pomaster bindings declare --from <single-row-json> --signoff <SO> [--permit-ref <ref>] [--execution-id <AGX-n>] --json",
+        "pomaster fact add --kind <kind> --id <id> --title <title> --from <payload-or-envelope-json> --reason <text> --by <type:name> --json",
+        "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] [--dispatch <original-ref>] --json",
+        "pomaster skills recommend [--pins <project-relative-json>] [--agent claude-code|codex] --json",
+        "pomaster skills audit --skill <id> --directory <local-dir> [--pin <project-relative-json>] --json",
+        "pomaster skills lock --skill <id> --audit <sha256-ref> --json",
+        "pomaster skills check [--skill <id>] --json",
         "pomaster design show [--area <key>] [--rule <id>] [--json]",
         "pomaster design adopt [--system antd|geist] [--baseline]",
         "pomaster design set <RULE.param> <value> --by human:<name> [--note <text>]",
@@ -980,7 +1248,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "## 执行与判读",
       "",
-      "0. 工具注册面 `.pomaster/tools/bindings.json` 缺席时 plan run 直接拒绝：新项目先 `pomaster tools init` 按 package.json 已声明的工具写起步注册面（只登记受信 adapter 能跑的 vitest / vue-tsc / tsc / eslint，既有绑定原样保留；playwright、pytest、maven 这类没有受信 adapter 的只列出不登记），再 `tools list` 看六分态。",
+      "0. 工具注册面 `.pomaster/tools/bindings.json` 缺席时 plan run 直接拒绝：新项目先 `pomaster tools init` 按 package.json 已声明的工具写起步注册面（只登记受信 adapter 能跑的 vitest / vue-tsc / tsc / eslint，既有绑定原样保留；playwright、pytest、gradle 这类没有受信 adapter 的只列出不登记），再 `tools list` 看六分态。",
       "1. compile 检查每条 acceptance 的 applicability、resolved bindings 与 diagnostics；unknown 保留，缺工具不是 N/A。",
       "2. run 只串行执行 REQUIRED obligations 并逐项写 GRN；只有全部 passed 才成功，且不会自动创建 claim、verification 或 closeout。工具缺席/未执行是显式 NOT_RUN（JSON `verdict=not_run`），不是绿色。",
       "3. 前端交互变更用 control-data-flow 静态报告配合浏览器 runtime confirmation；静态 proven 不证明真实 API、持久化或回显。",
@@ -990,6 +1258,9 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "7. 前端改动按设计规范找缺陷：`pomaster design check` 逐条门禁条文扫源码（违规给文件、行列与条文编号，与 closeout、check --gates 的 GATE.DESIGN.STANDARD 同一判卷；参数是决策位的检查记待定，不算通过也不算违规）；有 BA 原型的页面再跑 `pomaster prototype check <facts.json> <渲染后的页面.html>`，缺失 / 改动 / 新增 / 调序为零才算还原了业务事实。两者的结果作为验证证据，违规转 pomaster-execute 修。",
       "8. 任务声明了 baseline 依赖范围、而相关基线已经治理通路合法变更（closeout BASELINE_DRIFT「任务声明的历史 digest 已失效」）或任务影响面变化时：`task reassess-baseline <TASK> --lanes <…> --reason <text> --by <type:name>` 以当前确认快照重写范围（新相关目标须无漂移、无在途批），再按输出对列出的 claim 走第 6 步；不要用 maintain 手改 baseline_dependencies。",
       "",
+      "项目自驱终验：逐任务 machine_receipt 保留真实 agent/授权/AGX/任务版本，不冒充逐任务人签。`autopilot review draft` 必须显式 --execution 与可重复 --code/--build，真实判卷要求完整最终合并版本与 qualified final_stable 证据；blocked 报告只是不可变进度。`show` 调生产 review view，current 与 ready 分离，并披露 required_final_paths / required_project_checks / requirement_review；报告读取成功不等于完成。",
+      "Owner 单次项目 Human ACCEPT：`statement` 用与 `decide` 同源的 verdict、排序去重 affected 与 trim reason 输出 canonical statement/ref/sha256；将 ref/sha256 传给通用 `trust request accept`。Owner 在自己的终端按请求用 ssh-keygen 签名，agent 不读私钥、不代签或消费签名；`decide --signoff` 验证后留不可变决策（REWORK 明确受影响 TASK 与理由）。缺签名永远非绿，ACCEPT 不能缩小任务分母。`apply --decision` 只消费已签 ACCEPT ref，条件式可恢复幂等应用；普通模式 closeout 的原人工点与系统权威不变。",
+      "",
       "失败恢复按 diagnostics 分类：确认的产品缺陷转 pomaster-execute，工具/环境缺失修绑定或保持 NOT_RUN，输入漂移重新 inspect/context/handoff，权限与独立主体缺失保持 pending。只重跑受影响步骤，保留 partial GRN。产物包括 plan fingerprint、每项 verdict、证据引用和 pending actor/action；退出条件以 finalize 真实阶段为准，再主动重取 next-action 进入 reconcile/closeout 或准确停在人工边界。",
       "",
       ...commandBlock([
@@ -998,11 +1269,17 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster plan compile --task <TASK.*>",
         "pomaster plan run --task <TASK.*> --execution-id <AGX-n> --diagnose-on-failure",
         "pomaster control-data-flow analyze [--report-only]",
+        "  pomaster autopilot review draft --execution <AGX-*> --code <final-code> --build <final-build> [--candidates <project-relative-json>] --json",
+        "  pomaster autopilot review show --review <sha256-ref> --json",
+        "  pomaster autopilot review statement --review <sha256-ref> --verdict ACCEPT|REWORK|REJECT [--affected <TASK.*>] [--reason <text>] --json",
+        "pomaster trust request accept --ref <canonical-statement> --sha256 <statement-digest> --json",
+        "  pomaster autopilot review decide --review <sha256-ref> --verdict ACCEPT|REWORK|REJECT [--affected <TASK.*>] [--reason <text>] --signoff <SO-id> --json",
+        "  pomaster autopilot review apply --decision <sha256-ref> --json",
         "pomaster finalize status <TASK.*>",
         "pomaster finalize run <TASK.*> --verification-execution-id <AGX-*> --review-range <range> [--verifier <type:name>] [--replay-receipt <sha256>]",
         "pomaster check --fast",
         "pomaster check --gates",
-        "pomaster record gate-run --from <file> [--execution-id <AGX-n>]",
+        "pomaster record gate-run --from <file> [--execution-id <AGX-n>] [--dispatch <original-ref>]",
         "pomaster record claim --from <file> [--execution-id <AGX-n>]",
         "pomaster record verification --clm <CLM-n> --verifier <type:name> --evidence <ref> [--execution-id <AGX-n>]",
         "pomaster record requalify --clm <CLM-n> --by <type:name> --reason <text> [--evidence <GRN-n>]",
@@ -1428,8 +1705,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       ...commandBlock([
         "pomaster context compile --role <role> [--change <TASK|CHANGE>] [--capability <governed-id>] [--stage <stage>] [--check]",
-        "pomaster record gate-run --from <file> [--execution-id <AGX-n>]",
-        "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
+        "pomaster record gate-run --from <file> [--execution-id <AGX-n>] [--dispatch <original-ref>]",
+        "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] [--dispatch <original-ref>] --json",
         'pomaster update spec "<一句规范>" --scope <适用范围> --why <理由> --check-by <检查方式> --do <正例> --dont <反例> [--level <MUST|MUST NOT|SHOULD>] [--drawer <id>] --by <human|agent>:<name> [--dry-run]',
       ]),
     ],

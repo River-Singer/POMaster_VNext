@@ -114,6 +114,8 @@ import {
   stripQuotesFromPathEnv,
 } from "./detectors.js";
 import { absenceRecord, capItems, type RecordPlanFields } from "./normalize-common.js";
+import { parsePitReport, runPitLeg, PIT_DEFAULT_REPORT } from "./pit-leg.js";
+import type { JvmReportIO } from "./jvm-report.js";
 
 export const MUTATION_GATE_NAME = "MUTATION";
 export const MUTATION_GATE_DEF = "POLICY.GATE.MUTATION@0.1.0";
@@ -226,8 +228,9 @@ export const mutationSpawn: SpawnFn = (command, options) => {
 /** mutation 腿执行计划（mutation-adapter prepare 组装；字段是 RecordPlanFields 结构子集）。 */
 export interface MutationLegPlan extends RecordPlanFields {
   readonly projectRoot: string;
-  /** stryker | mutmut（B2-3 / B2-4；JaCoCo 侧 PIT 属 Java 第二波，显式 deferred 不在本腿）。 */
-  readonly runner: "stryker" | "mutmut";
+  /** BE-2 adds the JVM PIT dialect without changing the shared mutation judge. */
+  readonly runner: "stryker" | "mutmut" | "pit";
+  readonly pitVersion?: string;
   /** 触发方式（structural 词表；coverage 腿计划同款锚）。 */
   readonly trigger: RunTriggerValue;
   readonly absenceKind: "profile_not_required" | "config_absent" | "tool_absent" | null;
@@ -278,7 +281,9 @@ export function runMutationLeg(
   plan: MutationLegPlan,
   spawnFn: SpawnFn = mutationSpawn,
   executableProbe: ExecutableProbeFn = platformExecutableProbe,
+  reportIO?: JvmReportIO,
 ): MutationLegOutput {
+  if (plan.runner === "pit") return runPitLeg(plan, spawnFn, executableProbe, reportIO);
   // —— 前置闸①a：可执行体 PATH 探测（Windows cmd 缺席以 status=1+error=null 伪装
   // 执行失败，spawn 前先证在位）。
   const probeHit = executableProbe(plan.executable);
@@ -410,6 +415,8 @@ export type MutantStatus =
   | "suspicious"
   | "ignored"
   | "runtime_error"
+  | "nonviable"
+  | "memory_error"
   | "pending"
   | "skipped"
   | "untested";
@@ -584,9 +591,11 @@ export function parseMutmutJunitXml(text: string): MutationReportMetrics | null 
 
 /** 按 runner 分派报告解析（单一分派点——两腿词形互异，禁混用解析器）。 */
 export function parseMutationReport(
-  runner: "stryker" | "mutmut",
+  runner: "stryker" | "mutmut" | "pit",
   text: string,
+  changedFiles: readonly string[] = [],
 ): MutationReportMetrics | null {
+  if (runner === "pit") return parsePitReport(text, changedFiles);
   return runner === "stryker" ? parseStrykerReport(text) : parseMutmutJunitXml(text);
 }
 
@@ -767,7 +776,7 @@ export function normalizeMutationLeg(
       raw.externalMs,
     );
   }
-  const metrics = parseMutationReport(plan.runner, raw.reportText);
+  const metrics = parseMutationReport(plan.runner, raw.reportText, plan.changedFiles);
   if (metrics === null) {
     return absenceRecord(
       plan,
@@ -808,12 +817,16 @@ export function normalizeMutationLeg(
     );
   }
 
+  if (!inScope.some((mutant) => mutantStatusClass(mutant.status) !== "excluded")) {
+    return absenceRecord(plan, "not_run", "Zero eligible mutation denominator (all mutants nonviable, unexecuted or excluded); nothing verified", selfMs, raw.externalMs);
+  }
   const stats = summarizeMutants(inScope);
   const survivors = survivingMutants(inScope);
   const observed = raw.observedToolVersion;
   const effectiveVersion = observed ?? plan.toolVersion;
 
   const caps: string[] = [];
+  if (plan.runner === "pit" && inScope.some((mutant) => ["pending", "untested", "memory_error", "runtime_error"].includes(mutant.status))) caps.push("pit_incomplete_mutants");
   if (
     observed !== null &&
     plan.expectedToolVersion !== null &&
@@ -849,6 +862,9 @@ export function normalizeMutationLeg(
   }));
 
   const violations = items.length;
+  if (plan.runner === "pit" && raw.exitCode !== 0 && violations === 0) {
+    return absenceRecord(plan, "not_run", `PIT Maven execution failed (exit=${String(raw.exitCode)}); a report without threshold failures cannot fabricate success`, selfMs, raw.externalMs);
+  }
   let verdict: GateResult["verdict"];
   let capReason: string | null;
   if (violations > 0) {
@@ -871,8 +887,9 @@ export function normalizeMutationLeg(
     unattributed.length > 0
       ? `；scope 归属不可复核 ${String(unattributed.length)} 条（mutmut killed 词形无逐 mutant 位置——按命令面 --paths-to-mutate 信任计数，能力落差 2）`
       : "";
-  const runnerNote =
-    plan.runner === "mutmut" ? `；${MUTMUT_GAP_NOTE}` : "";
+  const runnerNote = plan.runner === "pit"
+    ? `; PIT=${plan.pitVersion ?? "unknown"}; nonviable=${inScope.filter((m) => m.status === "nonviable").length}; unexecuted=${inScope.filter((m) => m.status === "pending" || m.status === "untested").length}; memory_error=${inScope.filter((m) => m.status === "memory_error").length}; run_error=${inScope.filter((m) => m.status === "runtime_error").length} (excluded, never killed)`
+    : plan.runner === "mutmut" ? `；${MUTMUT_GAP_NOTE}` : "";
   const exitNote = `exit=${String(raw.exitCode)}（第三方工具自身语义非本 gate 判卷锚——stryker 内部阈值不达标亦 exit 1；判卷锚=报告重算）`;
   const scopeNote =
     `MUTATION（runner=${plan.runner}，changed-code scope ${String(plan.changedFiles.length)} 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：` +
@@ -947,7 +964,8 @@ export function buildMutmutCommand(command: string, changedFiles: readonly strin
 }
 
 /** mutation 腿 gate ①a 可执行体（firstCommandToken 同源；stryker=corepack / mutmut=python）。 */
-export function mutationLegExecutable(runner: "stryker" | "mutmut"): string {
+export function mutationLegExecutable(runner: "stryker" | "mutmut" | "pit"): string {
+  if (runner === "pit") return "mvn";
   return runner === "stryker"
     ? firstCommandToken(STRYKER_VERSION_PROBE_COMMAND)
     : firstCommandToken(MUTMUT_VERSION_PROBE_COMMAND);
@@ -955,9 +973,9 @@ export function mutationLegExecutable(runner: "stryker" | "mutmut"): string {
 
 /** 报告文件仓内相对路径解析（缺省按 runner；显式声明覆盖，分隔符归一）。 */
 export function resolveMutationReportPath(
-  runner: "stryker" | "mutmut",
+  runner: "stryker" | "mutmut" | "pit",
   configValue: string | null,
 ): string {
-  return (configValue ?? (runner === "stryker" ? STRYKER_DEFAULT_REPORT : MUTMUT_DEFAULT_REPORT))
+  return (configValue ?? (runner === "pit" ? PIT_DEFAULT_REPORT : runner === "stryker" ? STRYKER_DEFAULT_REPORT : MUTMUT_DEFAULT_REPORT))
     .replaceAll("\\", "/");
 }

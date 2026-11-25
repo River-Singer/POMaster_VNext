@@ -2,7 +2,7 @@
 // 原文复核三查（files sha256 / blocks 覆盖 / items 回溯）+ 12 类分母推导（tagsOf/
 // nfrHints 既有词表零新词族）+ 不可变冻结（current.json 指针 digest 锚）+ check
 // 对账（未冻结/被篡改 exit 1；重生成文件、换身份不能豁免）。
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, cpSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, cpSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,6 +13,7 @@ import { runIntakeDraft } from "../src/intake-draft.js";
 import { loadIntakeLatest, runIntakePending, runIntakeRead, runIntakeResolve } from "../src/intake.js";
 import { runKickoffConfirm, runKickoffDraft, type KickoffEnv } from "../src/kickoff.js";
 import { runPlanScenarios } from "../src/plan-scenarios.js";
+import { detectTestWeakening, extractVitestSpecSnapshot } from "@pomaster/kernel";
 import { QA_CATEGORIES, deriveCases, reviewSources, runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, type QaDerivationInput } from "../src/qa-cases.js";
 import { runTrustEnroll, runTrustRequest, type TrustEnv } from "../src/trust.js";
 import { makeKey, opensshPrivateKeyText, signSshsig, type TestKey } from "./fixtures/trust/sshsig-signer.js";
@@ -91,7 +92,7 @@ async function plannedRound(materialRoot?: string): Promise<string> {
   const signoff = sign(ownerKey as TestKey, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
   const confirmed = await runKickoffConfirm(dir, { signoff }, bareMachine);
   expect(confirmed.ok, JSON.stringify(confirmed.errors)).toBe(true);
-  const planned = await runPlanScenarios(dir, {});
+  const planned = await runPlanScenarios(dir);
   expect(planned.ok, JSON.stringify(planned.errors)).toBe(true);
   return id;
 }
@@ -122,9 +123,9 @@ async function nextRound(materialRoot: string): Promise<string> {
     const signoff = sign(ownerKey as TestKey, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
     const confirmed = await runKickoffConfirm(dir, { signoff }, bareMachine);
     expect(confirmed.ok, JSON.stringify(confirmed.errors)).toBe(true);
-    const planned = await runPlanScenarios(dir, {});
+    const planned = await runPlanScenarios(dir);
     expect(planned.ok, JSON.stringify(planned.errors)).toBe(true);
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
     return id;
   }
 }
@@ -233,7 +234,7 @@ describe("原文复核三查（纯函数）", () => {
 describe("qa cases 端到端", () => {
   it("全前置绿：draft 分母 + freeze 冻结 + check 全绿；重跑 draft 指纹稳定", async () => {
     await plannedRound();
-    const first = runQaCasesDraft(dir, {});
+    const first = runQaCasesDraft(dir);
     expect(first.ok, JSON.stringify(first.errors)).toBe(true);
     const draft1 = first.result as NonNullable<typeof first.result>;
     expect(draft1.change).toBe("CREATED");
@@ -246,15 +247,15 @@ describe("qa cases 端到端", () => {
     for (const entry of casesFile.cases) expect(entry.source_refs.length).toBeGreaterThan(0);
 
     // 重跑 draft：输入不变 → 指纹稳定（幂等）
-    const again = runQaCasesDraft(dir, {});
+    const again = runQaCasesDraft(dir);
     expect(again.ok).toBe(true);
     const casesAgain = JSON.parse(readFileSync(qaPath("KO-orders-r3", "cases.json"), "utf8")) as { fingerprint: string };
     expect(casesAgain.fingerprint).toBe(casesFile.fingerprint);
 
     // 未冻结时 check 是门禁失败（exit 1 语义）
-    expect(runQaCasesCheck(dir, {}).errors[0]?.code).toBe("QA_CASES_NOT_FROZEN");
+    expect(runQaCasesCheck(dir).errors[0]?.code).toBe("QA_CASES_NOT_FROZEN");
 
-    const frozen = runQaCasesFreeze(dir, {});
+    const frozen = runQaCasesFreeze(dir);
     expect(frozen.ok, JSON.stringify(frozen.errors)).toBe(true);
     const frozenResult = frozen.result as NonNullable<typeof frozen.result>;
     expect(frozenResult.change).toBe("FROZEN");
@@ -265,14 +266,14 @@ describe("qa cases 端到端", () => {
     expect(pointer.cases_frozen_sha256).toBe(createHash("sha256").update(frozenBytes).digest("hex"));
 
     // 冻结后重复冻结拒绝；check 全绿
-    expect(runQaCasesFreeze(dir, {}).errors[0]?.code).toBe("QA_CASES_ALREADY_FROZEN");
-    const checked = runQaCasesCheck(dir, {});
+    expect(runQaCasesFreeze(dir).errors[0]?.code).toBe("QA_CASES_ALREADY_FROZEN");
+    const checked = runQaCasesCheck(dir);
     expect(checked.ok, JSON.stringify(checked.errors)).toBe(true);
     expect(checked.warnings.length).toBe(0);
   });
 
   it("没有生效确认单：QA_KICKOFF_NOT_IN_FORCE；确认了但没跑 plan：QA_CASES_PLAN_MISSING", async () => {
-    expect(runQaCasesDraft(dir, {}).errors[0]?.code).toBe("QA_KICKOFF_NOT_IN_FORCE");
+    expect(runQaCasesDraft(dir).errors[0]?.code).toBe("QA_KICKOFF_NOT_IN_FORCE");
 
     await readyIntake();
     const key = enrollOwner();
@@ -281,7 +282,39 @@ describe("qa cases 端到端", () => {
     expect(draft().ready).toBe(true);
     const signoff = sign(key, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
     expect((await runKickoffConfirm(dir, { signoff }, bareMachine)).ok).toBe(true);
-    expect(runQaCasesDraft(dir, {}).errors[0]?.code).toBe("QA_CASES_PLAN_MISSING");
+    expect(runQaCasesDraft(dir).errors[0]?.code).toBe("QA_CASES_PLAN_MISSING");
+  });
+
+  it("C08 unchanged raw critical rule omitted from model cannot freeze (even if its block still claims coverage)", async () => {
+    const round = await plannedRound();
+    const latest = loadIntakeLatest(dir, "orders");
+    expect(latest.ok).toBe(true);
+    if (!latest.ok) throw new Error("intake missing");
+    const rule = latest.data.items.find(item => item.text.includes("金额超过 100 万"));
+    expect(rule).toBeDefined();
+    if (!rule) throw new Error("critical original rule missing from fixture");
+    const file = latest.data.files.files.find(file => file.path === rule.origin.file);
+    expect(file).toBeDefined();
+    const rawPath = join(latest.data.files.inputs[file!.root]!, file!.path);
+    const rawBefore = readFileSync(rawPath);
+    expect(rawBefore.toString()).toContain("金额超过 100 万的订单必须经主管审核后才能生效");
+    const itemsPath = join(latest.workspace.dir, "revisions", `r${latest.data.files.revision}`, "items.json");
+    const original = JSON.parse(readFileSync(itemsPath, "utf8")) as { items: typeof latest.data.items };
+    writeFileSync(itemsPath, JSON.stringify({ ...original, items: original.items.filter(item => item.id !== rule.id) }));
+    const reviewed = runQaCasesDraft(dir);
+    expect(reviewed.ok, JSON.stringify(reviewed.errors)).toBe(true);
+    expect(reviewed.result?.review?.files.drift).toEqual([]);
+    expect(reviewed.result?.review?.blocks.uncovered.some(block => block.excerpt.includes("金额超过 100 万"))).toBe(true);
+    expect(runQaCasesFreeze(dir).errors[0]?.code).toBe("QA_CASES_REVIEW_OPEN");
+    expect(readFileSync(rawPath)).toEqual(rawBefore);
+    expect(readdirSync(qaPath(round))).not.toContain("cases-frozen.json");
+    // Removing the original block as well must not hide the unchanged raw obligation.
+    const blocksPath = join(latest.workspace.dir, "revisions", `r${latest.data.files.revision}`, "blocks.json");
+    const blocks = JSON.parse(readFileSync(blocksPath, "utf8")) as { blocks: typeof latest.data.blocks };
+    writeFileSync(blocksPath, JSON.stringify({ ...blocks, blocks: blocks.blocks.filter(block => !block.items?.includes(rule.id)) }));
+    const rereview = runQaCasesDraft(dir);
+    expect(rereview.result?.review?.blocks.uncovered.some(block => block.excerpt.includes("金额超过 100 万"))).toBe(true);
+    expect(runQaCasesFreeze(dir).errors[0]?.code).toBe("QA_CASES_REVIEW_OPEN");
   });
 
   it("材料在读取后变过：QA_CASES_SOURCE_DRIFT（fail-closed，不静默消费漂移材料）", async () => {
@@ -297,7 +330,7 @@ describe("qa cases 端到端", () => {
       const target = snapshot.files.find((entry) => entry.path.endsWith(".md")) ?? snapshot.files[0]!;
       const absolute = join(snapshot.inputs[target.root] ?? "", target.path);
       writeFileSync(absolute, `${readFileSync(absolute, "utf8")}\n（确认后有人改了材料）\n`, "utf8");
-      expect(runQaCasesDraft(dir, {}).errors[0]?.code).toBe("QA_CASES_SOURCE_DRIFT");
+      expect(runQaCasesDraft(dir).errors[0]?.code).toBe("QA_CASES_SOURCE_DRIFT");
     } finally {
       rmSync(material, { recursive: true, force: true });
     }
@@ -305,7 +338,7 @@ describe("qa cases 端到端", () => {
 
   it("修订里有未收口块：draft 如实呈报 uncovered，freeze QA_CASES_REVIEW_OPEN 拒绝；收口后放行", async () => {
     await plannedRound();
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
     // 注入一个未消费也未 resolve 的块（模拟提取修订里的漏检候选）——修订目录从
     // loadIntakeLatest 取（readyIntake 在 resolve 后又读了一次 v2 → r3）
     const latest = loadIntakeLatest(dir, "orders");
@@ -314,26 +347,26 @@ describe("qa cases 端到端", () => {
     const blocks = JSON.parse(readFileSync(blocksPath, "utf8")) as { blocks: { id: string; file: string; module: string; kind: string; role: string; heading_path: string[]; excerpt: string; lines: [number, number]; destination: string }[] };
     blocks.blocks.push({ id: "BLK-INJECTED", file: "orders-spec.md", module: "orders", kind: "rule", role: "content", heading_path: ["漏检"], excerpt: "没人消费过的块", lines: [1, 1], destination: "pending" });
     writeFileSync(blocksPath, `${JSON.stringify(blocks, null, 2)}\n`, "utf8");
-    const draftOutcome = runQaCasesDraft(dir, {});
+    const draftOutcome = runQaCasesDraft(dir);
     expect(draftOutcome.ok).toBe(true);
     expect((draftOutcome.result as NonNullable<typeof draftOutcome.result>).review?.blocks.uncovered.map((entry) => entry.id)).toContain("BLK-INJECTED");
-    expect(runQaCasesFreeze(dir, {}).errors[0]?.code).toBe("QA_CASES_REVIEW_OPEN");
+    expect(runQaCasesFreeze(dir).errors[0]?.code).toBe("QA_CASES_REVIEW_OPEN");
 
     // 收口（resolve 成 skip）→ 重 draft → freeze 放行
     expect(runIntakeResolve(dir, { block: ["BLK-INJECTED"], as: "skip", reason: "模板说明，不是需求" }).ok).toBe(true);
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
+    expect(runQaCasesFreeze(dir).ok).toBe(true);
   });
 
   it("手改草案报表绕不过门禁：categories 谎报 → QA_CASES_FREEZE_INCOMPLETE；plan 指纹变 → QA_CASES_INPUTS_DRIFTED", async () => {
     await plannedRound();
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
     const casesPath = qaPath("KO-orders-r3", "cases.json");
     const cases = JSON.parse(readFileSync(casesPath, "utf8")) as { categories: Record<string, { count: number; na: { basis_zh: string } | null }>; cases: { category: string }[] };
     // 谎报 rollback 0 条且无依据（实际有 carried 推导或没有——重算都逮）
     cases.categories.rollback = { count: 0, na: null };
     writeFileSync(casesPath, `${JSON.stringify(cases, null, 2)}\n`, "utf8");
-    const frozen = runQaCasesFreeze(dir, {});
+    const frozen = runQaCasesFreeze(dir);
     expect(frozen.errors[0]?.code).toBe("QA_CASES_FREEZE_INCOMPLETE");
     expect(frozen.errors[0]?.message).toContain("回滚");
 
@@ -342,50 +375,102 @@ describe("qa cases 端到端", () => {
     const plan = JSON.parse(readFileSync(planPath, "utf8")) as { fingerprint: string };
     plan.fingerprint = `${plan.fingerprint.slice(0, -2)}00`;
     writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`, "utf8");
-    expect(runQaCasesFreeze(dir, {}).errors[0]?.code).toBe("QA_CASES_INPUTS_DRIFTED");
+    expect(runQaCasesFreeze(dir).errors[0]?.code).toBe("QA_CASES_INPUTS_DRIFTED");
   });
 
   it("冻结集被改 → check QA_CASES_TAMPERED（重生成/换身份不能豁免）；草案重跑漂移 → warning 不抬 exit", async () => {
     await plannedRound();
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
+    expect(runQaCasesFreeze(dir).ok).toBe(true);
     const frozenPath = qaPath("KO-orders-r3", "cases-frozen.json");
     const originalFrozen = readFileSync(frozenPath, "utf8");
 
     // 篡改冻结字节（模拟实现者改预期结果 / 换身份重生成——追加字节，必然改 digest）
     writeFileSync(frozenPath, `${originalFrozen}（已被改）`, "utf8");
-    expect(runQaCasesCheck(dir, {}).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+    expect(runQaCasesCheck(dir).errors[0]?.code).toBe("QA_CASES_TAMPERED");
 
     // 恢复原始字节（digest 一致即放行：锚是 digest 不是写它的人）
     writeFileSync(frozenPath, originalFrozen, "utf8");
-    expect(runQaCasesCheck(dir, {}).ok).toBe(true);
+    expect(runQaCasesCheck(dir).ok).toBe(true);
 
     // 草案在 plan 变后重跑 → 指纹与冻结集不同 → DRAFT_DRIFT warning（ok 保持 true）
     const planPath = join(dir, ".pomaster", "plan", "KO-orders-r3", "plan.json");
     const plan = JSON.parse(readFileSync(planPath, "utf8")) as { fingerprint: string };
     plan.fingerprint = `${plan.fingerprint.slice(0, -2)}11`;
     writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`, "utf8");
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-    const checked = runQaCasesCheck(dir, {});
+    expect(runQaCasesDraft(dir).ok).toBe(true);
+    const checked = runQaCasesCheck(dir);
     expect(checked.ok, JSON.stringify(checked.errors)).toBe(true);
     expect(checked.warnings.map((warning) => warning.code)).toContain("DRAFT_DRIFT");
   });
 
   it("回归类：v2 carried 条目产 regression 用例（上一版沿用义务不回退）", async () => {
     await plannedRound();
-    const outcome = runQaCasesDraft(dir, {});
+    const outcome = runQaCasesDraft(dir);
     expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
     const result = outcome.result as NonNullable<typeof outcome.result>;
-    // fixtures v1→v2 有沿用条目（v2 明确沿用的部分）；无 carried 时该类 N/A 有据
-    expect(result.categories?.regression.count).toBeGreaterThanOrEqual(0);
+    const latest = loadIntakeLatest(dir, "orders");
+    expect(latest.ok).toBe(true);
+    if (!latest.ok) throw new Error("intake missing");
+    const carried = latest.data.items.filter(item => item.carried === true);
+    expect(carried.length).toBeGreaterThan(0);
+    expect(result.categories?.regression?.count).toBe(carried.length);
+    const cases = JSON.parse(readFileSync(qaPath(result.round, "cases.json"), "utf8")) as { cases: { category: string; source_refs: string[] }[] };
+    expect(cases.cases.filter(entry => entry.category === "regression").flatMap(entry => entry.source_refs).sort()).toEqual(carried.map(item => item.id).sort());
   });
 });
 
 describe("qa cases revise 谱系（TC-1b）", () => {
+  it("C07 signed refund 7→14 replaces only its expectation; unrelated permission regression and frozen ancestry remain mandatory", async () => {
+    const material = mkdtempSync(join(tmpdir(), "pomaster-refund-"));
+    try {
+      for (const version of ["v1", "v2"]) cpSync(join(FIXTURES, version), join(material, version), { recursive: true });
+      const md = join(material, "v2", "openspec(1)", "openspec", "specs", "01-orders", "spec.md");
+      writeFileSync(md, readFileSync(md, "utf8") + "\n#### 退款规则\n\n- 退款期限不得超过 7 天\n- 仅主管有权限批准退款，其他角色不得执行\n");
+      const oldRound = await plannedRound(material);
+      expect(runQaCasesDraft(dir).ok).toBe(true);
+      expect(runQaCasesFreeze(dir).ok).toBe(true);
+      const oldPath = qaPath(oldRound, "cases-frozen.json");
+      const oldBytes = readFileSync(oldPath);
+      const old = JSON.parse(oldBytes.toString()) as { cases: { id: string; category: string; scenario_zh: string; expected_zh: string; source_refs: string[] }[] };
+      const refund = old.cases.find(entry => entry.category === "boundary" && entry.scenario_zh.includes("退款期限"))!;
+      const permission = old.cases.find(entry => entry.category === "permission" && entry.scenario_zh.includes("批准退款"))!;
+      expect(refund).toBeDefined();
+      expect(permission).toBeDefined();
+      writeFileSync(md, readFileSync(md, "utf8").replace("退款期限不得超过 7 天", "退款期限不得超过 14 天"));
+      const newRound = await nextRound(material);
+      const revised = runQaCasesRevise(dir);
+      expect(revised.ok, JSON.stringify(revised.errors)).toBe(true);
+      const newPath = qaPath(newRound, "cases-frozen.json");
+      const nextBytes = readFileSync(newPath);
+      const next = JSON.parse(nextBytes.toString()) as { cases: (typeof old.cases[number] & { replaces: string[] })[]; retired: { id: string }[] };
+      const updatedRefund = next.cases.find(entry => entry.category === "boundary" && entry.scenario_zh.includes("退款期限"))!;
+      expect(updatedRefund.expected_zh).toContain("14 天");
+      expect(updatedRefund.replaces).toContain(refund.id);
+      const retained = next.cases.find(entry => entry.category === "permission" && entry.source_refs.some(ref => permission.source_refs.includes(ref)))!;
+      expect(retained.expected_zh).toBe(permission.expected_zh);
+      expect(retained.replaces).toContain(permission.id);
+      expect(next.retired.map(entry => entry.id)).not.toContain(permission.id);
+      expect(readFileSync(oldPath)).toEqual(oldBytes);
+      expect(runQaCasesCheck(dir).ok).toBe(true);
+      // Existing weakening detector still blocks deleting the unrelated implementation regression.
+      const baseline = 'it("permission regression", () => { expect(refundAsAnonymous().status).toBe(403); });';
+      const weakened = detectTestWeakening([extractVitestSpecSnapshot("refund.spec.ts", baseline)], [extractVitestSpecSnapshot("refund.spec.ts", "")]);
+      expect(weakened.weakened).toBe(true);
+      expect(weakened.findings.some(finding => finding.verdict === "ASSERTION_REMOVED")).toBe(true);
+      // Rewriting frozen truth to remove it is separately refused by the existing lineage/digest gate.
+      writeFileSync(newPath, JSON.stringify({ ...next, cases: next.cases.filter(entry => entry.id !== retained.id) }));
+      expect(runQaCasesCheck(dir).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+      writeFileSync(newPath, nextBytes);
+      expect(runQaCasesCheck(dir).ok).toBe(true);
+      writeFileSync(oldPath, JSON.stringify({ ...old, cases: old.cases.filter(entry => entry.id !== permission.id) }));
+      expect(runQaCasesCheck(dir).errors[0]?.message).toContain("谱系祖先");
+    } finally { rmSync(material, { recursive: true, force: true }); }
+  });
   it("替代修订：parent 锚旧 digest、replaces 按 source_ref 交集、旧文件字节不动、check 过链、同轮拒绝、祖先篡改逮住", async () => {
     await plannedRound();
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
+    expect(runQaCasesFreeze(dir).ok).toBe(true);
     const oldPointer = JSON.parse(readFileSync(qaPath("current.json"), "utf8")) as { round: string; cases_frozen_sha256: string };
     const oldFrozenPath = qaPath(oldPointer.round, "cases-frozen.json");
     const oldFrozenBefore = readFileSync(oldFrozenPath, "utf8");
@@ -396,7 +481,7 @@ describe("qa cases revise 谱系（TC-1b）", () => {
     const newRound = await nextRound(material);
     expect(newRound).not.toBe(oldPointer.round);
 
-    const revised = runQaCasesRevise(dir, {});
+    const revised = runQaCasesRevise(dir);
     expect(revised.ok, JSON.stringify(revised.errors)).toBe(true);
     const result = revised.result as NonNullable<typeof revised.result>;
     expect(result).toMatchObject({ round: newRound, change: "REVISED" });
@@ -415,30 +500,30 @@ describe("qa cases revise 谱系（TC-1b）", () => {
     expect(frozen.cases.filter((entry) => entry.replaces.length > 0).length).toBeGreaterThan(0);
 
     // check 过链（parent 验祖）；同轮 revise 拒绝
-    expect(runQaCasesCheck(dir, {}).ok, JSON.stringify(runQaCasesCheck(dir, {}).errors)).toBe(true);
-    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_REVISE_SAME_ROUND");
+    expect(runQaCasesCheck(dir).ok, JSON.stringify(runQaCasesCheck(dir).errors)).toBe(true);
+    expect(runQaCasesRevise(dir).errors[0]?.code).toBe("QA_CASES_REVISE_SAME_ROUND");
 
     // 祖先篡改（删谱系义务）→ check 逮住
     writeFileSync(oldFrozenPath, `${oldFrozenBefore}x`, "utf8");
-    expect(runQaCasesCheck(dir, {}).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+    expect(runQaCasesCheck(dir).errors[0]?.code).toBe("QA_CASES_TAMPERED");
     rmSync(material, { recursive: true, force: true });
   });
 
   it("没冻结就 revise：QA_CASES_NOT_FROZEN（没有在冻结的集合就无所谓替代）", async () => {
     await plannedRound();
-    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_NOT_FROZEN");
+    expect(runQaCasesRevise(dir).errors[0]?.code).toBe("QA_CASES_NOT_FROZEN");
   });
 
   it("祖先冻结集被删：拒绝续谱（谱系锚在被验证的祖先上）", async () => {
     await plannedRound();
-    expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-    expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+    expect(runQaCasesDraft(dir).ok).toBe(true);
+    expect(runQaCasesFreeze(dir).ok).toBe(true);
     const oldPointer = JSON.parse(readFileSync(qaPath("current.json"), "utf8")) as { round: string };
     const material = mkdtempSync(join(tmpdir(), "pomaster-qa-r2-"));
     cpSync(join(FIXTURES, "v2"), join(material, "v2"), { recursive: true });
     await nextRound(material);
     rmSync(qaPath(oldPointer.round, "cases-frozen.json"));
-    expect(runQaCasesRevise(dir, {}).errors[0]?.code).toBe("QA_CASES_TAMPERED");
+    expect(runQaCasesRevise(dir).errors[0]?.code).toBe("QA_CASES_TAMPERED");
     rmSync(material, { recursive: true, force: true });
   });
 });

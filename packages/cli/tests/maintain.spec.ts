@@ -12,7 +12,7 @@
  * - fail-closed：--ops/--phase 互斥且必给其一；--phase 词表外值显式拒绝；链步失败
  *   failed_at_step 显式 + kernel/子命令码位透传。
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, type Dirent } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -21,6 +21,7 @@ import {
   applyKnowledgeTransition,
   beginExecution,
   createStore,
+  issuePermit,
   promoteKnowledge,
   recordKnowledge,
 } from "@pomaster/kernel";
@@ -121,7 +122,7 @@ function snapshot(): string[] {
   const base = join(root, ".pomaster");
   const entries: string[] = [];
   const walk = (current: string, rel: string): void => {
-    let items: ReturnType<typeof readdirSync>;
+    let items: Dirent<string>[];
     try {
       items = readdirSync(current, { withFileTypes: true });
     } catch {
@@ -277,7 +278,7 @@ describe("maintain --phase pre-dev（八拍②③薄编排；D-5 裁决 18 二�
     expect(result.failed_at_step).toBeNull();
 
     // D-1/D-5 退役回归：链结果零 triage 视图（判档位已删——零 compat 字段）。
-    expect((result as Record<string, unknown>).triage).toBeUndefined();
+    expect((result as unknown as Record<string, unknown>).triage).toBeUndefined();
 
     // ② permit（kernel 五件套台账签发）。
     expect(result.permit?.permit_ref).toMatch(/^PERMIT\./);
@@ -551,19 +552,29 @@ describe("maintain 事务级 execution 盖章（--execution-id → TX_APPLIED）
   it("携带已登记 AGX → APPLIED + 结果回读 execution_id + journal TX_APPLIED 盖章", async () => {
     await seedStore();
     const store = await createStore(root);
+    await applyTransaction(store, { ops: UPSERT_TX.ops } as never);
+    const permit = await issuePermit(store, {
+      subjectIds: ["PAGE.DASHBOARD" as never],
+      requestedBy: { actorType: "human", actor: "owner", selfAttested: true },
+      ttlBeats: 3,
+    });
     const record = await beginExecution(store, {
       role: "orchestrator",
       runtime: "claude-code",
       identityKind: "interactive",
+      permitIds: [permit.permitRef],
       startedAt: "2026-08-30T00:00:00.000Z",
     });
-    const txPath = writeTx("tx.json", UPSERT_TX);
+    const txPath = writeTx("tx.json", {
+      ops: [{ ...UPSERT_TX.ops[0], envelope: { ...UPSERT_TX.ops[0]!.envelope, titleZh: "更新后的仪表盘" } }],
+    });
     const outcome = await runMaintain(root, {
       changeOrTask: ANCHOR,
       opsFile: txPath,
       executionId: record.execution_id,
+      permitRef: permit.permitRef,
     });
-    expect(outcome.ok).toBe(true);
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
     const result = outcome.result as MaintainApplyResult;
     expect(result.change).toBe("APPLIED");
     expect(result.execution_id).toBe(record.execution_id);
@@ -631,7 +642,7 @@ describe("maintain apply policy 登记建议呈现（R4/D9）", () => {
       promotionAuthority: "MAINTAIN",
       authorityRef: "DECISION.77",
       promotedRef,
-      promotedBy: "human:maintain",
+      promotedBy: { actorType: "human", actor: "maintain", selfAttested: true },
     });
   }
 

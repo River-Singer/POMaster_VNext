@@ -24,7 +24,9 @@ import Ajv from "ajv";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyTransaction,
-  beginExecution,
+  beginExecution as beginRegisteredExecution,
+  issuePermit,
+  loadTruthIndex,
   compileExecutionTrace,
   EXECUTION_TRACE_SCHEMA,
   EXECUTION_TRACE_VERSION,
@@ -56,6 +58,17 @@ const BASE = {
   runtime: "claude-code",
   identityKind: "interactive",
 } as const;
+
+/** Trace fixtures mutate already registered objects under their own scoped execution. */
+async function beginExecution(target: Store, input: Parameters<typeof beginRegisteredExecution>[1]): Promise<ExecutionRecord> {
+  const index = await loadTruthIndex(target);
+  // Seed once before the first active identity; seed writes do not belong to an execution trace.
+  for (const id of ["PAGE.DASHBOARD", "PAGE.OTHER", "PAGE.THIRD"]) {
+    if (!index.objects.some(row => row.id === id)) await applyTransaction(target, { ops: [{ op: "upsert_object", envelope: pageEnvelope({ id: gid(id), titleZh: "Fixture baseline" }) as never }] });
+  }
+  const permit = await issuePermit(target, { subjectIds: ["PAGE.DASHBOARD", "PAGE.OTHER", "PAGE.THIRD"].map(gid), requestedBy: AGENT });
+  return beginRegisteredExecution(target, { ...input, permitIds: [permit.permitRef] });
+}
 
 // kernel 平面路径是正斜杠模板串（store 布局唯一登记处 paths.ts 形态）——断言用同形
 // 模板串拼装（join 的反斜杠形态会使 startsWith 失配）。

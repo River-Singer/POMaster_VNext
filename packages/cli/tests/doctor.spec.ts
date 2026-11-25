@@ -17,7 +17,7 @@
  * 扩容入矩阵（三探针独立呈现不聚合——防假绿纪律）。ok=true 的用例注入全 READY
  * fake 探针（宿主是否安装 oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
  */
-import { writeFileSync, rmSync, readFileSync, existsSync, mkdirSync } from "node:fs";
+import { writeFileSync, rmSync, readFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -30,6 +30,7 @@ import {
   CHROME_DEVTOOLS_MCP_HINT,
   PLAYWRIGHT_MCP_HINT,
   detectionToDoctorProbe,
+  runCli,
   runInit,
   runDoctor,
   probeChromeDevtoolsMcp,
@@ -110,6 +111,62 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
+});
+
+function expectBrowserRecoveryHint(hint: string | null): void {
+  expect(hint).toContain("pomaster tools prepare --host claude");
+  expect(hint).toContain("pomaster tools prepare --host codex");
+  expect(hint).toContain("pomaster tools prepare --host claude --check");
+  expect(hint).toContain("pomaster tools prepare --host codex --check");
+  expect(hint).toContain("锁定");
+  expect(hint).toContain("批准");
+  expect(hint).toContain("信任");
+  expect(hint).toContain("runner");
+  expect(hint).toContain("配置不代表就绪");
+  expect(hint).not.toMatch(/@latest|npx|mcpServers|在项目根.*写入/);
+}
+
+describe("DF-DIAG-01 public doctor recovery hints", () => {
+  it.each([false, true])("doctor --json preserves probe failures and read-only files (corrupt config=%s)", async (corrupt) => {
+    if (corrupt) writeFileSync(join(dir, ".mcp.json"), "{broken\n");
+    const snapshot = () => ({
+      root_mtime_ns: statSync(dir, { bigint: true }).mtimeNs.toString(),
+      files: readdirSync(dir).sort().map((name) => ({
+        name,
+        bytes: readFileSync(join(dir, name)).toString("base64"),
+        mtime_ns: statSync(join(dir, name), { bigint: true }).mtimeNs.toString(),
+      })),
+    });
+    const before = snapshot();
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const code = await runCli(["--dir", dir, "doctor", "--json"], {
+      stdout: (text) => stdout.push(text),
+      stderr: (text) => stderr.push(text),
+    });
+    expect(code).toBe(1);
+    expect(stderr).toEqual([]);
+    expect(stdout).toHaveLength(1);
+    const value = JSON.parse(stdout[0]!) as {
+      command: string;
+      ok: boolean;
+      result: { probes: { probe: string; status: string; hint: string | null }[] };
+    };
+    expect(value.command).toBe("doctor");
+    expect(value.ok).toBe(false);
+    for (const [name, expectedHint] of [["chrome_devtools_mcp", CHROME_DEVTOOLS_MCP_HINT], ["playwright_mcp", PLAYWRIGHT_MCP_HINT]]) {
+      const probe = value.result.probes.find((row) => row.probe === name);
+      expect(probe?.status).toBe(corrupt ? "DEFECT" : "MISSING_CONFIGURATION");
+      if (corrupt) {
+        expect(probe?.hint).toContain("修复 .mcp.json 语法");
+        expect(probe?.hint).not.toMatch(/@latest|npx/);
+      } else {
+        expect(probe?.hint).toBe(expectedHint);
+        expectBrowserRecoveryHint(probe?.hint ?? null);
+      }
+    }
+    expect(snapshot()).toEqual(before);
+  });
 });
 
 function passingReport(): DoctorReport {
@@ -210,10 +267,9 @@ describe("doctor 四态矩阵", () => {
     expect(mcp?.hint).toBe(CHROME_DEVTOOLS_MCP_HINT);
   });
 
-  it("一键提示文本含 mcpServers 与 chrome-devtools-mcp 安装指令（D22 一键引导）", () => {
-    expect(CHROME_DEVTOOLS_MCP_HINT).toContain("mcpServers");
-    expect(CHROME_DEVTOOLS_MCP_HINT).toContain("chrome-devtools-mcp");
-    expect(CHROME_DEVTOOLS_MCP_HINT).toContain(".mcp.json");
+  it("Chrome DevTools hint recommends explicit locked prepare and check, never manual latest config", () => {
+    expectBrowserRecoveryHint(CHROME_DEVTOOLS_MCP_HINT);
+    expect(CHROME_DEVTOOLS_MCP_HINT).toContain("Chrome DevTools MCP");
   });
 
   it("注入 kernel 全 pass + mcp READY → 全探针 READY，ok=true", async () => {
@@ -421,10 +477,9 @@ describe("probePlaywrightMcp 独立探测（P-v06 批次 2.6 Browser Eyes）", (
     expect(probe.status).toBe("DEFECT");
   });
 
-  it("一键提示文本含 mcpServers 与 @playwright/mcp 安装指令（D22 同款一键引导）", () => {
-    expect(PLAYWRIGHT_MCP_HINT).toContain("mcpServers");
-    expect(PLAYWRIGHT_MCP_HINT).toContain("@playwright/mcp");
-    expect(PLAYWRIGHT_MCP_HINT).toContain(".mcp.json");
+  it("Playwright hint recommends explicit locked prepare and check, never manual latest config", () => {
+    expectBrowserRecoveryHint(PLAYWRIGHT_MCP_HINT);
+    expect(PLAYWRIGHT_MCP_HINT).toContain("Playwright MCP");
   });
 
   it("runDoctor 矩阵含 playwright_mcp 行：空目录 → MISSING_CONFIGURATION（与 chrome_devtools_mcp 并存各自显式）", async () => {

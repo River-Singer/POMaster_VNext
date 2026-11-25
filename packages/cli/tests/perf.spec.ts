@@ -210,7 +210,7 @@ const dockerUpSpawn: SitSpawn = (command, args) => {
   return null;
 };
 
-const mvnOkSpawn: SitSpawn = (command, args) => {
+const mvnOkSpawn: SitSpawn = (command) => {
   if (command !== "mvn") return null;
   return okOut("");
 };

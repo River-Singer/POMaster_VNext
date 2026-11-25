@@ -413,8 +413,15 @@ async function readPermitLedger(
   let raw: string;
   try {
     raw = await readFile(permitsFilePath(rootDir), "utf8");
-  } catch {
-    return { permits: [] };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { permits: [] };
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `state/permits.json 不可读取：${error instanceof Error ? error.message : String(error)}`,
+        hint: `恢复 kernel 维护的 ${toPosix(PERMITS_RELATIVE)} 文件及读取权限后重试；读取故障不视为许可缺席。`,
+      },
+    };
   }
   let parsed: unknown;
   try {
@@ -466,8 +473,15 @@ async function readJournalEvents(
   let raw: string;
   try {
     raw = await readFile(journalFilePath(rootDir), "utf8");
-  } catch {
-    return { events: [] };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { events: [] };
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `state/journal.jsonl 不可读取：${error instanceof Error ? error.message : String(error)}`,
+        hint: `恢复 kernel 维护的 ${toPosix(JOURNAL_RELATIVE)} 追加流及读取权限后重试；读取故障不视为空事件链。`,
+      },
+    };
   }
   const events: Record<string, unknown>[] = [];
   for (const line of raw.split("\n")) {

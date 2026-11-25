@@ -34,6 +34,14 @@
 import {
   type Store,
   type TransactionOp,
+  type Transaction,
+  sha256OfCanonical,
+  breakGlassConfirmationSubject,
+  transactionMutationSubjects,
+  loadStoreReadOnly,
+  prepareTruthBodyAdvance,
+  listExecutionRecords,
+  readExecutionRecordById,
   GovernanceError,
   GovernedIdParseError,
   applyTransaction,
@@ -43,6 +51,8 @@ import {
 } from "@pomaster/kernel";
 import { buildStorePaths } from "@pomaster/kernel";
 import { runContextCompile } from "./context.js";
+import { verifySignoff, type TrustEnv } from "./trust.js";
+import { bootstrapTrustedWrites } from "./trusted-write-bootstrap.js";
 import { loadOpsFile } from "./compact.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -64,6 +74,38 @@ import {
 export const MAINTAIN_PHASES = ["pre-dev"] as const;
 
 export type MaintainPhase = (typeof MAINTAIN_PHASES)[number];
+
+export interface BreakGlassSpec {
+  readonly ops: readonly TransactionOp[];
+  readonly subjectIds: readonly string[];
+  readonly issuedAtSeq: number;
+  readonly expiresAtSeq: number;
+  readonly nonce: string;
+}
+export function breakGlassSubject(spec: BreakGlassSpec): { ref: string; sha256: string } {
+  const subject = breakGlassConfirmationSubject(spec.ops, spec);
+  return { ref: subject.ref, sha256: subject.sha256 };
+}
+/** Pure SSH verification, deliberately not an authorization token accepted by applyTransaction. */
+export function verifyBreakGlass(root: string, signoff: string, spec: BreakGlassSpec, currentSeq: number, env: TrustEnv = {}) {
+  const invalid = (message: string) => ({ ok: false as const, error: { code: "BREAK_GLASS_INVALID", message, hint: "Bind exact operations, exact scope, unique nonce and 1..3 sequence beats; human SSH signature TTL is at most five minutes." } });
+  if (!Number.isInteger(spec.issuedAtSeq) || !Number.isInteger(spec.expiresAtSeq) || spec.expiresAtSeq - spec.issuedAtSeq < 1 || spec.expiresAtSeq - spec.issuedAtSeq > 3 || currentSeq < spec.issuedAtSeq || currentSeq >= spec.expiresAtSeq || spec.nonce.length < 8) return invalid("Invalid emergency TTL or nonce");
+  const verified = verifySignoff(root, signoff, { kind: "accept", ...breakGlassSubject(spec) }, { consume: false, env });
+  if (!verified.ok) return verified;
+  const targets = transactionMutationSubjects(loadStoreReadOnly(root), { ops: spec.ops });
+  if (targets.length === 0 || sha256OfCanonical(targets) !== sha256OfCanonical([...new Set(spec.subjectIds)].sort())) return invalid("Emergency scope differs from kernel-derived operation targets");
+  const issued = Date.parse(verified.request.issued_at), expires = Date.parse(verified.request.expires_at), now = (env.now ?? (() => new Date()))().getTime();
+  if (!Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued || expires - issued > 300_000 || now < issued || now >= expires || verified.record.assurance === "self_attested") return invalid("Emergency signature must be human, current, and short-lived");
+  return { ok: true as const, record: verified.record, subject: breakGlassSubject(spec) };
+}
+
+/** Truth-body review uses the same trusted bootstrap and atomic transaction as maintain --ops. */
+export async function runTruthBodyAdvance(root: string, input: Parameters<typeof prepareTruthBodyAdvance>[1], attribution: Pick<Transaction, "executionId" | "permitRef"> = {}) {
+  bootstrapTrustedWrites();
+  const store = loadStoreReadOnly(root);
+  const record = prepareTruthBodyAdvance(store, input);
+  return applyTransaction(store, { ...attribution, ops: [{ op: "record_advance", record }] });
+}
 
 /** PROMOTED knowledge → POLICY.* 登记建议条目（vNext Batch 2 R4/D9 呈现位）。 */
 export interface PolicyRegistrationSuggestion {
@@ -160,6 +202,11 @@ export interface MaintainInput {
    * TX_APPLIED journal 事件与结果回读；缺席 = 事务无身份盖章（显式呈现，不伪造）。
    */
   readonly executionId?: string;
+  readonly permitRef?: string;
+  readonly newEntity?: Transaction["newEntity"];
+  /** No bypass: signed requests remain denied until the kernel commit bridge exists. */
+  readonly breakGlassSignoff?: string;
+  readonly breakGlassSpec?: BreakGlassSpec;
   /** pre-dev 链模式。 */
   readonly phase?: string;
   /** pre-dev 链：permit 范围对象（≥1；closed-world 校验）。 */
@@ -304,8 +351,32 @@ async function runMaintainApply(
   // 事务级执行身份盖章（P21-Enforcement）：--execution-id 携带即透传 kernel 校验
   // （词形/档案存在性；S1 禁自造身份）并盖进 TX_APPLIED journal 事件（§25.4 审计
   // 问题「哪个 Agent……做了哪次变化」在 maintain 通路的兑现位）。
-  const tx = {
+  const paths = buildStorePaths(rootDir);
+  try {
+    const active = listExecutionRecords(paths).filter(record => record.ended_at === null);
+    const execution = input.executionId === undefined ? null : readExecutionRecordById(paths, input.executionId);
+    if (input.executionId !== undefined && execution === null) {
+      return failMaintain({ code: "EXECUTION_NOT_FOUND", message: `Execution is not registered: ${input.executionId}`, hint: "Use an existing registered execution; do not invent an identity." }, empty, "permit attribution");
+    }
+    if (input.breakGlassSignoff === undefined && (active.length > 0 || input.executionId !== undefined) && (input.executionId === undefined || input.permitRef === undefined)) {
+      return failMaintain({ code: "PERMIT_ATTRIBUTION_REQUIRED", message: "Governed maintain requires explicit executionId and permitRef", hint: "Select the execution and its in-scope permit; no implicit cross-execution permit union." }, empty, "permit attribution");
+    }
+    if (execution !== null) {
+      if (execution.ended_at !== null || (input.breakGlassSignoff === undefined && !execution.permit_ids.includes(input.permitRef!))) {
+        return failMaintain({ code: "PERMIT_SCOPE_DENIED", message: "Permit is not attached to the selected active execution", hint: "Return to FRAMEWORK LOCK; do not borrow another execution's permit." }, empty, "permit attribution");
+      }
+    }
+    if (input.breakGlassSignoff !== undefined || input.breakGlassSpec !== undefined) {
+      if (input.breakGlassSignoff === undefined || input.breakGlassSpec === undefined || sha256OfCanonical(input.breakGlassSpec.ops) !== sha256OfCanonical(ops)) {
+        return failMaintain({ code: "TRUST_SIGNOFF_MISMATCH", message: "Emergency request must bind these exact operations", hint: "Prepare an exact signed statement; Boolean bypass is unsupported." }, empty, "break-glass");
+      }
+    }
+  } catch (error) { return failMaintain(kernelErrorOf(error), empty, "permit attribution"); }
+  const tx: Transaction = {
     ops,
+    ...(input.breakGlassSignoff !== undefined && input.breakGlassSpec !== undefined ? { breakGlass: { signoffRef: input.breakGlassSignoff, subjectIds: input.breakGlassSpec.subjectIds, issuedAtSeq: input.breakGlassSpec.issuedAtSeq, expiresAtSeq: input.breakGlassSpec.expiresAtSeq, nonce: input.breakGlassSpec.nonce } } : {}),
+    ...(input.permitRef !== undefined ? { permitRef: input.permitRef } : {}),
+    ...(input.newEntity !== undefined ? { newEntity: input.newEntity } : {}),
     ...(authorityRef !== undefined ? { authorityRef } : {}),
     ...(note !== undefined ? { note } : {}),
     ...(input.executionId !== undefined ? { executionId: input.executionId } : {}),
@@ -315,6 +386,7 @@ async function runMaintainApply(
   let changedObjectIds: readonly string[];
   let digestWarnings: readonly string[];
   try {
+    bootstrapTrustedWrites();
     const result = await applyTransaction(store, tx);
     appliedSeq = result.appliedSeq;
     shortCircuited = result.shortCircuited;
@@ -328,7 +400,7 @@ async function runMaintainApply(
   const warnings: CliWarning[] = digestWarnings.map((warning) => ({
     code: "DIGEST_WARNING",
     message: warning,
-    hint: "D24：digest 失配 = WARN + auto-regen（永不阻断写入）；如非预期请对账 git 防篡改。",
+    hint: "Review observed digest drift and its required legal-advance evidence; invalid external bodies remain blocked by kernel validation.",
   }));
   const opsCounts: Record<string, number> = {};
   for (const op of ops) {

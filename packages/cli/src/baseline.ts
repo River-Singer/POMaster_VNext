@@ -234,6 +234,9 @@
  */
 
 import { writeFile } from "node:fs/promises";
+import { readFileSync, realpathSync, statSync } from "node:fs";
+import { resolve, relative, isAbsolute, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { TruthIndex } from "@pomaster/kernel";
 import { load as loadYaml } from "js-yaml";
 import { GovernanceError, buildStorePaths, createStore, listActiveRetirements, loadTruthIndex, sha256OfCanonical, sha256OfUtf8 } from "@pomaster/kernel";
@@ -410,6 +413,10 @@ type StackYamlParse =
   | { readonly ok: false; readonly detail: string };
 
 /** 值段的行尾注释剥离（仅「空格+#」触发——不吞 C#/c++ 类词内井号）。 */
+function serializeStackValue(value: string): string {
+  return STACK_VALUE_PATTERN.test(value) && !value.includes(" #") && !/^(?:true|false|null|yes|no|on|off|[0-9]+)$/i.test(value) ? value : JSON.stringify(value);
+}
+
 function stripTrailingComment(rawValue: string): string {
   const idx = rawValue.indexOf(" #");
   return idx >= 0 ? rawValue.slice(0, idx) : rawValue;
@@ -455,7 +462,15 @@ function parseStackYaml(
     if (rawValue.startsWith("|") || rawValue.startsWith(">")) {
       return { ok: false, detail: `键 ${key} 为块标量形态，行级写法不支持` };
     }
-    values.set(key, stripTrailingComment(rawValue).trim());
+    let value = stripTrailingComment(rawValue).trim();
+    if (rawValue.trim().startsWith('"') || rawValue.trim().startsWith("'")) {
+      try {
+        const scalar: unknown = loadYaml(rawValue);
+        if (typeof scalar !== "string") return { ok: false, detail: `键 ${key} 不是字符串值` };
+        value = scalar;
+      } catch { return { ok: false, detail: `键 ${key} 的引号值不可解析` }; }
+    }
+    values.set(key, value);
     lineOf.set(key, i);
   }
   for (const key of expectedKeys) {
@@ -1366,7 +1381,7 @@ export async function applyStackAnswers(
     for (const answer of laneAnswers) {
       const lineIndex = parse.parsed.lineOf.get(answer.key);
       if (lineIndex === undefined) continue; // 键集闸在上游（问卷只产在册键）；防御性跳过
-      replaceLinePreservingEol(lines, lineIndex, `${answer.key}: ${answer.value}`);
+      replaceLinePreservingEol(lines, lineIndex, `${answer.key}: ${serializeStackValue(answer.value)}`);
       applied += 1;
       stackChanged = true;
     }
@@ -1614,7 +1629,7 @@ async function baselineSetAttempt(
         ),
       );
     }
-    replaceLinePreservingEol(lines, lineIndex, `${input.key}: ${input.value}`);
+    replaceLinePreservingEol(lines, lineIndex, `${input.key}: ${serializeStackValue(input.value)}`);
     nextStack = lines.join("\n");
     // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
     // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
@@ -1754,14 +1769,7 @@ export async function runBaselineSet(
       input,
     );
   }
-  if (!STACK_VALUE_PATTERN.test(input.value)) {
-    return failBaselineSet(
-      "SCHEMA_INVALID",
-      `值词形非法：${input.value}（允许 [A-Za-z0-9] 起始、[A-Za-z0-9 _./+#()-]、≤${STACK_VALUE_MAX_LENGTH} 字符）`,
-      "示例：--value vue3、--value 'Spring Boot'、--value none",
-      input,
-    );
-  }
+  // Values are safely serialized, not lexically blocked; catalog judgement belongs at consumption.
   if (readRetiredBaselineTargets(rootDir).includes(baselineStackTarget(lane))) {
     return failBaselineSet(
       "BASELINE_TARGET_RETIRED",
@@ -2396,6 +2404,83 @@ export function baselineAuthorityText(target: string, text: string): string {
  */
 export type BaselineTargetJudgement = "match" | "bytes-only" | "supplement" | "drift";
 
+export interface BaselineContentFinding extends CliWarning { readonly target: string; readonly section?: string; }
+function baselineSections(text: string): Map<string, string> {
+  const sections = new Map<string, string>();
+  let heading = "", fence = "";
+  for (const line of normalizeBaselineText(text).split("\n")) {
+    const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker) { fence = fence ? "" : marker[0]!; continue; }
+    if (!fence && /^##\s+/.test(line)) { heading = line.replace(/^##\s+/, "").trim(); if (!sections.has(heading)) sections.set(heading, ""); }
+    else if (heading) sections.set(heading, `${sections.get(heading) ?? ""}${line}\n`);
+  }
+  return sections;
+}
+function directoryMentions(text: string): string[] {
+  return [...new Set([...text.matchAll(/`([^`\n]+)`|(?:^|\s)((?:src|app|apps|packages|frontend|backend|services)\/[A-Za-z0-9_./-]+)/gm)].map(match => (match[1] ?? match[2] ?? "").replace(/\/$/, "")).filter(path => path.includes("/") && !path.includes(" ") && !path.includes("://")))];
+}
+/** Required H2s come from packaged seeds; new content findings remain advisory during rollout. */
+export function assessBaselineContent(root: string, target: string, text: string): BaselineContentFinding[] {
+  const findings: BaselineContentFinding[] = [];
+  const add = (code: string, message: string, section?: string) => findings.push({ code, message, hint: "Complete the authoritative baseline section/value; supplement suggestions are not adopted stack facts.", target, ...(section !== undefined ? { section } : {}) });
+  if (!(BASELINE_CONFIRM_TARGETS as readonly string[]).includes(target)) { add("BASELINE_CONTENT_TARGET_INVALID", `Unknown baseline target: ${target}`); return findings; }
+  const lane = /^baseline\/(frontend|backend)\/stack\.yaml$/.exec(target)?.[1] as BaselineLane | undefined;
+  if (lane) {
+    try {
+      const values: unknown = loadYaml(text);
+      if (!values || typeof values !== "object" || Array.isArray(values)) throw new Error("Expected a mapping");
+      for (const question of STACK_QUESTIONS.filter(question => question.lane === lane)) {
+        const value = (values as Record<string, unknown>)[question.key];
+        if (typeof value !== "string" || !value.trim() || /^(UNKNOWN|TODO|TBD)$/i.test(value.trim())) add("BASELINE_STACK_VALUE_INCOMPLETE", `${target}:${question.key} requires a completed string value`);
+        else if (!question.options.includes(value.toLowerCase()) && !/^(none|not_applicable|n\/a)$/i.test(value)) add("BASELINE_STACK_VALUE_UNKNOWN", `${target}:${question.key}: ${value} is outside the existing stack candidate catalog`);
+      }
+    } catch { add("BASELINE_STACK_INVALID", `${target} is not a valid stack mapping`); }
+    return findings;
+  }
+  if (!target.endsWith(".md")) return findings;
+  let seed: string;
+  try { seed = readFileSync(fileURLToPath(new URL(`../seeds/${target}`, import.meta.url)), "utf8"); }
+  catch { add("BASELINE_CONTENT_SPEC_MISSING", `Packaged baseline section contract missing: ${target}`); return findings; }
+  const sections = baselineSections(text);
+  for (const heading of baselineSections(seed).keys()) {
+    const body = sections.get(heading);
+    if (body === undefined) { add("BASELINE_SECTION_MISSING", `${target}: missing H2 ${heading}`, heading); continue; }
+    const values = body.replace(/<!--[\s\S]*?-->/g, "").split("\n").map(line => line.trim()).filter(line => !/^[-*]?\s*填写指引\s*[:：]/.test(line) && !/^#{1,6}\s/.test(line)).map(line => line.replace(/^(?:[-*]\s*)?起步值\s*[:：]\s*/, "")).filter(Boolean);
+    if (values.length === 0 || values.some(line => /^(?:[-*]\s*)?(?:UNKNOWN|TODO|TBD|待填写|待补充|\.\.\.|…)[.!。]?$/i.test(line))) add("BASELINE_SECTION_INCOMPLETE", `${target}: ${heading} has no complete authoritative value`, heading);
+    if (heading === "Layers" || heading === "Layer" || heading.includes("目录模板")) {
+      const paths = directoryMentions(values.join("\n"));
+      if ((heading === "Layers" || heading === "Layer") && paths.length === 0) add("BASELINE_LAYER_DIRECTORY_UNDECLARED", `${target}: ${heading} has no declared directory anchors`, heading);
+      let declared: string[] | null = null;
+      if (heading === "Layers" || heading === "Layer") {
+        try { const directoryTarget = target.replace("architecture.md", "directory-structure.md"); declared = directoryMentions(baselineAuthorityText(directoryTarget, readFileSync(resolve(root, ".pomaster", directoryTarget), "utf8"))); } catch { /* Original confirmation gate handles missing assets. */ }
+      }
+      for (const path of paths) {
+        if (declared !== null && !declared.includes(path)) add("BASELINE_LAYER_DIRECTORY_UNDECLARED", `${path} is not declared in directory-structure.md`, heading);
+        try {
+          const actual = realpathSync(resolve(root, path)), rel = relative(realpathSync(root), actual);
+          if (isAbsolute(path) || isAbsolute(rel) || rel === ".." || rel.startsWith(`..${sep}`) || !statSync(actual).isDirectory()) throw new Error("Outside/missing directory");
+        } catch { add("BASELINE_LAYER_DIRECTORY_MISSING", `${target}: ${path} is not an existing project directory`, heading); }
+      }
+    }
+  }
+  for (const [heading, body] of sections) {
+    if ((heading.startsWith("补充") || heading.includes("PRESET-DRAFT")) && (/(?:framework|language|build|router|state|grid|ui|css|testing|persistence|database|cache)\s*[:：=]/i.test(body) || /(?:技术栈|选型|stack)\s*[:：=]|改用\s*[A-Za-z]|\b(?:vuex|vue3|react|spring|mysql|redis|tailwind)\b/i.test(body))) add("BASELINE_SUPPLEMENT_STACK_SUGGESTION", `${target}: ${heading} contains unadopted stack suggestions (warning only)`, heading);
+  }
+  return findings;
+}
+export function baselineContentWarnings(root: string, dependency?: BaselineDependencyDeclaration): CliWarning[] {
+  const retired = new Set(readRetiredBaselineTargets(root)), relevant = dependency ? new Set(dependency.relevant_targets) : null;
+  const findings: CliWarning[] = [];
+  for (const target of BASELINE_CONFIRM_TARGETS) {
+    if (retired.has(target)) continue;
+    try {
+      const text = readFileSync(resolve(root, ".pomaster", target), "utf8");
+      findings.push(...assessBaselineContent(root, target, text).map(finding => relevant !== null && !relevant.has(target) ? { ...finding, message: `Excluded target (advisory): ${finding.message}` } : finding));
+    } catch { /* Existing confirmation gate owns unreadable asset errors. */ }
+  }
+  return findings;
+}
+
 export function judgeBaselineTargetText(
   record: BaselineConfirmedRecord,
   target: string,
@@ -2662,6 +2747,15 @@ async function appendBaselineAckJournalEvent(
 export async function runBaselineConfirm(
   rootDir: string,
   input: BaselineConfirmInput = {},
+): Promise<CommandOutcome<BaselineConfirmResult>> {
+  const outcome = await confirmBaselineSnapshot(rootDir, input);
+  const findings = baselineContentWarnings(rootDir);
+  return { ...outcome, warnings: [...outcome.warnings, ...findings], human: [...outcome.human, ...findings.map(finding => `  ${finding.code}: ${finding.message}`)] };
+}
+
+async function confirmBaselineSnapshot(
+  rootDir: string,
+  input: BaselineConfirmInput,
 ): Promise<CommandOutcome<BaselineConfirmResult>> {
   // —— 1. 通道旗标静态判卷（互斥 + 必配 + 词形；零 io 即决）——
   if (input.change !== undefined && (input.ackDrifted === true || input.note !== undefined)) {
@@ -3103,6 +3197,7 @@ export async function baselineGateAssessment(
           warnings: [],
         };
   }
+  const contentWarnings = baselineContentWarnings(rootDir, dependency);
   if (read.kind === "manifest-unreadable") {
     return {
       errors: [
@@ -3112,7 +3207,7 @@ export async function baselineGateAssessment(
           hint: "检查文件权限后重试；baseline manifest 损坏时从 git 恢复——closeout 判卷分母禁猜测。",
         },
       ],
-      warnings: [],
+      warnings: contentWarnings,
     };
   }
   if (read.kind === "record-invalid") {
@@ -3125,11 +3220,12 @@ export async function baselineGateAssessment(
           hint: "pomaster baseline confirm（前提：阻塞集清零——豁免登记行不阻塞）——确认记录与 digest 快照写入 baseline/manifest.yaml 后重跑 closeout。",
         },
       ],
-      warnings: [],
+      warnings: contentWarnings,
     };
   }
 
   const bytesOnlyWarnings: CliWarning[] = [
+    ...contentWarnings,
     ...(read.bytes_only.length > 0
       ? [
           {
@@ -3159,7 +3255,7 @@ export async function baselineGateAssessment(
             hint: `终结变更批: pomaster baseline confirm --change ${read.record.pending?.change_ref}（携同 ref 全量重快照）后重跑 closeout。`,
           },
         ],
-        warnings: [],
+        warnings: bytesOnlyWarnings,
       };
     }
     if (read.state === "drifted") {

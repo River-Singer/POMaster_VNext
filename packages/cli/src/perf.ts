@@ -18,9 +18,9 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statS
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { failOutcome, okOutcome, type CliError, type CommandOutcome, type CliWarning } from "./envelope.js";
-import { probeMavenVersion, SPAWN_MAX_BUFFER_BYTES } from "@pomaster/gauntlet-lite";
+import { probeMavenVersion } from "@pomaster/gauntlet-lite";
 import { fieldValue, loadSitManifest, makeSitIo, startBackendApps, waitAppHealthy, SIT_APP_PORTS, type SitEnvPointer, type SitIo } from "./sit.js";
-import type { NormalizedDomainSpec, NormalizedEntity, NormalizedField } from "./scaffold-spec.js";
+import type { NormalizedDomainSpec, NormalizedEntity } from "./scaffold-spec.js";
 
 // ============================================================
 // 锚定词形（code-spec §2）

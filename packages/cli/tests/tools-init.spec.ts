@@ -114,10 +114,13 @@ describe("tools init：诚实缺席", () => {
 
   it("探测到但没有受信 adapter 的工具只列出；--dry-run 不写文件", () => {
     writePackage({ vitest: "^3.2.4", "@playwright/test": "^1.54.0" });
-    writeFileSync(join(dir, "pom.xml"), "<project/>", "utf8");
-    const outcome = runToolsInit(dir, { dryRun: true });
+    // BE-1：pom.xml 已被 maven-surefire 受信 adapter 覆盖（不再入未覆盖清单）；
+    // 未覆盖机制用 Gradle 文件继续测。
+    writeFileSync(join(dir, "build.gradle"), "plugins { id 'java' }\n", "utf8");
+    const outcome = runToolsInit(dir, { dryRun: true, mavenProbe: () => "3.9.6" });
+    // 无 pom.xml → maven 腿不登记（build.gradle 仍只在未覆盖清单）
     expect(outcome.result?.added.map((row) => row.id)).toEqual(["project.test.vitest"]);
-    expect(outcome.result?.uncovered).toEqual(["Playwright（浏览器 E2E）", "Maven（Java 构建与测试）"]);
+    expect(outcome.result?.uncovered).toEqual(["Playwright（浏览器 E2E）", "Gradle（Java / Kotlin 构建与测试）"]);
     expect(outcome.human.join("\n")).toContain("tool_gap");
     expect(existsSync(registry())).toBe(false);
   });
@@ -129,5 +132,42 @@ describe("tools init：诚实缺席", () => {
     expect(code).toBe(0);
     expect((JSON.parse(out.join("\n")) as { result: { dry_run: boolean; added: unknown[] } }).result).toMatchObject({ dry_run: true, added: [expect.anything()] });
     expect(existsSync(registry())).toBe(false);
+  });
+});
+
+
+describe("tools init：Maven 项目（BE-1 pom.xml 识别）", () => {
+  it("pom.xml 在座 + 探针供给版本锚 → maven-surefire 登记（mvn 直跑命令，不套包管理器前缀）；Maven 移出未覆盖清单", () => {
+    writeFileSync(join(dir, "pom.xml"), "<project><build></build></project>\n", "utf8");
+    const outcome = runToolsInit(dir, { mavenProbe: () => "3.9.6" });
+    expect(outcome.ok, outcome.human.join("\n")).toBe(true);
+    const rows = bindings().map((b) => [b.id, b.tool, b.tool_version_anchor, b.execution.command]);
+    expect(rows).toContainEqual(["project.test.maven-surefire", "gauntlet:maven-surefire", "3.9.6", "mvn -B test"]);
+    expect(outcome.result?.uncovered.some((label) => label.includes("Maven"))).toBe(false);
+    // 保留已有登记：重跑（探针缺席也不动既有绑定）
+    const second = runToolsInit(dir, { mavenProbe: () => null });
+    expect(second.ok).toBe(true);
+    expect(second.result?.kept).toContain("project.test.maven-surefire");
+  });
+
+  it("探针失败（mvn 不可执行）→ 如实跳过不登记；缺 pom.xml 不入 maven 面", async () => {
+    writeFileSync(join(dir, "pom.xml"), "<project></project>\n", "utf8");
+    const outcome = runToolsInit(dir, { mavenProbe: () => null });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result?.skipped.map((row) => [row.tool, row.reason])).toContainEqual([
+      "maven-surefire",
+      "mvn 不可执行（版本锚探测失败）——安装 Maven 或修正 PATH 后重跑",
+    ]);
+    // 无 JS 工具在座 → 一个都探测不到不写注册面（既有缺席语义）；maven-surefire 绝不登记
+    expect(existsSync(registry())).toBe(false);
+
+    const noPom = mkdtempSync(join(tmpdir(), "pomaster-tools-nopom-"));
+    try {
+      await runInit(noPom);
+      const outcome2 = runToolsInit(noPom, { mavenProbe: () => "3.9.6" });
+      expect(outcome2.result?.added.some((row) => row.id === "project.test.maven-surefire")).toBe(false);
+    } finally {
+      rmSync(noPom, { recursive: true, force: true });
+    }
   });
 });

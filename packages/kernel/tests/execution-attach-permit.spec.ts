@@ -109,8 +109,9 @@ describe("attachPermit（在途执行追加许可）", () => {
 
   it("许可到期 → PERMIT_EXPIRED（PERMIT_ATTACH_EXPIRED）；许可缺席 → PERMIT_NOT_FOUND；执行缺席 → EXECUTION_NOT_FOUND；空 reason → SCHEMA_INVALID", async () => {
     const ref = await permit(1);
-    const execution = await beginExecution(store, { ...BASE, startedAt: "2026-10-30T00:00:00.000Z" });
-    await applyTransaction(store, { ops: [{ op: "append_denominator", entry: denominatorEntry() as never }] });
+    const writePermit = await issuePermit(store, { subjectIds: [gid("DENOMINATOR.PAGE.V1_SURFACE")], requestedBy: HUMAN, ttlBeats: 10 });
+    const execution = await beginExecution(store, { ...BASE, permitIds: [writePermit.permitRef], startedAt: "2026-10-30T00:00:00.000Z" });
+    await applyTransaction(store, { executionId: execution.execution_id, ops: [{ op: "append_denominator", entry: denominatorEntry() as never }] });
     const bytes = executionBytes(execution.execution_id);
     await expect(attachPermit(store, execution.execution_id, ref, HUMAN, "补挂")).rejects.toMatchObject({
       code: "PERMIT_EXPIRED",

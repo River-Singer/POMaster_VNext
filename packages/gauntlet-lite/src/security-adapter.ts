@@ -56,7 +56,6 @@ import { absenceRecord, assertCommonGates } from "./normalize-common.js";
 import { resolveGateTier } from "./coverage-adapter.js";
 import { securitySpawn } from "./security-leg.js";
 import {
-  DEFAULT_SECURITY_FAIL_ON,
   DEFAULT_SECURITY_TIMEOUT_MS,
   DEPENDENCY_CHECK_METRIC_DIALECT,
   DEPENDENCY_CHECK_TOOL_ID,

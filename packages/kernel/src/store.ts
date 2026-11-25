@@ -3,9 +3,9 @@
  *
  * 全局纪律落点：
  * - D24：body_sha256 / content_digest / inputs_fingerprint / vocab 指纹全部由事务自动
- *   维护（human_touch=forbidden）；digest 失配/手改 → digestWarnings（WARN + auto-regen
- *   hint）并自动重算覆盖，**永不阻断写入**（write_blocking=false）；digest 只服务
- *   identity / 短路重跑 / 防篡改抽验。
+ *   维护（human_touch=forbidden）；digest 失配不自行判非法。正文失配先复验内容，合法
+ *   内容 WARN + auto-regen + OUT_OF_BAND_EDIT_OBSERVED；非法内容整事务零落盘。
+ *   digest 只服务 identity / 短路重跑 / 防篡改抽验，不是调用方可签发的写权限。
  * - A4 幂等：seq/rev 单调分配（禁墙钟）；同 inputs 重放（inputs_fingerprint 相等）
  *   → shortCircuited=true 零写入（字节稳定）；无有效变化的同内容重写同样零写入
  *   （rev 不空转递增，GOLDEN-L8-4）。
@@ -19,9 +19,8 @@
  *   CONCURRENT_WRITE_DETECTED 显式失败；绝不静默丢事务（Owner 2026-11-06：非事实冲突不拦截）。
  * - vocab_lock 指纹：内容满足当前词表（schema 校验通过）时指纹漂移只是元数据过期 → 放行，
  *   下一次事务迁移到当前指纹并 WARN；内容不满足当前词表才 VOCAB_MISMATCH。
- * - A2 journal 纪律：TX_APPLIED 在 staged 批提交成功后 appendLine 原子追加
- *   （locks/execution/session 同款；RMW 覆写会把并发 appendLine 家族刚写的整行抹掉）。
- *   「index 先行、journal 缺行」= 可检出残态，比「journal 有幽灵行、index 未提交」诚实。
+ * - A2 journal：staged 批后 O_APPEND 追加，保留其他事件生产者；pending intent
+ *   绑定 nonce / 文件 / journal 的中断恢复，仅同一完整事务可重放。
  * - A3 证据防线：record_claim / record_gate_run 写前查既有文件——canonical 内容等价
  *   → 幂等短路（零写入零 journal）；内容不同 → EVIDENCE_ALREADY_EXISTS 拒绝
  *   （record 通道无权覆写既有证据，D20：禁翻转 verdict / 禁打回 UNVERIFIED）。
@@ -36,7 +35,9 @@
  * - A5 提交前复验：事务产出先过 01 schema 再落盘——op 层漏检的非法产出在此拦截
  *   （防 store 变砖：非法索引一旦落盘，后续一切读写 SCHEMA_INVALID 只能从 git 恢复）。
  */
-import { readdirSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, ftruncateSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { createHash } from "node:crypto";
 import * as ajvModule from "ajv";
 import type { ValidateFunction } from "ajv";
 import {
@@ -65,7 +66,6 @@ import {
   type DigestScopeInput,
 } from "./digest.js";
 import {
-  appendLine,
   captureOriginal,
   ensureDir,
   executeWrites,
@@ -78,8 +78,12 @@ import { assertEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { EVIDENCE_PURPOSE_VALUES, assertRunSourceSnapshot } from "./source-snapshot.js";
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
-import { loadAuthorityMap } from "./permits.js";
-import { assertExecutionAttachable } from "./execution.js";
+import { loadAuthorityMap, checkPermit, readPermitsFile, preparePermitIssue } from "./permits.js";
+import { assertExecutionAttachable, listExecutionRecords, readExecutionRecordById } from "./execution.js";
+import { assertKeybindingRow, assertPersistedSignoff, hasPersistedSignoffState, keybindingConfirmationSubject, physicalKeybindingAnchor, probeKeybinding, readKeybindings, type KeybindingRow, type PersistedSignoffExpectation } from "./keybindings.js";
+import { runNewEntityGate } from "./new-entity.js";
+import { loadCatalogArchetypes, readCatalogLock, resolveCatalogRoot, sha256OfUtf8, verifyCatalogLock, LOCK_FILE_NAME } from "./catalog.js";
+import { prepareRelationEntry, readRelations } from "./relations.js";
 import { gateResultToSnake } from "./gate-result.js";
 import { readAuthorityFaces } from "./authority.js";
 import {
@@ -89,6 +93,7 @@ import {
   advancePathOf,
   advancesDirOf,
   isRetired,
+  listAdvanceFiles,
   listAdvanceRecords,
   nextAdvanceId,
   parseAdvanceRecord,
@@ -99,16 +104,21 @@ import {
   type ReinstatementLedgerEntry,
   type RetirementLedgerEntry,
 } from "./advances.js";
-import { LANE_RETIREMENT_KINDS, validateAdvance, validateRetirements, type RetirementKind } from "./legal-advance.js";
+import { buildAdvance, buildRejudge, hexOf, LANE_RETIREMENT_KINDS, validateAdvance, validateRetirements, type RetirementKind, type VnextAnchor } from "./legal-advance.js";
 import { loadSourcesRegistry } from "./sources.js";
+import { readEquivalenceRegistry } from "./equivalence.js";
+import { resolveRefBatch } from "./ref-integrity.js";
 import type {
+  AdvanceRecordInput,
   AxesBlock,
   CreateStoreOptions,
   DenominatorEntry,
   GovernedId,
   LivenessSnapshot,
   ObjectEnvelopeInput,
+  ObjectKeyBindingInput,
   ObjectRow,
+  Permit,
   ProducerRecord,
   Store,
   Transaction,
@@ -643,6 +653,11 @@ interface TxWorkspace {
   readonly bodyOverlay: Map<string, UnknownRecord>;
   /** TX_APPLIED 之后追加的 journal 行（ADVANCE_RECORDED 等 op 级事件；A2 同纪律）。 */
   readonly journalTail: string[];
+  readonly consumptions?: Map<string, { next: string; signoff: string; expected: PersistedSignoffExpectation }>;
+  readonly intentSha256?: string;
+  readonly readOriginals?: Map<string, string | null>;
+  issuedPermit?: Permit;
+  plannerAdoptionVerified?: boolean;
 }
 
 function rowBodyPath(paths: StorePaths, bodyRef: string): string {
@@ -913,10 +928,139 @@ export const CONCURRENT_REPLAY_LIMIT = 3;
  * 即收敛——内核自动重放（≤ CONCURRENT_REPLAY_LIMIT 次）；重放时一切事实判卷（转移矩阵、
  * 权威闸、schema 复验……）照常对最新世代再跑一遍。连续冲突超过上限才显式失败。
  */
+interface PendingAdmission {
+  readonly pid: number;
+  readonly intent: string;
+  readonly transaction: Transaction;
+  readonly writes: FileWrite[];
+  readonly journal: string;
+  readonly journalBefore: string;
+  readonly consumptions: { path: string; next: string; signoff: string; expected: PersistedSignoffExpectation }[];
+}
+const pendingAdmissionPath = (paths: StorePaths) => resolve(paths.pomasterDir, "state/pending-admission.json");
+function assertAdmissionPath(paths: StorePaths, path: string): void {
+  const root = realpathSync(paths.pomasterDir);
+  const normalized = resolve(path), rel = relative(resolve(paths.pomasterDir), normalized);
+  if (isAbsolute(rel) || rel.startsWith("..")) throw new GovernanceError("SCHEMA_INVALID", "Admission path escapes store", "Restore the machine-generated pending transaction", {});
+  let ancestor = dirname(normalized);
+  while (!existsSync(ancestor)) ancestor = dirname(ancestor);
+  const physical = relative(root, realpathSync(ancestor));
+  if (isAbsolute(physical) || physical.startsWith("..")) throw new GovernanceError("SCHEMA_INVALID", "Admission path traverses an escaping symlink", "Keep persisted authority within the project store", {});
+}
+function rollbackAdmissionWrites(writes: FileWrite[]): void {
+  let conflict: GovernanceError | undefined;
+  for (const write of [...writes].reverse()) {
+    const current = captureOriginal(write.path);
+    if (current === write.original) continue;
+    if (current !== write.next) {
+      conflict ??= new GovernanceError("SCHEMA_INVALID", "Concurrent content prevents safe admission recovery", "Do not overwrite another writer; reconcile the pending exact intent", { path: write.path, reason_code: "ADMISSION_RECOVERY_REQUIRED" });
+      continue;
+    }
+    if (write.original === null) rmSync(write.path);
+    else executeWrites([{ path: write.path, next: write.original, original: write.next }]);
+  }
+  if (conflict !== undefined) throw conflict;
+}
+function rollbackAdmissionJournal(paths: StorePaths, chunk: string, before: string): void {
+  const journal = readFileSync(paths.journalPath), prefix = Buffer.from(before), batch = Buffer.from(chunk);
+  const reject = () => new GovernanceError("SCHEMA_INVALID", "Journal contains intervening content that cannot be safely removed", "Preserve other events and recover the pending exact intent", { reason_code: "ADMISSION_RECOVERY_REQUIRED" });
+  if (!journal.subarray(0, prefix.length).equals(prefix)) throw reject();
+  let at = journal.indexOf(batch, prefix.length);
+  if (at >= 0) {
+    if (at + batch.length !== journal.length || journal.indexOf(batch, at + 1) >= 0) throw reject();
+  } else {
+    // An interrupted append may end inside UTF-8 or inside any event of the batch.
+    for (let offset = prefix.length; offset < journal.length; offset++) {
+      if (offset > 0 && journal[offset - 1] !== 10) continue;
+      const suffix = journal.subarray(offset);
+      if (suffix.length < batch.length && batch.subarray(0, suffix.length).equals(suffix)) { at = offset; break; }
+    }
+    if (at < 0) {
+      if (journal.length === 0 || journal.at(-1) === 10) return;
+      throw reject();
+    }
+  }
+  const fd = openSync(paths.journalPath, "r+");
+  try {
+    if (!readFileSync(fd).equals(journal)) throw reject();
+    ftruncateSync(fd, at);
+  } finally { closeSync(fd); }
+}
+function recoverPendingAdmission(store: Store, tx: Transaction): void {
+  const paths = pathsOf(store), path = pendingAdmissionPath(paths);
+  const text = readText(path);
+  if (text === null) return;
+  let pending: PendingAdmission;
+  try { pending = JSON.parse(text) as PendingAdmission; } catch { throw new GovernanceError("SCHEMA_INVALID", "Pending admission is damaged", "Recover the exact original intent; never discard consumed authority", { reason_code: "ADMISSION_RECOVERY_REQUIRED" }); }
+  if (pending.intent !== sha256OfCanonical(tx) || sha256OfCanonical(pending.transaction) !== pending.intent || !Array.isArray(pending.writes) || !Array.isArray(pending.consumptions) || typeof pending.journal !== "string" || typeof pending.journalBefore !== "string" || !Number.isInteger(pending.pid) || pending.pid <= 0) throw new GovernanceError("SCHEMA_INVALID", "Only the exact interrupted transaction may recover", "Reapply the original operations, identity and signoff references", { reason_code: "ADMISSION_RECOVERY_REQUIRED" });
+  try { process.kill(pending.pid, 0); throw new GovernanceError("CONCURRENT_WRITE_DETECTED", "Admission owner is still active", "Retry after the current transaction finishes", {}); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error; }
+  for (const write of pending.writes) assertAdmissionPath(paths, write.path);
+  for (const consumed of pending.consumptions) {
+    assertAdmissionPath(paths, consumed.path);
+    if (resolve(consumed.path) !== resolve(paths.pomasterDir, "trust/consumed", `${consumed.signoff}.json`)) throw new GovernanceError("SCHEMA_INVALID", "Pending consumption path is invalid", "Restore the exact original transaction", {});
+    const current = captureOriginal(consumed.path);
+    if (current !== null && current !== consumed.next) throw new GovernanceError("SCHEMA_INVALID", "Nonce was consumed by another intent", "Never replace or steal a consumed nonce", { reason_code: "TRUST_SIGNOFF_REPLAYED" });
+    assertPersistedSignoff(store.rootDir, consumed.signoff, consumed.expected);
+  }
+  rollbackAdmissionJournal(paths, pending.journal, pending.journalBefore);
+  rollbackAdmissionWrites(pending.writes);
+  rmSync(path);
+}
+function assertAdmissionInputsUnchanged(workspace: TxWorkspace): void {
+  for (const [input, original] of workspace.readOriginals ?? []) {
+    if (captureOriginal(input) !== original) throw new GovernanceError("CONCURRENT_WRITE_DETECTED", "Admission input changed during validation", "Retry against the current persisted state", { path: input });
+  }
+}
+
+function commitAdmission(workspace: TxWorkspace, tx: Transaction, writes: FileWrite[], journal: string): void {
+  const path = pendingAdmissionPath(workspace.paths);
+  const pending: PendingAdmission = { pid: process.pid, intent: sha256OfCanonical(tx), transaction: tx, writes, journal, journalBefore: readText(workspace.paths.journalPath) ?? "", consumptions: [...(workspace.consumptions ?? [])].map(([path, consumption]) => ({ path, ...consumption })) };
+  for (const write of writes) assertAdmissionPath(workspace.paths, write.path);
+  for (const consumed of pending.consumptions) assertAdmissionPath(workspace.paths, consumed.path);
+  try { writeFileSync(path, `${JSON.stringify(pending)}\n`, { flag: "wx" }); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new GovernanceError("CONCURRENT_WRITE_DETECTED", "Another admission is in progress", "Retry the unchanged transaction", {}); throw error; }
+  const created: PendingAdmission["consumptions"] = [];
+  let effectsStarted = false;
+  let journalStarted = false;
+  try {
+    assertCommitSeqUnchanged(workspace.paths, workspace.curSeq);
+    assertAdmissionInputsUnchanged(workspace);
+    for (const consumed of pending.consumptions) {
+      ensureDir(dirname(consumed.path));
+      let fd: number;
+      try { fd = openSync(consumed.path, "wx"); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new GovernanceError("SCHEMA_INVALID", "Nonce was concurrently consumed", "Never overwrite another consumer", { reason_code: "TRUST_SIGNOFF_REPLAYED" }); throw error; }
+      created.push(consumed);
+      try { writeFileSync(fd, consumed.next, "utf8"); } finally { closeSync(fd); }
+    }
+    for (const write of writes) {
+      if (captureOriginal(write.path) !== write.original) throw new GovernanceError("CONCURRENT_WRITE_DETECTED", "Admission input changed before commit", "Retry against the current persisted state", { path: write.path });
+    }
+    effectsStarted = true;
+    // One swap per call keeps cross-file rollback in the ownership-checked admission path.
+    for (const write of writes) executeWrites([write]);
+    journalStarted = true;
+    appendFileSync(workspace.paths.journalPath, journal, "utf8");
+    rmSync(path);
+  } catch (error) {
+    if (journalStarted) rollbackAdmissionJournal(workspace.paths, journal, pending.journalBefore);
+    if (effectsStarted) rollbackAdmissionWrites(writes);
+    for (const consumed of created) {
+      const current = readFileSync(consumed.path), planned = Buffer.from(consumed.next);
+      if (current.length > planned.length || !planned.subarray(0, current.length).equals(current)) throw new GovernanceError("SCHEMA_INVALID", "Consumed nonce changed during rollback", "Preserve the other consumer and reconcile the pending transaction", { reason_code: "ADMISSION_RECOVERY_REQUIRED" });
+      rmSync(consumed.path);
+    }
+    rmSync(path);
+    throw error;
+  }
+}
+
 export async function applyTransaction(
   store: Store,
   tx: Transaction,
 ): Promise<TransactionResult> {
+  recoverPendingAdmission(store, tx);
   let replays = 0;
   for (;;) {
     try {
@@ -967,16 +1111,12 @@ async function applyTransactionOnce(
     assertExecutionIdClaimed(paths, tx.executionId, "transaction.executionId");
   }
 
-  // —— 幂等短路：同 inputs 重放 = 零写入（字节稳定，seq 不动） ——
-  const fingerprint = inputsFingerprintOf(tx);
-  if (vocabDrift.length === 0 && fingerprint === (raw.generation as UnknownRecord).inputs_fingerprint) {
-    return {
-      appliedSeq: curSeq,
-      shortCircuited: true,
-      changedObjectIds: [],
-      digestWarnings: [],
-    };
+  for (const op of tx.ops) {
+    const executionId = op.op === "record_claim" ? op.claim.executionId : op.op === "record_gate_run" ? op.run.executionId : undefined;
+    if (executionId !== undefined) assertExecutionIdClaimed(paths, executionId, `${op.op}.executionId`);
   }
+  // Identity alone cannot bypass current body validation or permit checks.
+  const fingerprint = inputsFingerprintOf(tx);
 
   // —— D-4 权威维度闸（先于一切 op 执行与 staged 计划：deny 时事务零落盘零 journal；
   //    推翻 authority.ts 原 B3 warning-only 红线，记录 owner-adjudications.md#裁决18） ——
@@ -995,10 +1135,43 @@ async function applyTransactionOnce(
     anyChange: false,
     bodyOverlay: new Map(),
     journalTail: [],
+    consumptions: new Map(),
+    intentSha256: sha256OfCanonical(tx),
+    readOriginals: new Map([paths.indexPath, paths.permitsPath].map(path => [path, captureOriginal(path)])),
   };
 
-  // —— D24 防篡改抽验（只读服务；失配 → WARN + auto-regen，永不阻断） ——
+  // Damaged history is not an empty authority ledger, including on identical replay.
+  checkedAdvanceRecords(workspace, journalEvents(paths));
+  // —— D24 防篡改抽验（合法内容失配 → WARN + auto-regen；非法内容整事务回滚） ——
   sweepDigestTampering(workspace);
+  const admittedIds = await prepareAdmissionAuthority(store, workspace, tx);
+  let emergency: ReturnType<typeof stageSignoff> | undefined;
+  if (tx.breakGlass !== undefined) {
+    const spec = tx.breakGlass;
+    const targets = transactionMutationSubjects(store, tx);
+    const observedIds = observedMutationSubjects(workspace);
+    if (!Number.isInteger(spec.issuedAtSeq) || !Number.isInteger(spec.expiresAtSeq) || spec.expiresAtSeq - spec.issuedAtSeq < 1 || spec.expiresAtSeq - spec.issuedAtSeq > 3 || curSeq < spec.issuedAtSeq || curSeq >= spec.expiresAtSeq || typeof spec.nonce !== "string" || spec.nonce.length < 8 || targets.length === 0 || sha256OfCanonical([...new Set(spec.subjectIds)].sort()) !== sha256OfCanonical(targets) || observedIds.some(id => !targets.includes(id))) {
+      throw new GovernanceError("SCHEMA_INVALID", "Emergency scope, sequence TTL or nonce is invalid", "Sign the kernel-derived exact scope for 1..3 beats", { reason_code: "BREAK_GLASS_INVALID" });
+    }
+    emergency = stageSignoff(workspace, spec.signoffRef, breakGlassConfirmationSubject(tx.ops, spec));
+  }
+  try { await assertTransactionPermits(store, workspace, tx, admittedIds); }
+  catch (error) {
+    if (emergency === undefined || !(error instanceof GovernanceError) || error.code !== "PERMIT_SCOPE_DENIED" || !["PERMIT_SCOPE_DENIED", "PERMIT_MISSING"].includes(String(error.details.reason_code))) throw error;
+  }
+  await assertNewEntityAdmissions(store, workspace, tx);
+  if (emergency !== undefined && tx.breakGlass !== undefined) workspace.journalTail.push(JSON.stringify({ type: "BREAK_GLASS_APPLIED", seq: workspace.nextSeq, subject_ids: [...new Set(tx.breakGlass.subjectIds)].sort(), ops_sha256: sha256OfCanonical(tx.ops), signoff_ref: tx.breakGlass.signoffRef, principal: emergency.principal, fingerprint: emergency.fingerprint, assurance: emergency.assurance, issued_at_seq: tx.breakGlass.issuedAtSeq, expires_at_seq: tx.breakGlass.expiresAtSeq, nonce: tx.breakGlass.nonce, disclosure_required: true }));
+  for (const op of tx.ops) {
+    if (op.op === "record_advance" && isPlainRecord(op.record.advance.new_anchor) && op.record.advance.new_anchor.kind === "truth_body") {
+      assertTruthBodyAdvance(workspace, op.record, [...journalEvents(paths), ...workspace.journalTail.map(line => JSON.parse(line) as UnknownRecord)]);
+    }
+  }
+  if (workspace.journalTail.length === 0 && vocabDrift.length === 0 &&
+      !tx.ops.some(op => op.op === "upsert_keybinding") &&
+      fingerprint === (raw.generation as UnknownRecord).inputs_fingerprint) {
+    if (tx.plannerConstruction !== undefined) assertAdmissionInputsUnchanged(workspace);
+    return { appliedSeq: curSeq, shortCircuited: true, changedObjectIds: [], digestWarnings: workspace.digestWarnings };
+  }
 
   // —— vocab_lock 迁移：内容已通过当前词表的 schema，指纹漂移只是元数据过期 → 改写为当前指纹 ——
   if (vocabDrift.length > 0) {
@@ -1020,6 +1193,7 @@ async function applyTransactionOnce(
   const indexChanged =
     JSON.stringify(working) !== JSON.stringify(raw);
   if (!indexChanged && workspace.files.size === 0) {
+    if (tx.plannerConstruction !== undefined) assertAdmissionInputsUnchanged(workspace);
     return {
       appliedSeq: curSeq,
       shortCircuited: true,
@@ -1035,43 +1209,27 @@ async function applyTransactionOnce(
   // —— staged 落盘 + journal ——
   const writes: FileWrite[] = [];
   for (const [path, next] of workspace.files) {
-    writes.push({ path, next, original: captureOriginal(path) });
+    writes.push({ path, next, original: workspace.readOriginals?.has(path) ? workspace.readOriginals.get(path)! : captureOriginal(path) });
   }
   writes.push({
     path: paths.indexPath,
     next: `${JSON.stringify(working, null, 2)}\n`,
-    original: captureOriginal(paths.indexPath),
+    original: workspace.readOriginals?.get(paths.indexPath) ?? captureOriginal(paths.indexPath),
   });
   // A1 世代复核：置于 staged 计划就绪之后、executeWrites 之前——检测到并发世代推进
   // 时本事务零落盘，重开 store 重放即收敛（P20 红队发现 4 同族修复）。
   assertCommitSeqUnchanged(paths, curSeq);
-  executeWrites(writes);
-  // A2：TX_APPLIED 不入 staged 批，在正文/索引提交成功后 appendLine 原子追加
-  // （locks/execution/session 同款纪律——RMW 覆写落法会把并发 appendLine 家族刚追加的
-  // 整行抹掉）。顺序取舍：op 失败零落盘不变量保持（正文/索引失败不追加）；崩溃窗口
-  // 从「journal 有幽灵行、index 没提交」改为「index 先行、journal 缺行」——后者是
-  // 可检出残态（changed_object_ids 对照磁盘可查缺），方向更诚实。
-  appendLine(
-    paths.journalPath,
-    `${JSON.stringify({
-      type: "TX_APPLIED",
-      seq: workspace.nextSeq,
-      authority_ref: tx.authorityRef ?? null,
-      // 事务级执行身份盖章（P21-Enforcement；§25.4 审计问题的 journal 兑现位；
-      // 缺席 = null 显式——C1，存量事件消费方只读既有键，向后兼容）。
-      execution_id: tx.executionId ?? null,
-      note: tx.note ?? null,
-      ops: tx.ops.map((op) => journalOpWordForm(op)),
-      changed_object_ids: [...workspace.changedObjectIds].sort(),
-      digest_warnings: workspace.digestWarnings.length,
-    })}\n`,
-  );
-  // op 级事件（ADVANCE_RECORDED）紧随 TX_APPLIED，同 seq；逐行原子追加。
-  for (const line of workspace.journalTail) appendLine(paths.journalPath, `${line}\n`);
+  const event = JSON.stringify({ type: "TX_APPLIED", seq: workspace.nextSeq, authority_ref: tx.authorityRef ?? null,
+    execution_id: tx.executionId ?? null, note: tx.note ?? null, ops: tx.ops.map(op => journalOpWordForm(op)),
+    changed_object_ids: [...workspace.changedObjectIds].sort(), digest_warnings: workspace.digestWarnings.length,
+    admission_intent: workspace.intentSha256 });
+  // O_APPEND preserves other event producers; pending intent closes the files/nonce/journal crash window.
+  commitAdmission(workspace, tx, writes, `${[event, ...workspace.journalTail].join("\n")}\n`);
 
   return {
     appliedSeq: workspace.nextSeq,
     shortCircuited: false,
+    ...(workspace.issuedPermit !== undefined ? { issuedPermit: workspace.issuedPermit } : {}),
     changedObjectIds: [...workspace.changedObjectIds].sort() as unknown as readonly GovernedId[],
     digestWarnings: workspace.digestWarnings,
   };
@@ -1115,7 +1273,9 @@ function sweepDigestTampering(workspace: TxWorkspace): void {
     );
   }
   for (const row of working.objects as readonly RawRow[]) {
-    const text = readText(rowBodyPath(paths, row.body_ref as string));
+    const bodyPath = rowBodyPath(paths, row.body_ref as string);
+    const text = readText(bodyPath);
+    workspace.readOriginals?.set(bodyPath, text);
     if (text === null) {
       throw new GovernanceError(
         "REF_INTEGRITY_VIOLATION",
@@ -1124,20 +1284,745 @@ function sweepDigestTampering(workspace: TxWorkspace): void {
         { id: String(row.id) },
       );
     }
-    const actual = sha256OfCanonical(JSON.parse(text) as unknown);
-    if (actual !== row.body_sha256) {
-      workspace.digestWarnings.push(
-        `body_sha256 mismatch for ${String(row.id)} (stored ${String(row.body_sha256)} ≠ actual ${actual}) — auto-regen applied（D24：WARN + auto-regen hint，永不阻断写入）`,
-      );
-      row.body_sha256 = actual;
+    try {
+      const parsed: unknown = JSON.parse(text);
+      const actual = sha256OfCanonical(parsed);
+      if (actual !== row.body_sha256) {
+        assertBodySchema(parsed);
+        const body = parsed;
+        const envelope = envelopeFromBody(body);
+        if (body.id !== row.id || body.kind !== row.kind || body.rev !== row.rev) throw new Error("body identity/kind/revision differs from index");
+        const scratch = validationWorkspace(paths, workspace.raw);
+        validateEnvelopeInWorkspace(scratch, envelope, {});
+        assertBodyReferences(workspace, body);
+        const priorConflicts = (workspace.raw.health as UnknownRecord).alias_conflicts as UnknownRecord[];
+        scratch.bodyOverlay.set(String(body.id), body);
+        const conflicts = computeAliasConflicts(scratch, scratch.working.objects as RawRow[]);
+        if (conflicts.some(conflict => !priorConflicts.some(prior => JSON.stringify(prior) === JSON.stringify(conflict)))) throw new Error("external alias introduces a canonical identity conflict");
+        workspace.journalTail.push(JSON.stringify({ type: "OUT_OF_BAND_EDIT_OBSERVED", id: row.id, stored: row.body_sha256, actual, seq: workspace.nextSeq }));
+        workspace.digestWarnings.push(`body_sha256 mismatch for ${String(row.id)}: OUT_OF_BAND_EDIT_OBSERVED — auto-regen applied after content validation; related closeout requires ADVANCE`);
+        Object.assign(row, { axes: body.axes, title_zh: body.title_zh, authority_owner: (body.authority as UnknownRecord).owner, origin: body.origin, body_sha256: actual, denominator_refs: body.denominator_refs ?? [], permits_active: body.permits_active ?? [] });
+        const producer = body.producer;
+        if (body.origin === "derived" && isPlainRecord(producer)) row.producer_id = producer.producer_id;
+        else delete row.producer_id;
+        workspace.bodyOverlay.set(String(row.id), body);
+        // Observation/rehash is not a sanctioned content mutation (reconcile retains unexplained origin).
+      }
+    } catch (error) {
+      throw new GovernanceError("SCHEMA_INVALID", `External body validation failed: ${String(row.id)}: ${(error as Error).message}`, "Restore invalid content or submit a sanctioned object change; no transaction mutations committed", { reason_code: "TRUTH_BODY_TAMPERED", id: row.id });
     }
   }
+}
+
+function validationWorkspace(paths: StorePaths, raw: UnknownRecord): TxWorkspace {
+  const seq = seqOfRaw(raw);
+  return { paths, raw, working: structuredClone(raw), files: new Map(), digestWarnings: [], changedObjectIds: new Set(), curSeq: seq, nextSeq: seq + 1, anyChange: false, bodyOverlay: new Map(), journalTail: [] };
+}
+
+const bodyValidators = new Map<string, ValidateFunction>();
+function schemaValidator(name: "objectEnvelope"): ValidateFunction {
+  const cached = bodyValidators.get(name);
+  if (cached !== undefined) return cached;
+  const AjvCtor = getAjvConstructor();
+  const ajv = new AjvCtor({ strict: false, allErrors: true });
+  for (const schema of Object.values(allSchemas)) ajv.addSchema(schema);
+  const validator = ajv.compile(allSchemas.objectEnvelope);
+  bodyValidators.set(name, validator);
+  return validator;
+}
+function assertBodySchema(body: unknown): asserts body is UnknownRecord {
+  const validate = schemaValidator("objectEnvelope");
+  if (!validate(body)) throw new GovernanceError("SCHEMA_INVALID", `Object envelope: ${JSON.stringify(validate.errors)}`, "Repair the object envelope", {});
+}
+
+function envelopeFromBody(value: unknown): ObjectEnvelopeInput {
+  assertBodySchema(value); // Never cast an unvalidated external body into the trusted input API.
+  const body = value;
+  const auth = body.authority as UnknownRecord;
+  const producer = body.producer as UnknownRecord | undefined;
+  return {
+    ...body, axisProfile: body.axis_profile, titleZh: body.title_zh,
+    authority: { ...auth, delegates: ((auth.delegates ?? []) as RawRow[]).map(d => ({ role: d.role, requiredFor: d.required_for })), writePolicy: auth.write_policy, escalationHint: auth.escalation_hint },
+    ...(producer ? { producer: { producerId: producer.producer_id, viewsMaintained: producer.views_maintained } } : {}),
+    successorRef: body.successor_ref,
+    supersedes: body.supersedes ? { ...(body.supersedes as UnknownRecord), reasonShort: (body.supersedes as UnknownRecord).reason_short } : undefined,
+    denominatorRefs: ((body.denominator_refs ?? []) as RawRow[]).map(r => ({ id: r.id, versionSeen: r.version_seen })),
+    permitsActive: body.permits_active,
+    sources: (body.sources as RawRow[] | undefined)?.map(s => ({ ...s, capturedBy: s.captured_by })),
+    notesMd: body.notes_md,
+    ...(isPlainRecord(body.key_bindings) ? { keyBindings: Object.fromEntries(Object.entries(body.key_bindings).map(([slot, entries]) => [slot, (entries as RawRow[]).map(entry => ({ artifactType: entry.artifact_type, value: entry.value, ...(entry.expect !== undefined ? { expect: entry.expect } : {}), ...(entry.probe !== undefined ? { probe: entry.probe } : {}), ...(entry.match_rule !== undefined ? { matchRule: entry.match_rule } : {}) }))])) } : {}),
+  } as unknown as ObjectEnvelopeInput;
+}
+
+function candidateFrameIds(payload: unknown): string[] {
+  if (!isPlainRecord(payload) || payload.candidate_ids === undefined) return [];
+  if (!Array.isArray(payload.candidate_ids) || payload.candidate_ids.some(id => typeof id !== "string")) throw new GovernanceError("SCHEMA_INVALID", "Malformed candidate_ids frame", "Declare governed candidate IDs", {});
+  return payload.candidate_ids as string[];
+}
+
+function affectedObjectIds(payload: unknown): string[] {
+  if (!isPlainRecord(payload) || payload.affected_objects === undefined) return [];
+  const affected = payload.affected_objects;
+  if (!Array.isArray(affected) || affected.some(id => typeof id !== "string")) throw new GovernanceError("SCHEMA_INVALID", "Malformed affected_objects scope", "Supply governed IDs, not an unjudgeable scope", {});
+  return affected as string[];
+}
+
+/** Structural references use the existing exact/equivalence resolver, never generic payload prose. */
+function assertBodyReferences(workspace: TxWorkspace, body: UnknownRecord): void {
+  const refs: string[] = [];
+  if (typeof body.successor_ref === "string") refs.push(body.successor_ref);
+  if (isPlainRecord(body.supersedes) && typeof body.supersedes.id === "string") refs.push(body.supersedes.id);
+  refs.push(...affectedObjectIds(body.payload));
+  const known = [...workspace.working.objects as RawRow[], ...workspace.working.denominators as RawRow[]].map(row => String(row.id));
+  known.push(...readKeybindings(dirname(workspace.paths.pomasterDir)).map(row => row.id));
+  for (const [path, text] of workspace.files) if (path.includes("/truth/keybindings/")) { const row: unknown = JSON.parse(text); assertKeybindingRow(row); known.push(row.id); }
+  const judgements = resolveRefBatch(readEquivalenceRegistry(workspace.paths), refs.map(text => ({ text, location: String(body.id) })), [...new Set(known)]);
+  if (judgements.some(row => row.disposition !== "present")) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "Object has unresolved structural references", "Restore referenced objects before applying the change", { id: body.id, judgements });
+  for (const ref of (body.denominator_refs ?? []) as RawRow[]) {
+    if (!(workspace.working.denominators as RawRow[]).some(row => row.id === ref.id && row.version === ref.version_seen)) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "Object denominator version is unresolved", "Restore the referenced denominator version", { id: body.id, ref });
+  }
+  const permits = readPermitsFile(workspace.paths).permits;
+  for (const ref of (body.permits_active ?? []) as string[]) {
+    const permit = permits.find(candidate => candidate.permit_ref === ref);
+    if (permit === undefined) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "Object permit reference is unresolved", "Restore the registered permit reference", { id: body.id, permit_ref: ref });
+    if (isPlainRecord(body.axes) && body.axes.change === "MIGRATING" &&
+        (permit.stolen_at_seq !== null || workspace.curSeq >= permit.expires_at_seq || !permit.scope.subject_ids.includes(String(body.id)))) throw new GovernanceError("CROSS_AXIS_ASSERTION", "MIGRATING requires an active subject-bound permit", "Attach a current permit covering the governed object", { id: body.id, permit_ref: ref });
+  }
+}
+
+function validateEnvelopeInWorkspace(workspace: TxWorkspace, envelope: ObjectEnvelopeInput, context: Pick<Transaction, "authorityRef">): void {
+  assertAuthorityBoundaries(workspace.paths, workspace.raw, { ...context, ops: [{ op: "upsert_object", envelope }] });
+  applyUpsertObject(workspace, envelope, { ...context, ops: [] });
+  // An identical body need not appear in the overlay; it still passed the upsert assertions.
+  const row = (workspace.working.objects as RawRow[]).find(candidate => candidate.id === envelope.id);
+  const body = row === undefined ? null : readBodyFor(workspace.paths, workspace.bodyOverlay, row);
+  assertBodySchema(body);
+  assertBodyReferences(workspace, body);
+  assertWorkingIndexSchemaValid(workspace.working);
+}
+
+/** Same sanctioned schema/payload/cross-axis/authority checks, with an isolated write plan. */
+export function validateObjectEnvelope(store: Store, envelope: ObjectEnvelopeInput, context: Pick<Transaction, "authorityRef"> = {}): void {
+  const paths = pathsOf(store);
+  const raw = readRawIndex(paths);
+  if (raw === null) throw new GovernanceError("NOT_CONFIGURED", "Store missing", "Initialize store", {});
+  validateRawIndex(paths, raw);
+  validateEnvelopeInWorkspace(validationWorkspace(paths, raw), envelope, context);
+}
+
+const kindPayloadValidators = new Map<string, ValidateFunction>();
+/** Required fields and types follow assets/02b; the published Evidence Spec profile is reused verbatim. */
+function assertKindPayload(kind: string, payload: unknown): void {
+  const text = { type: "string", minLength: 1 };
+  const texts = { type: "array", items: text };
+  const object = (required: string[], properties: UnknownRecord) => ({ type: "object", required, properties });
+  const need = object(["fields"], { fields: texts });
+  const profiles: Record<string, unknown> = {
+    capability: object(["canonical_realization", "category"], { canonical_realization: object(["component"], { component: text, import: text }), category: text, forbidden: texts, domain_states: texts, variants: texts, technology_base: text, poc_required: { type: "boolean" }, performance_budget: { $ref: `${allSchemas.objectEnvelope.$id}#/$definitions/PerformanceBudget` } }),
+    component: object(["component_name", "implements_capability", "import_path"], { component_name: text, implements_capability: { ...text, pattern: "^CAPABILITY\\." }, import_path: text, variants: texts, states: texts, forbidden: texts, vendor_base: object(["package", "version"], { package: text, version: text }) }),
+    contract_operation: object(["method", "path", "operation_id", "classification", "request_need", "response_need"], { method: { ...text, pattern: "^[A-Z]+$" }, path: text, operation_id: text, classification: text, request_need: need, response_need: need, mock_contract_ref: text, feature_ref: text, consumption_posture: text, auth_domain: text, trigger: object(["type", "automatic"], { type: text, automatic: { type: "boolean" } }) }),
+    error_term: object(["error_class", "user_message_zh"], { error_class: text, user_message_zh: text, http_status: { type: "integer", minimum: 100, maximum: 599 }, severity: text, mapping_chain: texts, retry_class: text, alert_policy_ref: { anyOf: [text, { type: "null" }] } }),
+    field_definition: object(["semantic_type"], { semantic_type: text, data_layer: text, pii: { type: "boolean" }, unit: text, vocab_ref: text, i18n_key: text }),
+    page_surface: object(["surface"], { surface: text, template_ref: text, slots: texts, actions: texts, state_subset_of: texts, interaction_contracts: texts }),
+    knowledge_entry: object(["failure_class", "checks"], { failure_class: text, checks: texts, trigger_when: texts, required_evidence: texts, advisory_note_md: { type: "string" }, promotion_eligible: { type: "boolean" } }),
+    business_rule: object(["statement_structured", "enforcement_point"], { statement_structured: object(["when", "then"], {}), enforcement_point: text, scope_refs: texts, decision_refs: texts }),
+    change_object: object(["motivation", "affected_objects", "reopen_count", "class_scan_result"], { motivation: text, affected_objects: texts, reopen_count: { type: "integer", minimum: 0 }, related_permits: texts, decision_refs: texts }),
+    task_object: object(["intent", "acceptance", "class_scan_result"], { intent: text, acceptance: { type: "array", minItems: 1, items: object(["criterion", "claim"], { criterion: text, claim: { ...text, pattern: "^CLM-[0-9]+$" }, anchor: text }) }, implements_change: { ...text, pattern: "^CHANGE\\." }, oscillation_guard: object(["same_target_previous_tasks", "flag", "requires"], { same_target_previous_tasks: texts, flag: text }) }),
+  };
+  const profile = kind === "business_rule" && isPlainRecord(payload) && payload.spec_kind === "evidence_spec" ? "evidence_spec" : kind;
+  let validate = kindPayloadValidators.get(profile);
+  if (validate === undefined) {
+    const ajv = new (getAjvConstructor())({ strict: false, allErrors: true });
+    for (const schema of Object.values(allSchemas)) ajv.addSchema(schema);
+    const schema = profile === "evidence_spec" ? allSchemas.evidenceSpec : profiles[profile];
+    if (schema === undefined) throw new GovernanceError("SCHEMA_INVALID", "Unsupported fact kind", "Use an official truth-body kind", { kind });
+    validate = ajv.compile(schema);
+    kindPayloadValidators.set(profile, validate);
+  }
+  if (!validate(payload)) throw new GovernanceError("SCHEMA_INVALID", `Kind payload ${kind}: ${JSON.stringify(validate.errors)}`, "Supply official per-kind required fields and types", { reason_code: "FACT_PAYLOAD_INVALID", kind });
+}
+
+export function validateFactCandidate(store: Store, envelope: ObjectEnvelopeInput): void {
+  validateObjectEnvelope(store, envelope);
+  assertKindPayload(envelope.kind, envelope.payload);
+  if (envelope.axes.lifecycle !== "PROPOSED" || envelope.axes.evidence !== "PLANNED" || envelope.axes.confidence !== "UNRESOLVED" || envelope.axes.change !== "STABLE") {
+    throw new GovernanceError("SCHEMA_INVALID", "Fact admission is candidate-only", "Use legal transition and independent evidence channels for promotion", { reason_code: "FACT_CANDIDATE_REQUIRED" });
+  }
+}
+
+function journalEvents(paths: StorePaths): UnknownRecord[] {
+  const text = readText(paths.journalPath);
+  if (text === null) throw new GovernanceError("SCHEMA_INVALID", "Journal is missing", "Restore the journal before judging closure", {});
+  return text.split("\n").filter(line => line.trim().length > 0).map(line => {
+    let event: unknown;
+    try { event = JSON.parse(line); } catch (error) { throw new GovernanceError("SCHEMA_INVALID", "Journal JSON is damaged", "Restore the journal before applying a transaction", { path: paths.journalPath, cause: String(error) }); }
+    if (!isPlainRecord(event) || typeof event.type !== "string") throw new GovernanceError("SCHEMA_INVALID", "Journal event is damaged", "Restore the journal", {});
+    if (event.type === "OUT_OF_BAND_EDIT_OBSERVED" &&
+        (typeof event.id !== "string" || typeof event.stored !== "string" || typeof event.actual !== "string" ||
+         !/^[0-9a-f]{64}$/.test(hexOf(event.stored)) || !/^[0-9a-f]{64}$/.test(hexOf(event.actual)) ||
+         !Number.isInteger(event.seq) || Number(event.seq) < 0)) throw new GovernanceError("SCHEMA_INVALID", "Truth body observation is damaged", "Restore the journal observation", {});
+    return event;
+  });
+}
+
+/** Validate persisted ADVANCE contents as well as their committed journal attribution. */
+function checkedAdvanceRecords(workspace: TxWorkspace, events: UnknownRecord[]): AdvanceRecord[] {
+  const records = listAdvanceFiles(workspace.paths).map(name => {
+    const path = `${advancesDirOf(workspace.paths)}/${name}`;
+    const text = readText(path);
+    if (text === null) throw advanceRejected("ADVANCE_INVALID", "Persisted ADVANCE disappeared during validation", "Restore the ADVANCE file", { path });
+    const record = parseAdvanceRecord(path, text);
+    if (`${record.adv}.json` !== name) throw advanceRejected("ADVANCE_INVALID", "ADVANCE filename differs from identity", "Restore the ADVANCE file", { path });
+    return record;
+  });
+  const tails = new Map<string, UnknownRecord>();
+  for (const record of records) {
+    const anchor = isPlainRecord(record.advance.new_anchor) ? record.advance.new_anchor : {};
+    const key = `${String(anchor.kind)}:${String(anchor.ref)}`;
+    const errors = validateAdvance(record.advance, { lane: "vnext", event: { actor: record.actor, reason: record.reason, after: anchor }, previousAfter: anchor.kind === "truth_body" ? null : (tails.get(key) ?? null) });
+    tails.set(key, anchor);
+    const committed = events.some(event => event.type === ADVANCE_RECORDED_EVENT && event.adv === record.adv && event.seq === record.at_seq && event.actor === record.actor && event.ref === anchor.ref && event.anchor_kind === anchor.kind && JSON.stringify(event.affected_ids) === JSON.stringify(record.advance.affected_ids));
+    if (errors.length > 0 || !committed || !Number.isInteger(record.at_seq) || record.at_seq < 0 || record.at_seq > workspace.curSeq) throw advanceRejected("ADVANCE_INVALID", "Persisted ADVANCE is damaged or not committed", "Restore the ADVANCE and its journal event", { adv: record.adv, errors });
+  }
+  return records;
+}
+
+function truthBodyReview(workspace: TxWorkspace, id: string, events: UnknownRecord[]): { observed: UnknownRecord; oldAnchor: VnextAnchor; newAnchor: VnextAnchor; subject: PersistedSignoffExpectation } {
+  const row = (workspace.working.objects as RawRow[]).find(candidate => candidate.id === id);
+  if (row === undefined) throw new GovernanceError("OBJECT_NOT_FOUND", "Truth body review subject is missing", "Restore the governed subject", { id });
+  const body = readBodyFor(workspace.paths, workspace.bodyOverlay, row);
+  assertBodySchema(body);
+  assertKindPayload(String(body.kind), body.payload);
+  const digest = sha256OfCanonical(body);
+  if (digest !== row.body_sha256) throw advanceRejected("TRUTH_BODY_TAMPERED", "Current body has not been validated and observed", "Run a sanctioned transaction to observe the valid edit first", { id });
+  const scratch = validationWorkspace(workspace.paths, workspace.working);
+  validateEnvelopeInWorkspace(scratch, envelopeFromBody(body), {});
+  const observed = events.filter(event => event.type === "OUT_OF_BAND_EDIT_OBSERVED" && event.id === id).at(-1);
+  if (observed === undefined) throw advanceRejected("ADVANCE_INVALID", "No related truth body observation exists", "Do not use an unrelated ADVANCE as closure", { id });
+  const oldAnchor: VnextAnchor = { kind: "truth_body", ref: id, digest: hexOf(String(observed.stored)), version: Number(body.rev) };
+  const newAnchor: VnextAnchor = { kind: "truth_body", ref: id, digest: hexOf(digest), version: Number(body.rev) };
+  const sha256 = hexOf(sha256OfCanonical({ id, observed_seq: observed.seq, old_anchor: oldAnchor, new_anchor: newAnchor, affected_ids: [id] }));
+  const subject = { kind: "accept" as const, ref: `truth-body:${id}`, sha256, consumedBy: `truth-body:${id}:${String(observed.seq)}:${sha256}` };
+  return { observed, oldAnchor, newAnchor, subject };
+}
+
+function stageSignoff(workspace: TxWorkspace, signoff: string | undefined, expected: PersistedSignoffExpectation, bindIntent = true) {
+  const expectation = { ...expected, ...(bindIntent && workspace.intentSha256 !== undefined ? { intentSha256: workspace.intentSha256 } : {}) };
+  const proof = assertPersistedSignoff(dirname(workspace.paths.pomasterDir), signoff, expectation);
+  if (proof.consumption !== undefined) {
+    if (workspace.consumptions === undefined || signoff === undefined) throw new GovernanceError("SCHEMA_INVALID", "Read-side review requires a consumed signature", "Commit through applyTransaction", { reason_code: "TRUST_SIGNOFF_MISMATCH" });
+    const path = resolve(workspace.paths.pomasterDir, "trust/consumed", `${signoff}.json`);
+    if (resolve(proof.consumption.path) !== path) throw new GovernanceError("SCHEMA_INVALID", "Verifier returned an invalid consumption path", "Use the shared trusted bootstrap", {});
+    const prior = workspace.consumptions.get(path);
+    if (prior !== undefined && prior.next !== proof.consumption.next && sha256OfCanonical(prior.expected) !== sha256OfCanonical(expectation)) throw new GovernanceError("SCHEMA_INVALID", "Nonce cannot authorize two different subjects", "Sign each exact action", {});
+    if (prior === undefined) workspace.consumptions.set(path, { next: proof.consumption.next, signoff, expected: expectation });
+  }
+  return proof;
+}
+
+function assertTruthBodyAdvance(workspace: TxWorkspace, input: AdvanceRecordInput, events: UnknownRecord[]): void {
+  const after = input.advance.new_anchor;
+  if (!isPlainRecord(after) || typeof after.ref !== "string") throw advanceRejected("ADVANCE_INVALID", "Truth body anchor is malformed", "Use prepareTruthBodyAdvance", {});
+  const review = truthBodyReview(workspace, after.ref, events);
+  const before = input.advance.old_anchor;
+  if (!isPlainRecord(before) || before.kind !== "truth_body" || before.ref !== after.ref ||
+      typeof before.digest !== "string" || hexOf(before.digest) !== review.oldAnchor.digest || before.version !== review.oldAnchor.version ||
+      after.kind !== "truth_body" || typeof after.digest !== "string" || hexOf(after.digest) !== review.newAnchor.digest || after.version !== review.newAnchor.version ||
+      Number(review.observed.seq) > workspace.nextSeq ||
+      input.advance.basis !== "explicit-evidence" || JSON.stringify(input.advance.affected_ids) !== JSON.stringify([after.ref])) {
+    throw advanceRejected("ADVANCE_INVALID", "Truth body ADVANCE does not bind the exact observed old/current body and scope", "Use prepareTruthBodyAdvance for the current observation", { id: after.ref });
+  }
+  const rejudge = input.advance.rejudge;
+  if (!isPlainRecord(rejudge) || !Array.isArray(rejudge.gates_run) || !rejudge.gates_run.some(gate => isPlainRecord(gate) && gate.gate === "truth.body.validation" && gate.result === "PASS")) {
+    throw advanceRejected("ADVANCE_REJUDGE_FAILED", "Truth body validation must be present in rejudge", "Use the sanctioned current-body validation helper", { id: after.ref });
+  }
+  // Ordinary legacy evidence remains supported. Enrolled projects require the same persisted SSH boundary.
+  if (hasPersistedSignoffState(dirname(workspace.paths.pomasterDir)) || input.signoffRef !== undefined) {
+    stageSignoff(workspace, input.signoffRef, review.subject);
+  }
+}
+
+/** Derives the exact subject for the existing trust request/consume interface. Pure read. */
+export function truthBodyAdvanceSubject(store: Store, id: string): PersistedSignoffExpectation {
+  const paths = pathsOf(store);
+  const raw = readRawIndex(paths);
+  if (raw === null) throw new GovernanceError("NOT_CONFIGURED", "Store missing", "Initialize store", {});
+  return truthBodyReview(validationWorkspace(paths, raw), id, journalEvents(paths)).subject;
+}
+
+/** Real current-body revalidation and observed anchors, not a caller-authored passing proof. */
+export function prepareTruthBodyAdvance(store: Store, input: { id: string; actor: string; reason: string; evidenceRefs: readonly string[]; evidenceSha256: string; signoffRef?: string }): AdvanceRecordInput {
+  const paths = pathsOf(store);
+  const raw = readRawIndex(paths);
+  if (raw === null) throw new GovernanceError("NOT_CONFIGURED", "Store missing", "Initialize store", {});
+  const review = truthBodyReview(validationWorkspace(paths, raw), input.id, journalEvents(paths));
+  return { actor: input.actor, reason: input.reason, ...(input.signoffRef !== undefined ? { signoffRef: input.signoffRef } : {}), advance: buildAdvance({ basis: "explicit-evidence", actor: input.actor, reason: input.reason, evidenceRefs: input.evidenceRefs, evidenceSha256: input.evidenceSha256, oldAnchor: { ...review.oldAnchor }, newAnchor: { ...review.newAnchor }, affectedIds: [input.id], rejudge: buildRejudge([{ gate: "truth.body.validation" }]) }) };
+}
+
+/** Fail closed on damaged history; read-only and also detects unswept current body edits. */
+export function assessTruthBodyEdits(store: Store, relatedIds: readonly string[]): { blockedIds: string[] } {
+  const paths = pathsOf(store);
+  const raw = readRawIndex(paths);
+  if (raw === null) return { blockedIds: [...new Set(relatedIds)] };
+  try {
+    validateRawIndex(paths, raw);
+    const workspace = validationWorkspace(paths, raw);
+    const events = journalEvents(paths);
+    const records = checkedAdvanceRecords(workspace, events);
+    const blockedIds = [...new Set(relatedIds)].filter(id => {
+      try {
+        const row = (raw.objects as RawRow[]).find(candidate => candidate.id === id);
+        if (row === undefined) return true;
+        const body = readBodyFor(paths, workspace.bodyOverlay, row);
+        assertBodySchema(body);
+        if (sha256OfCanonical(body) !== row.body_sha256) return true;
+        const observed = events.filter(event => event.type === "OUT_OF_BAND_EDIT_OBSERVED" && event.id === id).at(-1);
+        if (observed === undefined) return false;
+        return !records.some(record => {
+          const after = record.advance.new_anchor;
+          if (!isPlainRecord(after) || after.kind !== "truth_body" || after.ref !== id || record.at_seq < Number(observed.seq)) return false;
+          try {
+            assertTruthBodyAdvance(workspace, { advance: record.advance, actor: record.actor, reason: record.reason, ...(typeof (record as unknown as UnknownRecord).signoff_ref === "string" ? { signoffRef: (record as unknown as UnknownRecord).signoff_ref as string } : {}) }, events);
+            return true;
+          } catch { return false; }
+        });
+      } catch { return true; }
+    });
+    return { blockedIds };
+  } catch { return { blockedIds: [...new Set(relatedIds)] }; }
+}
+
+/** Evidence identities resolve to subjects before execution, including pending writes. */
+function evidenceMutationSubjects(workspace: TxWorkspace, tx: Transaction): Map<string, string[]> {
+  const subjects = new Map<string, string[]>();
+  const runSubject = (grn: string, subjectId: unknown): string[] => {
+    if (subjectId === null) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "ADVANCE references an unbound gate run", "Use evidence bound to a governed subject", { grn });
+    if (typeof subjectId !== "string") throw new GovernanceError("SCHEMA_INVALID", "Gate run subject is damaged", "Restore the persisted or pending gate run", { grn });
+    parseIdOrWrap(subjectId, "ADVANCE gate run subject");
+    return [subjectId];
+  };
+  const readRunSubject = (grn: string): string[] => {
+    if (!/^GRN-[0-9]+$/.test(grn)) throw new GovernanceError("GRN_INVALID", "Invalid gate run reference", "Use GRN-<number>", { grn });
+    const text = readText(`${workspace.paths.runsDir}/${grn}.json`);
+    if (text === null) return [];
+    let run: unknown;
+    try { run = JSON.parse(text); }
+    catch { throw new GovernanceError("SCHEMA_INVALID", "Gate run JSON is damaged", "Restore the persisted gate run", { grn }); }
+    if (!isPlainRecord(run) || run.record_type !== "run" || run.grn !== grn ||
+        !isPlainRecord(run.gate_result) || run.gate_result.mode !== "inline" ||
+        !isPlainRecord(run.gate_result.result) || run.gate_result.result.grn !== grn) {
+      throw new GovernanceError("SCHEMA_INVALID", "Gate run identity or inline result is damaged", "Restore the persisted gate run", { grn });
+    }
+    return runSubject(grn, run.gate_result.result.subject_id);
+  };
+  const readSubject = (clm: string): string[] => {
+    if (!/^CLM-[0-9]+$/.test(clm)) throw new GovernanceError("SCHEMA_INVALID", "Invalid claim reference", "Use CLM-<number>", { clm });
+    const text = readText(`${workspace.paths.claimsDir}/${clm}.json`);
+    if (text === null) return [];
+    const claim: unknown = JSON.parse(text);
+    if (!isPlainRecord(claim) || !isPlainRecord(claim.subject) || typeof claim.subject.object_id !== "string") {
+      throw new GovernanceError("SCHEMA_INVALID", "Claim subject is damaged", "Restore the persisted claim", { clm });
+    }
+    return [claim.subject.object_id];
+  };
+  for (const op of tx.ops) {
+    if (op.op === "record_claim") {
+      subjects.set(op.claim.clm, [...new Set([...(subjects.get(op.claim.clm) ?? readSubject(op.claim.clm)), op.claim.subjectId])]);
+    } else if (op.op === "verify_claim" || op.op === "supersede_claim") {
+      const clm = op.op === "verify_claim" ? op.claim.clm : op.requalify.clm;
+      if (!subjects.has(clm)) subjects.set(clm, readSubject(clm));
+      if (op.op === "supersede_claim") subjects.set(op.requalify.successor, subjects.get(clm)!);
+    } else if (op.op === "record_advance" && Array.isArray(op.record.advance.affected_ids)) {
+      for (const id of op.record.advance.affected_ids) {
+        if (typeof id !== "string" || subjects.has(id)) continue;
+        if (/^CLM-[0-9]+$/.test(id)) subjects.set(id, readSubject(id));
+        else if (id.startsWith("GRN-")) subjects.set(id, readRunSubject(id));
+      }
+    }
+  }
+  // Only referenced runs affect ADVANCE scope. An unrelated unbound run remains
+  // valid evidence, not a global write grant. Keep prior and pending subjects in
+  // the same map so an overwrite cannot conceal an out-of-scope prior binding.
+  for (const op of tx.ops) if (op.op === "record_gate_run" && subjects.has(op.run.grn)) {
+    if (op.run.result.grn !== op.run.grn) throw new GovernanceError("GRN_INVALID", "Pending gate run identity differs from its result", "Use matching GRN identities", { grn: op.run.grn });
+    subjects.set(op.run.grn, [...new Set([...subjects.get(op.run.grn)!, ...runSubject(op.run.grn, op.run.result.subjectId)])]);
+  }
+  return subjects;
+}
+
+/** Mutation subjects only: references to evidence or an unbound run are not invented subjects. */
+function mutationTargets(workspace: TxWorkspace, op: TransactionOp, subjects: Map<string, string[]>, tx: Transaction): string[] {
+  const producerTargets = (producerId: string): string[] => [...new Set([
+    ...(workspace.working.objects as RawRow[]).filter(row => row.producer_id === producerId).map(row => String(row.id)),
+    ...tx.ops.flatMap(pending => pending.op === "upsert_object" && pending.envelope.origin === "derived" && pending.envelope.producer?.producerId === producerId ? [pending.envelope.id] : []),
+  ])];
+  switch (op.op) {
+    case "upsert_object": {
+      const row = (workspace.raw.objects as RawRow[]).find(candidate => candidate.id === op.envelope.id);
+      const prior = row === undefined ? null : readBodyFor(workspace.paths, workspace.bodyOverlay, row);
+      const candidates = candidateFrameIds(op.envelope.payload), previous = candidateFrameIds(prior?.payload);
+      return [op.envelope.id, ...affectedObjectIds(op.envelope.payload), ...candidates.filter(id => !previous.includes(id))];
+    }
+    case "transition_object": {
+      const row = (workspace.working.objects as RawRow[]).find(candidate => candidate.id === op.id);
+      const body = row === undefined ? null : readBodyFor(workspace.paths, workspace.bodyOverlay, row);
+      return [op.id, ...affectedObjectIds(body?.payload)];
+    }
+    case "upsert_keybinding": {
+      const prior = readKeybindings(dirname(workspace.paths.pomasterDir)).find(row => row.id === op.row.id);
+      return [...new Set([op.row.canonical_id, ...(prior ? [prior.canonical_id] : [])])];
+    }
+    case "append_denominator": return [op.entry.id];
+    case "heartbeat": return [...new Set([...op.wroteObjectIds, ...producerTargets(op.producerId)])];
+    case "register_producer": return producerTargets(op.record.producerId);
+    case "record_claim": return subjects.get(op.claim.clm) ?? [op.claim.subjectId];
+    case "record_gate_run": return op.run.result.subjectId === null ? [] : [op.run.result.subjectId];
+    case "verify_claim": return subjects.get(op.claim.clm) ?? [];
+    case "supersede_claim": return subjects.get(op.requalify.clm) ?? [];
+    case "reassess_baseline_scope": return [op.task];
+    case "record_advance": {
+      const affected = op.record.advance.affected_ids;
+      if (!Array.isArray(affected) || affected.some(id => typeof id !== "string")) throw new GovernanceError("SCHEMA_INVALID", "Malformed ADVANCE scope", "Supply affected_ids", {});
+      // CLM/GRN IDs identify evidence, not governed mutation targets. Preserve
+      // affected_ids in the record; canonicalize only this permit projection.
+      return [...new Set(affected.flatMap((id: string) => {
+        if (!/^CLM-[0-9]+$/.test(id) && !id.startsWith("GRN-")) return [id];
+        const mapped = subjects.get(id) ?? [];
+        if (mapped.length === 0) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "ADVANCE evidence subject cannot be resolved", "Restore the related persisted or pending claim/run", id.startsWith("GRN-") ? { grn: id } : { clm: id });
+        return mapped;
+      }))];
+    }
+    default: throw new GovernanceError("SCHEMA_INVALID", "Unsupported transaction op", "Use sanctioned operation types", {});
+  }
+}
+
+export type PlannerConstructionVerifier = (root: string, tx: Transaction) => Promise<{
+  readonly subjectIds: readonly string[];
+  readonly sheetRef: string;
+  readonly sheetSha256: string;
+  readonly planRef: string;
+  readonly planSha256: string;
+  readonly generationRef: string;
+  readonly generationSha256: string;
+}>;
+
+export const PLANNER_TASK_ARCHETYPE_ID = "ARCHETYPE.GOVERNANCE.TASK_UNIT";
+const PLANNER_TASK_ARCHETYPE_PATH = "archetypes/archetype.governance.task_unit.json";
+const PLANNER_INSTANTIATION = {
+  truth_kind: "task_object", axis_profile: "task_default", constructor: "plan scenarios",
+  lanes: ["contract", "db", "be", "fe"], claim_subject: "TASK", artifact_roles: ["kickoff", "scenario_plan", "generation"],
+};
+
+/** Catalog admission is separate from the axis profile and from a caller-authored pass. */
+export function plannerTaskArchetype(): { id: string; contentSha256: string } {
+  const root = resolveCatalogRoot(), lock = readCatalogLock(root);
+  const entries = lock.entries.filter(entry => entry.id === PLANNER_TASK_ARCHETYPE_ID || entry.path === PLANNER_TASK_ARCHETYPE_PATH);
+  const entry = entries[0];
+  if (!verifyCatalogLock(root, lock).ok || entries.length !== 1 || entry?.id !== PLANNER_TASK_ARCHETYPE_ID || entry.path !== PLANNER_TASK_ARCHETYPE_PATH || !lock.controlled_children.allowed.includes(entry.path) || !lock.controlled_children.required.includes(entry.path)) {
+    throw new GovernanceError("SCHEMA_INVALID", "TASK archetype catalog identity or lock membership/content is invalid", "Restore the owner-approved TASK_UNIT catalog and regenerate its lock with pomaster catalog relock", { reason_code: "PLANNER_ADOPTION_INVALID" });
+  }
+  const material = loadCatalogArchetypes(root).find(material => material.id === entry.id);
+  const body: unknown = JSON.parse(readFileSync(resolve(root, entry.path), "utf8"));
+  if (material?.kind !== "archetype" || material.layer !== "ARCHETYPE" || material.file !== entry.path || !material.semantic.responsibility || !material.semantic.whenToUse || !material.semantic.whenNotToUse || !isPlainRecord(body) || sha256OfCanonical(body.instantiation) !== sha256OfCanonical(PLANNER_INSTANTIATION)) {
+    throw new GovernanceError("SCHEMA_INVALID", "TASK catalog archetype is unsuitable for the existing signed deterministic model", "Restore TASK_UNIT's task_object/acceptance/CLM and finite lane/entity instantiation contract; do not substitute runtime archetypes", { reason_code: "PLANNER_ADOPTION_INVALID" });
+  }
+  return { id: entry.id, contentSha256: entry.content_sha256 };
+}
+
+function plannerAdoptionFailure(message: string, legacy = false): never {
+  throw new GovernanceError("SCHEMA_INVALID", message,
+    legacy ? "Preserve historical TASKs, CLMs and signed operations; create a new intake revision, kickoff draft → Owner signature → kickoff confirm → plan scenarios. No retrospective signature or automatic backfill is authorized."
+      : "Restore the exact committed TASK_UNIT construction, bindings and relation provenance; recompile only within a valid signed kickoff",
+    { reason_code: legacy ? "PLANNER_ADOPTION_REBUILD_REQUIRED" : "PLANNER_ADOPTION_INVALID" });
+}
+
+/** No edge input is exposed: derive only the sanctioned planner's verified TASK instances. */
+function preparePlannerAdoption(workspace: TxWorkspace, tx: Transaction, construction: Awaited<ReturnType<PlannerConstructionVerifier>>, replay: boolean, model: ReturnType<typeof plannerTaskArchetype>): void {
+  const root = dirname(workspace.paths.pomasterDir);
+  const tasks = tx.ops.flatMap(op => op.op === "upsert_object" ? [op.envelope] : []);
+  const receipt = replay ? journalEvents(workspace.paths).find(event => event.type === "PLANNER_INSTANCE_ADMITTED" && event.intent_sha256 === workspace.intentSha256) : undefined;
+  if (replay && (receipt === undefined || receipt.adoption !== model.id)) plannerAdoptionFailure("Legacy committed planner construction has no real catalog adoption receipt", true);
+  const seq = replay ? Number(receipt?.seq) : workspace.nextSeq;
+  if (replay && (receipt?.catalog_sha256 !== model.contentSha256 || receipt.signoff_ref !== tx.plannerConstruction?.signoffRef || receipt.sheet_sha256 !== construction.sheetSha256 || receipt.ops_sha256 !== sha256OfCanonical(tx.ops))) plannerAdoptionFailure("Committed planner adoption catalog/signoff/operations drifted");
+  const expectedBindings = [
+    { artifactType: "file", value: construction.sheetRef, expect: { role: "kickoff", sha256: `sha256:${construction.sheetSha256}` }, matchRule: "mechanical" },
+    { artifactType: "file", value: construction.planRef, expect: { role: "scenario_plan", sha256: construction.planSha256 }, matchRule: "mechanical" },
+    { artifactType: "file", value: construction.generationRef, expect: { role: "generation", sha256: construction.generationSha256 }, matchRule: "mechanical" },
+  ];
+  for (const binding of expectedBindings) {
+    if (isAbsolute(binding.value) || binding.value.split("/").some(part => part === ".." || part === "")) plannerAdoptionFailure("Invalid construction artifact path");
+    const path = resolve(root, binding.value), text = readText(path);
+    if (text === null || sha256OfUtf8(text) !== binding.expect.sha256) plannerAdoptionFailure("Actual planner artifact binding bytes differ from the verified construction");
+    if (!workspace.readOriginals?.has(path)) workspace.readOriginals?.set(path, text);
+    if (workspace.readOriginals?.get(path) !== text) plannerAdoptionFailure("Planner artifact changed during construction validation");
+  }
+  const existing = readRelations(workspace.paths);
+  const entries = tasks.map(task => {
+    if (task.keyBindings === undefined) plannerAdoptionFailure("Legacy planner instance lacks actual artifact bindings", true);
+    if (sha256OfCanonical(task.keyBindings) !== sha256OfCanonical({ artifact: expectedBindings })) plannerAdoptionFailure("Planner TASK binding declarations differ from actual construction artifacts");
+    return prepareRelationEntry({
+      type: "INSTANCE_OF", source: { domain: "truth", id: task.id }, target: { domain: "catalog", id: model.id },
+      origin: "static_analysis", confidence: "deterministic", producer: "ANALYZER.PLAN_SCENARIOS",
+      sourceRef: `.pomaster/plan/${String(task.payload.round)}/units.tx.json`,
+      locator: `${task.id}; signoff=${tx.plannerConstruction?.signoffRef}; sheet_sha256=${construction.sheetSha256}; ops_sha256=${sha256OfCanonical(tx.ops)}; catalog_sha256=${model.contentSha256}`,
+    }, seq);
+  });
+  for (const entry of entries) {
+    const matches = existing.filter(candidate => candidate.source.domain === "truth" && candidate.source.id === entry.source.id && candidate.type === "INSTANCE_OF");
+    if (replay ? matches.length !== 1 || sha256OfCanonical(matches[0]) !== sha256OfCanonical(entry) : matches.length !== 0) plannerAdoptionFailure("TASK INSTANCE_OF relation is missing, conflicting or has forged provenance");
+  }
+  if (!replay) {
+    const original = workspace.readOriginals?.get(workspace.paths.relationsPath) ?? readText(workspace.paths.relationsPath);
+    const base = original ?? "";
+    workspace.files.set(workspace.paths.relationsPath, `${base}${base.length > 0 && !base.endsWith("\n") ? "\n" : ""}${entries.map(entry => JSON.stringify(entry)).join("\n")}\n`);
+    workspace.journalTail.push(...entries.map(entry => JSON.stringify({ type: "RELATION_REGISTERED", seq, edge_id: entry.edge_id, relation_type: entry.type, source: entry.source, target: entry.target, origin: entry.origin, confidence: entry.confidence, producer: entry.producer })));
+  }
+  workspace.plannerAdoptionVerified = true;
+}
+let plannerConstructionVerifier: PlannerConstructionVerifier | undefined;
+export function registerPlannerConstructionVerifier(verifier: PlannerConstructionVerifier): void {
+  if (plannerConstructionVerifier !== undefined && plannerConstructionVerifier !== verifier) throw new GovernanceError("SCHEMA_INVALID", "Planner construction verifier is already registered", "Do not replace trusted bootstrap", {});
+  plannerConstructionVerifier = verifier;
+}
+
+function observedMutationSubjects(workspace: TxWorkspace): string[] {
+  return [...new Set(workspace.journalTail.map(line => JSON.parse(line) as UnknownRecord)
+    .filter(event => event.type === "OUT_OF_BAND_EDIT_OBSERVED")
+    .flatMap(event => [String(event.id), ...affectedObjectIds(workspace.bodyOverlay.get(String(event.id))?.payload)]))];
+}
+
+export function transactionMutationSubjects(store: Store, tx: Transaction): string[] {
+  const paths = pathsOf(store), raw = readRawIndex(paths);
+  if (raw === null) throw new GovernanceError("NOT_CONFIGURED", "Store missing", "Initialize store", {});
+  validateRawIndex(paths, raw);
+  const workspace = validationWorkspace(paths, raw);
+  sweepDigestTampering(workspace);
+  const subjects = evidenceMutationSubjects(workspace, tx);
+  return [...new Set([...observedMutationSubjects(workspace), ...tx.ops.flatMap(op => mutationTargets(workspace, op, subjects, tx))])].sort();
+}
+
+export function breakGlassConfirmationSubject(ops: readonly TransactionOp[], spec: Omit<NonNullable<Transaction["breakGlass"]>, "signoffRef">): PersistedSignoffExpectation {
+  const statement = `pomaster:maintain-break-glass:${sha256OfCanonical({ ops, scope: [...new Set(spec.subjectIds)].sort(), issued_at_seq: spec.issuedAtSeq, expires_at_seq: spec.expiresAtSeq, nonce: spec.nonce })}`;
+  const sha256 = createHash("sha256").update(statement).digest("hex");
+  return { kind: "accept", ref: statement, sha256, consumedBy: `maintain-break-glass:${sha256}`, maxTtlMs: 300_000 };
+}
+
+export function readBreakGlassDisclosures(store: Store, subjectIds?: readonly string[]): UnknownRecord[] {
+  return journalEvents(pathsOf(store)).filter(event => event.type === "BREAK_GLASS_APPLIED" && (subjectIds === undefined || (Array.isArray(event.subject_ids) && event.subject_ids.some(id => subjectIds.includes(String(id))))));
+}
+
+async function prepareAdmissionAuthority(store: Store, workspace: TxWorkspace, tx: Transaction): Promise<string[] | undefined> {
+  if (tx.factAdmission !== undefined && tx.plannerConstruction !== undefined) throw new GovernanceError("SCHEMA_INVALID", "Conflicting creation channels", "Choose one sanctioned admission", {});
+  if (tx.factAdmission === undefined && tx.plannerConstruction === undefined) return undefined;
+  const targets = transactionMutationSubjects(store, tx);
+  if (tx.plannerConstruction !== undefined) {
+    if (plannerConstructionVerifier === undefined || tx.executionId !== undefined || tx.permitRef !== undefined) throw new GovernanceError("SCHEMA_INVALID", "Sanctioned planner bootstrap is required", "Use the bounded signed scenario planner, not worker scope expansion", { reason_code: "PLANNER_CONSTRUCTION_INVALID" });
+    const catalogRoot = resolveCatalogRoot();
+    const model = plannerTaskArchetype();
+    const signoff = tx.plannerConstruction.signoffRef;
+    if (typeof signoff !== "string" || !/^SO-[0-9a-f]{12}$/.test(signoff)) plannerAdoptionFailure("Planner signoff reference is malformed");
+    const authorityInputs = ["kickoff/current.json", "trust/signers.json", `trust/requests/${signoff}.json`, `trust/requests/${signoff}.json.sig`, `trust/consumed/${signoff}.json`];
+    for (const path of [resolve(catalogRoot, LOCK_FILE_NAME), resolve(catalogRoot, PLANNER_TASK_ARCHETYPE_PATH), workspace.paths.relationsPath, ...authorityInputs.map(path => resolve(workspace.paths.pomasterDir, path))]) workspace.readOriginals?.set(path, captureOriginal(path));
+    for (const op of tx.ops) {
+      if (op.op === "record_claim") workspace.readOriginals?.set(`${workspace.paths.claimsDir}/${op.claim.clm}.json`, captureOriginal(`${workspace.paths.claimsDir}/${op.claim.clm}.json`));
+      if (op.op === "upsert_object") {
+        const round = op.envelope.payload.round;
+        if (typeof round !== "string" || !/^[A-Za-z0-9_-]+$/.test(round)) plannerAdoptionFailure("Malformed deterministic planner round");
+        for (const name of ["plan.json", "units.tx.json"]) {
+          const path = resolve(store.rootDir, `.pomaster/plan/${round}/${name}`);
+          workspace.readOriginals?.set(path, captureOriginal(path));
+        }
+        for (const binding of op.envelope.keyBindings?.artifact ?? []) {
+          const path = resolve(store.rootDir, binding.value);
+          assertAdmissionPath(workspace.paths, path);
+          workspace.readOriginals?.set(path, captureOriginal(path));
+        }
+      }
+    }
+    const construction = await plannerConstructionVerifier(store.rootDir, tx);
+    if (sha256OfCanonical(plannerTaskArchetype()) !== sha256OfCanonical(model)) plannerAdoptionFailure("Catalog changed during construction validation");
+    if (targets.length === 0 || sha256OfCanonical(targets) !== sha256OfCanonical([...new Set(construction.subjectIds)].sort())) throw new GovernanceError("SCHEMA_INVALID", "Planner scope differs from kernel-derived targets", "Recompile the actual signed deterministic plan", {});
+    stageSignoff(workspace, tx.plannerConstruction.signoffRef, { kind: "kickoff", ref: construction.sheetRef, sha256: construction.sheetSha256, consumedBy: "kickoff confirm" }, false);
+    const replay = journalEvents(workspace.paths).some(event => event.type === "TX_APPLIED" && event.admission_intent === workspace.intentSha256);
+    for (const op of tx.ops) {
+      if (op.op === "upsert_object") {
+        validateFactCandidate(store, op.envelope);
+        if (op.envelope.kind !== "task_object" || (!replay && (workspace.raw.objects as RawRow[]).some(row => row.id === op.envelope.id))) throw new GovernanceError("SCHEMA_INVALID", "Planner must instantiate new bounded task records", "Existing concepts still require their ordinary creation/maintenance channels", {});
+      } else if (op.op !== "record_claim") throw new GovernanceError("SCHEMA_INVALID", "Unsupported planner construction operation", "Only deterministic task/claim pairs are sanctioned", {});
+    }
+    preparePlannerAdoption(workspace, tx, construction, replay, model);
+    if (replay) {
+      const scratch = validationWorkspace(workspace.paths, workspace.raw);
+      for (const op of tx.ops) applyOp(scratch, op, tx);
+      if (scratch.files.size !== 0 || sha256OfCanonical(scratch.working) !== sha256OfCanonical(workspace.raw) || observedMutationSubjects(workspace).length !== 0) throw new GovernanceError("SCHEMA_INVALID", "Committed construction no longer matches its actual task/claim records", "Use ordinary maintenance for drift; do not recreate instances or claims", { reason_code: "PLANNER_CONSTRUCTION_INVALID" });
+      return targets;
+    }
+    const permit = preparePermitIssue(store, { subjectIds: targets.map(asGovernedId), requestedBy: { actorType: "tool", actor: "pomaster-plan-scenarios", selfAttested: false }, changeRef: construction.sheetRef, ttlBeats: 3, acceptanceShape: { sheet_sha256: construction.sheetSha256, ops_sha256: sha256OfCanonical(tx.ops), adoption: model.id, catalog_sha256: model.contentSha256 } }, workspace.nextSeq);
+    workspace.files.set(permit.path, permit.next);
+    workspace.issuedPermit = permit.permit;
+    workspace.journalTail.push(JSON.stringify(permit.event), JSON.stringify({ type: "PLANNER_INSTANCE_ADMITTED", seq: workspace.nextSeq, subject_ids: targets, signoff_ref: tx.plannerConstruction.signoffRef, sheet_sha256: construction.sheetSha256, permit_ref: permit.permit.permitRef, adoption: model.id, catalog_sha256: model.contentSha256, ops_sha256: sha256OfCanonical(tx.ops), intent_sha256: workspace.intentSha256 }));
+    return targets;
+  }
+  if (tx.factAdmission === undefined) return undefined;
+  const admission = tx.factAdmission, op = tx.ops[0];
+  if (tx.ops.length !== 1 || op?.op !== "upsert_object") throw new GovernanceError("SCHEMA_INVALID", "Fact admission requires one upsert", "Admit one candidate at a time", {});
+  validateFactCandidate(store, op.envelope);
+  const id = op.envelope.id, ttl = admission.request.ttlBeats ?? 3;
+  if (admission.request.subjectIds.length !== 1 || admission.request.subjectIds[0] !== id || !Number.isInteger(ttl) || ttl < 1 || ttl > 3) throw new GovernanceError("SCHEMA_INVALID", "Fact permit must cover the new ID only for 1..3 beats", "Use a narrow candidate permit", { reason_code: "FACT_PERMIT_TTL_INVALID" });
+  if ((workspace.raw.objects as RawRow[]).some(row => row.id === id)) throw new GovernanceError("SCHEMA_INVALID", "Fact ID already exists", "Reuse the existing fact", { reason_code: "NEW_ENTITY_PROOF_REJECTED" });
+  const active = listExecutionRecords(workspace.paths).filter(record => record.ended_at === null);
+  if (active.length > 0 || tx.executionId !== undefined || tx.permitRef !== undefined) {
+    const execution = tx.executionId === undefined ? null : readExecutionRecordById(workspace.paths, tx.executionId);
+    if (execution === null || execution.ended_at !== null || (tx.permitRef !== undefined && !execution.permit_ids.includes(tx.permitRef))) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Candidate admission requires an explicit owned active execution", "Select its attached parent/frame permit", { reason_code: "PERMIT_SCOPE_DENIED" });
+    const refs = tx.permitRef === undefined ? execution.permit_ids : [tx.permitRef];
+    const covers = async (subject: string) => {
+      for (const ref of refs) if ((await checkPermit(store, ref, { id: asGovernedId(subject), op: "upsert_object" }, { observeExpiry: false })).outcome === "allowed") return true;
+      return false;
+    };
+    let candidateCovered = await covers(id);
+    if (!candidateCovered && admission.parentRef !== undefined && await covers(admission.parentRef)) {
+      const parent = (workspace.raw.objects as RawRow[]).find(row => row.id === admission.parentRef);
+      const payload = parent === undefined ? undefined : readBodyFor(workspace.paths, workspace.bodyOverlay, parent)?.payload;
+      // A rehashed parent is not the frame captured by its permit baseline.
+      if (parent !== undefined && !workspace.bodyOverlay.has(String(parent.id)) && candidateFrameIds(payload).includes(id)) {
+        for (const ref of refs) {
+          const baseline = readPermitsFile(workspace.paths).permits.find(permit => permit.permit_ref === ref)?.baseline?.subjects[admission.parentRef];
+          if (baseline?.body_sha256 === parent.body_sha256 && (await checkPermit(store, ref, { id: asGovernedId(admission.parentRef), op: "upsert_object" }, { observeExpiry: false })).outcome === "allowed") candidateCovered = true;
+        }
+      }
+    }
+    if (!candidateCovered) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Candidate is not explicitly covered by the owned frame", "Declare candidate_ids on the permitted parent or obtain exact pre-approved candidate scope; actor strings confer no authority", { id });
+    for (const affected of targets.filter(target => target !== id)) if (!await covers(affected)) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Affected target lies outside the owned execution scope", "Return to FRAMEWORK LOCK", { id: affected });
+  }
+  const permit = preparePermitIssue(store, { ...admission.request, ttlBeats: ttl, acceptanceShape: { ...admission.request.acceptanceShape, object_digest: sha256OfCanonical(op.envelope) } }, workspace.nextSeq);
+  workspace.files.set(permit.path, permit.next);
+  workspace.issuedPermit = permit.permit;
+  workspace.journalTail.push(JSON.stringify({ ...permit.event, execution_id: tx.executionId ?? null, parent_ref: admission.parentRef ?? null }));
+  return [id];
+}
+
+async function assertNewEntityAdmissions(store: Store, workspace: TxWorkspace, tx: Transaction): Promise<void> {
+  if (tx.plannerConstruction !== undefined) {
+    if (workspace.plannerAdoptionVerified !== true) plannerAdoptionFailure("Planner creation has no verified catalog adoption");
+    return; // Existing-model instantiation, only after real catalog/binding/relation validation.
+  }
+  const guarded = tx.factAdmission !== undefined || tx.breakGlass !== undefined || tx.permitRef !== undefined || listExecutionRecords(workspace.paths).some(record => record.ended_at === null);
+  if (!guarded) return;
+  for (const op of tx.ops) if (op.op === "upsert_object" && !(workspace.raw.objects as RawRow[]).some(row => row.id === op.envelope.id)) {
+    const input = tx.newEntity;
+    const candidates = Array.isArray(input?.candidates) ? input.candidates.filter(candidate => candidate.wordForm === op.envelope.id) : [];
+    if (input === undefined || typeof input.catalogRoot !== "string" || candidates.length !== 1) throw new GovernanceError("SCHEMA_INVALID", `New Entity input required for ${op.envelope.id}`, "Include one candidate and a legitimate available catalogRoot", { reason_code: "NEW_ENTITY_PROOF_REQUIRED" });
+    try { if (!statSync(input.catalogRoot).isDirectory()) throw new Error("catalogRoot is not a directory"); }
+    catch (error) { throw new GovernanceError("SCHEMA_INVALID", "Current catalogRoot is unavailable", "Supply the current catalog directory", { reason_code: "NEW_ENTITY_PROOF_REJECTED", cause: String(error) }); }
+    const report = await runNewEntityGate(store, input.catalogRoot, { candidates });
+    if (report.result.verdict !== "passed") throw new GovernanceError("SCHEMA_INVALID", `New Entity gate rejected ${op.envelope.id}`, "Reuse existing objects or resolve blindspots", { reason_code: "NEW_ENTITY_PROOF_REJECTED", report });
+    workspace.journalTail.push(JSON.stringify({ type: "NEW_ENTITY_CHECKED", seq: workspace.nextSeq, id: op.envelope.id, envelope_sha256: sha256OfCanonical(op.envelope), execution_id: tx.executionId ?? null, permit_refs: workspace.issuedPermit !== undefined ? [workspace.issuedPermit.permitRef] : tx.permitRef !== undefined ? [tx.permitRef] : tx.executionId !== undefined ? readExecutionRecordById(workspace.paths, tx.executionId)?.permit_ids ?? [] : listExecutionRecords(workspace.paths).filter(record => record.ended_at === null).flatMap(record => record.permit_ids), report }));
+  }
+}
+
+async function assertTransactionPermits(store: Store, workspace: TxWorkspace, tx: Transaction, admittedIds?: string[]): Promise<void> {
+  const active = listExecutionRecords(workspace.paths).filter(execution => execution.ended_at === null);
+  if (tx.plannerConstruction !== undefined && admittedIds !== undefined) {
+    const observed = observedMutationSubjects(workspace);
+    if (observed.some(id => !admittedIds.includes(id))) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Planner cannot sweep unrelated governed edits", "Apply the unrelated edit under its own authority", { reason_code: "PERMIT_SCOPE_DENIED" });
+    return;
+  }
+  if (tx.ops.length > 0 && tx.ops.every(op => op.op === "record_gate_run" && op.run.result.subjectId === null) && workspace.journalTail.length === 0) return;
+  const recordIds = tx.ops.flatMap(op => op.op === "record_claim" ? [op.claim.executionId] : op.op === "record_gate_run" && op.run.result.subjectId !== null ? [op.run.executionId] : []);
+  const suppliedIds = [...new Set([tx.executionId, ...recordIds].filter((id): id is string => id !== undefined))];
+  if (suppliedIds.length > 1) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Transaction has conflicting execution identities", "Submit one worker's operations per transaction", { reason_code: "EXECUTION_AMBIGUOUS" });
+  const executionId = suppliedIds[0];
+  if (active.length === 0 && tx.permitRef === undefined && executionId === undefined) return;
+  let execution = executionId === undefined ? null : readExecutionRecordById(workspace.paths, executionId);
+  if (executionId !== undefined) assertExecutionIdClaimed(workspace.paths, executionId, "transaction permit attribution");
+  if (execution === null && active.length > 0) {
+    if (active.length !== 1) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Multiple active workers require explicit execution attribution", "Supply the registered executionId; never borrow another worker's permits", { reason_code: "EXECUTION_AMBIGUOUS" });
+    execution = active[0]!;
+  }
+  // Closed execution IDs remain valid provenance for post-hoc records. They do not
+  // activate governance by themselves; an active execution or explicit permit does.
+  if (active.length === 0 && tx.permitRef === undefined) return;
+  if (active.length > 0 && execution !== null && execution.ended_at !== null) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Closed provenance cannot authorize a governed worker mutation", "Use an active registered execution with its own scoped permits", { execution_id: execution.execution_id });
+  if (execution !== null && tx.permitRef !== undefined && !execution.permit_ids.includes(tx.permitRef)) {
+    throw new GovernanceError("PERMIT_SCOPE_DENIED", "Explicit permit does not belong to the attributed execution", "Attach a valid scoped permit through the registered execution boundary", { permit_ref: tx.permitRef, execution_id: execution.execution_id });
+  }
+  const refs = tx.permitRef !== undefined ? [tx.permitRef] : [...new Set(execution?.permit_ids ?? [])];
+  const subjects = evidenceMutationSubjects(workspace, tx);
+  const checkTargets = async (targets: string[], semantic: "upsert_object" | "transition_object"): Promise<void> => {
+    for (const id of targets) {
+      parseIdOrWrap(id, "mutation target");
+      let allowed = admittedIds?.includes(id) === true;
+      for (const ref of refs) {
+        const verdict = await checkPermit(store, ref, { id: asGovernedId(id), op: semantic }, { observeExpiry: false });
+        if (verdict.outcome === "allowed") allowed = true;
+        else if (verdict.outcome === "unknown_permit") throw new GovernanceError("PERMIT_NOT_FOUND", `Permit missing or stolen: ${ref}`, "Restore or attach a current permit", { permit_ref: ref });
+      }
+      if (!allowed) throw new GovernanceError("PERMIT_SCOPE_DENIED", `No attributed permit covers ${id}`, "Return to FRAMEWORK LOCK; no implicit scope expansion", { id, reason_code: refs.length === 0 ? "PERMIT_MISSING" : "PERMIT_SCOPE_DENIED" });
+    }
+  };
+  const observedIds = observedMutationSubjects(workspace);
+  await checkTargets(observedIds, "upsert_object");
+  for (const op of tx.ops) {
+    const targets = mutationTargets(workspace, op, subjects, tx);
+    const unboundEvidence = op.op === "record_gate_run" && op.run.result.subjectId === null;
+    if (targets.length === 0 && !unboundEvidence) throw new GovernanceError("PERMIT_SCOPE_DENIED", "Runtime mutation lacks governed attribution", "Supply the governed scope", { reason_code: "PERMIT_MISSING", op: op.op });
+    await checkTargets(targets, op.op === "transition_object" ? "transition_object" : "upsert_object");
+  }
+}
+
+function applyUpsertKeybinding(workspace: TxWorkspace, op: Extract<TransactionOp, { op: "upsert_keybinding" }>): void {
+  const input = op.row;
+  assertKeybindingRow(input);
+  if (!(workspace.working.objects as RawRow[]).some(r => r.id === input.canonical_id)) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "Binding canonical object missing", "Register canonical object first", { id: input.canonical_id });
+  const root = dirname(workspace.paths.pomasterDir);
+  const dir = `${workspace.paths.pomasterDir}/truth/keybindings/`;
+  const rows = new Map(readKeybindings(root).map(r => [r.id, r]));
+  for (const [path, text] of workspace.files) if (path.startsWith(dir)) { const r = JSON.parse(text) as KeybindingRow; rows.set(r.id, r); }
+  const prior = rows.get(input.id);
+  const sameMapping = (a: KeybindingRow, b: KeybindingRow) => sha256OfCanonical(Object.fromEntries(Object.entries(a).filter(([key]) => key !== "probe" && key !== "binding_status"))) === sha256OfCanonical(Object.fromEntries(Object.entries(b).filter(([key]) => key !== "probe" && key !== "binding_status")));
+  const priorEvent = journalEvents(workspace.paths).filter(event => event.type === "KEYBINDING_UPSERTED" && event.id === input.id && typeof event.signoff_ref === "string").at(-1);
+  let declaration = input;
+  if (prior !== undefined && priorEvent !== undefined && isPlainRecord(priorEvent.declaration)) {
+    assertKeybindingRow(priorEvent.declaration);
+    const observationStatus = input.binding_status === prior.binding_status || input.binding_status === priorEvent.declaration.binding_status;
+    if (observationStatus && sameMapping(prior, input) && sameMapping(priorEvent.declaration, input) && keybindingConfirmationSubject(priorEvent.declaration).sha256 === priorEvent.subject_sha256) declaration = priorEvent.declaration;
+  }
+  const subject = keybindingConfirmationSubject(declaration);
+  const previousProof = priorEvent?.subject_sha256 === subject.sha256 ? priorEvent.signoff_ref : undefined;
+  const signoffRef = op.signoffRef ?? (typeof previousProof === "string" ? previousProof : undefined);
+  if (declaration.match_rule === "manual_confirmed" || priorEvent?.signoff_ref !== undefined) stageSignoff(workspace, signoffRef, subject, op.signoffRef !== undefined);
+  // Probe status is a machine observation; restore reachability against the signed declaration.
+  let row = probeKeybinding(root, { ...declaration, probe: input.probe }, workspace.curSeq);
+  if (prior && sha256OfCanonical({ ...prior, probe: { ...prior.probe, last_run_seq: 0 } }) === sha256OfCanonical({ ...row, probe: { ...row.probe, last_run_seq: 0 } })) row = prior;
+  assertKeybindingRow(row);
+  if (row.binding_status === "confirmed") {
+    for (const other of rows.values()) if (other.id !== row.id && other.binding_status === "confirmed" && other.binding_class === row.binding_class && (physicalKeybindingAnchor(root, other) === physicalKeybindingAnchor(root, row) || other.canonical_id === row.canonical_id)) throw new GovernanceError("SCHEMA_INVALID", "Confirmed binding conflict within class", "Resolve conflict before confirmation", { reason_code: "KEYBINDING_CONFLICT", id: other.id });
+  }
+  for (const other of rows.values()) {
+    if (other.id === row.id) continue;
+    const aliases = [row.legacy_id, other.legacy_id].map(value => typeof value === "string" ? normalizedKey(value) : null);
+    if ((aliases[0] !== null && (aliases[0] === normalizedKey(other.canonical_id) || aliases[0] === aliases[1])) ||
+        (aliases[1] !== null && aliases[1] === normalizedKey(row.canonical_id))) throw new GovernanceError("REF_INTEGRITY_VIOLATION", "Keybinding legacy alias conflicts with another canonical or alias", "Resolve duplicate registration before writing", { reason_code: "KEYBINDING_CONFLICT", id: other.id });
+  }
+  if (prior && sha256OfCanonical(prior) === sha256OfCanonical(row)) return;
+  const lowerPath = `${dir}${row.id.toLowerCase()}.json`;
+  const bindingPath = existsSync(lowerPath) ? lowerPath : `${dir}${row.id}.json`;
+  workspace.files.set(bindingPath, `${JSON.stringify(row, null, 2)}\n`);
+  const canonical = (workspace.working.objects as RawRow[]).find(r => r.id === row.canonical_id)!;
+  rows.set(row.id, row);
+  const bindings = [...rows.values()].filter(r => r.canonical_id === row.canonical_id);
+  canonical.binding_summary = { declared: bindings.length, probe_status: bindings.every(r => r.binding_status !== "stale" && r.probe.result === "matched") ? "all_verified" : "has_unverified" };
+  workspace.journalTail.push(JSON.stringify({ type: "KEYBINDING_UPSERTED", seq: workspace.nextSeq, id: row.id, binding_status: row.binding_status, subject_sha256: subject.sha256, declaration, ...(signoffRef !== undefined ? { signoff_ref: signoffRef } : {}) }));
+  workspace.anyChange = true;
 }
 
 // —— op 分发 ——
 
 function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): void {
   switch (op.op) {
+    case "upsert_keybinding":
+      applyUpsertKeybinding(workspace, op);
+      break;
     case "upsert_object":
       applyUpsertObject(workspace, op.envelope, tx);
       break;
@@ -1430,6 +2315,7 @@ function applyUpsertObject(
     existingRow === undefined
       ? null
       : readBodyFor(paths, workspace.bodyOverlay, existingRow);
+  if (existingBody !== null && existingBody.origin !== origin) throw new GovernanceError("SCHEMA_INVALID", "Object origin is immutable", "Create a legitimate successor instead of rewriting provenance", { reason_code: "ORIGIN_IMMUTABLE", id });
   const rev = existingRow === undefined ? 1 : ((existingRow.rev as number) + 1);
 
   const body: UnknownRecord = {
@@ -1489,7 +2375,11 @@ function applyUpsertObject(
         }
       : {}),
     ...(env.notesMd !== undefined ? { notes_md: env.notesMd } : {}),
+    ...(envelope.keyBindings !== undefined ? { key_bindings: Object.fromEntries(Object.entries(envelope.keyBindings).map(([slot, entries]) => [slot, (entries as readonly ObjectKeyBindingInput[]).map(entry => ({ artifact_type: entry.artifactType, value: entry.value, ...(entry.expect !== undefined ? { expect: entry.expect } : {}), ...(entry.probe !== undefined ? { probe: entry.probe } : {}), ...(entry.matchRule !== undefined ? { match_rule: entry.matchRule } : {}) }))])) } : {}),
   };
+
+  // Preserve the sanctioned legacy upsert contract. Full 02 schema revalidation is used
+  // by validateEnvelopeInWorkspace and external-body admission, not a new global migration gate.
 
   // 幂等：正文内容（除 rev）与既有正文一致 → 本 op 零变化（rev 不空转）。
   if (existingBody !== null) {
@@ -2514,10 +3404,13 @@ function applyRecordAdvance(
   const tail = chain.length === 0 ? null : (chain[chain.length - 1] ?? null);
   const previousAnchor = tail !== null && isPlainRecord(tail.advance.new_anchor) ? tail.advance.new_anchor : null;
 
+  const events = [...journalEvents(paths), ...workspace.journalTail.map(line => JSON.parse(line) as UnknownRecord)];
+  const bodyReview = anchorKind === "truth_body" && ref !== null ? truthBodyReview(workspace, ref, events) : null;
+  if (bodyReview !== null) assertTruthBodyAdvance(workspace, input, events);
   const errors = validateAdvance(advance, {
     lane: "vnext",
-    event: { actor: input.actor, reason: input.reason, after: input.currentAnchor ?? newAnchor },
-    previousAfter: previousAnchor,
+    event: { actor: input.actor, reason: input.reason, after: bodyReview === null ? (input.currentAnchor ?? newAnchor) : { ...bodyReview.newAnchor } },
+    previousAfter: bodyReview === null ? previousAnchor : { ...bodyReview.oldAnchor },
   });
   if (errors.length > 0) {
     const rejudgeOnly = errors.every((error) => error.startsWith("advance.rejudge"));
@@ -2585,6 +3478,7 @@ function applyRecordAdvance(
     actor: input.actor,
     reason: input.reason,
     advance: advance as UnknownRecord,
+    ...(input.signoffRef !== undefined ? { signoff_ref: input.signoffRef } : {}),
     retirement_ids: retirementIds,
     ...(reinstatementIds.length > 0 ? { reinstatement_ids: reinstatementIds } : {}),
   };

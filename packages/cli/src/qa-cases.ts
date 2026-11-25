@@ -35,6 +35,8 @@ import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
 import { nfrHints, tagsOf, type NfrHint } from "./intake-draft.js";
 import { loadIntakeLatest, type StoredBlock } from "./intake.js";
 import type { IntakeItem } from "./intake-identity.js";
+import { learnChapterRoles, readMarkdownDoc } from "./intake-blocks.js";
+import { normalizeText } from "./intake-text.js";
 import { KICKOFF_CURRENT_SCHEMA, KICKOFF_DIR, type KickoffSheet } from "./kickoff.js";
 
 /** qa 平面根（cli 本地平面，kernel 空根零改动——kickoff/plan 同款先例）。 */
@@ -193,7 +195,7 @@ export function deriveCases(input: QaDerivationInput): { readonly cases: readonl
       } else if (UNIQUE_WORD.test(rule.text)) {
         buckets.get("duplicate")?.push(ruleCase("duplicate", "唯一性校验：重复输入被拒绝", `${rule.text}——以已存在的值重复提交`, "提交被拒绝并提示重复", rule, "rule_duplicate"));
       } else if (DIGIT_FACE.test(rule.text)) {
-        buckets.get("boundary")?.push(ruleCase("boundary", "边界值：数值/长度约束面", `${rule.text}——取边界值（最小/最大/临界）各提交一次`, "边界值按规则接受或拒绝，行为与规则一致", rule, "rule_boundary"));
+        buckets.get("boundary")?.push(ruleCase("boundary", "边界值：数值/长度约束面", `${rule.text}——取边界值（最小/最大/临界）各提交一次`, `必须满足：${rule.text}；边界值按规则接受或拒绝，行为与规则一致`, rule, "rule_boundary"));
       } else {
         buckets.get("invalid_input")?.push(ruleCase("invalid_input", "非法输入：违反校验规则", `${rule.text}——提交不满足规则的输入`, "提交被拒绝并给出校验提示", rule, "rule_validation"));
       }
@@ -318,6 +320,7 @@ export interface QaFilesSnapshot {
 }
 export interface QaBlockResolution {
   readonly as: "item" | "gap" | "presentation" | "skip";
+  readonly reason?: string;
 }
 export interface QaResolutions {
   readonly blocks: Readonly<Record<string, QaBlockResolution>>;
@@ -327,8 +330,8 @@ export interface QaResolutions {
  * 原文复核三查（C-08 防线；D-2 纯读——重读磁盘只比对，零写口）：
  * 1) files：逐文件按 inputs[root]+path 重读、sha256 与 files.json 记录比对（材料在
  *    读取后变过 → drift）；
- * 2) blocks：items 非空 / resolution(item·gap) = covered，resolution(presentation·skip)
- *    = documented_skips，其余 = uncovered（提取可能漏检候选——freeze 门禁清零）；
+ * 2) blocks：逐个验证引用的 items 在座；重读原 md 的规则必须有文本/身份映射。
+ *    原文规则/块被模型漏掉仍为 uncovered；有据 presentation/skip 保持显式去向。
  * 3) items：origin.block 非空者必须在 blocks.json 在座（断链 = 提取/对齐损坏）。
  *    只查当前修订的条目——carried（上一版沿用）条目的出处块住在旧修订快照里，
  *    对照当前 blocks.json 断链是历史常态不是损坏。
@@ -351,13 +354,39 @@ export function reviewSources(inputs: readonly string[], files: readonly QaFileR
   const uncovered: { id: string; file: string; heading_path: readonly string[]; excerpt: string }[] = [];
   let covered = 0;
   let documentedSkips = 0;
-  for (const block of blocks) {
+  const itemIds = new Set(items.map(item => item.id));
+  // Re-read original requirement documents, not the extraction model's coverage claims.
+  // This checks mechanical omissions, not arbitrary semantic understanding or host isolation.
+  const rawDocs = files.filter(file => file.class === "requirement_doc" && /\.(md|markdown)$/i.test(file.path))
+    .flatMap(file => {
+      const base = inputs[file.root];
+      const path = base === undefined ? file.path : join(base, file.path);
+      return existsSync(path) ? [{ file: file.path, text: readFileSync(path, "utf8") }] : [];
+    });
+  const chapters = learnChapterRoles(rawDocs.map(doc => doc.text));
+  const originals = rawDocs.flatMap(doc => {
+    const reading = readMarkdownDoc(doc.file, doc.text, { chapters });
+    return reading.blocks.map(block => ({ block, rules: reading.items.filter(item => item.origin.block === block.id && item.kind === "rule") }));
+  });
+  const reviewBlocks = [...blocks];
+  for (const { block, rules } of originals) {
+    if (rules.length > 0 && !reviewBlocks.some(stored => stored.id === block.id && stored.file === block.file)) {
+      reviewBlocks.push({ ...block, destination: "pending" });
+    }
+  }
+  for (const block of reviewBlocks) {
     const resolution = resolutions.blocks[block.id];
     const destination = block.destination;
-    // covered：出条目（items:*）/ 读后 resolve 成条目或缺口 / 读时判读为缺口
-    if ((block.items !== undefined && block.items.length > 0) || resolution?.as === "item" || resolution?.as === "gap" || destination === "gap") covered += 1;
-    // documented_skips：读时判读已定（结构块 / 呈现面 / 跳过）或读后 resolve 成跳过
-    else if (resolution?.as === "presentation" || resolution?.as === "skip" || destination === "structure" || destination === "presentation" || destination === "skip") documentedSkips += 1;
+    const mapped = (block.items ?? []).filter(id => itemIds.has(id));
+    const originalRules = originals.find(original => original.block.id === block.id && original.block.file === block.file)?.rules ?? [];
+    const omitted = originalRules.some(rule => !items.some(item => mapped.includes(item.id) &&
+      (item.basis === "resolved" || (item.kind === rule.kind && normalizeText(item.text) === normalizeText(rule.text)))));
+    // Old-revision origins are legitimate: identity/text mapping, not current origin equality.
+    const completeMapping = mapped.length > 0 && mapped.length === block.items?.length && !omitted;
+    const documentedResolution = (resolution?.as === "presentation" || resolution?.as === "skip") && (resolution.reason?.trim().length ?? 0) > 0;
+    const nonMandatoryPresentation = originalRules.length === 0 && (resolution?.as === "presentation" || resolution?.as === "skip" || destination === "structure" || destination === "presentation" || destination === "skip");
+    if (documentedResolution || nonMandatoryPresentation) documentedSkips += 1;
+    else if (completeMapping || (originalRules.length === 0 && (resolution?.as === "gap" || destination === "gap"))) covered += 1;
     // 其余 = pending 且没有任何收口记录 → 提取可能漏检候选（freeze 门禁清零）
     else uncovered.push({ id: block.id, file: block.file, heading_path: block.heading_path, excerpt: block.excerpt.slice(0, 80) });
   }
@@ -373,7 +402,7 @@ export function reviewSources(inputs: readonly string[], files: readonly QaFileR
 
   return {
     files: { checked: files.length, matched, drift },
-    blocks: { total: blocks.length, covered, documented_skips: documentedSkips, uncovered },
+    blocks: { total: reviewBlocks.length, covered, documented_skips: documentedSkips, uncovered },
     items: { total: items.length, origin_resolved: originResolved, broken },
   };
 }
@@ -487,7 +516,7 @@ function loadQaInputs(dir: string, command: string): LoadedInputs | CommandOutco
 
 // ─────────────────────────────── qa cases draft ───────────────────────────────
 
-export function runQaCasesDraft(dir: string, _input: { readonly name?: string } = {}): CommandOutcome<QaCommandResult | null> {
+export function runQaCasesDraft(dir: string): CommandOutcome<QaCommandResult | null> {
   const command = "qa cases draft";
   const loaded = loadQaInputs(dir, command);
   if (!("sheetId" in loaded)) return loaded;
@@ -623,7 +652,7 @@ function freezeGateErrors(loaded: LoadedInputs, draft: CasesFile): CliError[] {
   return errors;
 }
 
-export function runQaCasesFreeze(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
+export function runQaCasesFreeze(dir: string): CommandOutcome<QaCommandResult | null> {
   const command = "qa cases freeze";
   const round = readJson<KickoffCurrent>(join(dir, ...KICKOFF_DIR.split("/"), "current.json"))?.sheet;
   if (round === undefined || round === "") {
@@ -705,7 +734,7 @@ interface QaCurrentPointer {
  * 新冻结集（parent 锚旧 digest）+ 新指针。旧 cases-frozen.json 字节零改动（留谱系）。
  * 祖先被改/被删 → 拒绝续谱（谱系锚在被验证的祖先上）。
  */
-export function runQaCasesRevise(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
+export function runQaCasesRevise(dir: string): CommandOutcome<QaCommandResult | null> {
   const command = "qa cases revise";
   const pointer = readJson<QaCurrentPointer>(join(dir, ...QA_DIR.split("/"), "current.json"));
   if (pointer === null || pointer.schema !== QA_CURRENT_SCHEMA) {
@@ -798,7 +827,7 @@ export function runQaCasesRevise(dir: string, _input: {} = {}): CommandOutcome<Q
 // ─────────────────────────────── qa cases check ───────────────────────────────
 
 /** 纯读对账：指针缺席 / digest 不一致 → fail（exit 1 门禁）；谱系链逐级验祖；其余漂移 → warning（不抬 exit）。 */
-export function runQaCasesCheck(dir: string, _input: {} = {}): CommandOutcome<QaCommandResult | null> {
+export function runQaCasesCheck(dir: string): CommandOutcome<QaCommandResult | null> {
   const command = "qa cases check";
   const pointer = readJson<QaCurrentPointer>(join(dir, ...QA_DIR.split("/"), "current.json"));
   if (pointer === null || pointer.schema !== QA_CURRENT_SCHEMA) {

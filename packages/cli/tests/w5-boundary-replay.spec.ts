@@ -28,7 +28,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
+import { applyTransaction, beginExecution, createStore, issuePermit } from "@pomaster/kernel";
+import { HUMAN, gid } from "../../../packages/kernel/tests/helpers.js";
 import type { ToolBindingRecord } from "@pomaster/gauntlet-lite";
 import { runInit, runPlanRun } from "@pomaster/cli";
 
@@ -393,7 +394,11 @@ async function replayFixture(bindings: readonly ToolBindingRecord[], acceptance:
     titleZh: "W5 边界回放", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
     payload: { intent: "Case E/F 边界回放", class_scan_result: { scope: "src/**", hits: 1, fixed_count: 1, regression_case_ref: "GRN-W5R" }, acceptance },
   } as never }] });
-  const execution = await beginExecution(store, { role: "orchestrator", runtime: "claude-code", identityKind: "interactive", startedAt: "2026-09-30T00:00:00.000Z" });
+  const permit = await issuePermit(store, {
+    subjectIds: [gid("TASK.W5.REPLAY")],
+    requestedBy: HUMAN,
+  });
+  const execution = await beginExecution(store, { role: "orchestrator", runtime: "claude-code", identityKind: "interactive", permitIds: [permit.permitRef], startedAt: "2026-09-30T00:00:00.000Z" });
   return execution.execution_id;
 }
 
@@ -448,7 +453,7 @@ describe("Case E 回放（R3：mock/real mutation 分裂；PR-W5.3 · W0 R3）",
     const injected = await runPlanRun(root, { taskRef: "TASK.W5.REPLAY", executionId, changed: ["src/ImportPanel.tsx"], faces: REPLAY_FACES });
     expect(injected.ok).toBe(false);
     const seamRows = injected.result.rows.filter((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
-    expect(seamRows.map((row) => row.binding_id).sort()).toEqual(["project.w5.seam.mock", "project.w5.seam.real"]);
+    expect(seamRows.map((row) => row.binding_id).sort(), JSON.stringify(injected.errors)).toEqual(["project.w5.seam.mock", "project.w5.seam.real"]);
 
     const mockRow = seamRows.find((row) => row.binding_id === "project.w5.seam.mock");
     const realRow = seamRows.find((row) => row.binding_id === "project.w5.seam.real");
@@ -512,7 +517,7 @@ describe("Case F 回放（R4：保存 200 但 scope 不可见；PR-W5.3 · W0 R4
     const injected = await runPlanRun(root, { taskRef: "TASK.W5.REPLAY", executionId, changed: ["src/BucCard.tsx"], faces: REPLAY_FACES });
     expect(injected.ok).toBe(false);
     const runtimeRow = injected.result.rows.find((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
-    expect(runtimeRow?.verdict).toBe("warning");
+    expect(runtimeRow?.verdict, JSON.stringify(injected.errors)).toBe("warning");
     const note = grnNote(runtimeRow?.grn as string);
     expect(note).toContain("w5_oracle_visible_chain_incomplete");
     expect(note).toContain("visible_result=false");

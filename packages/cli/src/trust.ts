@@ -220,7 +220,7 @@ export function verifySignoff(
   root: string,
   id: string,
   expect: { kind: SignoffKind; ref: string; sha256: string } | null,
-  options: { consume: boolean; allowConsumed?: boolean; requireConsumed?: boolean; env?: TrustEnv; consumedBy?: string },
+  options: { consume: boolean; allowConsumed?: boolean; requireConsumed?: boolean; env?: TrustEnv; consumedBy?: string; requireConsumedBy?: string },
 ): Verified {
   const env = options.env ?? {};
   const registry = loadRegistry(root);
@@ -230,6 +230,13 @@ export function verifySignoff(
   const parsed = parseRequest(trustPath(root, "requests", `${id}.json`));
   if (parsed === null) return failVerify("TRUST_SIGNOFF_NOT_FOUND", `找不到签发请求 ${id}（或不可解析）`, "pomaster trust request <种类> … 先创建请求");
   const { bytes, request } = parsed;
+  const issuedAt = Date.parse(request.issued_at);
+  const expiresAt = Date.parse(request.expires_at);
+  if (request.id !== id || !(SIGNOFF_KINDS as readonly string[]).includes(request.kind) ||
+      !Number.isFinite(issuedAt) || !Number.isFinite(expiresAt) || expiresAt <= issuedAt ||
+      expiresAt - issuedAt > MAX_TTL_MINUTES * 60_000 || issuedAt > (env.now ?? (() => new Date()))().getTime()) {
+    return failVerify("TRUST_SIGNOFF_MISMATCH", `请求 ${id} 的身份或有效期不成立`, "使用当前内容重新创建有界签发请求");
+  }
   if (request.project_id !== registry.file.project_id) return failVerify("TRUST_SIGNOFF_MISMATCH", `请求 ${id} 属于别的项目`, "在本项目里重新创建请求");
   if (expect !== null) {
     if (request.kind !== expect.kind) return failVerify("TRUST_SIGNOFF_MISMATCH", `请求 ${id} 是「${request.kind}」，这里需要「${expect.kind}」`, "为这个人工点创建对应种类的请求");
@@ -247,12 +254,25 @@ export function verifySignoff(
   const signer = registry.file.signers[signerIndex] as SignerRecord;
   const consumedPath = trustPath(root, "consumed", `${id}.json`);
   const alreadyConsumed = existsSync(consumedPath);
+  let consumedAssurance: Assurance | null = null;
+  if (alreadyConsumed && options.requireConsumedBy !== undefined) {
+    const consumed = readJson(consumedPath) as Record<string, unknown> | null;
+    if (consumed === null || consumed.id !== id || consumed.kind !== request.kind ||
+        consumed.by !== options.requireConsumedBy || consumed.principal !== signer.principal ||
+        consumed.fingerprint !== signer.fingerprint || !["strong", "weak", "unknown"].includes(String(consumed.assurance)) ||
+        typeof consumed.consumed_at !== "string" || !Number.isFinite(Date.parse(consumed.consumed_at)) ||
+        Date.parse(consumed.consumed_at) < issuedAt || Date.parse(consumed.consumed_at) >= expiresAt ||
+        Date.parse(consumed.consumed_at) > (env.now ?? (() => new Date()))().getTime()) {
+      return failVerify("TRUST_SIGNOFF_MISMATCH", `签发 ${id} 未被指定人工点消费`, "恢复原消费记录；不能把其他人工点的签发复用为恢复凭据");
+    }
+    consumedAssurance = consumed.assurance as Assurance; // recovery never upgrades the original assurance
+  }
   if (alreadyConsumed && !options.allowConsumed && !options.requireConsumed) return failVerify("TRUST_SIGNOFF_REPLAYED", `签发 ${id} 已经用过了`, "每份签发只能用一次：重新创建请求并签名");
-  if (!alreadyConsumed && (env.now ?? (() => new Date()))().getTime() > Date.parse(request.expires_at)) {
+  if (!alreadyConsumed && (env.now ?? (() => new Date()))().getTime() >= expiresAt) {
     return failVerify("TRUST_SIGNOFF_EXPIRED", `签发 ${id} 已于 ${request.expires_at} 过期`, "重新创建请求并签名");
   }
   if (options.requireConsumed && !alreadyConsumed) return failVerify("TRUST_SIGNOFF_MISMATCH", `签发 ${id} 没有被人工点使用过`, "成果 ACCEPT 时须带 --signoff");
-  const { assurance } = assuranceOf(signer, verdict.publicKey, env);
+  const assurance = consumedAssurance ?? assuranceOf(signer, verdict.publicKey, env).assurance;
   const record: SignoffRecord = { assurance, signoff: id, principal: signer.principal, fingerprint: signer.fingerprint };
   if (options.consume && !alreadyConsumed) {
     mkdirSync(dirname(consumedPath), { recursive: true });

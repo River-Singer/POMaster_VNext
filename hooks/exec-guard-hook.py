@@ -17,11 +17,9 @@ packages/cli/src/exec-guard.ts——判卷权威单一实现，本脚本零第�
       （outside_scope / unknown_permit / expired / policy_forbidden），
       或活跃 execution 显式无 permit（permit_ids 空——显式无许可非缺席，
       与 execution audit 空 scope 面同语义：任何映射不可授予 in-scope）。
-- (c) fail-open 放行（exit 0 + stderr 显式声明）：判卷器自身故障（CLI 入口缺席 /
-      node 缺席 / exec-guard 进程故障 / 判卷系统码 ATTEMPT_MALFORMED·FATAL_*·
-      KERNEL_ERROR·NOT_INITIALIZED / store 台账损坏 / 本脚本自身异常）。
-      防 hook 把开发流程卡死；放行留下审计线索，由 Detection 半边
-      （`pomaster execution audit`，PR #6 ①号切片）兜底复查。
+- (c) 运行故障：追加 state/guard-faults.jsonl 的 GUARD_FAULT_OBSERVED。
+      治理控制面 / confirmed physical roots 故障 exit 2；其他目标计数并 fail-open。
+      unknown protected-root metadata 同样 fail-closed，不把损坏当无绑定。
 - 合规写入 ALLOW（exit 0 + stderr 注记）：活跃 execution 的任一 permit
   scope.subject_ids 覆盖映射 id（多 execution / 多 permit 取并集——与
   execution audit judgeMutationScope 的「多路径 × 多 permit 并集面」同判据方向）。
@@ -29,14 +27,13 @@ packages/cli/src/exec-guard.ts——判卷权威单一实现，本脚本零第�
   DENY stderr 枚举全部越界目标（denied 列表持有全量）；unmapped / 无 store /
   无活跃 execution 透传面不参与全称（条件激活语义原样）。
 
-两道常开的防线（不看有没有活跃 execution，store 在座即生效）：
+常开控制平面防线（不看有没有活跃 execution，store 在座即生效）：
 - 治理控制平面只经 pomaster 命令写：.pomaster/ 下的 state、truth、evidence、executions、runtime、
   traces、production、sources、memory、生成清单 scaffold/generation-manifest.json、讨论的
   state.json / meta.json / decision-graph.json。Edit / Write / MultiEdit / NotebookEdit / apply_patch
   直接写，或 Bash 命令有写意图（重定向、rm / mv / cp 目标、tee、sed -i、truncate、git checkout -- 等）
   落到这些路径 → DENY（exit 2），指路对应命令。读（cat / grep / jq …）照常放行。
-- 脚手架生成文件（KEYBINDING 映射到 CAPABILITY.SCAFFOLD.*）不手改：没有活跃 execution 时
-  对它们的写同样 DENY，指路「改规格 → confirm --change → generate」。
+- 无活跃 execution 的 source 写入（含脚手架）仅 advisory；不伪造 permit 判卷。
 
 工具面：Claude Code 的 Edit / Write / MultiEdit / NotebookEdit / Bash；Codex 的 apply_patch
 （补丁在 tool_input.command，按 *** Add / Update / Delete File 与 *** Move to 行取全部目标）
@@ -52,14 +49,14 @@ packages/cli/src/exec-guard.ts——判卷权威单一实现，本脚本零第�
   （跨 session 并集；不按 hook session_id 收窄——session_key 绑定是可选字段，
   缺席诚实优先于猜测）。
 - KEYBINDING 行镜像 execution-audit.ts 的最小词形（id/binding_class/canonical_id/
-  physical_path/binding_status）；malformed 行跳过并 stderr 披露（fail-open 方向，
-  结构化披露由 Detection 半边 KEYBINDING_ROW_MALFORMED 承接）。路径段镜像
+  physical_path/binding_status）；只消费 confirmed 并重探现实，malformed root 元数据
+  产生可见故障；derived/stale 不作保护范围授权。路径段镜像
   cli/execution-audit.ts KEYBINDINGS_DIR_RELATIVE（.pomaster/truth/keybindings）——
   Python 侧无法 import TS 单源，漂移由两端测试钉（execution-audit.spec + 本 spec）。
 
 退出码契约（Claude Code hooks）：0 = 放行（stdout/stderr 不阻断）；2 = 阻断工具
-调用（stderr 回喂 agent）；其余非零 = 非阻断错误。本脚本对一切自身异常兜底为
-fail-open exit 0——判卷器永不因自身故障阻塞开发流程。
+调用（stderr 回喂 agent）；其余非零 = 非阻断错误。launcher 仅取 trusted runtime
+相邻包 / 外部 PATH，拒绝 target-contained 可执行件和环境入口注入；保护根故障关闭。
 """
 from __future__ import annotations
 
@@ -69,6 +66,8 @@ import re
 import subprocess
 import sys
 import time
+import shutil
+from datetime import datetime, timezone
 
 # Windows 控制台缺省码页（cp936 等）会毁掉 stderr 中文注记——与 session-start.py
 # 同款纪律：stderr/stdout 重配置 utf-8（errors=replace 防单字符毁整行）。
@@ -82,6 +81,8 @@ if sys.platform.startswith("win"):
 # ---------------------------------------------------------------------------
 
 STDERR_PREFIX = "[pomaster exec-guard hook]"
+_fault_root: str | None = None
+_fault_target = "<unknown>"
 
 STORE_INDEX_RELATIVE = os.path.join(".pomaster", "state", "truth-index.json")
 EXECUTIONS_DIR_RELATIVE = os.path.join(".pomaster", "executions")
@@ -112,8 +113,6 @@ DENIAL_CODE_EXTRA = {"DENOMINATOR_DELETE_FORBIDDEN"}
 JUDGE_SPAWN_TIMEOUT_SECONDS = 20.0
 DEFAULT_DEADLINE_SECONDS = 50.0
 DEADLINE_ENV = "POMASTER_HOOK_DEADLINE_SECONDS"
-# CLI 入口注入面（默认 = 自举布局 <store_root>/packages/cli/dist/bin.js）。
-CLI_ENTRY_ENV = "POMASTER_CLI_ENTRY"
 
 # 脚手架受管文件的治理 id 前缀（镜像 packages/cli/src/scaffold-generate.ts
 # SCAFFOLD_CANONICAL_PREFIX）。只影响 DENY 的指路呈现，不参与判卷。
@@ -303,7 +302,7 @@ def bash_path_candidates(command: str) -> list[str]:
     normalized = re.sub(r"[\"'`(){}\[\];|<>&]", " ", command)
     candidates: list[str] = []
     for token in normalized.split():
-        token = token.strip(".,:!?")
+        token = token.rstrip(".,:!?")
         if not token or token.startswith("-"):
             continue
         if "://" in token:
@@ -323,8 +322,10 @@ def load_active_executions(store_root: str) -> list[dict] | None:
     exec_dir = os.path.join(store_root, *EXECUTIONS_DIR_RELATIVE.split(os.sep))
     try:
         names = sorted(name for name in os.listdir(exec_dir) if name.endswith(".json"))
+    except FileNotFoundError:
+        return []  # Missing execution ledger means no active execution.
     except OSError:
-        return []  # 目录缺席 = 零档案（无活跃 execution 的合法态）
+        return None  # Unreadable is a fault, not advisory absence.
     active: list[dict] = []
     for name in names:
         path = os.path.join(exec_dir, name)
@@ -343,12 +344,12 @@ def load_active_executions(store_root: str) -> list[dict] | None:
 
 
 def load_keybinding_rows(store_root: str) -> list[dict]:
-    """装载 KEYBINDING 绑定行（最小词形；malformed 行跳过 + stderr 披露）。"""
+    """Read confirmed physical roots, re-probe reality, and expose malformed metadata."""
     kb_dir = os.path.join(store_root, *KEYBINDINGS_DIR_RELATIVE.split(os.sep))
     try:
         names = sorted(name for name in os.listdir(kb_dir) if name.endswith(".json"))
-    except OSError:
-        return []  # 目录缺席 = 无绑定表（全 unmapped 合法态，与 Detection 半边同语义）
+    except FileNotFoundError:
+        return []  # No binding table is honest unmapped state.
     rows: list[dict] = []
     for name in names:
         path = os.path.join(kb_dir, name)
@@ -356,15 +357,15 @@ def load_keybinding_rows(store_root: str) -> list[dict]:
             with open(path, encoding="utf-8") as handle:
                 parsed = json.load(handle)
         except (OSError, json.JSONDecodeError) as exc:
-            note(f"KEYBINDING 行不可解析（跳过该行，fail-open 方向）：{name}（{exc}）")
-            continue
+            raise ValueError(f"KEYBINDING row unreadable: {name}: {exc}") from exc
         if not isinstance(parsed, dict):
-            note(f"KEYBINDING 行非对象（跳过该行）：{name}")
-            continue
+            raise ValueError(f"KEYBINDING row is not an object: {name}")
         row_id = parsed.get("id")
         binding_class = parsed.get("binding_class")
         canonical_id = parsed.get("canonical_id")
         physical_path = parsed.get("physical_path")
+        if binding_class == "contract_operation_to_operationId":
+            continue  # operationId is not a physical root.
         if (
             not isinstance(row_id, str)
             or not isinstance(binding_class, str)
@@ -374,15 +375,26 @@ def load_keybinding_rows(store_root: str) -> list[dict]:
             or not GOVERNED_ID_COARSE.match(canonical_id)
             or not physical_path
         ):
-            note(f"KEYBINDING 行词形不参与文件映射（跳过该行）：{name}")
-            continue
+            raise ValueError(f"Malformed KEYBINDING root declaration: {name}")
+        if parsed.get("binding_status") != "confirmed":
+            continue  # Derived/stale observations cannot establish a protected root.
+        probe = parsed.get("probe")
+        if not isinstance(probe, dict) or probe.get("result") not in ("matched", "not_probed") or (probe.get("result") == "not_probed" and parsed.get("match_rule") != "manual_confirmed"):
+            raise ValueError(f"Invalid confirmed KEYBINDING probe: {name}")
+        if os.path.isabs(physical_path) or "\\" in physical_path or ".." in physical_path.split("/"):
+            raise ValueError(f"Invalid KEYBINDING root: {name}")
+        anchor_path = os.path.join(store_root, physical_path)
+        if not path_within(anchor_path, store_root):
+            raise ValueError(f"KEYBINDING symlink escapes project: {name}")
+        if not (os.path.isdir(anchor_path) if binding_class == BINDING_CLASS_DIR_ANCHOR else os.path.isfile(anchor_path)):
+            continue  # Physical reality is re-probed, not inferred from a saved result.
         rows.append(
             {
                 "file": name,
                 "binding_class": binding_class,
                 "canonical_id": canonical_id,
                 # 物理锚统一 posix 词形再 normcase（Windows 盘面大小写不敏感）。
-                "anchor": os.path.normcase(physical_path.replace("\\", "/")),
+                "anchor": os.path.normcase(physical_path).replace("\\", "/"),
             }
         )
     return rows
@@ -390,7 +402,7 @@ def load_keybinding_rows(store_root: str) -> list[dict]:
 
 def map_path_to_ids(rel: str, rows: list[dict]) -> list[str]:
     """store 相对 posix 路径 → 映射 governed id 去重清单（execution-audit 同锚语义）。"""
-    rel_norm = os.path.normcase(rel)
+    rel_norm = os.path.normcase(rel).replace("\\", "/")
     ids: list[str] = []
     for row in rows:
         anchor = row["anchor"]
@@ -408,12 +420,58 @@ def map_path_to_ids(rel: str, rows: list[dict]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def path_within(path: str, root: str) -> bool:
+    try:
+        return os.path.normcase(os.path.commonpath([os.path.realpath(path), os.path.realpath(root)])) == os.path.normcase(os.path.realpath(root))
+    except ValueError:
+        return False
+
+
 def resolve_cli_entry(store_root: str) -> str | None:
-    entry = os.environ.get(CLI_ENTRY_ENV, "").strip()
-    if entry:
-        return entry if os.path.isfile(entry) else None
-    default = os.path.join(store_root, "packages", "cli", "dist", "bin.js")
-    return default if os.path.isfile(default) else None
+    """Only trusted runtime-adjacent package assets, then external PATH installations.
+
+    Neither environment overrides nor the candidate store can supply executable code.
+    """
+    runtime = os.path.dirname(os.path.realpath(__file__))
+    package_roots = [os.path.realpath(os.path.join(runtime, "../..")),
+                     os.path.realpath(os.path.join(runtime, "../../../")),
+                     os.path.realpath(os.path.join(runtime, "../packages/cli"))]
+    for package in package_roots:
+        if path_within(package, store_root):
+            continue
+        try:
+            with open(os.path.join(package, "package.json"), encoding="utf-8") as handle:
+                if json.load(handle).get("name") != "@pomaster/cli":
+                    continue
+        except (OSError, ValueError, AttributeError):
+            continue
+        for entry in [os.path.join(package, "dist/bin.js"), os.path.join(package, "bin.js")]:
+            if os.path.isfile(entry) and not path_within(entry, store_root):
+                return os.path.realpath(entry)
+    # Search each external directory independently; a poisoned first PATH entry must not hide a later installation.
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory or path_within(directory, store_root):
+            continue
+        entry = shutil.which("pomaster", path=directory)
+        if entry and not path_within(entry, store_root):
+            return os.path.realpath(entry)
+    return None
+
+
+def observe_fault(store_root: str, target: str, reason: str, protected: bool) -> int:
+    disposition = "fail_closed" if protected else "fail_open"
+    event = {"type": "GUARD_FAULT_OBSERVED", "observed_at": datetime.now(timezone.utc).isoformat(),
+             "target": target, "reason": reason, "protected": protected, "disposition": disposition}
+    file = os.path.join(store_root, ".pomaster/state/guard-faults.jsonl")
+    try:
+        if not path_within(file, store_root):
+            raise OSError("fault log escapes store")
+        with open(file, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, ensure_ascii=False) + "\n")
+    except OSError as exc:
+        note(f"GUARD_FAULT_LOG_INVALID: cannot persist fault ({exc})")
+    note(f"GUARD_FAULT_OBSERVED {disposition}: {target}: {reason}")
+    return 2 if protected else 0
 
 
 def judge_once(
@@ -424,17 +482,24 @@ def judge_once(
     if cli_entry is None:
         return {
             "kind": "fault",
-            "reason": f"exec-guard CLI 入口缺席（{CLI_ENTRY_ENV} 缺省解析 "
-            f"<store_root>/packages/cli/dist/bin.js 均不可用）",
+            "reason": "Trusted package-local/PATH exec-guard launcher unavailable; target artifacts are never executed",
         }
-    node = os.environ.get("POMASTER_NODE", "node")
+    node = None
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if directory and not path_within(directory, store_root):
+            candidate = shutil.which("node", path=directory)
+            if candidate and not path_within(candidate, store_root):
+                node = candidate
+                break
     attempt = {
         "permit_ref": permit_ref,
         "id": governed_id,
         "op": WRITE_OP,
         "context": {"surface": "pretooluse-hook", "tool": tool, "target": raw_target},
     }
-    cmd = [node, cli_entry, "--dir", store_root, "exec-guard", "--attempt", "-", "--json"]
+    if cli_entry.endswith(".js") and node is None:
+        return {"kind": "fault", "reason": "Trusted external node runtime unavailable"}
+    cmd = ([node, cli_entry] if cli_entry.endswith(".js") else [cli_entry]) + ["--dir", store_root, "exec-guard", "--attempt", "-", "--json"]
     try:
         proc = subprocess.run(
             cmd,
@@ -462,7 +527,8 @@ def judge_once(
             code = first.get("code") if isinstance(first.get("code"), str) else None
             message = first.get("message") if isinstance(first.get("message"), str) else None
             hint = first.get("hint") if isinstance(first.get("hint"), str) else None
-    if proc.returncode == 0:
+    result = envelope.get("result") if isinstance(envelope, dict) else None
+    if proc.returncode == 0 and isinstance(result, dict) and envelope.get("ok") is True and result.get("outcome") == "allowed" and result.get("permit_ref") == permit_ref and result.get("attempt") == {"id": governed_id, "op": WRITE_OP}:
         return {"kind": "allowed", "permit_ref": permit_ref, "id": governed_id}
     if proc.returncode == 1 and code is not None and (
         code.startswith(DENIAL_CODE_PREFIX) or code in DENIAL_CODE_EXTRA
@@ -526,9 +592,8 @@ def write_targets(tool: str, raw_targets: list[str], bash_command: str | None) -
 
 
 def deny_always_on(tool: str, cwd: str, targets: list[str]) -> int | None:
-    """常开防线：治理控制平面 / 脚手架生成文件（无活跃 execution 时）的写 → DENY；否则 None。"""
+    """常开控制平面写保护；source 写入是否治理仅由下游 execution 判定。"""
     control: list[tuple[str, str]] = []
-    scaffold: list[tuple[str, list[str]]] = []
     for raw in targets:
         absolute = resolve_target(raw, cwd)
         if absolute is None:
@@ -543,12 +608,8 @@ def deny_always_on(tool: str, cwd: str, targets: list[str]) -> int | None:
         if hint is not None:
             control.append((rel, hint))
             continue
-        active = load_active_executions(root)
-        if active:
-            continue  # 有活跃 execution：照 permit 判卷（下游原流程）
-        ids = [cid for cid in map_path_to_ids(rel, load_keybinding_rows(root)) if cid.startswith(SCAFFOLD_CANONICAL_PREFIX)]
-        if ids:
-            scaffold.append((rel, ids))
+        # Source files, including scaffold files, are advisory when no execution is active.
+        # Active execution scope is judged below, never inferred here.
     if control:
         print(f"{STDERR_PREFIX} DENY: 治理控制平面不直接编辑（tool={tool}）", file=sys.stderr)
         for rel, hint in control:
@@ -559,20 +620,12 @@ def deny_always_on(tool: str, cwd: str, targets: list[str]) -> int | None:
             file=sys.stderr,
         )
         return 2
-    if scaffold:
-        print(f"{STDERR_PREFIX} DENY: 脚手架生成文件不手改（tool={tool}）", file=sys.stderr)
-        for rel, ids in scaffold:
-            print(f"  - {rel}（{', '.join(ids)}）", file=sys.stderr)
-        print(
-            "  要改就改 `.pomaster/scaffold/domain-spec.yaml` → `pomaster scaffold confirm --change <CHANGE-id> "
-            "--by human:<owner>` → `pomaster scaffold generate`；业务扩展写在生成器留出的扩展点里（如后端的 <app>-support 模块）。",
-            file=sys.stderr,
-        )
-        return 2
     return None
 
 
 def main() -> int:
+    global _fault_root, _fault_target
+    _fault_root = find_store_root(os.getcwd())
     started = time.monotonic()
     deadline = DEFAULT_DEADLINE_SECONDS
     raw_deadline = os.environ.get(DEADLINE_ENV, "").strip()
@@ -588,7 +641,9 @@ def main() -> int:
         if isinstance(parsed, dict):
             payload = parsed
     except json.JSONDecodeError:
-        return fail_open("hook 入参 stdin 非 JSON（harness 形态漂移？）——无法定位判卷目标")
+        if _fault_root:
+            return observe_fault(_fault_root, "<unknown>", "Hook input is not JSON; protected target cannot be excluded", True)
+        return fail_open("Hook input is not JSON; no initialized store found for fault telemetry")
 
     tool = payload.get("tool_name")
     if tool not in SUPPORTED_TOOLS:
@@ -630,16 +685,30 @@ def main() -> int:
     judged_targets = 0
     budget_exceeded = False
     for store_root, targets in buckets.items():
+        _fault_root = store_root
+        _fault_target = targets[0] if targets else "<unknown>"
         active = load_active_executions(store_root)
         if active is None:
-            return fail_open(f"执行档案台账损坏（{store_root}）——活跃性不可判定")
+            try:
+                known_rows = load_keybinding_rows(store_root)
+                decisions = [observe_fault(store_root, raw, "Execution ledger unreadable", bool(map_path_to_ids(rel_posix(store_root, raw) or "", known_rows)) or (rel_posix(store_root, raw) or "").startswith(".pomaster/")) for raw in targets]
+            except Exception as exc:
+                decisions = [observe_fault(store_root, raw, f"Execution and binding metadata unreadable: {exc}", True) for raw in targets]
+            if 2 in decisions:
+                return 2
+            continue
         if not active:
             note(
-                "pass-through: 无活跃 execution（executions/ 档案全封口或缺席）"
+                "ADVISORY: 无活跃 execution（executions/ 档案全封口或缺席）；source edits allowed"
                 f"——store={store_root}"
             )
             continue
-        rows = load_keybinding_rows(store_root)
+        try:
+            rows = load_keybinding_rows(store_root)
+        except Exception as exc:
+            for raw in targets:
+                observe_fault(store_root, raw, f"Protected root metadata unreadable: {exc}", True)
+            return 2
         budget_exceeded = False
         for raw in targets:
             absolute = resolve_target(raw, cwd)
@@ -683,6 +752,8 @@ def main() -> int:
                 verdicts.append(
                     {
                         "kind": "denied",
+                        "store_root": store_root,
+                        "target": raw,
                         "permit_ref": None,
                         "id": ", ".join(mapped_ids),
                         "code": "EXECUTION_WITHOUT_PERMIT",
@@ -699,9 +770,12 @@ def main() -> int:
                     if time.monotonic() - started > deadline:
                         budget_exceeded = True
                         break
-                    verdicts.append(
-                        judge_once(store_root, permit_ref, governed_id, raw, str(tool))
-                    )
+                    try:
+                        verdict = judge_once(store_root, permit_ref, governed_id, raw, str(tool))
+                    except Exception as exc:
+                        verdict = {"kind": "fault", "reason": f"Guard runtime exception: {exc}"}
+                    verdict.update({"store_root": store_root, "target": raw, "protected": True})
+                    verdicts.append(verdict)
                 if budget_exceeded:
                     break
             if budget_exceeded:
@@ -718,14 +792,22 @@ def main() -> int:
     # 前置半）：按 governed id 归并判卷结论——∃ permit 覆盖即该目标 allowed，
     # raw verdict 层的个别 denied 不定罪（钉 allow.multi_permit_union 语义：
     # 全称只作用于目标层，不作用于 raw verdict 层）。
-    covered_ids = {verdict["id"] for verdict in allowed}
+    covered_ids = {(verdict["store_root"], verdict["target"], verdict["id"]) for verdict in allowed}
     # 跨目标聚合 = 全称（后置半）：任一未被任何 permit 覆盖的越界目标 → 整体
     # DENY——同批混合允许/越界命令不得因任一 allowed verdict 提前放行（与
     # execution audit judgeMutationScope 逐路径严格判据对称，消除「judge_once
     # 已返回 denied 又被汇总层丢弃」的语义倒挂）。unmapped / 无 store / 无活跃
     # execution 透传面不产 verdict，天然不参与全称；DENY 优先于 ALLOW 也使混合
     # 批中预算耗尽的部分判卷落 fail-closed 方向。
-    out_of_scope = [verdict for verdict in denied if verdict["id"] not in covered_ids]
+    out_of_scope = [verdict for verdict in denied if (verdict["store_root"], verdict["target"], verdict["id"]) not in covered_ids]
+    # Every fault is disclosed, including mixed allow/fault batches and alternate permits.
+    fault_closed = False
+    for fault in faults:
+        fault_closed = observe_fault(fault["store_root"], fault["target"], fault["reason"], fault["protected"]) == 2 or fault_closed
+    if budget_exceeded:
+        for root, targets in buckets.items():
+            for target in targets:
+                fault_closed = observe_fault(root, target, "Guard judgement budget exhausted; batch incompletely assessed", True) == 2 or fault_closed
 
     if out_of_scope:
         first = out_of_scope[0]
@@ -776,6 +858,8 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    if fault_closed:
+        return 2
     if allowed:
         hit = allowed[0]
         note(
@@ -784,18 +868,15 @@ def main() -> int:
         )
         return 0
     if faults:
-        return fail_open(faults[0]["reason"])
-    if budget_exceeded:
-        return fail_open("判卷预算耗尽且未取得任何判卷结论")
+        return 0  # Counted unprotected fault only; protected faults already closed.
     return pass_through("全部目标均为透传面（无 store 树内 mapped 目标）")
 
 
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception as exc:  # noqa: BLE001 —— 自身异常兜底 fail-open（头注三态 (c)）。
-        try:
-            note(f"FAIL-OPEN: hook 自身异常（{type(exc).__name__}: {exc}）")
-        except Exception:
-            pass
+    except Exception as exc:  # Last-resort fault boundary: never silently allow an unknown protected target.
+        if _fault_root:
+            sys.exit(observe_fault(_fault_root, _fault_target, f"Hook runtime exception: {type(exc).__name__}: {exc}", True))
+        note(f"FAIL-OPEN: no initialized store for runtime fault telemetry: {type(exc).__name__}: {exc}")
         sys.exit(0)

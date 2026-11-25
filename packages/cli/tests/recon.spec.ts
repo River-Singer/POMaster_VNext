@@ -62,8 +62,9 @@ import { basename, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Ajv from "ajv";
 import { allSchemas, perceptionReceiptsSchema } from "@pomaster/schemas";
-import { applyTransaction, beginExecution, createStore, sha256OfBytes, storagePathOfSha256, type Store } from "@pomaster/kernel";
+import { applyTransaction, attachPermit, beginExecution, createStore, issuePermit, sha256OfBytes, storagePathOfSha256, type Store } from "@pomaster/kernel";
 import { stripQuotesFromPathEnv, type SpawnFn } from "@pomaster/gauntlet-lite";
+import { HUMAN, gid } from "../../../packages/kernel/tests/helpers.js";
 import {
   RECON_ARCH_BASELINE_FILE,
   RECON_ARCH_TOOL,
@@ -110,7 +111,13 @@ describe("recon scope-review freshness/adopt", () => {
 
   it("fresh 可追加 Task 输入；源码漂移后 stale 且拒绝二次采纳", async () => {
     await seedScopeTask();
+    const permit = await issuePermit(store, {
+      subjectIds: [gid("TASK.RECON_SCOPE")],
+      requestedBy: HUMAN,
+    });
     const { executionId } = await seedExecution();
+    await attachPermit(store, executionId, permit.permitRef, HUMAN, "采纳 TASK.RECON_SCOPE 的审阅输入");
+    // adopt 无 execution-id 参数；唯一活跃 worker 持有其自身 TASK 许可。
     writeHostFile("src/root.ts", 'import { child } from "./child"; export const root=child;\n');
     writeHostFile("src/child.ts", "export const child=1;\n");
     const scan = await runReconImportGraph(root, { executionId, roots:["src/root.ts"], task:"TASK.RECON_SCOPE", maxDepth:4 });
@@ -125,7 +132,7 @@ describe("recon scope-review freshness/adopt", () => {
     const reviewPath=join(root,"review.json");
     writeFileSync(reviewPath,JSON.stringify({decisions:report.scope_review.machine_derived_candidates.map((x)=>({path:x.path,status:"unknown",basis:"技术回放；非 Owner 裁决"}))}));
     const adopted=await runScopeReviewAdopt(root,{observationRef:obs,taskRef:"TASK.RECON_SCOPE",reviewFile:reviewPath,actor:"agent:codex",sourceRef:"session:test"});
-    expect(adopted.ok).toBe(true);
+    expect(adopted.ok, JSON.stringify(adopted.errors)).toBe(true);
     const shown=await runScopeReviewShow(root,"TASK.RECON_SCOPE");
     expect(shown.result.reviews).toHaveLength(1);
     const receiptPath = join(root, ...(scan.result.receipt_path as string).split("/"));

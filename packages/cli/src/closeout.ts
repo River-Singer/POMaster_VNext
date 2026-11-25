@@ -111,7 +111,7 @@
  *   （short_circuited=true 零写入）。
  */
 
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GovernedId, RunSourceSnapshot, Store, TruthIndex } from "@pomaster/kernel";
@@ -126,9 +126,12 @@ import {
   assertEvidenceBaselineInputs,
   GovernedIdParseError,
   applyTransaction,
+  assessTruthBodyEdits,
+  readBreakGlassDisclosures,
   PLAN_CAPABILITY_GATE_NAMES,
   createStore,
   loadTruthIndex,
+  loadStoreReadOnly,
   parseGovernedId,
   qualifyEvidenceBatch,
   resolveAlias,
@@ -164,6 +167,7 @@ import {
 } from "./permit.js";
 import { POMASTER_DIR, claimsDirPath, discoveryScratchpadsDirPath, runsDirPath, toPosix } from "./store-layout.js";
 import { judgeRunSourceStability } from "./source-snapshot.js";
+import { readGuardFaults, type GuardFaultAssessment } from "./guard-faults.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -189,6 +193,8 @@ export interface CloseoutGateRow {
   readonly verdict: string | null;
   readonly ran_at_seq: number | null;
   readonly latest: boolean;
+  /** Assessment-only projection of the existing required/grounded-optional union. */
+  readonly required?: boolean;
 }
 
 /**
@@ -215,6 +221,9 @@ export interface CloseoutAcceptReceipt {
 }
 
 export interface CloseoutResult {
+  readonly truth_body_edits?: ReturnType<typeof assessTruthBodyEdits>;
+  readonly break_glass_disclosures?: ReturnType<typeof readBreakGlassDisclosures>;
+  readonly guard_faults?: GuardFaultAssessment;
   /** argv 原词形。 */
   readonly task: string;
   /** canonical 解析结果（A5 文法 / A6 收编；解析失败时 null）。 */
@@ -261,6 +270,8 @@ export interface CloseoutInput {
   /** 审批/决策引用（随施断事务落 journal；evidence 轴补丁 kernel 无 requires，选填）。 */
   readonly authorityRef?: string;
   readonly note?: string;
+  /** Content-addressed, signed project decision; never a caller-supplied receipt. */
+  readonly projectAccept?: string;
 }
 
 function emptyResult(task: string): CloseoutResult {
@@ -304,7 +315,7 @@ function asString(value: unknown): string | null {
  * exclusions can narrow the denominator; incomplete declarations retain the
  * conservative rule without discarding known required gates.
  */
-function requiredGateNamesFromAcceptance(value: unknown): {
+export function requiredGateNamesFromAcceptance(value: unknown): {
   readonly required: ReadonlySet<string>;
   readonly optional: ReadonlySet<string>;
   readonly complete: boolean;
@@ -822,6 +833,22 @@ export async function runCloseout(
   rootDir: string,
   input: CloseoutInput,
 ): Promise<CommandOutcome<CloseoutResult>> {
+  return judgeCloseout(rootDir, input, false);
+}
+
+/** Exact shared machine judgment. No human bypass and no completion write. */
+export async function assessCloseoutMachine(
+  rootDir: string,
+  input: Pick<CloseoutInput, "taskId">,
+): Promise<CommandOutcome<CloseoutResult>> {
+  return judgeCloseout(rootDir, input, true);
+}
+
+async function judgeCloseout(
+  rootDir: string,
+  input: CloseoutInput,
+  assessmentOnly: boolean,
+): Promise<CommandOutcome<CloseoutResult>> {
   const base = emptyResult(input.taskId);
 
   // —— store 初始化缺席显式（requireInitialized；与 record/maintain 同一纪律） ——
@@ -840,7 +867,7 @@ export async function runCloseout(
 
   let store: Store;
   try {
-    store = await createStore(rootDir);
+    store = assessmentOnly ? loadStoreReadOnly(rootDir) : await createStore(rootDir);
   } catch (err) {
     return failCloseout(kernelErrorOf(err), withId);
   }
@@ -1479,6 +1506,7 @@ export async function runCloseout(
         verdict: view.verdict,
         ran_at_seq: view.ranAtSeq,
         latest: latestSet.has(view),
+        ...(assessmentOnly ? { required: !gateObligations.optional.has(view.gate as string) } : {}),
       });
     }
     gateRows.sort((a, b) => grnOrdinal(a.grn) - grnOrdinal(b.grn));
@@ -1547,9 +1575,37 @@ export async function runCloseout(
     gates_passed: gateRows.filter((row) => row.latest && row.verdict === "passed").length,
     rows: gateRows,
   };
-  const judged: CloseoutResult = { ...withKind, dod, gates };
+  // Scope comes from actual task obligations, not every object/fault in the project.
+  const affected = Array.isArray(payload.affected_objects) ? payload.affected_objects.flatMap(value => typeof value === "string" ? [value] : isRecord(value) && typeof value.id === "string" ? [value.id] : []) : [];
+  // Legacy implements_change may be an attribution-only reference, not a persisted body.
+  const relatedChange = taskImplementsChange !== null && index.objects.some(entry => entry.id === taskImplementsChange) ? [taskImplementsChange] : [];
+  const relatedIds = [...new Set([target, ...affected, ...boundSpecRefs, ...relatedChange])];
+  const bodyEdits = assessTruthBodyEdits(store, relatedIds);
+  const consumerErrors: CliError[] = bodyEdits.blockedIds.map(id => ({ code: "TRUTH_BODY_EDIT_UNCOVERED", message: `Current or observed truth body edit is not covered by validated ADVANCE: ${id}`, hint: `Inspect ${id}; audit the real body, then use pomaster truth-body statement/advance with actual evidence and required scope/signoff. No automatic recovery or body rewrite.` }));
+  const disclosures: ReturnType<typeof readBreakGlassDisclosures> = [];
+  try {
+    const events = readBreakGlassDisclosures(store);
+    for (const event of events) {
+      if (!Array.isArray(event.subject_ids) || event.subject_ids.length === 0 || event.subject_ids.some(id => typeof id !== "string" || !id)) {
+        throw new Error("Break-glass disclosure scope is unreadable; relevance cannot be established.");
+      }
+      if (!event.subject_ids.some(id => relatedIds.includes(id as string))) continue;
+      if (typeof event.signoff_ref !== "string" || !event.signoff_ref || typeof event.ops_sha256 !== "string" || !/^sha256:[0-9a-f]{64}$/.test(event.ops_sha256) || event.disclosure_required !== true) {
+        throw new Error("Related break-glass disclosure is missing its production signature/operation anchors.");
+      }
+      disclosures.push(event);
+    }
+  }
+  catch (error) { consumerErrors.push({ code: "BREAK_GLASS_DISCLOSURE_INVALID", message: error instanceof Error ? error.message : String(error), hint: "Restore readable journal history and inspect the actual scoped exception; damaged history cannot be presented as clean." }); }
+  const guardFaults = readGuardFaults(rootDir);
+  consumerErrors.push(...guardFaults.errors);
+  const consumerWarnings: CliWarning[] = [
+    ...guardFaults.events.map(event => ({ code: event.type, message: `${event.target}: ${event.reason} (${event.disposition}, observed ${event.observed_at})`, hint: "Historical diagnostic, not a completion authority. Production qualification/execution audit judges invalid effects; retain telemetry and inspect scope/freshness." })),
+    ...disclosures.map(event => ({ code: "BREAK_GLASS_APPLIED", message: JSON.stringify(event), hint: "Actual scoped emergency exception retained; this does not replace independent evidence or human acceptance." })),
+  ];
+  const judged: CloseoutResult = { ...withKind, dod, gates, truth_body_edits: bodyEdits, break_glass_disclosures: disclosures, guard_faults: guardFaults };
 
-  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors, ...scaffoldErrors, ...designErrors];
+  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors, ...scaffoldErrors, ...designErrors, ...consumerErrors];
   const specSummary =
     dod.spec === null
       ? "spec: 无绑定 Evidence Spec（双轨过渡——acceptance 轨）"
@@ -1563,6 +1619,7 @@ export async function runCloseout(
       ...gateWarnings,
       ...specWarnings,
       ...baselineAssessment.warnings,
+      ...consumerWarnings,
     ]);
   }
 
@@ -1574,13 +1631,17 @@ export async function runCloseout(
   // 混算——先修机器可判项，回执缺口在其全绿后精确呈现。
   // ============================================================
 
-  const receiptOutcome = await acceptReceiptGate(
-    rootDir,
-    target,
-    taskImplementsChange,
-    row.bodySha256 ?? null,
-    acceptRevisionFingerprint(body),
-  );
+  if (assessmentOnly) {
+    return okOutcome("closeout machine assessment", { ...judged, blocked: false },
+      [`closeout ${target}: machine obligations satisfied; human acceptance not assessed`],
+      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings, ...consumerWarnings]);
+  }
+
+  const receiptOutcome: { readonly receipt: CloseoutAcceptReceipt; readonly executionId?: string; readonly permitRef?: string } | { readonly error: CliError } = input.projectAccept === undefined
+    ? await acceptReceiptGate(rootDir, target, taskImplementsChange, row.bodySha256 ?? null, acceptRevisionFingerprint(body))
+    : await (await import("./autopilot-review.js")).validateProjectAcceptForCloseout(
+        rootDir, input.projectAccept, target, acceptRevisionFingerprint(body),
+      );
   if ("error" in receiptOutcome) {
     const human = [
       `closeout ${target} → BLOCKED at ACCEPT 回执闸（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,
@@ -1591,6 +1652,7 @@ export async function runCloseout(
       ...gateWarnings,
       ...specWarnings,
       ...baselineAssessment.warnings,
+      ...consumerWarnings,
     ]);
   }
 
@@ -1599,7 +1661,11 @@ export async function runCloseout(
   // ============================================================
 
   try {
+    if (input.projectAccept !== undefined && acceptRevisionFingerprint(JSON.parse(readFileSync(bodyPath, "utf8"))) !== acceptRevisionFingerprint(body)) {
+      return failCloseout({ code: "AUTOPILOT_REVIEW_STALE", message: "TASK semantic revision changed immediately before signed closeout", hint: "Refresh the project review; the old signature cannot authorize a new version." }, judged);
+    }
     const applied = await applyTransaction(store, {
+      ...(receiptOutcome.executionId !== undefined ? { executionId: receiptOutcome.executionId, permitRef: receiptOutcome.permitRef, authorityRef: input.projectAccept } : {}),
       ops: [
         {
           op: "transition_object",
@@ -1608,7 +1674,7 @@ export async function runCloseout(
           reasonShort: "closeout: DoD satisfied（acceptance 逐条映射 VERIFIED claim + subject 绑定 gate 全 passed）",
         },
       ],
-      ...(input.authorityRef !== undefined ? { authorityRef: input.authorityRef } : {}),
+      ...(input.authorityRef !== undefined && input.projectAccept === undefined ? { authorityRef: input.authorityRef } : {}),
       ...(input.note !== undefined ? { note: input.note } : {}),
     });
     const result: CloseoutResult = {
@@ -1630,7 +1696,7 @@ export async function runCloseout(
         `  accept_receipt: ${receiptOutcome.receipt.decision_id} @ ${receiptOutcome.receipt.graph}（有效 ACCEPT 回执——W1 R1-1 / C-4）`,
         `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词——vocab-lock presentation_axes.closeout_change_presentation）`,
       ],
-      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings],
+      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings, ...consumerWarnings],
     );
   } catch (err) {
     // kernel staged 回滚保证零残留；施断判卷（跨轴断言等）全部 kernel 侧，原码透传。
@@ -1644,7 +1710,7 @@ export async function runCloseout(
         `  ${error.code}: ${error.message}`,
         `  hint: ${error.hint}`,
       ],
-      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings],
+      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings, ...consumerWarnings],
     );
   }
 }

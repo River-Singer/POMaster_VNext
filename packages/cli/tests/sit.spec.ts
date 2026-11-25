@@ -478,11 +478,6 @@ describe("sit up（起环境）", () => {
 // sit run
 // ============================================================
 
-interface PreparedEnv {
-  readonly backend: FakeBackend;
-  readonly kills: string[];
-}
-
 async function prepareUpAndBuild(counters?: { flyway: { count: number } }): Promise<void> {
   writeManifest(dir);
   writeGrants(dir);
@@ -621,7 +616,7 @@ describe("sit down（拆环境）", () => {
 
 describe("buildSitScenario（纯构造）", () => {
   it("步骤连号 + 覆盖面；无 public 面 → public/db-可见性步骤 na 有据；fieldValue 机械值", async () => {
-    const { entity, steps } = buildSitScenario(SPEC, 7);
+    const { entity, steps } = buildSitScenario(SPEC);
     expect(entity?.key).toBe("vehicle_model");
     expect(steps[0]?.id).toBe("SIT-CHK-01");
     expect(steps[0]?.label).toContain("401");
@@ -629,7 +624,6 @@ describe("buildSitScenario（纯构造）", () => {
     expect(steps.filter((step) => step.surface === "db").length).toBeGreaterThanOrEqual(3);
     const noPublic = buildSitScenario(
       { ...SPEC, entities: [{ ...ENTITY, exposure: { admin: ENTITY.exposure.admin } }] } as unknown as NormalizedDomainSpec,
-      1,
     );
     const ctxStub = null as unknown as never;
     const publicSteps = noPublic.steps.filter((step) => step.surface === "public");
@@ -644,7 +638,7 @@ describe("buildSitScenario（纯构造）", () => {
   });
 
   it("无 admin exposure 实体 → entity null + 零步骤", () => {
-    const noAdmin = buildSitScenario({ ...SPEC, entities: [{ ...ENTITY, exposure: { public: ENTITY.exposure.public } }] } as unknown as NormalizedDomainSpec, 1);
+    const noAdmin = buildSitScenario({ ...SPEC, entities: [{ ...ENTITY, exposure: { public: ENTITY.exposure.public } }] } as unknown as NormalizedDomainSpec);
     expect(noAdmin.entity).toBeNull();
     expect(noAdmin.steps).toEqual([]);
   });

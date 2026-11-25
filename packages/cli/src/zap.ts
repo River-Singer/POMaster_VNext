@@ -144,7 +144,6 @@ export interface ZapRunResult {
 }
 
 const emptyZapRun = (): ZapRunResult => ({ run_id: "", mode: "baseline", verdict: "failed", gate: ZAP_GATE, scan_targets: [], findings: [], rules_conf: [], detail_path: "" });
-type ZapRunResultMutable = ZapRunResult;
 
 function latestReport(rootDir: string, prefix: string): string | null {
   const reportDir = join(rootDir, ...ZAP_REPORT_DIR.split("/"));

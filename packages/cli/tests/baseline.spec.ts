@@ -753,14 +753,13 @@ describe("baseline set", () => {
     expect(unknownEntryCount()).toBe(13);
   });
 
-  it("词形闸 fail-closed 零写入：非法 lane / 非法键 / UNKNOWN 作值 / 非法值词形", async () => {
+  it("结构闸 fail-closed 零写入：非法 lane / 非法键 / UNKNOWN 作值；自定义值留给消费判读", async () => {
     await runInit(dir);
     const before = read(baselineStackRelative("frontend"));
     const cases: Array<{ input: { lane: string; key: string; value: string }; code: string; messagePart: string }> = [
       { input: { lane: "mobile", key: "framework", value: "vue3" }, code: "SCHEMA_INVALID", messagePart: "非法 lane 词形" },
       { input: { lane: "frontend", key: "routing", value: "vue3" }, code: "SCHEMA_INVALID", messagePart: "非法键词形" },
       { input: { lane: "frontend", key: "framework", value: "UNKNOWN" }, code: "SCHEMA_INVALID", messagePart: "UNKNOWN 是起步缺席词形" },
-      { input: { lane: "frontend", key: "framework", value: "bad;value" }, code: "SCHEMA_INVALID", messagePart: "值词形非法" },
     ];
     for (const testCase of cases) {
       const outcome = await runBaselineSet(dir, testCase.input);
@@ -772,6 +771,9 @@ describe("baseline set", () => {
     // 非法键错误信息列出该 lane 键集闭包（修复路标）。
     const bad = await runBaselineSet(dir, { lane: "frontend", key: "routing", value: "vue3" });
     expect(bad.errors[0]?.message).toContain("testing");
+    const custom = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "bad;value" });
+    expect(custom.ok).toBe(true);
+    expect(read(baselineStackRelative("frontend"))).toContain('framework: "bad;value"');
   });
 
   it("未播种目录 NOT_CONFIGURED；stack.yaml 损坏 INVALID_STATE；零写入", async () => {
@@ -1415,13 +1417,16 @@ describe("baselineGateErrors 与确认态呈现（R-L）", () => {
     writeFileSync(unrelatedPath, "# unrelated drift\n", "utf8");
     const unrelated = await baselineGateAssessment(dir, declaration.declaration);
     expect(unrelated.errors).toEqual([]);
-    expect(unrelated.warnings.map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
-    expect(unrelated.warnings[0]?.message).toContain("baseline/platform/security.md");
+    const unrelatedDrift = unrelated.warnings.filter((warning) => warning.code === "BASELINE_DRIFT_OUT_OF_SCOPE");
+    expect(unrelatedDrift.map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
+    expect(unrelatedDrift[0]?.message).toContain("baseline/platform/security.md");
+    expect(unrelated.warnings.some((warning) => warning.code === "BASELINE_SECTION_MISSING")).toBe(true);
 
     writeFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), "framework: changed\n", "utf8");
     const related = await baselineGateAssessment(dir, declaration.declaration);
     expect(related.errors.map((error) => error.code)).toEqual(["BASELINE_DRIFT"]);
-    expect(related.warnings.map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
+    expect(related.warnings.filter((warning) => warning.code === "BASELINE_DRIFT_OUT_OF_SCOPE").map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
+    expect(related.warnings.some((warning) => warning.code === "BASELINE_STACK_VALUE_INCOMPLETE")).toBe(true);
 
     // 重确认会更新全局 manifest digest；相关任务仍拿旧快照对账，不能被新确认静默洗白。
     writeFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), originalFrontendStack, "utf8");
@@ -2415,7 +2420,9 @@ describe("baseline 摘要 v2：BOM / 换行 / 行尾空白不计漂移（V2-3）
 
     const gate = await baselineGateAssessment(dir);
     expect(gate.errors).toEqual([]);
-    expect(gate.warnings).toEqual([expect.objectContaining({ code: "BASELINE_BYTES_ONLY_CHANGE" })]);
+    expect(gate.warnings.filter((warning) => warning.code === "BASELINE_BYTES_ONLY_CHANGE")).toEqual([expect.objectContaining({ code: "BASELINE_BYTES_ONLY_CHANGE" })]);
+    // Legacy confirmed seed placeholders remain advisory, not silently complete.
+    expect(gate.warnings.some((warning) => warning.code === "BASELINE_SECTION_INCOMPLETE")).toBe(true);
 
     const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
     const replay = await runBaselineConfirm(dir);
@@ -2623,7 +2630,8 @@ describe("权威面锚定（V2-5）", () => {
     expect(result.supplement.sort()).toEqual([ARCH, STACK, OBS].sort());
     const gate = await baselineGateAssessment(dir);
     expect(gate.errors).toEqual([]);
-    expect(gate.warnings.map((warning) => warning.code)).toEqual(["BASELINE_SUPPLEMENT_CHANGED"]);
+    expect(gate.warnings.filter((warning) => warning.code === "BASELINE_SUPPLEMENT_CHANGED").map((warning) => warning.code)).toEqual(["BASELINE_SUPPLEMENT_CHANGED"]);
+    expect(gate.warnings.some((warning) => warning.code === "BASELINE_SECTION_INCOMPLETE")).toBe(true);
     const replay = await runBaselineConfirm(dir);
     expect(replay.result.change).toBe("NO_CHANGE");
     expect(replay.human.join("\n")).toContain("supplement");

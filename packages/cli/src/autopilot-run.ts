@@ -38,7 +38,6 @@ import { runLockAcquire, runLockRelease } from "./runtime.js";
 import { runAutopilotBudgetRecord, verifyQaFrozen, resolveRegisteredExecution, AUTOPILOT_DIR, DISPATCH_LEDGER, BUDGET_LEDGER, type DispatchLedgerLine, type AutopilotDispatchPack } from "./autopilot-dispatch.js";
 import { KICKOFF_CURRENT_SCHEMA, KICKOFF_DIR } from "./kickoff.js";
 import { loadIntakeLatest } from "./intake.js";
-import { QA_DIR } from "./qa-cases.js";
 
 /** 轮账 schema 与文件（append-only）。 */
 export const ROUND_SCHEMA = "pomaster.autopilot-round/v1";
@@ -117,8 +116,6 @@ function readJsonLines<T>(path: string): T[] {
 const fail = <T>(command: string, errors: readonly CliError[]): CommandOutcome<T | null> =>
   failOutcome<T | null>(command, null, errors, errors.map((error) => `${command}: FAILED — ${error.code}：${error.message}${error.hint !== "" ? `\n  hint: ${error.hint}` : ""}`));
 
-const unitBodyPath = (dir: string, unit: string) => join(dir, ".pomaster", "truth", "objects", "task-object", `${unit.toLowerCase().replace(/_/g, "-")}.json`);
-
 // ─────────────────────────────── 共享前置（AP-2 同款链） ───────────────────────────────
 
 interface KickoffCurrent {
@@ -149,8 +146,7 @@ export interface RunPrecontext {
  * run / hook-stop 共享前置（与 dispatch 的 fail-closed 序同判卷——同一套码位；dispatch
  * 自身路径由 dispatch 钉测钉住，本函数供驱动面消费，不另立第二判据）。
  */
-export async function loadRunPrecontext(dir: string, executionId: string): Promise<{ readonly ok: true; readonly ctx: RunPrecontext } | { readonly ok: false; readonly errors: readonly CliError[] }> {
-  const errors: CliError[] = [];
+export async function loadRunPrecontext(dir: string, executionId: string, unit?: string): Promise<{ readonly ok: true; readonly ctx: RunPrecontext } | { readonly ok: false; readonly errors: readonly CliError[] }> {
   if (!existsSync(join(dir, ".pomaster"))) {
     return { ok: false, errors: [{ code: "NOT_INITIALIZED", message: `no pomaster state found at ${".pomaster"}`, hint: "run: pomaster init / createStore 后重试（缺席显式，不静默建账）。" }] };
   }
@@ -176,7 +172,10 @@ export async function loadRunPrecontext(dir: string, executionId: string): Promi
   }
   const sheet = readJson<{ revision?: number; budget?: { readonly max_rework_rounds?: number; readonly stop_on?: readonly string[] } }>(sheetPath);
   if (loaded.data.files.revision !== sheet?.revision) {
-    return { ok: false, errors: [{ code: "AUTOPILOT_REVISION_AHEAD", message: `读取工作区在确认单之后又变过（确认单 r${sheet?.revision}，当前 r${loaded.data.files.revision}）`, hint: "增量重签出新轮次 → qa cases revise → 再驱动" }] };
+    const original = [...readJsonLines<DispatchLedgerLine>(join(dir, ...DISPATCH_LEDGER.split("/")))].reverse().find(line => line.unit === unit && line.execution_id === execution.id);
+    const { runAutopilotStaleCheck } = await import("./autopilot-revision.js");
+    const reusable = original === undefined ? null : await runAutopilotStaleCheck(dir, { disp: original.disp });
+    if (reusable?.result?.verdict !== "OK") return { ok: false, errors: [{ code: "AUTOPILOT_REVISION_AHEAD", message: `读取工作区在确认单之后又变过（确认单 r${sheet?.revision}，当前 r${loaded.data.files.revision}）`, hint: "增量重签出新轮次 → qa cases revise → 再驱动；只有已证明不相关的原包可续跑" }] };
   }
   return {
     ok: true,
@@ -210,8 +209,10 @@ export function buildRoundPrompt(pack: AutopilotDispatchPack): string {
     `## 必读（实现前完整读取）`,
     ...pack.reading.spec_refs.map((ref) => `- ${ref}`),
     ``,
-    `## 允许写范围`,
-    `- ${pack.write_scope.lane} 线：affected_objects = ${pack.write_scope.affected_objects.join("、")}`,
+    `## 任务目标与路径（只读声明，非写授权）`,
+    `- ${pack.write_scope.lane} 线：affected_objects = ${pack.write_scope.affected_objects.join("、") || "[]"}`,
+    `- paths = ${pack.write_scope.paths === undefined ? "unknown（历史包未声明路径；不得猜测或视为写权限）" : pack.write_scope.paths.length === 0 ? "[]" : pack.write_scope.paths.join("、")}`,
+    `- 本包只投影任务声明；实际写入仍由 kernel 按在册 execution 的附着 permit scope / 活性判卷，不授予或扩张许可。`,
     ``,
     `## 验收真值（实现者只读——禁改）`,
     `- QA 冻结集：${pack.qa_cases.digest.slice(0, 12)}…（${pack.qa_cases.case_ids.length} 条用例；${pack.qa_cases.scope_note}）`,
@@ -245,8 +246,14 @@ export interface AutopilotRunInput {
   readonly sandbox?: string;
 }
 
+export interface AutopilotRunEffects {
+  /** Process seam only; does not replace authorization, leases or completion judgments. */
+  readonly spawn?: typeof spawnSync;
+}
+
 /** 无头轮次：租约 → spawn → 记账 → 释放；一次性进程，不驻留（DEF-SUP 边界）。 */
-export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Promise<CommandOutcome<AutopilotRunResult | null>> {
+export async function runAutopilotRun(dir: string, input: AutopilotRunInput, effects: AutopilotRunEffects = {}): Promise<CommandOutcome<AutopilotRunResult | null>> {
+  const spawn = effects.spawn ?? spawnSync;
   const command = "autopilot run";
   const driver = input.driver ?? "script";
   if (!(AUTOPILOT_DRIVERS as readonly string[]).includes(driver)) {
@@ -258,7 +265,7 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
   if (input.sessionKey === undefined || input.sessionKey.trim() === "") {
     return fail<AutopilotRunResult>(command, [{ code: "AUTOPILOT_UNIT_NOT_ATTACHED", message: "--session-key 缺席（worker 租约锚定已 attach 会话）", hint: "pomaster session attach --harness claude-code --session-key <key> 后传入" }]);
   }
-  const pre = await loadRunPrecontext(dir, input.executionId ?? "");
+  const pre = await loadRunPrecontext(dir, input.executionId ?? "", input.unit);
   if (!pre.ok) return fail<AutopilotRunResult>(command, pre.errors);
   const ctx = pre.ctx;
 
@@ -285,6 +292,12 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
   if (pack === null) {
     return fail<AutopilotRunResult>(command, [{ code: "AUTOPILOT_UNIT_NOT_DISPATCHED", message: `派发包读不了（${latestDisp.disp}.json 缺席或损坏）`, hint: "重新 pomaster autopilot dispatch 出包；不手写包文件" }]);
   }
+
+  const suspension = [...readJsonLines<{ unit: string; action: string }>(join(dir, ...AUTOPILOT_DIR.split("/"), "suspensions.jsonl"))].reverse().find(line => line.unit === unit);
+  if (suspension?.action === "suspend") return fail<AutopilotRunResult>(command, [{ code: "AUTOPILOT_UNIT_SUSPENDED", message: `单元 ${unit} 等待增量重签`, hint: "关闭询问不能扩大授权；其余单元继续。" }]);
+  const { runAutopilotStaleCheck } = await import("./autopilot-revision.js");
+  const fresh = await runAutopilotStaleCheck(dir, { disp: latestDisp.disp });
+  if (!fresh.ok || fresh.result?.verdict !== "OK") return fail<AutopilotRunResult>(command, [{ code: "AUTOPILOT_REVISION_AHEAD", message: `派发包 ${latestDisp.disp} 不再有效`, hint: "重新派发相关工作；不得把旧包当新包。" }]);
 
   // 轮次预算：caps = max_rework_rounds + 1（初轮 + 重派轮共享）；连续失败 ≥3 → STOP_REQUIRED 拒绝 spawn
   const budgetLinesAll = readJsonLines<{ kind: string; unit: string | null }>(join(dir, ...BUDGET_LEDGER.split("/")));
@@ -327,7 +340,7 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
   let outputTail = "";
   try {
     if (driver === "script") {
-      const result = spawnSync(input.cmd as string, { shell: true, timeout: timeoutMs, encoding: "utf8" });
+      const result = spawn(input.cmd as string, { cwd: dir, shell: true, timeout: timeoutMs, encoding: "utf8" });
       outputTail = `${result.stdout ?? ""}${result.stderr ?? ""}`.slice(-ROUND_OUTPUT_TAIL_CAP);
       exitCode = result.status;
       // Windows 无 signal 语义：timeout kill 走 TerminateProcess（exit code 1、signal=null），
@@ -336,14 +349,14 @@ export async function runAutopilotRun(dir: string, input: AutopilotRunInput): Pr
     } else {
       const prompt = buildRoundPrompt(pack);
       const binary = driver === "claude-code" ? "claude" : "codex";
-      const probe = spawnSync(binary, ["--version"], { encoding: "utf8", timeout: 15000 });
+      const probe = spawn(binary, ["--version"], { encoding: "utf8", timeout: 15000 });
       if (probe.error !== undefined || probe.status !== 0) {
         return fail<AutopilotRunResult>(command, [{ code: "AUTOPILOT_DRIVER_UNAVAILABLE", message: `驱动器 ${driver} 不可用（${binary} 缺席或不可执行）——诚实失败，零伪造轮次`, hint: "pomaster tools prepare --host " + (driver === "claude-code" ? "claude" : "codex") + " 装宿主；或 --driver script 用有界命令兜底" }]);
       }
       const args = driver === "claude-code"
         ? ["-p", prompt, "--permission-mode", "dontAsk", "--output-format", "json"]
         : ["exec", ...(input.sandbox !== undefined ? ["-s", input.sandbox] : []), prompt];
-      const result = spawnSync(binary, args, { timeout: timeoutMs, encoding: "utf8" });
+      const result = spawn(binary, args, { cwd: dir, timeout: timeoutMs, encoding: "utf8" });
       outputTail = `${result.stdout ?? ""}${result.stderr ?? ""}`.slice(-ROUND_OUTPUT_TAIL_CAP);
       exitCode = result.status;
       verdict = result.status === 0 ? "completed" : result.signal !== null || Date.now() - startedMs >= timeoutMs ? "timeout" : "failed";
@@ -441,12 +454,12 @@ export async function runAutopilotHookStop(dir: string, input: { readonly sessio
     return okOutcome(command, result, [`autopilot hook-stop: complete — ${result.reason}`]);
   }
 
-  // 路由重查（消费既有权威）：无 blockers = 该单元出口达成 → complete（交付判定归 plan run 判卷）
+  // 路由重查：只有既有 finalize 的 COMPLETED 是完成事实；空 blockers/exit0 均不替代。
   const routeWarnings: CliWarning[] = [];
   const snapshot = await collectNextActionSnapshot(dir, routeWarnings, { taskId: unit });
   const route = projectWorkflowRoute(evaluateNextAction(snapshot), snapshot);
-  if (route.blockers.length === 0 && latest.verdict === "completed") {
-    const result: HookStopResult = { action: "complete", unit, round_next: rounds.length + 1, reason: `路由无 blockers 且上轮 ${latest.id} completed——出口义务交既有 plan run 判卷（本会话可结束）`, prompt: null };
+  if (snapshot.finalize_stage === "COMPLETED") {
+    const result: HookStopResult = { action: "complete", unit, round_next: rounds.length + 1, reason: "既有路由已判定任务完成（不是进程 exit0 或加载公告）", prompt: null };
     return okOutcome(command, result, [`autopilot hook-stop: complete — ${result.reason}`]);
   }
 

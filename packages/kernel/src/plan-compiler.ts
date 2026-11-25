@@ -103,10 +103,10 @@ export const PLAN_CHANGE_FACE_KINDS = [
 export type PlanChangeFaceKind = (typeof PLAN_CHANGE_FACE_KINDS)[number];
 
 /**
- * 能力词形（十四词；static_analysis 为 TS 族 tsc/ESLint 绑定面，control_data_flow
- * 为 Vue/React 控件结构链独立绑定面，
- * 同批修订 = schema 23 capability_word enum。visual_diff、static_analysis 与
- * control_data_flow 均不从任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
+ * 能力词形（十五词；同批修订 = schema 23 capability_word enum）。
+ * visual_diff、static_analysis、control_data_flow、mutation_check 不从 face 派生，
+ * 只经 acceptance requires/exclusions 进闭包。mutation_check 独立要求 MUTATION，
+ * 不扩展普通 unit_behavior 的 BUILD 分母；运行强度仍归 adapter GateTier policy。
  */
 export const PLAN_CAPABILITY_WORDS = [
   "unit_behavior",
@@ -123,6 +123,7 @@ export const PLAN_CAPABILITY_WORDS = [
   "visual_diff",
   "static_analysis",
   "control_data_flow",
+  "mutation_check",
 ] as const;
 export type PlanCapabilityWord = (typeof PLAN_CAPABILITY_WORDS)[number];
 
@@ -146,6 +147,7 @@ export const PLAN_CAPABILITY_GATE_NAMES: Readonly<Record<PlanCapabilityWord, rea
   visual_diff: ["BROWSER"],
   static_analysis: ["TYPECHECK", "LINT"],
   control_data_flow: ["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"],
+  mutation_check: ["MUTATION"],
 };
 
 /** face kind → 派生能力（轴序固定词形；face 闭包是能力的唯一 face 来源）。 */
@@ -186,6 +188,7 @@ const CAPABILITY_METHOD: Readonly<Record<PlanCapabilityWord, string>> = {
   visual_diff: "observation",
   static_analysis: "analysis",
   control_data_flow: "analysis",
+  mutation_check: "test",
 };
 
 /**
@@ -210,6 +213,8 @@ export const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord
     "类型/静态分析工具真实执行回执（tsc --noEmit 文本诊断逐条重算 ∥ ESLint JSON finding 逐条重算；编译转译成功不当 typecheck，空根 tsconfig 零分母禁默认 PASS）",
   control_data_flow:
     "控件数据流双证据回执（静态 control→event→handler/action→state/transform→effect→readback→rendered feedback + 独立 runtime trace artifact；动态边保持 unknown，静态 passed 不代表运行时用户旅程成功）",
+  mutation_check:
+    "变更代码 mutation 实测回执（MUTATION 独立 GRN；HARDENING-only 原生判卷，policy_skip 不满足 REQUIRED 义务）",
 };
 
 // ============================================================
@@ -793,6 +798,16 @@ function validateToolBindings(bindings: readonly PlanToolBinding[]): void {
  */
 const SEAM_EXPANSION_GATE = "CONTROL_DATA_FLOW_RUNTIME";
 
+/** BE-2 compatibility: native PIT declares unit_behavior, but its MUTATION
+ * gate can satisfy only an explicitly required mutation_check, never BUILD.
+ * Keep the reviewed native capability contract; no adapter/judge aliasing.
+ */
+function bindingCoversCapability(capability: PlanCapabilityWord, binding: PlanToolBinding): boolean {
+  return capability === "mutation_check"
+    ? binding.gate === PLAN_CAPABILITY_GATE_NAMES.mutation_check[0] && binding.capabilities.includes("unit_behavior")
+    : binding.capabilities.includes(capability);
+}
+
 function resolveBindingObligations(
   capability: PlanCapabilityWord,
   bindings: readonly PlanToolBinding[],
@@ -805,7 +820,7 @@ function resolveBindingObligations(
         (binding) =>
           binding.binding_id !== undefined &&
           binding.gate === gate &&
-          binding.capabilities.includes(capability),
+          bindingCoversCapability(capability, binding),
       )
       .sort((a, b) => {
         const left = a.binding_id as string;
@@ -902,7 +917,7 @@ function resolveTool(
   // 码点序（非 localeCompare——ICU collation 下标点权重随环境 locale 变化，
   // 破坏跨环境字节稳定；catalog/analyzer-import-graph 同款码点序惯例）。
   const covering = bindings
-    .filter((binding) => binding.capabilities.includes(capability))
+    .filter((binding) => bindingCoversCapability(capability, binding))
     .sort((a, b) => (a.tool_id < b.tool_id ? -1 : a.tool_id > b.tool_id ? 1 : 0));
   const available = covering.filter((binding) => binding.available);
   if (available.length > 0) {

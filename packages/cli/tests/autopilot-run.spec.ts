@@ -6,7 +6,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { spawnSync } from "node:child_process";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runInit } from "../src/init.js";
 import { runIntakeDraft } from "../src/intake-draft.js";
 import { runIntakePending, runIntakeRead, runIntakeResolve } from "../src/intake.js";
@@ -14,10 +15,13 @@ import { runKickoffConfirm, runKickoffDraft, type KickoffEnv } from "../src/kick
 import { runPlanScenarios } from "../src/plan-scenarios.js";
 import { runQaCasesDraft, runQaCasesFreeze } from "../src/qa-cases.js";
 import { runExecutionBegin } from "../src/runtime.js";
+import { collectNextActionSnapshot, evaluateNextAction, projectWorkflowRoute } from "../src/next-action.js";
+import { runFinalizeStatus } from "../src/finalize.js";
+import { runCloseout } from "../src/closeout.js";
 import { runLockAcquire } from "../src/runtime.js";
 import { runSessionAttach } from "../src/runtime.js";
-import { runAutopilotDispatch } from "../src/autopilot-dispatch.js";
-import { runAutopilotBudgetRecord } from "../src/autopilot-dispatch.js";
+import { runAutopilotDispatch, type AutopilotDispatchPack } from "../src/autopilot-dispatch.js";
+import { buildRoundPrompt } from "../src/autopilot-run.js";
 import { runAutopilotHookInstall, runAutopilotHookStop, runAutopilotHookUninstall, runAutopilotRun, HOOK_STOP_COMMAND, ROUND_DEFAULT_TIMEOUT_SECONDS } from "../src/autopilot-run.js";
 import { runTrustEnroll, runTrustRequest, type TrustEnv } from "../src/trust.js";
 import { makeKey, opensshPrivateKeyText, signSshsig, type TestKey } from "./fixtures/trust/sshsig-signer.js";
@@ -89,9 +93,9 @@ async function greenRound(extraChoices = ""): Promise<void> {
   expect(draft().ready).toBe(true);
   const signoff = sign(ownerKey as TestKey, "kickoff", `.pomaster/kickoff/${id}/sheet.json`);
   expect((await runKickoffConfirm(dir, { signoff }, bareMachine)).ok, JSON.stringify((await runKickoffConfirm(dir, { signoff }, bareMachine)).errors)).toBe(true);
-  expect((await runPlanScenarios(dir, {})).ok).toBe(true);
-  expect(runQaCasesDraft(dir, {}).ok).toBe(true);
-  expect(runQaCasesFreeze(dir, {}).ok).toBe(true);
+  expect((await runPlanScenarios(dir)).ok).toBe(true);
+  expect(runQaCasesDraft(dir).ok).toBe(true);
+  expect(runQaCasesFreeze(dir).ok).toBe(true);
   expect((await runExecutionBegin(dir, { role: "implementer", runtime: "script", identityKind: "script", executionId: AGX })).ok).toBe(true);
   expect((await runSessionAttach(dir, { sessionKey: SESSION, harness: "claude-code" })).ok).toBe(true);
   expect((await runSessionAttach(dir, { sessionKey: SESSION_B, harness: "claude-code" })).ok).toBe(true);
@@ -109,7 +113,102 @@ describe("autopilot run 前置链", () => {
   });
 });
 
+describe("dogfood truthful worker scope prompt", () => {
+  it("DF-SCOPE actual targets/paths are read-only declarations, never permit grants; legacy missing paths stay unknown", async () => {
+    await greenRound();
+    const pack = JSON.parse(readFileSync(apPath("dispatches", "DISP-0001.json"), "utf8")) as AutopilotDispatchPack;
+    const before = JSON.stringify(pack);
+    const prompt = buildRoundPrompt(pack);
+    expect(prompt).not.toContain("## 允许写范围");
+    expect(prompt).toContain("只读声明");
+    expect(prompt).toContain("kernel");
+    expect(prompt).toContain("permit");
+    for (const id of pack.write_scope.affected_objects) expect(prompt).toContain(id);
+    expect(pack.write_scope.paths!.length).toBeGreaterThan(0);
+    for (const path of pack.write_scope.paths!) expect(prompt).toContain(path);
+    expect(JSON.stringify(pack)).toBe(before);
+    const legacyScope = { ...pack.write_scope };
+    delete legacyScope.paths;
+    const legacy = buildRoundPrompt({ ...pack, write_scope: legacyScope });
+    expect(legacy).toContain("unknown");
+    expect(legacy).not.toContain("允许写范围");
+    const zero = buildRoundPrompt({ ...pack, write_scope: { ...pack.write_scope, affected_objects: [], paths: [] } });
+    expect(zero).toContain("paths = []");
+    expect(zero).not.toContain("paths = unknown");
+  });
+});
+
+describe("dogfood worker project cwd", () => {
+  it.each(["script", "claude-code", "codex"])("DF-RUN-01 %s real-worker spawn receives project cwd and retains driver options", async driver => {
+    await greenRound();
+    const spawn = vi.fn(() => ({ pid: 1, output: [], stdout: "worker process only", stderr: "", status: 0, signal: null }));
+    const outcome = await runAutopilotRun(dir, { driver, executionId: AGX, sessionKey: SESSION, cmd: "node dogfood-worker.mjs", sandbox: "workspace-write", roundTimeout: 17 }, { spawn: spawn as typeof spawnSync });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result).toMatchObject({ verdict: "completed", exit_code: 0, rounds_used: 1 });
+    if (driver === "script") {
+      expect(spawn).toHaveBeenCalledTimes(1);
+      expect(spawn).toHaveBeenCalledWith("node dogfood-worker.mjs", { cwd: dir, shell: true, timeout: 17000, encoding: "utf8" });
+    } else {
+      const binary = driver === "claude-code" ? "claude" : "codex";
+      expect(spawn).toHaveBeenCalledTimes(2);
+      expect(spawn).toHaveBeenNthCalledWith(1, binary, ["--version"], { encoding: "utf8", timeout: 15000 });
+      expect(spawn).toHaveBeenNthCalledWith(2, binary,
+        driver === "claude-code"
+          ? ["-p", expect.stringContaining("POMaster"), "--permission-mode", "dontAsk", "--output-format", "json"]
+          : ["exec", "-s", "workspace-write", expect.stringContaining("POMaster")],
+        { cwd: dir, timeout: 17000, encoding: "utf8" });
+    }
+    expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
+  });
+
+  it("DF-RUN-01 actual relative local script succeeds in a project path with spaces, not caller cwd", async () => {
+    // Reinitialize in an isolated space-containing root; no process.chdir or target executable fallback.
+    rmSync(dir, { recursive: true, force: true });
+    dir = mkdtempSync(join(tmpdir(), "pomaster ap3 project "));
+    expect((await runInit(dir)).ok).toBe(true);
+    await greenRound();
+    const caller = process.cwd();
+    expect(dir).not.toBe(caller);
+    expect(dir).toContain(" ");
+    expect(existsSync(join(caller, "dogfood-worker.mjs"))).toBe(false);
+    writeFileSync(join(dir, "dogfood-worker.mjs"), "console.log(JSON.stringify({ worker_cwd: process.cwd(), project_local: true }));\n");
+    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION,
+      unit: "TASK.KO_ORDERS_R3.BE.ORDERS", cmd: `"${process.execPath}" dogfood-worker.mjs`, roundTimeout: 10 });
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result).toMatchObject({ verdict: "completed", exit_code: 0, rounds_used: 1 });
+    const round = JSON.parse(readFileSync(apPath("rounds.jsonl"), "utf8").trim()) as { output_tail: string };
+    expect(JSON.parse(round.output_tail)).toEqual({ worker_cwd: dir, project_local: true });
+    expect(process.cwd()).toBe(caller);
+    expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
+  });
+});
+
 describe("autopilot run 无头轮次", () => {
+  it("C01 exit0 announcement alone preserves task truth, route blockers, handoff and finalize/closeout obligations", async () => {
+    await greenRound();
+    const unit = "TASK.KO_ORDERS_R3.BE.ORDERS";
+    const truthPath = join(dir, ".pomaster", "truth", "objects", "task-object", "task.ko-orders-r3.be.orders.json");
+    const truthBefore = readFileSync(truthPath);
+    const archiveBefore = readFileSync(join(dir, ".pomaster", "executions", `${AGX}.json`));
+    const route = async () => {
+      const snapshot = await collectNextActionSnapshot(dir, [], { taskId: unit });
+      return projectWorkflowRoute(evaluateNextAction(snapshot), snapshot);
+    };
+    const before = await route();
+    const finalBefore = (await runFinalizeStatus(dir, { taskRef: unit })).result;
+    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, unit,
+      cmd: 'node -e "console.log(\'已用 verify、已完成\')"' });
+    expect(outcome.result).toMatchObject({ verdict: "completed", exit_code: 0 }); // process only
+    expect(await route()).toEqual(before);
+    expect(readFileSync(truthPath)).toEqual(truthBefore);
+    expect(readFileSync(join(dir, ".pomaster", "executions", `${AGX}.json`))).toEqual(archiveBefore);
+    expect((await runFinalizeStatus(dir, { taskRef: unit })).result).toEqual(finalBefore);
+    expect(finalBefore.completed).toBe(false);
+    expect((await runCloseout(dir, { taskId: unit })).ok).toBe(false);
+    expect(readFileSync(truthPath)).toEqual(truthBefore);
+    expect((await runAutopilotHookStop(dir, { sessionKey: SESSION })).result?.action).toBe("refeed");
+  });
+
   it("script happy path：RND-0001 completed、rounds.jsonl 1 行、budget spend 入账、锁释放（可复跑）", async () => {
     await greenRound();
     const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, cmd: "echo worker-round-ok" });
@@ -167,8 +266,8 @@ describe("autopilot run 无头轮次", () => {
   it("timeout：round-timeout 1s 杀睡眠命令 → verdict timeout", async () => {
     await greenRound();
     // 夹具跨平台：Windows cmd 无 sleep（秒退 exit 1 → verdict failed 假红）——用 node 睡眠。
-    // 杀壳进程后孙进程仍持管道直至自退——5s 自退兜底，测试尾延 ≤4s。
-    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, cmd: "node -e \"setTimeout(() => {}, 5000)\"", roundTimeout: 1 });
+    // 杀壳进程后孙进程可能留到自退；夹具先释放工程 cwd，避免 Windows 清理目录被锁。
+    const outcome = await runAutopilotRun(dir, { driver: "script", executionId: AGX, sessionKey: SESSION, cmd: "node -e \"process.chdir(require('node:os').tmpdir()); setTimeout(() => {}, 5000)\"", roundTimeout: 1 });
     expect(outcome.ok).toBe(true);
     expect((outcome.result as { verdict: string }).verdict).toBe("timeout");
     void ROUND_DEFAULT_TIMEOUT_SECONDS;

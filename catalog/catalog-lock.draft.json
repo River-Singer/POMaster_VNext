@@ -41,6 +41,7 @@
       "archetypes/archetype.frontend.feature_oriented.json",
       "archetypes/archetype.frontend.modular.json",
       "archetypes/archetype.frontend.spa_layered.json",
+      "archetypes/archetype.governance.task_unit.json",
       "archetypes/archetype.page.analysis.json",
       "archetypes/archetype.page.master_data.json",
       "archetypes/archetype.runtime.environment_parity.json",
@@ -315,6 +316,7 @@
       "archetypes/archetype.frontend.feature_oriented.json",
       "archetypes/archetype.frontend.modular.json",
       "archetypes/archetype.frontend.spa_layered.json",
+      "archetypes/archetype.governance.task_unit.json",
       "archetypes/archetype.page.analysis.json",
       "archetypes/archetype.page.master_data.json",
       "archetypes/archetype.runtime.environment_parity.json",
@@ -650,6 +652,12 @@
       "path": "archetypes/archetype.backend.transactional_write.json",
       "content_sha256": "sha256:9878d0c9f705984dae426c7d41a8399cc646ff89361640be8f2f53bb75d9c28d",
       "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.GOVERNANCE.TASK_UNIT",
+      "path": "archetypes/archetype.governance.task_unit.json",
+      "content_sha256": "sha256:48f6b74875fecdc6a0920829ec0702921a18855422df20cd312a09de2629c251",
+      "source_ref": "package://catalog/archetypes/archetype.governance.task_unit.json"
     },
     {
       "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",

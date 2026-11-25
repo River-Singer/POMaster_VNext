@@ -27,7 +27,7 @@
  * - **QA 真值被改全拒**：派发前置 qa/current.json digest 对账（TC-1 同一锚）——
  *   验收真值可疑时不派任何工。
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type { CliError, CliWarning } from "./envelope.js";
@@ -37,6 +37,12 @@ import { KICKOFF_CURRENT_SCHEMA, KICKOFF_DIR, type KickoffSheet } from "./kickof
 import { loadIntakeLatest } from "./intake.js";
 import { resolveExecutionId } from "./evidence.js";
 import { QA_CURRENT_SCHEMA, QA_DIR } from "./qa-cases.js";
+import { assessScaffoldSpec } from "./scaffold-governance.js";
+import { buildStorePaths, GovernanceError, parseGovernedId, probeKeybinding, readExecutionRecordById, readKeybindings } from "@pomaster/kernel";
+import { governanceErrorToCliError, runPermitList } from "./permit.js";
+import { readGenerationManifest } from "./scaffold-generate.js";
+import { SCAFFOLD_GENERATION_MANIFEST_RELATIVE } from "./store-layout.js";
+import { reviewPath } from "./autopilot-review.js";
 
 /** autopilot 平面（escalate 同族 cli 本地位）。 */
 export const AUTOPILOT_DIR = ".pomaster/autopilot";
@@ -125,8 +131,9 @@ export interface AutopilotDispatchPack {
   readonly reading: Readonly<{ skill_paths: readonly string[]; spec_refs: readonly string[] }>;
   readonly context_ref: string;
   readonly permit_refs: readonly string[];
-  readonly versions: Readonly<{ sheet_sha256: string; plan_fingerprint: string; qa_frozen_sha256: string; intake_revision: number }>;
-  readonly write_scope: Readonly<{ lane: string; entity: string | null; affected_objects: readonly string[] }>;
+  readonly versions: Readonly<{ sheet_sha256: string; plan_fingerprint: string; qa_frozen_sha256: string; intake_revision: number; unit_sha256?: string; domain_semantic_sha256?: string | null }>;
+  /** paths is absent only in retained legacy packs; new dispatches always declare it. */
+  readonly write_scope: Readonly<{ lane: string; entity: string | null; affected_objects: readonly string[]; paths?: readonly string[] }>;
   readonly required_artifacts: readonly string[];
   readonly exit_obligations: Readonly<{ exit_condition: string; acceptance_rows: number }>;
   readonly recovery: readonly string[];
@@ -155,7 +162,52 @@ interface PlanFile {
   readonly units: readonly { readonly id: string; readonly lane: string; readonly entity: string | null }[];
 }
 interface UnitBody {
-  readonly payload?: { readonly acceptance?: unknown; readonly intent?: unknown };
+  readonly payload?: { readonly acceptance?: unknown; readonly intent?: unknown; readonly affected_objects?: unknown };
+}
+
+/** Read-only traceability projection, never a permit scope or a binding registration. */
+async function unitWriteTargets(dir: string, body: UnitBody | null, domainSemanticSha: string | null): Promise<{ affected_objects: string[]; paths: string[] }> {
+  const deny = (message: string): never => {
+    throw new GovernanceError("SCHEMA_INVALID", message, "恢复 TASK 声明的现有 KEYBINDING / generation manifest 及项目内实际路径后重试；不得省略未知关联对象或从 permit 反推任务范围。", {});
+  };
+  if (body?.payload === undefined || body.payload === null || typeof body.payload !== "object" || Array.isArray(body.payload)) deny("TASK 正文/关联对象声明不可判");
+  const raw = body!.payload!.affected_objects;
+  if (!Array.isArray(raw) || raw.some(id => typeof id !== "string")) deny("TASK affected_objects 非法（须为 governed ID 数组）");
+  const affected = [...new Set(raw as string[])].sort();
+  for (const id of affected) parseGovernedId(id);
+  if (affected.length === 0) return { affected_objects: [], paths: [] };
+
+  const bindings = readKeybindings(dir);
+  reviewPath(dir, SCAFFOLD_GENERATION_MANIFEST_RELATIVE);
+  const manifestRead = await readGenerationManifest(dir);
+  if (manifestRead.kind === "malformed") deny(`generation manifest 不可判：${manifestRead.detail}`);
+  const manifest = manifestRead.kind === "ok" ? manifestRead.manifest : null;
+  const paths = new Set<string>();
+  for (const id of affected) {
+    const rows = bindings.filter(row => row.id === id || row.canonical_id === id);
+    const files = manifest?.files.filter(file => file.keybinding_id === id || file.canonical_id === id) ?? [];
+    if (rows.length === 0) deny(`关联对象无现有物理绑定：${id}`);
+    if (files.length > 0 && (domainSemanticSha === null || manifest!.spec_semantic_sha256 !== domainSemanticSha)) deny(`关联对象的 generation manifest 与已确认领域规格不一致：${id}`);
+    for (const row of rows) {
+      if (row.binding_status === "stale" || row.binding_class === "contract_operation_to_operationId") deny(`关联对象绑定陈旧或仅为符号定位：${id}（${row.id}）`);
+      reviewPath(dir, row.physical_path);
+      if (probeKeybinding(dir, row, manifest?.at_seq ?? 0).probe.result !== "matched") deny(`关联对象物理路径不可达或类型不符：${id}（${row.physical_path}）`);
+      const generated = manifest?.files.filter(file => file.keybinding_id === row.id) ?? [];
+      if (row.probe.method === "scaffold_generation_manifest" && generated.length !== 1) deny(`生成绑定缺少唯一 generation manifest 记录：${row.id}`);
+      for (const file of generated) {
+        reviewPath(dir, file.path);
+        if (file.path !== row.physical_path || file.canonical_id !== row.canonical_id) deny(`generation manifest 与 KEYBINDING 路径/身份不一致：${row.id}`);
+      }
+      paths.add(row.physical_path);
+    }
+    for (const file of files) {
+      reviewPath(dir, file.path);
+      const row = rows.find(binding => binding.id === file.keybinding_id);
+      if (row === undefined || row.physical_path !== file.path || row.canonical_id !== file.canonical_id) deny(`generation manifest 无一致现有绑定：${file.keybinding_id}`);
+      paths.add(file.path);
+    }
+  }
+  return { affected_objects: affected, paths: [...paths].sort() };
 }
 
 const fail = <T>(command: string, errors: readonly CliError[]): CommandOutcome<T | null> =>
@@ -232,9 +284,31 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
     return fail<AutopilotDispatchResult>(command, [{ code: "AUTOPILOT_REVISION_AHEAD", message: `读取工作区在确认单之后又变过（确认单 r${sheetFull.revision}，当前 r${loaded.data.files.revision}）`, hint: "材料有新修订：增量重签出新轮次 → qa cases revise → 再派发" }]);
   }
 
-  // 5) 执行身份在册
+  // 5) 执行身份在册；许可引用只投影该执行的附着集合，不合并其他 worker 的许可。
   const execution = resolveRegisteredExecution(dir, input.executionId);
   if (!execution.ok) return fail<AutopilotDispatchResult>(command, [execution.error]);
+  let permits: readonly string[];
+  try {
+    const record = readExecutionRecordById(buildStorePaths(dir), execution.id);
+    if (record === null) return fail<AutopilotDispatchResult>(command, [{ code: "AUTOPILOT_EXECUTION_NOT_FOUND", message: `执行档案缺席：${execution.id}`, hint: "恢复在册执行档案后再派发。" }]);
+    if (!Array.isArray(record.permit_ids) || record.permit_ids.some(ref => typeof ref !== "string" || ref.trim() === "")) {
+      throw new GovernanceError("SCHEMA_INVALID", `执行档案 permit_ids 形态非法：${execution.id}`, "许可附着由 execution begin / attach-permit 维护；恢复档案后重试。", {});
+    }
+    const listed = await runPermitList(dir, {});
+    if (!listed.ok) return fail<AutopilotDispatchResult>(command, listed.errors);
+    permits = [...new Set(record.permit_ids)].sort().map(ref => {
+      const matches = listed.result.permits.filter(permit => permit.permit_ref === ref);
+      if (matches.length !== 1) {
+        throw new GovernanceError("SCHEMA_INVALID", `执行 ${execution.id} 的附着许可无法唯一解析：${ref}`, "核对 execution permit_ids 与 state/permits.json；不得借用其他执行的许可或以文件名替代。", {});
+      }
+      return matches[0]!.permit_ref;
+    });
+    // 这里只呈现附着引用（含历史到期引用）；实际 scope/活性仍由 kernel 判卷。
+  } catch (error) {
+    return fail<AutopilotDispatchResult>(command, [error instanceof GovernanceError ? governanceErrorToCliError(error) : {
+      code: "SCHEMA_INVALID", message: `执行/许可元数据不可判：${error instanceof Error ? error.message : String(error)}`, hint: "恢复执行档案和 state/permits.json 后重试；损坏不视为许可缺席。",
+    }]);
+  }
 
   // 6) 预算熔断（确认单 budget caps——只比对不发明语义）
   const sheet = readJson<{ budget?: { readonly valid_days?: number; readonly max_rework_rounds?: number; readonly stop_on?: readonly string[] } }>(sheetPath);
@@ -264,6 +338,8 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
   const suspendedList: string[] = [];
   const warnings: CliWarning[] = [];
 
+  const domain = await assessScaffoldSpec(dir);
+  const domainSemanticSha = !('code' in domain) && domain.state === "confirmed" ? domain.semantic_sha256 : null;
   // 逐单元
   let seq = ledger.length;
   const generations = new Map<string, number>();
@@ -290,6 +366,14 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
 
     // 幂等筛（指纹锚：单元正文 + lane + 确认单字节 + plan 指纹 + QA digest + 执行身份）
     const body = readJson<UnitBody>(unitBodyPath(dir, unit.id));
+    let targets: Awaited<ReturnType<typeof unitWriteTargets>>;
+    try {
+      targets = await unitWriteTargets(dir, body, domainSemanticSha);
+    } catch (error) {
+      blocked.push({ unit: unit.id, code: "SCHEMA_INVALID", reason: `TASK 关联对象/路径不可判：${error instanceof Error ? error.message : String(error)}；恢复现有绑定和项目内路径后重试，不发不完整包。` });
+      continue;
+    }
+    const writeScope = { lane: unit.lane, entity: unit.entity, ...targets };
     const acceptanceRows = Array.isArray((body?.payload as { acceptance?: unknown } | undefined)?.acceptance) ? ((body?.payload as { acceptance: unknown[] }).acceptance as unknown[]).length : 0;
     const fingerprintSource = JSON.stringify({
       unit: unit.id,
@@ -301,15 +385,21 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
       plan_fingerprint: plan.fingerprint,
       qa_digest: qa.digest,
       execution_id: execution.id,
+      permit_refs: permits,
+      write_scope: writeScope,
     });
     const fingerprint = sha256(fingerprintSource);
-    const prior = [...ledger].reverse().find((line) => line.unit === unit.id);
+    const prior = [...ledger].reverse().find(line => {
+      if (line.unit === unit.id) return true;
+      const original = readJson<AutopilotDispatchPack>(join(dir, ...DISPATCH_DIR.split("/"), `${line.disp}.json`));
+      return original !== null && original.round !== current.sheet && original.write_scope.lane === unit.lane && original.write_scope.entity === unit.entity;
+    });
     if (prior !== undefined && prior.fingerprint === fingerprint) {
       noChange.push({ disp: prior.disp, unit: unit.id });
       continue;
     }
     // rework 预算：换代重派的代数超过 caps → 该单元熔断（首派不受限）
-    const generation = (generations.get(unit.id) ?? 0) + 1;
+    const generation = (generations.get(unit.id) ?? prior?.generation ?? 0) + 1;
     if (prior !== undefined && generation - 1 > maxRework) {
       blocked.push({ unit: unit.id, code: "AUTOPILOT_BUDGET_EXHAUSTED", reason: `重派代数 ${generation - 1} 超过确认单 max_rework_rounds=${maxRework}——熔断，人阅后 revise 或重签`, });
       continue;
@@ -337,11 +427,8 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
     // 发包
     seq += 1;
     const disp = `DISP-${String(seq).padStart(4, "0")}`;
-    const permits = existsSync(join(dir, ".pomaster", "permits"))
-      ? readdirSync(join(dir, ".pomaster", "permits")).filter((name) => name.endsWith(".json"))
-      : [];
     if (permits.length === 0) {
-      warnings.push({ code: "AUTOPILOT_PERMIT_ABSENT", message: `${unit.id} 无在座 permit——worker 路由第一步走 pomaster permit issue（呈现非阻断）` });
+      warnings.push({ code: "AUTOPILOT_PERMIT_ABSENT", message: `${unit.id} 的执行 ${execution.id} 未附着 permit——worker 先走 pomaster permit issue / execution attach-permit（呈现非阻断）` });
     }
     const pack: AutopilotDispatchPack = {
       schema: DISPATCH_SCHEMA,
@@ -360,12 +447,12 @@ export async function runAutopilotDispatch(dir: string, input: { readonly execut
       actor_requirement: route.required_action?.actor ?? "既有 route actor 权威（投影缺席时 worker 按技能面身份执行）",
       reading: {
         skill_paths: readableSkills,
-        spec_refs: [`.pomaster/kickoff/${current.sheet}/sheet.json`, ".pomaster/scaffold/domain-spec.yaml", join(".pomaster", ...QA_DIR.split("/"), current.sheet, "cases-frozen.json").replace(/\\/g, "/")],
+        spec_refs: [`.pomaster/kickoff/${current.sheet}/sheet.json`, ".pomaster/scaffold/domain-spec.yaml", `${QA_DIR}/${current.sheet}/cases-frozen.json`],
       },
-      context_ref: `pomaster context compile --task ${unit.id}（worker 首步；context 是权威产物非本包复述）`,
+      context_ref: `pomaster context compile --change ${unit.id} --role ${snapshot.task_manifest_role ?? "<role>"}（worker 首步；未有 manifest 时按既有路由填写 role；context 是权威产物非本包复述）`,
       permit_refs: permits,
-      versions: { sheet_sha256: current.sheet_sha256, plan_fingerprint: plan.fingerprint, qa_frozen_sha256: qa.digest, intake_revision: loaded.data.files.revision },
-      write_scope: { lane: unit.lane, entity: unit.entity, affected_objects: [unit.id] },
+      versions: { sheet_sha256: current.sheet_sha256, plan_fingerprint: plan.fingerprint, qa_frozen_sha256: qa.digest, intake_revision: loaded.data.files.revision, unit_sha256: sha256(JSON.stringify(body?.payload ?? null)), domain_semantic_sha256: domainSemanticSha },
+      write_scope: writeScope,
       required_artifacts: [`payload.acceptance ${acceptanceRows} 行的 plan run 判卷收据（GRN）`],
       exit_obligations: { exit_condition: route.exit_condition, acceptance_rows: acceptanceRows },
       recovery: [
@@ -425,7 +512,7 @@ export interface AutopilotStatusResult {
 }
 
 /** 纯读呈现：单元状态表 + 预算 + 熔断 + 下一动作（正常续跑不需要用户再发一句话）。 */
-export function runAutopilotStatus(dir: string, _input: {} = {}): CommandOutcome<AutopilotStatusResult | null> {
+export function runAutopilotStatus(dir: string): CommandOutcome<AutopilotStatusResult | null> {
   const command = "autopilot status";
   if (!existsSync(join(dir, ".pomaster"))) {
     return fail<AutopilotStatusResult>(command, [{ code: "NOT_INITIALIZED", message: `no pomaster state found at ${".pomaster"}`, hint: "run: pomaster init / createStore 后重试（缺席显式，不静默建账）。" }]);

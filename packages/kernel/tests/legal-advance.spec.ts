@@ -281,7 +281,7 @@ describe("validateAdvance（vnext lane：锚 = {kind, ref, digest, version}）",
     const errors = validateAdvance(section, { lane: "vnext", event });
     expect(errors).toContain(`advance.old_anchor.kind must be one of ${pyRepr([
       "baseline_target", "task_baseline_scope", "claim_verification", "accept_revision",
-      "source_snapshot", "permit_scope", "keybinding", "pomaster-layers",
+      "source_snapshot", "permit_scope", "keybinding", "truth_body", "pomaster-layers",
     ])}`);
     expect(errors).toContain("advance.old_anchor.ref must be a non-empty string");
     expect(errors).toContain("advance.old_anchor.digest must be a sha256 hex digest");

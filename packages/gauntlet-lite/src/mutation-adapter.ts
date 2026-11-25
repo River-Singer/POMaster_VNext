@@ -75,6 +75,9 @@ import {
 } from "./detectors.js";
 import { absenceRecord, assertCommonGates } from "./normalize-common.js";
 import { resolveGateTier } from "./coverage-adapter.js";
+import { detectPit, buildPitCommand, pitClassForFile, PIT_DEFAULT_REPORT, PIT_METRIC_DIALECT, PIT_TOOL_ID } from "./pit-leg.js";
+import { isExactJvmVersion, isJvmMavenInvoker, isJvmRelativePath, type JvmReportIO } from "./jvm-report.js";
+import { mavenSpawn } from "./maven-leg.js";
 
 // ============================================================
 // 共享配置读取（mutation-gate.json；facts 注入零隐式 I/O）
@@ -84,6 +87,7 @@ export const MUTATION_CONFIG_HINT =
   "在项目根 mutation-gate.json 声明变异测试判卷输入（P24）：" +
   'JS/TS 腿 {"runner":"stryker","command":"<stryker 运行命令>","changedFiles":["<变更文件>"]}（需 package.json 声明 @stryker-mutator/core）；' +
   'Python 腿（D17 先行）{"runner":"mutmut","command":"<mutmut run 与 junitxml 导出的组合命令>","changedFiles":["<变更文件>"]}（需 pyproject [tool.mutmut] 或 setup.cfg [mutmut] + policy 版本锚）；' +
+  'JVM 腿 {"runner":"pit","command":"mvn -B","pitVersion":"1.16.1","changedFiles":["src/main/java/com/acme/Calc.java"]}（policy.expectedToolVersion=Maven 版本；报告缺省 target/pit-reports/mutations.xml；不代装工具）；' +
   '"changedFiles" 必填非空（changed-code scope 分母——命令面旗标 + 判卷面逐条复核双重强制，见随版计划 B2-3）；' +
   '可选 "report"（缺省 stryker=reports/mutation/mutation.json / mutmut=mutants.xml）、' +
   '"thresholds":{"minKillScore":85,"maxSurvivors":10}（缺省=出厂兜底 85/10——已经 Owner 决议 2026-09-01 批准转正，A4 阈值包：minKillScore 锚测试战略 L6-1、maxSurvivors 一并获批；后续调整走本字段配置化覆盖）；' +
@@ -96,7 +100,9 @@ export interface MutationThresholds {
 }
 
 export interface MutationGateConfig {
-  readonly runner: "stryker" | "mutmut";
+  readonly runner: "stryker" | "mutmut" | "pit";
+  /** BE-2: exact PIT Maven plugin version, distinct from policy's Maven version. */
+  readonly pitVersion?: string;
   /** 变异测试运行命令（不含 scope 旗标——adapter 组装；必填）。 */
   readonly command: string;
   /** changed-code scope 分母（变更文件清单；必填非空）。 */
@@ -171,10 +177,10 @@ export function readMutationGateConfig(facts: DetectorFacts): MutationConfigRead
     };
   }
   const runner = parsed["runner"];
-  if (runner !== "stryker" && runner !== "mutmut") {
+  if (runner !== "stryker" && runner !== "mutmut" && runner !== "pit") {
     return {
       ok: false,
-      reason: `${MUTATION_GATE_CONFIG_FILE} 的 runner 必须是 "stryker" 或 "mutmut"（B2-3 StrykerJS / B2-4 mutmut；PIT 属 Java 第二波 deferred）`,
+      reason: `${MUTATION_GATE_CONFIG_FILE} 的 runner 必须是 "stryker"、"mutmut" 或 "pit"（BE-2 JVM）`,
       installHint: `词形见：${MUTATION_CONFIG_HINT}`,
     };
   }
@@ -224,11 +230,18 @@ export function readMutationGateConfig(facts: DetectorFacts): MutationConfigRead
       installHint: `字段形态见：${MUTATION_CONFIG_HINT}`,
     };
   }
+  const pitVersion = parsed["pitVersion"];
+  if (runner === "pit" && (!isExactJvmVersion(pitVersion) || !isJvmMavenInvoker(command) ||
+      changedFiles.some((file) => pitClassForFile(file) === null) ||
+      (typeof reportRaw === "string" && (!isJvmRelativePath(reportRaw) || !reportRaw.replaceAll("\\", "/").endsWith("/mutations.xml"))))) {
+    return { ok: false, reason: "PIT requires an exact pitVersion, Maven invoker command, src/main/java changedFiles and safe */mutations.xml report path", installHint: MUTATION_CONFIG_HINT };
+  }
   return {
     ok: true,
     config: {
       runner,
       command,
+      ...(runner === "pit" && typeof pitVersion === "string" ? { pitVersion } : {}),
       changedFiles,
       report: typeof reportRaw === "string" ? reportRaw.replaceAll("\\", "/") : null,
       thresholds,
@@ -301,8 +314,8 @@ function mutationPlanCommon(scope: GateScope, policy: GatePolicy) {
 }
 
 /**
- * MUTATION 门禁 adapter（P24；StrykerJS 腿 + mutmut 腿——B2-3/B2-4；PIT/Java 第二波
- * 显式 deferred；GateResult 必带 mutation 类型 metric_dialect——横切纪律 2）。
+ * MUTATION 门禁 adapter（StrykerJS / mutmut + BE-2 PIT JVM 腿）。
+ * GateResult 必带 runner-specific mutation metric_dialect；PIT 使用既有判卷核。
  * options：spawnFn / executableProbe 注入面（coverage adapter 同款先例；
  * 测试注入 fake 保证判卷矩阵与宿主环境无关）。
  */
@@ -312,6 +325,8 @@ export function createMutationAdapter(
     readonly spawnFn?: SpawnFn;
     /** 注入 run 前置可执行体探测（gate ①a）；缺省 platformExecutableProbe（真实 PATH）。 */
     readonly executableProbe?: ExecutableProbeFn;
+    /** BE-2 JVM report IO; real filesystem by default, never stdout fallback. */
+    readonly reportIO?: JvmReportIO;
   } = {},
 ): GateAdapter<
   DetectionResult,
@@ -334,11 +349,11 @@ export function createMutationAdapter(
         };
       }
       const tool =
-        read.config.runner === "stryker" ? detectStryker(facts) : detectMutmut(facts);
+        read.config.runner === "pit" ? detectPit(facts) : read.config.runner === "stryker" ? detectStryker(facts) : detectMutmut(facts);
       if (tool.status === "READY") {
         return {
           status: "READY",
-          tool: read.config.runner === "stryker" ? STRYKER_TOOL_ID : MUTMUT_TOOL_ID,
+          tool: read.config.runner === "pit" ? PIT_TOOL_ID : read.config.runner === "stryker" ? STRYKER_TOOL_ID : MUTMUT_TOOL_ID,
           detectedVersion: tool.detectedVersion,
           evidence: `${read.evidence}；${tool.evidence}`,
         };
@@ -419,8 +434,8 @@ export function createMutationAdapter(
       const thresholds = config.thresholds ?? MUTATION_PROVISIONAL_THRESHOLDS;
       const thresholdsProvisional = config.thresholds === null;
       const metricDialect =
-        runner === "stryker" ? STRYKER_METRIC_DIALECT : MUTMUT_METRIC_DIALECT;
-      const tool = runner === "stryker" ? STRYKER_TOOL_ID : MUTMUT_TOOL_ID;
+        runner === "pit" ? PIT_METRIC_DIALECT : runner === "stryker" ? STRYKER_METRIC_DIALECT : MUTMUT_METRIC_DIALECT;
+      const tool = runner === "pit" ? PIT_TOOL_ID : runner === "stryker" ? STRYKER_TOOL_ID : MUTMUT_TOOL_ID;
       const reportPath = resolveMutationReportPath(runner, config.report);
       const planBase = {
         tool,
@@ -442,7 +457,7 @@ export function createMutationAdapter(
 
       // —— 工具闸（配置就绪但 runner 工具不在位 → tool_absent → not_run 非绿非红）。
       const detection =
-        runner === "stryker" ? detectStryker(resolved) : detectMutmut(resolved);
+        runner === "pit" ? detectPit(resolved) : runner === "stryker" ? detectStryker(resolved) : detectMutmut(resolved);
       if (detection.status !== "READY") {
         return {
           ...planBase,
@@ -460,6 +475,14 @@ export function createMutationAdapter(
         };
       }
 
+      if (runner === "pit") {
+        if (!isExactJvmVersion(policy.expectedToolVersion)) {
+          return { ...planBase, absenceKind: "config_absent", absentReason: "PIT requires exact policy.expectedToolVersion (Maven version, BE-1 contract)", absentHint: MUTATION_CONFIG_HINT, command: "", versionProbeCommand: "mvn --version", executable: "mvn", expectedToolVersion: null };
+        }
+        return { ...planBase, toolVersion: policy.expectedToolVersion, pitVersion: config.pitVersion,
+          command: buildPitCommand(config.command, config.changedFiles, config.pitVersion!, config.report ?? PIT_DEFAULT_REPORT),
+          versionProbeCommand: "mvn --version", executable: config.command.trim().split(/\s+/)[0] ?? "mvn", expectedToolVersion: policy.expectedToolVersion };
+      }
       if (runner === "stryker") {
         // —— stryker 腿版本锚取 package.json 声明版本（c8 腿同款：无法从配置文件
         // 可靠探测的词形拒绝出计划，禁猜版本口径）。
@@ -497,13 +520,13 @@ export function createMutationAdapter(
       };
     },
 
-    run(plan: MutationLegPlan, injectedSpawn: SpawnFn | undefined = spawnFn): MutationRunOutput {
+    run(plan: MutationLegPlan, injectedSpawn: SpawnFn = options.spawnFn ?? (plan.runner === "pit" ? mavenSpawn : spawnFn)): MutationRunOutput {
       const startedAt = performance.now();
       const elapsed = () => Math.max(0, Math.round(performance.now() - startedAt));
       if (plan.absenceKind !== null) {
         return { plan, outcome: "not_declared", externalMs: elapsed() };
       }
-      const leg = runMutationLeg(plan, injectedSpawn, executableProbe);
+      const leg = runMutationLeg(plan, injectedSpawn, executableProbe, options.reportIO);
       return { plan, outcome: "leg", leg, externalMs: leg.externalMs };
     },
 

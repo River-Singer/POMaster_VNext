@@ -33,7 +33,9 @@ POMaster 的做法是：不再把规范文档当成治理对象，而是治理�
 
 ### 2. 写代码之前要有许可
 
-一个任务开工前，Owner 签一个许可（permit）：这次允许碰哪些对象。Agent 声明执行身份（`execution begin`）后，宿主的写前钩子（`exec-guard`）对每次写文件做判断：这个文件绑定的对象在不在许可范围里。不在就拦下，并指出该去扩大许可还是换个改法。钩子只判断、不写文件；判卷器自身出故障时放行并留下记录，事后由 `execution audit` 复查，不会把开发卡死。
+一个任务开工前，先确定许可（permit）范围，再登记执行身份（`execution begin`）并附着许可。宿主的写前钩子（`exec-guard`）按实际 KEYBINDING 锚判断文件对应的对象，只使用归属该活跃 execution 的有效许可，不借其他 worker 的范围；越界就拦下并给出恢复路标。没有活跃 execution 时，源码编辑的提示是 advisory，不是写权限授予。
+
+守卫或启动器自身出故障时，受保护控制面、已确认保护根，以及元数据损坏等导致保护范围不可判的情形都 fail-closed；普通未受保护目标才披露后 fail-open。故障记为 `GUARD_FAULT_OBSERVED`，日志写失败也必须显式披露，不能因此放开受保护目标。事后 `execution audit`、doctor 与收口检查消费这些记录；故障放行不等于 ALLOW。
 
 ### 3. 结论要有证据
 
@@ -72,13 +74,15 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 
 `pomaster init` 会在项目里装三样东西：AGENTS.md / CLAUDE.md（项目入口说明与能力地图）、一组技能卡（每个阶段一张，Claude Code 与通用 Agent 各一份镜像）、宿主钩子（会话开始注入状态速览，每轮提示附带可行动项，写文件前过 `exec-guard`）。钩子注入的内容都是状态的投影。宿主不支持钩子时，AGENTS.md 里的约定仍然要求 Agent 先跑 `next-action` 再动手。
 
-**全 auto 的浏览器工具链**：POMaster 只推荐安装，不代装。
-- `pomaster init --full-auto` 只核验：Chrome DevTools MCP、Playwright MCP、Playwright runner 和 Chromium 在不在、能不能真跑。它不安装、不改配置，缺什么就在回执里给出推荐命令。
+**全 auto 的浏览器工具链**：init 的新增分支只核验并推荐；安装需主动执行 `tools prepare`。
+- `pomaster init --full-auto` 在普通 init 播种治理内容、技能卡和所选宿主钩子之后，额外调用浏览器工具链核验（`tools prepare --check`）。只有这个新增核验分支不安装、不改工具链或 MCP 配置，只写回执；检查 Chrome DevTools MCP、Playwright MCP、Playwright runner 和 Chromium，缺什么就如实列出并推荐恢复命令，不自动下载。
 - 推荐命令是 `pomaster tools prepare --host <claude|codex>`，由人或 agent 主动执行。它按兼容锁把这些组件装进 `~/.pomaster/toolchain/<lock>/`，业务依赖不碰；只给选中的宿主写 MCP 条目（Claude Code → `.mcp.json`，Codex → `.codex/config.toml`），同名而配置不同时报冲突，不覆盖。
-- 两种方式每次都真跑握手、工具清单、隔离浏览器 smoke 和 runner smoke，结果分层写进 `.pomaster/tools/toolchain.json`。`--check` 是只核验的那一种。
+- 组件齐备时，实际核验握手、工具清单、隔离浏览器 smoke 和 runner smoke，结果分层写进 `.pomaster/tools/toolchain.json`。缺组件时保留 missing / not_run 与原因，不声称已跑浏览器。`--check` 只核验现有组件。
 - 每层都过，才算 `machine_ready`。
 - 宿主那边的批准或信任列在 blockers 里，由人去做。
 - 宿主会话真实加载并调用一次之前，`full_auto_ready` 一直是 false。
+
+**可选第三方 Skills**：`skills catalog/recommend/audit/lock/check` 是离线目录、推荐、静态审计和本地字节锁核对，不下载、不安装、不执行第三方技能。推荐安装命令与 lock 都要求精确 Git revision pin；未知 revision 可审计但不可锁定。静态 audit 无发现、check 字节一致，都不证明安全、上游来源或人类信任，不授予安装 / 写入权限，项目规范与许可仍优先。
 
 ### 7. 基线与漂移
 
@@ -91,7 +95,7 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 1. 登记一次：`pomaster trust enroll --key ~/.ssh/id_ed25519.pub --principal <名字> --private ~/.ssh/id_ed25519`。
    - 第一个签名人按首次信任登记，请核对打印出的指纹就是你的密钥。
    - 之后再加人，要由已登记的人签发。
-   - `--private` 只用来检查私钥有没有口令，不读取、不保存私钥内容。
+   - 若提供 `--private`，会在本机读取私钥文件以识别口令保护元数据；登记表保存公钥、指纹与保护类别，不保存私钥内容。没有签名服务器，签名由 Owner 在自己的终端完成，Agent 不代签。
 2. 人工点被拒时，提示里有确切的 `pomaster trust request …` 命令。它生成一份签发请求，写明确认什么、内容摘要和有效期（默认 24 小时）。
 3. 在你自己的终端签名：`ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n pomaster .pomaster/trust/requests/<SO-…>.json`。Windows 10 起自带 OpenSSH。也可以用 `pomaster trust sign <SO-…> --key <私钥>`。
 4. 带 `--signoff <SO-…>` 重跑那个人工点。
@@ -127,6 +131,20 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 3. 答案、阈值、自主边界写进确认单目录。
 
 最后才写 `.pomaster/kickoff/current.json`，有它才算生效，默认有效 14 天。中途失败时修好再重跑：已完成的步骤不重做，签发也不再消费。没登记签名人时 confirm 直接拒绝，启动确认不接受自报。
+
+### 10. Autopilot：从需求到可审阅交付
+
+Autopilot 是有界协调与驱动，不是替 Owner 接受项目的后台服务。当前交付链是：
+
+1. **读需求，出候选。** `intake read/check/draft` 只读原材料，形成带出处的修订与草案；pending / unknown 必须判读，不能猜成已确认。
+2. **Owner 启动确认。** `kickoff draft/status/confirm` 绑定本轮需求、技术选择、阈值、预算与自主边界；Owner 对确切内容签名后才生效。
+3. **生成真实工作单元。** `plan scenarios` 创建 TASK 与初始 UNVERIFIED 的 CLM，实际采纳锁定的 `ARCHETYPE.GOVERNANCE.TASK_UNIT`，绑定已签确认单、场景计划和 generation manifest 的真实字节。生成车道声明 `requires`：contract → `api_contract`、db → `migration_drill`、be → `unit_behavior`、fe → `ui_render`；工具缺席不会取消必需义务。
+4. **冻结 QA，再派发。** `qa cases draft/freeze/check` 固定需求版本、场景与预期结果，实现者只读。登记会话、在册 execution 和归属它的许可后，`autopilot dispatch --execution-id <AGX> --unit <TASK>` 出不可变 DISP 包；范围来自 TASK 关联对象和实际 KEYBINDING 路径，包内说明不是写授权。QA 当前仍为 `not_isolated`，另开会话或换身份不证明宿主真正实施了隔离。
+5. **工程内执行，带原包交接。** `autopilot run` 的实际 worker cwd 是目标工程根，受租约、超时与预算约束；轮次 completed 只代表进程结果。`execution handoff` 记录实际改动、检查与缺口，并带 `--dispatch <原DISP>`；之后运行 `pomaster plan run --task <TASK> --execution-id <AGX> --dispatch <原DISP>`，逐项执行与入账。原包必须显式透传，不自动取 latest；缺失、跨任务 / 执行身份或陈旧包在工具与缓存复用前拒绝。
+6. **出可读 review，不把进度当完成。** `autopilot review draft --execution <AGX> --code <路径> --build <路径>` 汇总完整最终源码、构建与证据；`review show --review <ref>` 显示快照、当前性和阻断项。缺合格最终 `final_stable` GRN、独立 claim 复核、必需全栈证据，或必需义务为 failed / NOT_RUN、必需阈值未定，都不能 ready；blocked report 仍可用于审阅进度，选用项的 NOT_RUN 不冒充通过也不擅自升级为必需。机器收据不等于 Human ACCEPT。
+7. **真实 Owner 决定，再应用。** `review statement` 给出确切 ref / sha256，`trust request accept` 建请求；Owner 在自己的终端签名，`review decide --signoff <SO>` 验证决定。`review apply --decision <ref>` 仅应用已审阅且仍匹配的受支持内容与任务收口，重验依赖和许可；中断后按原 intent 恢复，不重复消费签名。REJECT 不可 apply，任意正文 / 新文件写入不属于这个应用入口。
+
+旧模板缺必需义务、真实绑定或采纳证据时，保留历史 TASK / CLM、已签操作与摘要，走新输入修订 → 新 Owner 签名 → 新有界规划轮次；不回填旧哈希、不改冻结 QA 来报绿。
 
 ## 前端：设计规范、Storybook 与原型转换
 
@@ -168,6 +186,15 @@ Agent 每次开工拿到的不是全部规范，而是按当前任务的阶段�
 ## 脚手架
 
 一份领域规格（`pomaster.domain-spec/v1`）描述实体、字段、分级和对管理侧 / 用户侧的暴露方式。Owner 确认后，`scaffold generate` 按它生成数据库迁移（只追加，需要数据迁移的变化会被拒绝）、每个部署面一份 OpenAPI、管理侧前端（Vue + ant-design-vue 的列表、编辑抽屉、接口客户端、路由与文案，照设计规范写）。生成的文件记在清单里，手改会被一致性门禁拦下；改规格要重新确认再生成。详见 [docs/scaffold-domain-spec.md](docs/scaffold-domain-spec.md)。
+
+## 后端：JVM 原生测试腿
+
+当前已接入 Maven 原生报告，不用 Node 测试冒充 Java 验证：
+
+- **BE-1 · Surefire / JaCoCo**：BUILD 跑 `mvn -B test`，读取 `target/surefire-reports/TEST-*.xml`，逐用例重算；COVERAGE 跑 `mvn -B verify`，读取 `target/site/jacoco/jacoco.xml`，同时核对行与分支覆盖。Maven 版本实测对账，缺报告或口径不能靠 exit 0 判绿。
+- **BE-2 · PIT / ArchUnit**：MUTATION 按显式精确 PIT 版本执行原生 Maven goal，限定 changed Java classes，消费 `target/pit-reports/**/mutations.xml`；ARCHITECTURE 按项目实际声明的精确 ArchUnit 依赖与测试类执行，消费逐类匹配的 `target/surefire-reports/TEST-<class>.xml`。仅在所选 Maven 模块的这些生成 target 命名空间回读报告，运行前清除已知报告，不接受源码 / 外部路径冒充新结果；解析与计数复用既有判卷核，排除项不冒充杀死的变异。
+
+这些 adapter 不代装 Java、Maven、PIT 或 ArchUnit，也不改项目依赖。项目要显式配置对应门禁 / ToolBinding 与阈值；`tools init` 目前只自动补登可探测的 Maven Surefire 起步 binding（以及 Node 工具），不是四腿全自动配置。报告经规范化与资格校验后才能形成 GRN，已接线不等于真实宿主已验收。
 
 ## 设计取舍
 
@@ -233,6 +260,7 @@ pomaster update spec                            # 不带子命令 = CLI 自更�
 pomaster spec-lint                              # 按写入契约复核已有规范条文：引用、版本号、时间戳、记录人逐处报出
 pomaster standards [id]                         # 规范的空间与抽屉：九个空间的通用规范，语言 / 框架 / 架构形态 / 产品抽屉，哪些对本项目生效
 pomaster baseline set/confirm/retire/unretire   # 回填基线键 / 确认基线 / Owner 标记某项不适用 / 撤销
+pomaster skills catalog/recommend/audit/lock/check   # 离线推荐（--pins 项目相对 JSON pin map）/ 静态审计（--pin 单 pin）/ 字节锁与漂移核对；无精确 revision 不出安装命令，不下载、不安装、不授信，项目规范与许可不变
 
 # ① 需求：追问到可判断的决策图，再提升为任务
 pomaster brainstorm start/question-gate/status/decide/promote
@@ -240,7 +268,7 @@ pomaster prototype ingest/check                 # BA 原型 → 业务事实与�
 pomaster intake read/status/pending/resolve/changes/check/draft   # 需求读取：整套材料（原型 + 需求文档 + 变更文档……）每来一版读一次，出带出处的需求条目、稳定编号与差异；读不懂的段落交 agent 判读，check 是反向追溯闸门；draft 从最新修订出可签草案
 pomaster kickoff draft/status/confirm           # 启动确认单：草案 + 工具链 + 签名人汇成一张单子；Owner 在 choices.yaml 里答问题、签一次，confirm 落库领域规格、技术栈、答案与自主边界
 pomaster qa cases draft/freeze/revise/check      # QA 用例集：原文复核三查 + 12 类完整分母（每类有场景或有依据不适用）；freeze 冻结「需求版本+场景+预期结果」不可变版本（实现者只读），revise 活输入变化后续谱重冻结（旧用例保留、replaces/retired 替代关系），check 以 digest+谱系链对账（重生成文件、换身份不能豁免）
-pomaster autopilot dispatch/status/suspend/resume/escalate/budget/run/hook-stop/hook/revision/stale-check  # 自驱协调、驱动与活输入修订（D-7/D-8/D-1b）：dispatch 消费既有路由逐单元出 DISP-#### 派发包（幂等靠包指纹，必读缺失阻断，QA 真值被改全拒）；status 纯读呈现单元/预算/熔断/下一动作；suspend-resume 局部挂起（其余照常）；budget 记账（花费不可测显式 unknown，连续失败 ≥3 熔断该单元）；escalate 纠错出口台账（不等于实现失败，不能抹已有失败/删测试/绕授权）；run 无头轮次驱动（--driver claude-code|codex|script 有界 spawn，worker 租约 = kernel unit_write 锁不重复调度，RND-#### 轮账，交付判定归 plan run 判卷）；hook-stop 宿主回灌入口（受控 Ralph）；hook install/uninstall 接线宿主 Stop hook（保留人改字段）；revision assess/adopt 活输入修订面（影响传播四层 + RVC-#### 可恢复记录两阶段接线：登记 → Owner 增量重签 → 编排 qa revise/dispatch 换代）；stale-check 迟到拒收对账
+pomaster autopilot dispatch/status/suspend/resume/escalate/budget/run/hook-stop/hook/revision/stale-check/review  # review draft/show/statement/decide/apply = 显式 --execution 与重复 --code/--build 编译真实机器回执，blocked 快照只是进度；show 由生产 review view 重验，current 与 ready 分离，披露 required_final_paths/required_project_checks/requirement_review，读取成功不是完成；statement 输出 canonical statement/ref/sha256 供 trust request accept 与 Owner 自己 ssh-keygen 签名（不读私钥/代签/消费）；decide 缺 --signoff 非绿，项目单次 Human ACCEPT 不伪造逐任务人签；apply 只收 --decision 已签 ref，可恢复幂等，普通 closeout 不变； 自驱协调、驱动与活输入修订（D-7/D-8/D-1b）：dispatch 消费既有路由逐单元出 DISP-#### 派发包（幂等靠包指纹，必读缺失阻断，QA 真值被改全拒）；status 纯读呈现单元/预算/熔断/下一动作；suspend-resume 局部挂起（其余照常）；budget 记账（花费不可测显式 unknown，连续失败 ≥3 熔断该单元）；escalate 纠错出口台账（不等于实现失败，不能抹已有失败/删测试/绕授权）；run 无头轮次驱动（--driver claude-code|codex|script 有界 spawn，worker 租约 = kernel unit_write 锁不重复调度，RND-#### 轮账，交付判定归 plan run 判卷）；hook-stop 宿主回灌入口（受控 Ralph）；hook install/uninstall 接线宿主 Stop hook（保留人改字段）；revision assess/adopt 活输入修订面（影响传播四层 + RVC-#### 可恢复记录两阶段接线：登记 → Owner 增量重签 → 编排 qa revise/dispatch 换代）；stale-check 迟到拒收对账
 
 # ② 许可
 pomaster permit issue/check/steal/renew/widen/list
@@ -250,20 +278,23 @@ pomaster context compile/explain
 
 # ④ 实现
 pomaster exec-guard --attempt <file|->          # 写前判断（钩子调用）
-pomaster maintain <change-or-task> --ops <tx>   # 提交治理对象事务
+pomaster maintain <change-or-task> --ops <tx> [--execution-id <AGX>] [--permit-ref <ref>] [--break-glass-signoff <SO>] [--break-glass-spec <project-relative-json>]   # 精确 scope/ops/短 TTL 人签急救；不是 --force 旁路
+pomaster bindings sync/declare/statement --from <project-relative-json>   # sync --dry-run 真只读；declare --signoff 逐行签精确生产 subject（statement），可携带 --permit-ref/--execution-id；不接受 JSON verifier
+pomaster fact add --kind <kind> --id <id> --title <title> [--from <project-relative-json>] --reason <reason> --by <type:name>   # PROPOSED 候选入账/单 ID 短 TTL permit；必填 kind payload 缺席要求 --from，不猜默认、不等于完成
+pomaster truth-body statement/advance --id <id>   # statement 取真实现盘审阅 subject；advance --by/--reason/--evidence/--evidence-sha256 [--signoff/--permit-ref/--execution-id] 消费生产 ADVANCE，不编辑正文、不伪造验证
 pomaster design validate/show/adopt/set/check   # 设计规范：校验 / 查 / 落到项目 / 定取值 / 门禁扫源码
 pomaster scaffold validate/confirm/status/plan/generate/check   # 领域规格 → 数据库迁移、OpenAPI、管理侧前端；check = 一致性门禁
 
 # ⑤ 验证
-pomaster plan compile/run/scenarios                       # 编译并执行验证计划，每项一张收据；--diagnose-on-failure 出分类诊断
+pomaster plan compile/run/scenarios                       # scenarios 生成真实 TASK/CLM 与必需义务；compile 纯读编译；派发后用 pomaster plan run --task <TASK> --execution-id <AGX> --dispatch <原DISP> 逐项执行入账，不自动取 latest；--diagnose-on-failure 出分类诊断
 pomaster sit build/up/run/down/zap                            # 一次性 SIT 环境（TS-1）+ ZAP 动态扫描（TS-3）：build 合并构建（双 jar+前端）产物指纹落账；up mysql:8.4 容器+建库建号+Flyway 迁移+授权（幂等；docker/mvn/java 缺席诚实拒绝）；run 起双 jar 跑通用跨层不变量（鉴权/权限/校验/版本并发/KEYSET/ETag）+接口→DB 一致性断言+属主档跨 owner 隔离专块（ownership=user），SIT-#### 轮账+明细，failed 即 exit 1；down 拆容器留台账（GRN 接线归 AC-1）；zap baseline 被动扫两基址/api 逐面导入 OpenAPI 主动扫（只对一次性环境跑），security-zap.json 逐插件 IGNORE/WARN/FAIL 映射判卷，ZAP-#### 轮 gate SECURITY
 pomaster perf build/run                                      # 后端性能（TS-2；Gatling）：build 生成/复用独立 perf/ 模块（manifest 驱动基准负载仿真+发现在座仿真）+编译落清单；run 消费 SIT 环境（指纹对账陈旧拒跑）起双 jar 跑负载 → stats.json 摘要 vs 确认单阈值结构化词形（p95<=ms/rps>=/error_rate<%/concurrency=/capacity=）判卷，PERF-#### 台账 + PERFORMANCE gate；零可判阈值 verdict=recorded 不猜
 pomaster control-data-flow analyze [--report-only]   # 控件 → 事件 → 状态 → 回显的数据链审计（Vue SFC / React TSX）
 pomaster finalize status/replay-adjudicate/run TASK.*   # 推进验证收尾；独立复核与人工接受处停下等待
 pomaster trust enroll/request/sign/verify/status   # 人工点的 Owner 签名：登记 SSH 公钥、建签发请求、在你自己的终端签名、核验
-pomaster tools init/list/validate/prepare       # 工具绑定：init 按已声明的 vitest / vue-tsc / tsc / eslint 写起步注册面；prepare 是推荐的浏览器工具链安装（两个 MCP、runner、Chromium 装好、接好、实测；--check 只核验）
+pomaster tools init/list/validate/prepare       # init 按可探测的 vitest / vue-tsc / tsc / eslint 与 pom.xml + 实测 Maven 版本补登 Surefire 起步 binding，不覆盖已有绑定、不安装依赖；prepare 主动准备锁定浏览器工具链（两个 MCP、runner、Chromium），--check 只核验，缺组件如实 missing / not_run
 pomaster check --fast/--gates                   # 局部自检 / 全部门禁定义派发并入账
-pomaster record gate-run/claim/verification/requalify   # 收据、验收、复核、证据过期后的重绑
+pomaster record gate-run/claim/verification/requalify   # 收据、验收、复核、证据过期重绑；gate-run --dispatch <original-ref> 透传原派发锚，迟到相关工作由生产 qualifier 拒收；claim/verification 尚无 dispatchRef API，不能冒充已接线
 pomaster task reassess-baseline TASK.*          # 基线合法变更后重算任务的基线依赖
 
 # ⑥ 对账
@@ -312,3 +343,9 @@ pomaster diagnose "<症状>"                       # 关联已有证据给出诊
 # corepack pnpm studio:vue:dev      只起 Vue · Ant Design（6006）
 # corepack pnpm studio:react:dev    只起 React · Geist（6007）
 ```
+
+## 当前源码验证与限制
+
+本轮已记录的本地 Windows 源码验证：根目录 `corepack pnpm build`、`corepack pnpm lint` 通过；全仓 311 文件 / 7298 项，7284 通过、14 跳过、0 失败。真实公开 CLI 演练 76 次命令 / 22 断言通过，仅产生 1 张真实 Vitest GRN；真实需求材料读取的 64 断言通过，待判读项仍正确阻断。这是本地验证记录，不是 npm 发布版本或 GitHub CI 结果。
+
+**仍未验证**：真实 Docker / SIT、Gatling、ZAP、PIT / ArchUnit 工程运行，Claude Code / Codex 真实宿主、QA 宿主隔离、真正 Owner 接受，以及跨平台 CI（含 macOS / Linux）。局部测试或 adapter 接线通过不等于全栈就绪，本项目不据此宣称已接受。

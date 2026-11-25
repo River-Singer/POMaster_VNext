@@ -27,6 +27,8 @@ import type { PermitCheckResult, WriteAttempt } from "@pomaster/kernel";
 import type { CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { PERMIT_WRITE_OPS, deniedReasonToCode, requireInitialized } from "./permit.js";
+export { readGuardFaults, guardFaultErrors } from "./guard-faults.js";
+export type { GuardFaultEvent, GuardFaultAssessment } from "./guard-faults.js";
 
 function isFATALCode(err: unknown): err is { reason: "unknown_prefix" | "grammar" } {
   return (

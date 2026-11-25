@@ -32,8 +32,10 @@ import {
 import {
   BINDING_ANNOTATION_PREFIX,
   GateAdapterError,
+  GATE_TIER_VALUES,
   absenceRecord,
   runBindingGate,
+  type BindingGateDeps,
   type GateResultRecord,
   type ToolBindingRecord,
 } from "@pomaster/gauntlet-lite";
@@ -60,6 +62,8 @@ import {
 export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
   readonly taskRef: string;
   readonly executionId: string;
+  /** Original worker DISP anchor; dispatched submissions must never default to the latest pack. */
+  readonly dispatchRef?: string;
   readonly diagnoseOnFailure?: boolean;
   /**
    * FR-05 共享依赖/配置面（W2.2）：除任务变更面（changed）外显式并入 source 相关分母的
@@ -343,6 +347,7 @@ function findCarriedObligation(rootDir: string, executionId: string, role: strin
 export async function runPlanRun(
   rootDir: string,
   input: PlanRunInput,
+  deps: BindingGateDeps = {},
 ): Promise<CommandOutcome<PlanRunResult>> {
   let result = empty(input);
   if (!EXECUTION_ID_PATTERN.test(input.executionId)) {
@@ -391,6 +396,18 @@ export async function runPlanRun(
     );
   }
 
+  // Qualify the original submission before tool probes, cached GRN reuse or ADVANCE.
+  // Recording rechecks the same anchor after execution; this preflight cannot replace it.
+  const { qualifyAutopilotSubmission } = await import("./autopilot-revision.js");
+  const submissionError = await qualifyAutopilotSubmission(rootDir, {
+    executionId: input.executionId,
+    tasks: [input.taskRef],
+    dispatchRef: input.dispatchRef,
+  });
+  if (submissionError !== null) {
+    return fail(input, result, submissionError, { phase: "execution_preflight", kind: "cli_error" });
+  }
+
   const loaded = loadToolBindingRegistry(rootDir);
   if (!loaded.ok) return fail(input, result, loaded.error);
 
@@ -408,6 +425,18 @@ export async function runPlanRun(
       code: "SCHEMA_INVALID",
       message: "Verification Plan 编译失败",
       hint: "修复 task、变更面或 ToolBinding registry 后重试。",
+    });
+  }
+
+  // Profile controls native execution policy only; acceptance remains the sole
+  // capability authority. Absence preserves the adapter default, never HARDENING.
+  const profile = compiled.result.informational?.governance_profile;
+  const gateTier = GATE_TIER_VALUES.find((tier) => tier === profile);
+  if (profile != null && gateTier === undefined) {
+    return fail(input, result, {
+      code: "SCHEMA_INVALID",
+      message: `plan run profile 不在 GateTier 闭包：${profile}`,
+      hint: `使用 ${GATE_TIER_VALUES.join("/")} 或省略 profile；禁止猜测 HARDENING 映射。`,
     });
   }
 
@@ -452,6 +481,7 @@ export async function runPlanRun(
   const stateById = new Map(
     computeBindingStates(rootDir, loaded.registry.bindings, {
       planItems: compiled.result.items,
+      executableProbe: deps.executableProbe,
     }).map((row) => [row.binding_id, row]),
   );
   const bindingById = new Map(loaded.registry.bindings.map((binding) => [binding.id, binding]));
@@ -531,7 +561,8 @@ export async function runPlanRun(
             grn,
             ranAtSeq,
             subjectId: input.taskRef,
-          })
+            ...(gateTier === undefined ? {} : { gateTier }),
+          }, deps)
         : null;
       record = executed?.record ?? stampedAbsence(
             binding,
@@ -560,9 +591,16 @@ export async function runPlanRun(
       }
     }
 
+    // Native JVM notes use a descriptive ASCII delimiter. Ensure binding identity
+    // is an exact machine-consumer field; already canonical adapter notes stay intact.
+    const bindingMarker = `${BINDING_ANNOTATION_PREFIX}${binding.id}`;
+    const nativeNote = record.scopeNote ?? "";
+    const attributedNote = nativeNote.split("；").includes(bindingMarker)
+      ? nativeNote
+      : `${bindingMarker}；${nativeNote}`;
     // W1-FR04：场景身份以 scenario_ref=<局部键> 进 note marker（run 复用/终验 cohort
     // 键共用锚）；无场景条目不带此段（legacy GRN note 字节不变）。
-    record = { ...record, scopeNote: `acceptance_ref=${entry.item.acceptance_ref}${entry.item.scenario_ref == null ? "" : `；scenario_ref=${entry.item.scenario_ref}`}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
+    record = { ...record, scopeNote: `acceptance_ref=${entry.item.acceptance_ref}${entry.item.scenario_ref == null ? "" : `；scenario_ref=${entry.item.scenario_ref}`}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${attributedNote}` };
     if (record.gate !== binding.gate || record.gateDef !== binding.gate_def) {
       bindingDrift = {
         code: "PLAN_BINDING_DRIFT",
@@ -634,6 +672,7 @@ export async function runPlanRun(
       grn: item.grn,
       trigger: "on_demand",
       executionId: input.executionId,
+      ...(input.dispatchRef !== undefined ? { dispatchRef: input.dispatchRef } : {}),
       subjects: [input.taskRef],
       ...(baselineInputs !== undefined ? { baselineInputs } : {}),
       ...(runSourceSnapshot !== undefined ? { sourceSnapshot: runSourceSnapshot } : {}),
@@ -767,7 +806,7 @@ async function recordRequalifiedCohort(
         },
       ]),
     });
-    await applyTransaction(store, { note: `plan run --requalify ${input.taskRef} ${input.executionId}`, ops: [{ op: "record_advance", record: { advance, actor, reason } }] });
+    await applyTransaction(store, { executionId: input.executionId, note: `plan run --requalify ${input.taskRef} ${input.executionId}`, ops: [{ op: "record_advance", record: { advance, actor, reason } }] });
     const adv = latestAdvanceFor(paths, "source_snapshot", ref)?.adv ?? null;
     return { adv, line: `  requalify：沿用 ${String(carried.length)} 项跨 AGX 证据，cohort 记入 ${adv ?? "ADVANCE"}（锚 source_snapshot ${ref}）。` };
   } catch (error) {

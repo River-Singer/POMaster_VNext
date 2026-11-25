@@ -91,6 +91,12 @@ import {
   type RecordPlanFields,
 } from "./normalize-common.js";
 
+import { ARCHUNIT_TOOL_ID, ARCHUNIT_METRIC_DIALECT, DEFAULT_ARCHUNIT_TIMEOUT_MS, archUnitReportsForTests, buildArchUnitCommand, detectArchUnit, readArchUnitVersion, runArchUnitLeg, type ArchUnitLegPlan } from "./archunit-leg.js";
+import { isArchUnitReportSet, isExactJvmVersion, isJvmMavenInvoker, type JvmReportIO } from "./jvm-report.js";
+import { mavenSpawn } from "./maven-leg.js";
+import { normalizePytestLeg } from "./pytest-leg.js";
+import type { ToolRunOutput } from "./adapter-types.js";
+
 // ============================================================
 // 口径常量（gate 名不属 vocab-lock 管辖；新增 gate 须经 gate_def 版本化登记）
 // ============================================================
@@ -102,15 +108,16 @@ export const ARCHITECTURE_METRIC_DIALECT = "arch:forbidden_import_line";
 export const ARCHITECTURE_GATE_CONFIG_FILE = "architecture-gate.json";
 
 export const ARCHITECTURE_CONFIG_HINT =
-  "在项目根 architecture-gate.json 声明机判口径，三种二选一（互斥，一份配置一个口径）：" +
+  "在项目根 architecture-gate.json 声明一个机判口径（rules / dependency-cruiser / import-linter / archunit 互斥）：" +
   '文本扫描规则 {"rules":[{"name":"fe_no_direct_ag_grid","scopePrefix":"src/","forbidden":"ag-grid-community",' +
   '"suggestion":"须经 components/grid wrapper"}]}；' +
   '机判腿（P22）{"tool":"dependency-cruiser","toolRoot":"src"}（FE，需 devDependencies 安装 + .dependency-cruiser.cjs 配置）或 ' +
-  '{"tool":"import-linter"}（BE-Python，需 pip install import-linter + .importlinter 配置）——' +
+  '{"tool":"import-linter"}（BE-Python，需 pip install import-linter + .importlinter 配置）或 ' +
+  '{"tool":"archunit","tests":["com.acme.LayerTest"]}（JVM，现有 pom 声明精确 ArchUnit 版本；可选 command=mvn -B、reports=仅 target/surefire-reports/TEST-<class>.xml 清单、archunitVersion=一致性锚；policy.expectedToolVersion=Maven 版本，不代装）——' +
   "口径未声明是诚实缺席（not_configured），不会被记为通过";
 
 /** 机判腿 tool 词表（architecture-gate.json tool 键的闭集；词表外 → NOT_INSTALLED）。 */
-export const ARCH_TOOL_VALUES = ["dependency-cruiser", "import-linter"] as const;
+export const ARCH_TOOL_VALUES = ["dependency-cruiser", "import-linter", "archunit"] as const;
 export type ArchToolValue = (typeof ARCH_TOOL_VALUES)[number];
 
 /** 视为源码文本的扩展名（与 kernel doctor 的 TEXT_EXTENSIONS 同族 + .vue）。 */
@@ -146,9 +153,17 @@ export type ArchitectureGateConfig =
   | { readonly mode: "rules"; readonly rules: readonly ArchitectureRule[] }
   | {
       readonly mode: "tool";
-      readonly tool: ArchToolValue;
+      readonly tool: "dependency-cruiser" | "import-linter";
       /** 机判扫描根（仓内相对路径；仅 dependency-cruiser 消费，import-linter 忽略）。 */
       readonly toolRoot: string;
+    }
+  | {
+      readonly mode: "tool";
+      readonly tool: "archunit";
+      readonly command: string;
+      readonly tests: readonly string[];
+      readonly reports: readonly string[];
+      readonly archunitVersion: string | null;
     };
 
 export type ArchitectureConfigRead =
@@ -200,6 +215,20 @@ export function readArchitectureConfig(facts: DetectorFacts): ArchitectureConfig
         installHint: `口径形态见：${ARCHITECTURE_CONFIG_HINT}`,
       };
     }
+    if (tool === "archunit" && loose !== null) {
+      const tests = loose["tests"];
+      const reports = loose["reports"];
+      const command = loose["command"] ?? "mvn -B";
+      const version = loose["archunitVersion"];
+      const detectedVersion = readArchUnitVersion(facts);
+      if (Object.hasOwn(loose, "rules") || !Array.isArray(tests) || tests.length === 0 || tests.some((name) => typeof name !== "string" || !/^(?:[A-Za-z_][\w]*\.)+[A-Za-z_][\w]*$/.test(name)) || new Set(tests).size !== tests.length ||
+          typeof command !== "string" || !isJvmMavenInvoker(command) ||
+          (reports !== undefined && (!Array.isArray(reports) || !isArchUnitReportSet(tests, reports))) ||
+          (version !== undefined && (!isExactJvmVersion(version) || (detectedVersion !== null && version !== detectedVersion)))) {
+        return { ok: false, reason: "ArchUnit needs exact architecture tests, matching target/surefire-reports/TEST-<class>.xml reports, a Maven invoker and matching dependency version", installHint: ARCHITECTURE_CONFIG_HINT };
+      }
+      return { ok: true, config: { mode: "tool", tool: "archunit", command, tests: tests as string[], reports: reports === undefined ? archUnitReportsForTests(tests as string[]) : (reports as string[]).map((path) => path.replaceAll("\\", "/")), archunitVersion: detectedVersion }, evidence: `${configPath}: declared ArchUnit architecture tests (${tests.length})` };
+    }
     const rawToolRoot = loose === null ? undefined : loose["toolRoot"];
     if (
       rawToolRoot !== undefined &&
@@ -215,7 +244,7 @@ export function readArchitectureConfig(facts: DetectorFacts): ArchitectureConfig
       ok: true,
       config: {
         mode: "tool",
-        tool: tool as ArchToolValue,
+        tool: tool as "dependency-cruiser" | "import-linter",
         toolRoot:
           typeof rawToolRoot === "string" && rawToolRoot.length > 0
             ? rawToolRoot
@@ -329,7 +358,8 @@ export interface ArchitectureViolation {
 export interface ArchitectureGatePlan extends RecordPlanFields {
   readonly projectRoot: string;
   /** 机判口径（P22 三口径：rules 文本扫描 / dependency-cruiser / import-linter）。 */
-  readonly mode: "rules" | "dependency-cruiser" | "import-linter";
+  readonly mode: "rules" | "dependency-cruiser" | "import-linter" | "archunit";
+  readonly archunitPlan?: ArchUnitLegPlan | null;
   /** false = 口径缺席（absenceKind 分流到 normalize 的 not_configured / not_run）。 */
   readonly declared: boolean;
   readonly absenceKind: ArchitectureAbsenceKind | null;
@@ -367,6 +397,12 @@ export type ArchitectureRunOutput =
       readonly outcome: "tool_leg";
       readonly leg: DepcruiseLegOutput | ImportLinterLegOutput;
       readonly externalMs: number;
+    }
+  | {
+      readonly plan: ArchitectureGatePlan;
+      readonly outcome: "archunit_leg";
+      readonly leg: ToolRunOutput;
+      readonly externalMs: number;
     };
 
 /** 机判腿配置文件发现（与探测面同源候选清单；命中顺序即候选序）。 */
@@ -396,6 +432,9 @@ export function createArchitectureAdapter(
     readonly depcruiseExecutableProbe?: ExecutableProbeFn;
     /** 注入 import-linter 腿 run 前置可执行体探测（测试 fake）；缺省扫真实 PATH。 */
     readonly importLinterExecutableProbe?: ExecutableProbeFn;
+    readonly archunitSpawnFn?: SpawnFn;
+    readonly archunitExecutableProbe?: ExecutableProbeFn;
+    readonly archunitReportIO?: JvmReportIO;
   } = {},
 ): GateAdapter<
   DetectionResult,
@@ -429,6 +468,7 @@ export function createArchitectureAdapter(
           evidence: read.evidence,
         };
       }
+      if (read.config.tool === "archunit") return detectArchUnit(facts);
       // 机判腿口径：配置就绪还不够，对应工具必须在位（探测面直连，理由/指引自带）。
       if (read.config.tool === "dependency-cruiser") {
         const detection = detectDependencyCruiser(facts);
@@ -529,6 +569,24 @@ export function createArchitectureAdapter(
         };
       }
 
+      if (read.config.tool === "archunit") {
+        const config = read.config;
+        const detection = detectArchUnit(resolved);
+        const archCommon = { ...common, tool: ARCHUNIT_TOOL_ID, metricDialect: ARCHUNIT_METRIC_DIALECT,
+          mode: "archunit" as const, rules: [], toolRoot: null, toolConfigName: "pom.xml", depcruisePlan: null, importLinterPlan: null };
+        if (detection.status !== "READY") {
+          const pom = resolved.readTextFile(resolved.joinPath(resolved.projectRoot, "pom.xml"));
+          return { ...archCommon, declared: false, absenceKind: pom?.includes("com.tngtech.archunit") ? "config_absent" : "tool_absent", absentReason: detection.status === "NOT_INSTALLED" ? detection.reason : "ArchUnit unavailable", installHint: ARCHITECTURE_CONFIG_HINT };
+        }
+        if (!isExactJvmVersion(policy.expectedToolVersion) || config.archunitVersion === null) {
+          return { ...archCommon, declared: false, absenceKind: "config_absent", absentReason: "ArchUnit requires exact policy.expectedToolVersion (Maven) and resolved ArchUnit dependency version", installHint: ARCHITECTURE_CONFIG_HINT };
+        }
+        const archunitPlan: ArchUnitLegPlan = { ...archCommon, toolVersion: policy.expectedToolVersion,
+          runner: "maven", cwd: scope.projectRoot, command: buildArchUnitCommand(config.command, config.tests),
+          timeoutMs: policy.timeoutMs ?? DEFAULT_ARCHUNIT_TIMEOUT_MS, expectedToolVersion: policy.expectedToolVersion,
+          architectureTests: config.tests, reportPaths: config.reports, archunitVersion: config.archunitVersion };
+        return { ...archCommon, toolVersion: policy.expectedToolVersion, declared: true, absenceKind: null, absentReason: null, installHint: null, archunitPlan };
+      }
       // —— 机判腿：工具在位性 + 版本锚强制（pytest 腿同款纪律）——
       // TS 收窄不进闭包：read.config 的判别联合在箭头函数体内不保留收窄（TS2339），
       // 先在此把 tool 词形收窄成局部常量再被闭包引用。
@@ -672,7 +730,7 @@ export function createArchitectureAdapter(
 
     run(
       plan: ArchitectureGatePlan,
-      spawnFn: SpawnFn = plan.mode === "import-linter" ? importLinterSpawnFn : depcruiseSpawnFn,
+      spawnFn: SpawnFn = plan.mode === "archunit" ? options.archunitSpawnFn ?? mavenSpawn : plan.mode === "import-linter" ? importLinterSpawnFn : depcruiseSpawnFn,
     ): ArchitectureRunOutput {
       const startedAt = performance.now();
       const elapsed = () => Math.max(0, Math.round(performance.now() - startedAt));
@@ -682,6 +740,11 @@ export function createArchitectureAdapter(
           outcome: "not_declared",
           externalMs: elapsed(),
         };
+      }
+      if (plan.mode === "archunit") {
+        if (plan.archunitPlan === null || plan.archunitPlan === undefined) throw new GateAdapterError("runner_not_implemented", "ArchUnit plan missing", "prepare must supply archunitPlan");
+        const leg = runArchUnitLeg(plan.archunitPlan, spawnFn, options.archunitExecutableProbe, options.archunitReportIO);
+        return { plan, outcome: "archunit_leg", leg, externalMs: leg.externalMs };
       }
       if (plan.mode === "dependency-cruiser") {
         if (plan.depcruisePlan === null) {
@@ -762,6 +825,14 @@ export function createArchitectureAdapter(
           selfMs,
           raw.externalMs,
         );
+      }
+      if (raw.outcome === "archunit_leg") {
+        const record = normalizePytestLeg(raw.leg.plan, raw.leg, selfMs, "archunit");
+        const asserted = record.trust.asserted;
+        return { ...record,
+          scopeNote: `${record.scopeNote ?? "Declared architecture tests only; shared Surefire/JUnit walker"}; ArchUnit=${plan.archunitPlan?.archunitVersion ?? "unknown"}; reports=${plan.archunitPlan?.reportPaths.join(",") ?? "none"}`,
+          trust: { ...record.trust, asserted: asserted === null ? null : { ...asserted, claimedBy: { ...asserted.claimedBy, actor: `${record.tool}@${record.toolVersion}` } } },
+        };
       }
       if (raw.outcome === "tool_leg") {
         // 机判腿判卷（violations=违规依赖重算 + 明细 items；工具缺席 → not_run 腿内处理）。

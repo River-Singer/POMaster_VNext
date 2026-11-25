@@ -48,6 +48,36 @@
       }
     },
     "mapping": {
+      "packages/cli/tests/atomic-admissions.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/maven-leg.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/public-consumer-wiring.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/autopilot-review.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/plan-jvm-bindings.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/remaining-cli-slices.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/skill-recommendations.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/skills-review-cli-wiring.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/jvm-gate-adapters.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/remaining-write-slices.spec.ts": {
+        "layer": "L1"
+      },
       "packages/cli/tests/agents-commands.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"

@@ -87,12 +87,17 @@ import {
   stripQuotesFromPathEnv,
 } from "./detectors.js";
 import { absenceRecord, capItems, type RecordPlanFields } from "./normalize-common.js";
+import { parseJacocoXml } from "./maven-leg.js";
 
 export const COVERAGE_GATE_NAME = "COVERAGE";
 export const COVERAGE_GATE_DEF = "POLICY.GATE.COVERAGE@0.1.0";
 export const COVERAGE_GATE_CONFIG_FILE = "coverage-gate.json";
 export const C8_TOOL_ID = "gauntlet:c8";
 export const PYTEST_COV_TOOL_ID = "gauntlet:pytest-cov";
+/** BE-1：JaCoCo/Java 覆盖率腿（D17 第二波到货——runner 词形 jacoco，mvn -B verify 产 jacoco.xml）。 */
+export const JACOCO_TOOL_ID = "gauntlet:jacoco";
+export const JACOCO_METRIC_DIALECT = "coverage:jacoco_lines_branches";
+export const JACOCO_DEFAULT_REPORT = "target/site/jacoco/jacoco.xml";
 /** coverage adapter 自身身份（配置缺席等 runner 未定态的探测/缺席记录 tool 词形）。 */
 export const COVERAGE_ADAPTER_TOOL_ID = "gauntlet:coverage";
 /** coverage 类型 metric_dialect（出口判据：GateResult 必带 coverage 类型口径；03 schema 注：「coverage 行/分支混用即口径漂移」——复合口径一词形钉死，禁混用）。 */
@@ -249,7 +254,7 @@ export const coverageSpawn: SpawnFn = (command, options) => {
 export interface CoverageLegPlan extends RecordPlanFields {
   readonly projectRoot: string;
   /** c8 | pytest-cov（D17：pytest-cov 先行；JaCoCo/Java 第二波 deferred）。 */
-  readonly runner: "c8" | "pytest-cov";
+  readonly runner: "c8" | "pytest-cov" | "jacoco";
   /** 触发方式（structural 词表；oasdiff 腿计划同款锚）。 */
   readonly trigger: RunTriggerValue;
   readonly absenceKind: "profile_not_required" | "config_absent" | "tool_absent" | null;
@@ -628,10 +633,10 @@ export function parsePytestCovJson(text: string): CoverageReportMetrics | null {
 
 /** 按 runner 分派报告解析（单一分派点——两腿词形互异，禁混用解析器）。 */
 export function parseCoverageReport(
-  runner: "c8" | "pytest-cov",
+  runner: "c8" | "pytest-cov" | "jacoco",
   text: string,
 ): CoverageReportMetrics | null {
-  return runner === "c8" ? parseC8Summary(text) : parsePytestCovJson(text);
+  return runner === "c8" ? parseC8Summary(text) : runner === "jacoco" ? parseJacocoReport(text) : parsePytestCovJson(text);
 }
 
 // ============================================================
@@ -755,7 +760,9 @@ export function normalizeCoverageLeg(
   const exitNote =
     plan.runner === "c8"
       ? `runner=c8 exit=${String(raw.exitCode)}（被包裹测试命令语义，非本 gate 判卷锚——测试失败归 BUILD gate）`
-      : `runner=pytest-cov exit=${String(raw.exitCode)}（pytest 自身退出码语义——本腿命令为合成命令、无被包裹用户命令；测试失败归 BUILD gate，非本 gate 判卷锚）`;
+      : plan.runner === "jacoco"
+        ? `runner=jacoco exit=${String(raw.exitCode)}（mvn 自身退出码语义——测试失败归 BUILD gate，非本 gate 判卷锚）`
+        : `runner=pytest-cov exit=${String(raw.exitCode)}（pytest 自身退出码语义——本腿命令为合成命令、无被包裹用户命令；测试失败归 BUILD gate，非本 gate 判卷锚）`;
   const scopeNote =
     `行口径 ${formatPct(metrics.linesPct)}%（阈值 ≥${plan.thresholds.lines}）/ 分支口径 ${formatPct(metrics.branchesPct)}%（阈值 ≥${plan.thresholds.branches}）；` +
     `报告内文件 ${metrics.files.size} 个；` +
@@ -824,20 +831,25 @@ export function buildPytestCovCommand(covTarget: string, reportAbs: string): str
 }
 
 /** coverage 腿 gate ①a 可执行体（firstCommandToken 同源；c8=corepack / pytest-cov=python）。 */
-export function coverageLegExecutable(runner: "c8" | "pytest-cov"): string {
+export function coverageLegExecutable(runner: "c8" | "pytest-cov" | "jacoco"): string {
   return runner === "c8"
     ? firstCommandToken(C8_VERSION_PROBE_COMMAND)
-    : firstCommandToken("python -m pytest --version");
+    : runner === "jacoco"
+      ? firstCommandToken("mvn --version")
+      : firstCommandToken("python -m pytest --version");
 }
 
 /** 报告文件仓内相对路径解析（c8 = 报告目录 + reporter 固定文件名；pytest-cov = 声明文件路径）。 */
 export function resolveCoverageReportPath(
-  runner: "c8" | "pytest-cov",
+  runner: "c8" | "pytest-cov" | "jacoco",
   configValue: string | null,
 ): string {
   if (runner === "c8") {
     const dir = (configValue ?? C8_DEFAULT_REPORTS_DIR).replaceAll("\\", "/").replace(/\/$/, "");
     return `${dir}/${C8_SUMMARY_FILE_NAME}`;
+  }
+  if (runner === "jacoco") {
+    return (configValue ?? JACOCO_DEFAULT_REPORT).replaceAll("\\", "/");
   }
   return (configValue ?? PYTEST_COV_DEFAULT_REPORT).replaceAll("\\", "/");
 }
@@ -850,4 +862,16 @@ export function coverageReportAbsolutePath(projectRoot: string, relativePath: st
 /** c8 --reports-dir 绝对路径（coverageReportPath 的目录段）。 */
 export function c8ReportsDirAbsolute(projectRoot: string, coverageReportPath: string): string {
   return pathDirname(pathJoin(projectRoot, coverageReportPath));
+}
+
+
+// ============================================================
+// jacoco 腿解析（BE-1；XML counter 词形 → 行/分支双口径——与 c8/pytest-cov 同构出口）
+// ============================================================
+
+/** jacoco XML → CoverageReportMetrics（report 级 counter = 总判卷锚；sourcefile = 分母）。 */
+export function parseJacocoReport(text: string): CoverageReportMetrics | null {
+  const parsed = parseJacocoXml(text);
+  if (parsed === null) return null;
+  return { linesPct: parsed.linesPct, branchesPct: parsed.branchesPct, files: parsed.files };
 }

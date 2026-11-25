@@ -13,7 +13,7 @@
  *
  * 不做的事：
  * - 已有注册面里的绑定原样保留（同 id 不覆盖、不改命令）；只补缺的；
- * - 探测到但没有受信 adapter 的工具（playwright、pytest、maven、gradle……）只列出来，
+ * - 探测到但没有受信 adapter 的工具（playwright、pytest、gradle……）只列出来，
  *   不猜命令也不登记——它们的证明义务在 plan 里保持 REQUIRED 并记 tool_gap；
  * - 一个都探测不到时不写文件（缺席与显式空表语义不同，不替项目造一张空表）；
  * - 登记 ≠ 调用授权：执行入账照旧只经 plan run / record gate-run。
@@ -43,6 +43,7 @@ import {
 } from "@pomaster/gauntlet-lite";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { probeMavenVersion, SUREFIRE_FORMAT, SUREFIRE_PARSER_REF, SUREFIRE_RUN_COMMAND, SUREFIRE_TOOL_ID } from "@pomaster/gauntlet-lite";
 import { loadToolBindingRegistry } from "./tools.js";
 import { TOOLS_BINDINGS_RELATIVE, toolsBindingsPath } from "./store-layout.js";
 
@@ -58,6 +59,8 @@ interface StarterTool {
   readonly gateDef: string;
   readonly metricDialect: string;
   readonly capability: string;
+  /** 命令覆盖（BE-1：maven 腿 mvn 直跑，不套包管理器前缀——runner 前缀只属 node 生态）。 */
+  readonly commandOverride?: string;
   readonly format: string;
   readonly parserRef: string;
 }
@@ -121,6 +124,23 @@ const STARTER_TOOLS: readonly StarterTool[] = [
     format: ESLINT_JSON_FORMAT,
     parserRef: LINT_PARSER_REF,
   },
+  {
+    // BE-1：pom.xml 识别（Maven Surefire 腿；mvn 直跑；版本锚 = tools init 当刻
+    // mvn --version 探测——取不到不登记并如实说明，沿用「缺席显式」纪律）。
+    id: "project.test.maven-surefire",
+    label: "maven-surefire",
+    adapterRef: "builtin.gauntlet-lite.build",
+    toolId: SUREFIRE_TOOL_ID,
+    bin: "mvn",
+    args: "-B test",
+    commandOverride: SUREFIRE_RUN_COMMAND,
+    gate: "BUILD",
+    gateDef: BUILD_GATE_DEF,
+    metricDialect: "test:assertion_count",
+    capability: "unit_behavior",
+    format: SUREFIRE_FORMAT,
+    parserRef: SUREFIRE_PARSER_REF,
+  },
 ];
 
 /**
@@ -132,7 +152,6 @@ const UNCOVERED_SIGNALS: readonly { readonly label: string; readonly deps?: read
   { label: "Cypress（浏览器 E2E）", deps: ["cypress"] },
   { label: "Jest（单元测试）", deps: ["jest"] },
   { label: "pytest（Python 测试）", files: ["pytest.ini", "pyproject.toml", "setup.cfg", "tox.ini"] },
-  { label: "Maven（Java 构建与测试）", files: ["pom.xml"] },
   { label: "Gradle（Java / Kotlin 构建与测试）", files: ["build.gradle", "build.gradle.kts"] },
   { label: "Go test", files: ["go.mod"] },
   { label: "PHPUnit（PHP 测试）", files: ["phpunit.xml", "phpunit.xml.dist"] },
@@ -140,6 +159,8 @@ const UNCOVERED_SIGNALS: readonly { readonly label: string; readonly deps?: read
 
 export interface ToolsInitInput {
   readonly dryRun?: boolean;
+  /** maven 版本探针注入面（测试确定性；缺省真实 mvn --version——tools init 当刻锚定）。 */
+  readonly mavenProbe?: (rootDir: string) => string | null;
 }
 
 export interface ToolsInitResult {
@@ -196,7 +217,7 @@ function bindingFor(tool: StarterTool, runner: string, version: string): ToolBin
     gate_def: tool.gateDef,
     metric_dialect: tool.metricDialect,
     capabilities: [tool.capability],
-    execution: { command: `${runner} ${tool.bin} ${tool.args}`, cwd: "." },
+    execution: { command: tool.commandOverride ?? `${runner} ${tool.bin} ${tool.args}`, cwd: "." },
     report_contract: { format: tool.format, parser_ref: tool.parserRef, parser_version: PARSER_VERSION },
     environment: { requires: false },
     notes: `pomaster tools init 按项目声明的 ${tool.label} 生成；命令可按项目调整（报告格式要保持 ${tool.format}）`,
@@ -245,13 +266,24 @@ export function runToolsInit(rootDir: string, input: ToolsInitInput = {}): Comma
       skipped.push({ tool: tool.label, reason: "已有类型检查绑定（Vue 项目用 vue-tsc，它同时检查 .ts 与 .vue）" });
       continue;
     }
-    if (detection.detectedVersion === null) {
+    let detectedVersion = detection.detectedVersion;
+    if (detectedVersion === null && tool.toolId === SUREFIRE_TOOL_ID) {
+      // BE-1：maven 版本锚文件面取不到（pom.xml 不带 runner 版本）——tools init 当刻
+      // mvn --version 实测；探测不到不登记并如实说明（缺席显式纪律）。
+      const observed = input.mavenProbe !== undefined ? input.mavenProbe(rootDir) : probeMavenVersion(rootDir);
+      if (observed === null) {
+        skipped.push({ tool: tool.label, reason: "mvn 不可执行（版本锚探测失败）——安装 Maven 或修正 PATH 后重跑" });
+        continue;
+      }
+      detectedVersion = observed;
+    }
+    if (detectedVersion === null) {
       skipped.push({ tool: tool.label, reason: "声明的版本不是具体 semver（如 latest / workspace:*），版本锚取不到；写成具体版本后重跑" });
       continue;
     }
-    const binding = bindingFor(tool, runner, detection.detectedVersion);
+    const binding = bindingFor(tool, runner, detectedVersion);
     fresh.push(binding);
-    added.push({ id: binding.id, tool: tool.label, command: binding.execution.command ?? "", version: detection.detectedVersion });
+    added.push({ id: binding.id, tool: tool.label, command: binding.execution.command ?? "", version: detectedVersion });
     if (tool.gate === "TYPECHECK") typecheckChosen = true;
   }
 

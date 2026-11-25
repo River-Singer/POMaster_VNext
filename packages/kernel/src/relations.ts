@@ -425,7 +425,7 @@ export async function registerRelation(
   if (currentSeq === null) {
     throw notConfigured(store);
   }
-  const entry = buildEntry(input, currentSeq);
+  const entry = prepareRelationEntry(input, currentSeq);
   const existing = readRelations(paths);
   const triple = tripleKeyOf(entry.source, entry.type, entry.target);
   const hit = existing.find((candidate) => tripleKey(candidate) === triple);
@@ -600,6 +600,12 @@ export function forwardDependencies(
 // ============================================================
 // 内部共享
 // ============================================================
+
+/** Pure sanctioned preparation for a caller-owned atomic staged transaction. No persistence. */
+export function prepareRelationEntry(input: RelationRegistrationInput, seq: number): RelationEntry {
+  if (!Number.isInteger(seq) || seq < 0) throw relationsInvalid("prepared relation sequence is invalid");
+  return validateEntryShape(buildEntry(input, seq), 1);
+}
 
 function buildEntry(input: RelationRegistrationInput, seq: number): RelationEntry {
   const type = normalizeRelationType(input.type);

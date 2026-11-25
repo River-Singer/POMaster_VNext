@@ -22,9 +22,11 @@ import {
   applyTransaction,
   beginExecution,
   createStore,
+  endExecution,
+  issuePermit,
 } from "@pomaster/kernel";
 import { createProgram, runCli, type CliEnvelope } from "@pomaster/cli";
-import { gid, makeStore, pageEnvelope } from "../../../packages/kernel/tests/helpers.js";
+import { HUMAN, gid, makeStore, pageEnvelope } from "../../../packages/kernel/tests/helpers.js";
 
 let root: string;
 
@@ -72,9 +74,20 @@ async function seedExecution(startedAt = "2026-08-30T00:00:00.000Z"): Promise<st
 /** 登记执行 + 盖章一笔写入事务（TX_APPLIED.changed_object_ids → 投影 writes 分母）。 */
 async function seedExecutionWithWrite(): Promise<string> {
   const store = await createStore(root);
-  const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
   await applyTransaction(store, {
     ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }],
+  });
+  const permit = await issuePermit(store, {
+    subjectIds: [gid("PAGE.DASHBOARD")],
+    requestedBy: HUMAN,
+  });
+  const record = await beginExecution(store, {
+    ...BASE,
+    permitIds: [permit.permitRef],
+    startedAt: "2026-08-30T00:00:00.000Z",
+  });
+  await applyTransaction(store, {
+    ops: [{ op: "upsert_object", envelope: pageEnvelope({ titleZh: "仪表盘（执行写入）" }) as never }],
     executionId: record.execution_id,
   });
   return record.execution_id;
@@ -324,14 +337,18 @@ describe("trace show --seal --retention（显式物化——裁决 8 ② OD-2）
   });
 
   it("封存后 post-hoc 补录 → stale=true 显式呈现且 exit 0（漂移是信号不是故障——canonical 重放对账）", async () => {
-    const executionId = await seedExecutionWithWrite();
-    expect(
-      await runCli(["--dir", root, "trace", "show", executionId, "--seal", "--retention", "TASK_RETENTION"], capture()),
-    ).toBe(0);
-    // post-hoc：同执行追加一笔新事务（合法通路——封存快照由此 stale）。
     const store = await createStore(root);
     await applyTransaction(store, {
       ops: [{ op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.OTHER") }) as never }],
+    });
+    const executionId = await seedExecutionWithWrite();
+    await endExecution(store, executionId, { endedAt: "2026-08-30T00:10:00.000Z" });
+    expect(
+      await runCli(["--dir", root, "trace", "show", executionId, "--seal", "--retention", "TASK_RETENTION"], capture()),
+    ).toBe(0);
+    // post-hoc：已封口且无活跃 worker，补录保留身份；实际改写既有对象使快照 stale。
+    await applyTransaction(store, {
+      ops: [{ op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.OTHER"), titleZh: "事后补录" }) as never }],
       executionId,
     });
     const io = capture();

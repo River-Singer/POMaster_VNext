@@ -33,9 +33,10 @@ import { KICKOFF_CURRENT_SCHEMA, KICKOFF_DIR } from "./kickoff.js";
 import { loadIntakeLatest } from "./intake.js";
 import type { IntakeItem } from "./intake-identity.js";
 import { readDomainSpecFile } from "./scaffold-spec.js";
+import { assessScaffoldSpec } from "./scaffold-governance.js";
 import { SCAFFOLD_DOMAIN_SPEC_RELATIVE } from "./store-layout.js";
 import { runAutopilotDispatch, runAutopilotSuspend, verifyQaFrozen, resolveRegisteredExecution, AUTOPILOT_DIR, DISPATCH_LEDGER, type DispatchLedgerLine, type AutopilotDispatchPack } from "./autopilot-dispatch.js";
-import { runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_DIR } from "./qa-cases.js";
+import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_DIR } from "./qa-cases.js";
 import { runAutopilotEscalateRecord } from "./autopilot-escalate.js";
 
 /** 变更记录 schema 与文件（append-only）。 */
@@ -154,11 +155,13 @@ export function assessRevisionDiff(input: AssessInput): RevisionAssessment {
     const matched = affectedModules.some((moduleKey) => moduleClean(moduleKey).includes(entityKey) || entityKey.includes(moduleClean(moduleKey)));
     if (matched) affectedUnits.add(unit.id);
   }
-  if (affectedUnits.size === 0 && reqs.length > 0) {
+  const missingEdges = reqs.filter(req => !input.scenarioRules.some(module => module.reqIds.includes(req)));
+  const unknown = reqs.length > 0 && (affectedUnits.size === 0 || missingEdges.length > 0);
+  if (unknown) {
     for (const unit of input.units) affectedUnits.add(unit.id);
-    unitsNote = "模块交集推不出（unknown）——按 D-1b 缺边扩大分析：影响面给全集";
+    unitsNote = `模块交集推不出（unknown）——按 D-1b 缺边扩大分析：影响面给全集（缺映射 ${missingEdges.join("、")}）`;
   }
-  const affectedCases = input.frozenCases.filter((entry) => entry.source_refs.some((reqId) => affectedReqs.has(reqId))).map((entry) => entry.id);
+  const affectedCases = input.frozenCases.filter((entry) => unknown || entry.source_refs.some((reqId) => affectedReqs.has(reqId))).map((entry) => entry.id);
   const affectedEvidence = input.rounds.filter((round) => affectedUnits.has(round.unit)).map((round) => `${round.id}@${round.unit}(${round.verdict})`);
 
   const verdict: RevisionVerdict = addedModules.size > 0 ? "SCOPE_CHANGE" : reqs.length === 0 ? "COSMETIC_RESIGN" : "SEMANTIC_RESIGN";
@@ -200,8 +203,7 @@ function readRevisionItems(dir: string, workspace: string, revision: number): In
 }
 
 /** assess/adopt 共享装载（纯读）：确认单字节一致 + 两修订快照 + 影响面素材。 */
-export async function loadRevisionAssessment(dir: string): Promise<{ readonly ok: true; readonly assessment: RevisionAssessment } | { readonly ok: false; readonly errors: readonly CliError[] }> {
-  const errors: CliError[] = [];
+export async function loadRevisionAssessment(dir: string, originalRound?: string): Promise<{ readonly ok: true; readonly assessment: RevisionAssessment } | { readonly ok: false; readonly errors: readonly CliError[] }> {
   if (!existsSync(join(dir, ".pomaster"))) {
     return { ok: false, errors: [{ code: "NOT_INITIALIZED", message: `no pomaster state found at ${".pomaster"}`, hint: "run: pomaster init / createStore 后重试（缺席显式，不静默建账）。" }] };
   }
@@ -209,8 +211,9 @@ export async function loadRevisionAssessment(dir: string): Promise<{ readonly ok
   if (current === null || current.schema !== KICKOFF_CURRENT_SCHEMA) {
     return { ok: false, errors: [{ code: "QA_KICKOFF_NOT_IN_FORCE", message: "还没有生效的启动确认单（缺 current.json）", hint: "先走 pomaster kickoff draft → 签名 → kickoff confirm" }] };
   }
-  const sheetPath = join(dir, ...KICKOFF_DIR.split("/"), current.sheet, "sheet.json");
-  if (!existsSync(sheetPath) || sha256(readFileSync(sheetPath)) !== current.sheet_sha256) {
+  const round = originalRound ?? current.sheet;
+  const sheetPath = join(dir, ...KICKOFF_DIR.split("/"), round, "sheet.json");
+  if (!existsSync(sheetPath) || (originalRound === undefined && sha256(readFileSync(sheetPath)) !== current.sheet_sha256)) {
     return { ok: false, errors: [{ code: "QA_KICKOFF_NOT_IN_FORCE", message: `确认单 ${current.sheet} 的字节与签名时不一致`, hint: "增量重签（kickoff draft → 签名 → confirm）后再评估修订" }] };
   }
   const sheet = readJson<KickoffSheetShape>(sheetPath);
@@ -231,10 +234,10 @@ export async function loadRevisionAssessment(dir: string): Promise<{ readonly ok
   const currentItems = loaded.data.items;
   const specRead = readDomainSpecFile(join(dir, ...SCAFFOLD_DOMAIN_SPEC_RELATIVE.split("/")));
   const specEntities = specRead.ok ? ((specRead.raw as { entities?: readonly { key?: string }[] }).entities ?? []).map((entity) => String(entity.key ?? "")) : [];
-  const plan = readJson<{ units?: readonly { readonly id: string; readonly entity: string | null }[] }>(join(dir, ".pomaster", "plan", current.sheet, "plan.json"));
-  const scenarioModules = readJson<ScenarioModulesFile>(join(dir, ".pomaster", "plan", current.sheet, "scenarios.json"))?.modules ?? [];
+  const plan = readJson<{ units?: readonly { readonly id: string; readonly entity: string | null }[] }>(join(dir, ".pomaster", "plan", round, "plan.json"));
+  const scenarioModules = readJson<ScenarioModulesFile>(join(dir, ".pomaster", "plan", round, "scenarios.json"))?.modules ?? [];
   const scenarioRules = scenarioModules.map((module) => ({ moduleKey: module.key, reqIds: Object.values(module.rules ?? {}).flat().map((rule) => rule.id) }));
-  const frozenCases = readJson<{ cases: readonly { id: string; source_refs: readonly string[] }[] }>(join(dir, ...QA_DIR.split("/"), current.sheet, "cases-frozen.json"))?.cases ?? [];
+  const frozenCases = readJson<{ cases: readonly { id: string; source_refs: readonly string[] }[] }>(join(dir, ...QA_DIR.split("/"), round, "cases-frozen.json"))?.cases ?? [];
   const rounds = readJsonLines<{ unit: string; id: string; verdict: string }>(join(dir, ".pomaster", "autopilot", "rounds.jsonl"));
   const assessment = assessRevisionDiff({
     revision_from: sheet.revision,
@@ -266,7 +269,7 @@ export interface RevisionAssessResult {
   readonly diff_count: number;
 }
 
-export async function runAutopilotRevisionAssess(dir: string, _input: {} = {}): Promise<CommandOutcome<RevisionAssessResult | null>> {
+export async function runAutopilotRevisionAssess(dir: string): Promise<CommandOutcome<RevisionAssessResult | null>> {
   const command = "autopilot revision assess";
   const loaded = await loadRevisionAssessment(dir);
   if (!loaded.ok) return fail<RevisionAssessResult>(command, loaded.errors);
@@ -294,7 +297,12 @@ export interface RevisionAdoptResult {
   readonly orchestrated: readonly string[];
 }
 
-export async function runAutopilotRevisionAdopt(dir: string, input: { readonly executionId?: string; readonly confirmRound?: string; readonly record?: string }): Promise<CommandOutcome<RevisionAdoptResult | null>> {
+export interface RevisionAdoptEffects {
+  /** Fault seam after real persisted effects; no replacement authority, writes or daemon. */
+  readonly afterEffect?: (effect: "registered" | "qa_frozen" | "dispatched" | "adopted") => void;
+}
+
+export async function runAutopilotRevisionAdopt(dir: string, input: { readonly executionId?: string; readonly confirmRound?: string; readonly record?: string }, effects: RevisionAdoptEffects = {}): Promise<CommandOutcome<RevisionAdoptResult | null>> {
   const command = "autopilot revision adopt";
   const ledgerPath = join(dir, ...REVISION_LEDGER.split("/"));
   const ledger = readJsonLines<RvcLine>(ledgerPath);
@@ -309,27 +317,33 @@ export async function runAutopilotRevisionAdopt(dir: string, input: { readonly e
     }
     // 幂等：同 verdict + 同 revision_to 的 awaiting 记录直接复用
     const existing = ledger.find((line) => line.state === "awaiting_resign" && line.verdict === a.verdict && line.revision_to === a.revision_to);
-    if (existing !== undefined) {
-      return okOutcome(command, { rvc: existing.id, state: existing.state, verdict: existing.verdict, round_new: null, orchestrated: [] }, [
-        `autopilot revision adopt: ${existing.id} 已在册（awaiting_resign；幂等复用，零重复登记）`,
-        "  下一动作：pomaster kickoff draft → Owner 签名 → kickoff confirm → autopilot revision adopt --execution-id <AGX> --confirm-round <新KO>",
-      ]);
-    }
     const seq = ledger.length + 1;
-    const rvc = `RVC-${String(seq).padStart(4, "0")}`;
+    const rvc = existing?.id ?? `RVC-${String(seq).padStart(4, "0")}`;
     mkdirSync(join(dir, ...AUTOPILOT_DIR.split("/")), { recursive: true });
     const orchestrated: string[] = [];
-    if (a.verdict === "SCOPE_CHANGE") {
+    // Register first. A retry resumes local effects under the same RVC identity.
+    if (existing === undefined) {
+      const line: RvcLine = { schema: REVISION_SCHEMA, seq, id: rvc, state: "awaiting_resign", verdict: a.verdict, revision_from: a.revision_from, revision_to: a.revision_to, round_new: null, affected: a.affected, at: new Date().toISOString() };
+      appendFileSync(ledgerPath, `${JSON.stringify(line)}\n`, "utf8");
+    }
+    effects.afterEffect?.("registered");
+    if (a.verdict === "SCOPE_CHANGE" || a.verdict === "SEMANTIC_RESIGN") {
       // D-1a/D-1b：只挂起受影响单元（推不出给全集——assess 的 unknown 口径），其余继续
       for (const unit of a.affected.units) {
-        const suspended = runAutopilotSuspend(dir, { unit, reason: `${rvc} SCOPE_CHANGE：${a.scope_note ?? ""}` });
-        if (suspended.ok) orchestrated.push(`suspend ${unit}`);
+        const reason = `${rvc} ${a.verdict}：${a.scope_note ?? "已签业务规则变化——增量重签唯一通道"}`;
+        const prior = readJsonLines<{ unit: string; reason_zh: string }>(join(dir, ...AUTOPILOT_DIR.split("/"), "suspensions.jsonl"));
+        if (prior.some(line => line.unit === unit && line.reason_zh === reason)) continue;
+        const suspended = runAutopilotSuspend(dir, { unit, reason });
+        if (!suspended.ok) return fail<RevisionAdoptResult>(command, suspended.errors);
+        orchestrated.push(`suspend ${unit}`);
       }
-      const escalated = runAutopilotEscalateRecord(dir, { context: "plan", subject: rvc, reason: a.scope_note ?? "SCOPE_CHANGE——超出已签范围，需要 Owner 增量重签裁定", refs: a.affected.units });
-      if (escalated.ok) orchestrated.push(`escalate ${(escalated.result as { id: string }).id}`);
+      const escalations = readJsonLines<{ subject: string }>(join(dir, ...AUTOPILOT_DIR.split("/"), "escalations.jsonl"));
+      if (!escalations.some(line => line.subject === rvc)) {
+        const escalated = runAutopilotEscalateRecord(dir, { context: "plan", subject: rvc, reason: a.scope_note ?? "已签业务规则变化，需要 Owner 增量重签裁定", refs: a.affected.units });
+        if (!escalated.ok) return fail<RevisionAdoptResult>(command, escalated.errors);
+        orchestrated.push(`escalate ${(escalated.result as { id: string }).id}`);
+      }
     }
-    const line: RvcLine = { schema: REVISION_SCHEMA, seq, id: rvc, state: "awaiting_resign", verdict: a.verdict, revision_from: a.revision_from, revision_to: a.revision_to, round_new: null, affected: a.affected, at: new Date().toISOString() };
-    appendFileSync(ledgerPath, `${JSON.stringify(line)}\n`, "utf8");
     const human = [
       `autopilot revision adopt: ${rvc} 登记（awaiting_resign；verdict ${a.verdict}，r${a.revision_from} → r${a.revision_to}）`,
       `  影响面：REQ ${a.affected.reqs.length} · 单元 ${a.affected.units.length} · 用例 ${a.affected.cases.length} · 证据 ${a.affected.evidence.length}`,
@@ -346,37 +360,57 @@ export async function runAutopilotRevisionAdopt(dir: string, input: { readonly e
   if (current === null || current.sheet !== input.confirmRound) {
     return fail<RevisionAdoptResult>(command, [{ code: "AUTOPILOT_REVISION_AWAITING_SIGNOFF", message: `生效确认单还是 ${current?.sheet ?? "（无）"}——${input.confirmRound} 未生效（重签未完成或 confirm 未跑）`, hint: "pomaster kickoff draft → Owner 签名 → kickoff confirm 后带 --confirm-round <新KO> 再来" }]);
   }
-  const record = input.record !== undefined ? ledger.find((line) => line.id === input.record) : [...ledger].reverse().find((line) => line.state === "awaiting_resign");
+  const latestRecords = [...new Map(ledger.map(line => [line.id, line])).values()];
+  const record = input.record !== undefined ? latestRecords.find(line => line.id === input.record) : latestRecords.reverse().find(line => line.state === "awaiting_resign" || line.round_new === input.confirmRound);
   if (record === undefined) {
     return fail<RevisionAdoptResult>(command, [{ code: "AUTOPILOT_RECORD_NOT_FOUND", message: `变更记录不在座（${input.record ?? "最新 awaiting"}）`, hint: "先跑无 --confirm-round 的 adopt 登记，或核对 --record 编号" }]);
   }
+  const signedRevision = readJson<{ revision: number }>(join(dir, ...KICKOFF_DIR.split("/"), current.sheet, "sheet.json"))?.revision;
+  if (signedRevision !== record.revision_to) return fail<RevisionAdoptResult>(command, [{ code: "AUTOPILOT_REVISION_AWAITING_SIGNOFF", message: "RVC revision does not match the confirmed round", hint: "Sign the exact registered input revision." }]);
+  if (record.state === "adopted") {
+    const checked = runQaCasesCheck(dir);
+    if (!checked.ok) return fail<RevisionAdoptResult>(command, checked.errors);
+    if (checked.result?.round !== input.confirmRound || checked.warnings.some(warning => warning.code === "REVISION_AHEAD" || warning.code === "SHEET_DRIFT")) return fail<RevisionAdoptResult>(command, [{ code: "AUTOPILOT_REVISION_AWAITING_SIGNOFF", message: "Adopted inputs have changed", hint: "Register a new increment; do not replay the old RVC." }]);
+    return okOutcome(command, { rvc: record.id, state: "adopted", verdict: record.verdict, round_new: input.confirmRound, orchestrated: ["已 adopted，跳过（零重复生效/派发/扣账）"] }, ["autopilot revision adopt: NO_CHANGE"]);
+  }
   const orchestrated: string[] = [];
   // 步 1：新轮次 QA 草案（幂等：重跑覆盖草案）
-  const qaDraft = runQaCasesDraft(dir, {});
+  const qaDraft = runQaCasesDraft(dir);
   if (!qaDraft.ok) return fail<RevisionAdoptResult>(command, [{ code: "SCHEMA_INVALID", message: `编排步 qa cases draft 失败：${qaDraft.errors[0]?.code} ${qaDraft.errors[0]?.message}`, hint: qaDraft.errors[0]?.hint ?? "修好输入后重跑 adopt（幂等续跑，不重复已完成的步）" }]);
   orchestrated.push("qa cases draft");
   // 步 2：谱系接线（revise 接旧锚 / 首轮 freeze / 已指向新轮次跳过）
   const qaPointer = readJson<{ round: string }>(join(dir, ...QA_DIR.split("/"), "current.json"));
   if (qaPointer === null) {
-    const frozen = runQaCasesFreeze(dir, {});
+    const frozen = runQaCasesFreeze(dir);
     if (!frozen.ok) return fail<RevisionAdoptResult>(command, [{ code: "SCHEMA_INVALID", message: `编排步 qa cases freeze 失败：${frozen.errors[0]?.code} ${frozen.errors[0]?.message}`, hint: frozen.errors[0]?.hint ?? "复核收口后重跑 adopt（幂等续跑）" }]);
     orchestrated.push("qa cases freeze");
   } else if (qaPointer.round !== input.confirmRound) {
-    const revised = runQaCasesRevise(dir, {});
+    const revised = runQaCasesRevise(dir);
     if (!revised.ok) return fail<RevisionAdoptResult>(command, [{ code: "SCHEMA_INVALID", message: `编排步 qa cases revise 失败：${revised.errors[0]?.code} ${revised.errors[0]?.message}`, hint: revised.errors[0]?.hint ?? "收口/谱系问题修好后重跑 adopt（幂等续跑）" }]);
     orchestrated.push(`qa cases revise（${(revised.result as { continued?: number }).continued ?? 0} 延续）`);
   } else {
     orchestrated.push("qa cases（已指向新轮次，跳过）");
   }
-  // 步 3：换代重派（dispatch 指纹幂等——未变单元 NO_CHANGE 零重复扣账）
-  const dispatched = await runAutopilotDispatch(dir, { executionId: execution.id });
-  if (!dispatched.ok) return fail<RevisionAdoptResult>(command, [{ code: "SCHEMA_INVALID", message: `编排步 autopilot dispatch 失败：${dispatched.errors[0]?.code} ${dispatched.errors[0]?.message}`, hint: dispatched.errors[0]?.hint ?? "处置后重跑 adopt（幂等续跑）" }]);
-  const dispatchResult = dispatched.result as { dispatched: readonly { readonly disp: string }[]; no_change: readonly unknown[] };
-  orchestrated.push(`autopilot dispatch（${dispatchResult.dispatched.length} 换代 / ${dispatchResult.no_change.length} NO_CHANGE）`);
+  effects.afterEffect?.("qa_frozen");
+  // Only replace related logical units; unrelated original DISP submissions stay reusable.
+  const newUnits = readJson<{ units: { id: string; lane: string; entity: string | null }[] }>(join(dir, ".pomaster", "plan", input.confirmRound, "plan.json"))?.units ?? [];
+  const targetUnits = newUnits.filter(unit => record.affected.units.some(old => old === unit.id || old.endsWith(unit.entity === null ? ".CONTRACT" : `.${unit.lane.toUpperCase()}.${unit.entity.toUpperCase()}`)));
+  let dispatchedCount = 0;
+  let reusedCount = 0;
+  for (const unit of targetUnits) {
+    const dispatched = await runAutopilotDispatch(dir, { executionId: execution.id, unit: unit.id });
+    if (!dispatched.ok) return fail<RevisionAdoptResult>(command, dispatched.errors);
+    if ((dispatched.result?.blocked.length ?? 0) > 0) return fail<RevisionAdoptResult>(command, dispatched.result!.blocked.map(block => ({ code: block.code, message: block.reason, hint: "Resolve this dispatch boundary before resuming adoption." })));
+    dispatchedCount += dispatched.result?.dispatched.length ?? 0;
+    reusedCount += dispatched.result?.no_change.length ?? 0;
+  }
+  orchestrated.push(`autopilot dispatch（${dispatchedCount} 换代 / ${reusedCount} NO_CHANGE）`);
+  effects.afterEffect?.("dispatched");
   // 步 4：RVC 状态推进（append-only）
   const seq = ledger.length + 1;
   const adoptedLine: RvcLine = { schema: REVISION_SCHEMA, seq, id: record.id, state: "adopted", verdict: record.verdict, revision_from: record.revision_from, revision_to: record.revision_to, round_new: input.confirmRound, affected: record.affected, at: new Date().toISOString() };
   appendFileSync(ledgerPath, `${JSON.stringify(adoptedLine)}\n`, "utf8");
+  effects.afterEffect?.("adopted");
   orchestrated.push(`RVC ${record.id} → adopted`);
   const human = [
     `autopilot revision adopt: ${record.id} adopted — 新轮次 ${input.confirmRound}（r${record.revision_from} → r${record.revision_to}）`,
@@ -387,6 +421,24 @@ export async function runAutopilotRevisionAdopt(dir: string, input: { readonly e
 }
 
 // ─────────────────────────────── autopilot stale-check ───────────────────────────────
+
+/** Existing delivery/record entrypoints require the original DISP anchor for dispatched work.
+ * Undispatched legacy work keeps its original contract; omitting a DISP cannot accept stale work.
+ */
+export async function qualifyAutopilotSubmission(dir: string, input: { readonly executionId: string | null; readonly tasks: readonly string[]; readonly dispatchRef?: string }): Promise<CliError | null> {
+  const ledger = readJsonLines<DispatchLedgerLine>(join(dir, ...DISPATCH_LEDGER.split("/")));
+  const related = ledger.filter(line => input.tasks.length > 0 ? input.tasks.includes(line.unit) : line.execution_id === input.executionId);
+  if (related.length === 0 && input.dispatchRef === undefined) return null;
+  if (input.dispatchRef === undefined) return { code: "AUTOPILOT_RECORD_NOT_FOUND", message: "Dispatched work requires its original DISP submission anchor", hint: "Supply dispatchRef from the original worker package, never the latest package." };
+  if (!/^DISP-[0-9]{4,}$/.test(input.dispatchRef)) return { code: "SCHEMA_INVALID", message: "Invalid DISP anchor", hint: "Use a registered DISP-####." };
+  const pack = readJson<AutopilotDispatchPack>(join(dir, ...AUTOPILOT_DIR.split("/"), "dispatches", `${input.dispatchRef}.json`));
+  if (pack === null || pack.execution_id !== input.executionId || input.tasks.some(task => task !== pack.task) || !related.some(line => line.disp === input.dispatchRef)) {
+    return { code: "SCHEMA_INVALID", message: "DISP task/execution does not match this submission", hint: "Use the original task, registered execution and dispatch package." };
+  }
+  const checked = await runAutopilotStaleCheck(dir, { disp: input.dispatchRef });
+  if (!checked.ok) return checked.errors[0] ?? { code: "SCHEMA_INVALID", message: "DISP cannot be qualified", hint: "Restore original dispatch anchors." };
+  return checked.result?.verdict === "OK" ? null : { code: "AUTOPILOT_REVISION_AHEAD", message: `Stale submission rejected: ${input.dispatchRef}`, hint: "Replan/redispatch related work; do not re-label an old submission." };
+}
 
 export interface StaleCheckResult {
   readonly disp: string;
@@ -402,7 +454,7 @@ export async function runAutopilotStaleCheck(dir: string, input: { readonly disp
   if (!existsSync(join(dir, ".pomaster"))) {
     return fail<StaleCheckResult>(command, [{ code: "NOT_INITIALIZED", message: `no pomaster state found at ${".pomaster"}`, hint: "run: pomaster init / createStore 后重试（缺席显式，不静默建账）。" }]);
   }
-  if (input.disp === undefined || input.disp === "" || !input.disp.startsWith("DISP-")) {
+  if (input.disp === undefined || input.disp === "" || !/^DISP-[0-9]{4,}$/.test(input.disp)) {
     return fail<StaleCheckResult>(command, [{ code: "SCHEMA_INVALID", message: `--disp 词形非法（DISP-####）：${input.disp ?? "（缺席）"}`, hint: "autopilot status / dispatches.jsonl 看在册包号" }]);
   }
   const pack = readJson<AutopilotDispatchPack>(join(dir, ...AUTOPILOT_DIR.split("/"), "dispatches", `${input.disp}.json`));
@@ -424,6 +476,32 @@ export async function runAutopilotStaleCheck(dir: string, input: { readonly disp
   const ledger = readJsonLines<DispatchLedgerLine>(join(dir, ...DISPATCH_LEDGER.split("/")));
   const mine = ledger.find((line) => line.disp === input.disp);
   const supersededBy = ledger.find((line) => line.supersedes === input.disp)?.disp ?? null;
+  const expires = Date.parse(pack.budget.valid_until);
+  if (!Number.isFinite(expires) || expires < Date.now()) drifts.push({ field: "valid_until", pack: pack.budget.valid_until, current: "expired/unjudgeable" });
+  const currentDomain = await assessScaffoldSpec(dir);
+  if (pack.versions.domain_semantic_sha256 !== undefined && (('code' in currentDomain) || currentDomain.state !== "confirmed" || currentDomain.semantic_sha256 !== pack.versions.domain_semantic_sha256)) {
+    drifts.push({ field: "domain_semantic_sha256", pack: String(pack.versions.domain_semantic_sha256), current: "domain changed/unjudgeable" });
+  }
+  const bodyPath = join(dir, ".pomaster", "truth", "objects", "task-object", `${pack.task.toLowerCase().replace(/_/g, "-")}.json`);
+  const body = readJson<{ payload: unknown }>(bodyPath);
+  if (pack.versions.unit_sha256 !== undefined && sha256(JSON.stringify(body?.payload ?? null)) !== pack.versions.unit_sha256) {
+    drifts.push({ field: "unit_sha256", pack: pack.versions.unit_sha256.slice(0, 12), current: "unit contract changed" });
+  }
+  // Global revision changes are not evidence that unrelated work became stale.
+  // Recompute impact from the ORIGINAL dispatch round and retain shared authority gates.
+  if (drifts.length > 0 && pack.versions.unit_sha256 !== undefined && supersededBy === null && !drifts.some(drift => ["unit_sha256", "valid_until", "domain_semantic_sha256"].includes(drift.field))) {
+    const originalPath = join(dir, ...KICKOFF_DIR.split("/"), pack.round, "sheet.json");
+    const original = readJson<Record<string, unknown>>(originalPath);
+    const active = readJson<Record<string, unknown>>(sheetPath);
+    const historicalQa = join(dir, ...QA_DIR.split("/"), pack.round, "cases-frozen.json");
+    const shared = ["stack", "style", "thresholds", "autonomy", "budget", "scope"];
+    const domainIntact = typeof pack.versions.domain_semantic_sha256 === "string" && !('code' in currentDomain) && currentDomain.state === "confirmed" && currentDomain.semantic_sha256 === pack.versions.domain_semantic_sha256;
+    const impact = await loadRevisionAssessment(dir, pack.round);
+    const anchorsIntact = existsSync(originalPath) && sha256(readFileSync(originalPath)) === pack.versions.sheet_sha256 &&
+      existsSync(historicalQa) && sha256(readFileSync(historicalQa)) === pack.versions.qa_frozen_sha256 &&
+      "digest" in qa && original !== null && active !== null && shared.every(key => JSON.stringify(original[key]) === JSON.stringify(active[key]));
+    if (anchorsIntact && domainIntact && impact.ok && impact.assessment.verdict !== "NO_REVISION" && !impact.assessment.affected.units.includes(pack.task)) drifts.length = 0;
+  }
   const verdict: StaleCheckResult["verdict"] = drifts.length === 0 && supersededBy === null ? "OK" : "STALE";
   const human = [
     `autopilot stale-check: ${input.disp} → ${verdict}`,

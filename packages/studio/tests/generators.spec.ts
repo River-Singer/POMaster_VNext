@@ -1,5 +1,5 @@
-// 画廊生成器钉测（G-A Step 2）：覆盖计数（41/71/18/1/1）+ 幂等（双跑 diff 空）+
-// 发布面纪律（private、零运行时 deps）+ S4 映射层（41 卡全量/逐条溯源/组件词形
+// 画廊生成器钉测（G-A Step 2）：覆盖计数（42/71/18/1/1）+ 幂等（双跑 diff 空）+
+// 发布面纪律（private、零运行时 deps）+ S4 映射层（42 卡全量/逐条溯源/组件词形
 // 收敛在 71 族内/双向呈现）+ S1 态矩阵（story 总数分母）。
 //
 // 测试自足：全部生成进系统 temp 随机目录（不触碰 packages/studio/generated——
@@ -48,19 +48,19 @@ function snapshotTree(root: string): Map<string, string> {
 }
 
 describe("studio generators · archetype 语义卡（catalog/archetypes）", () => {
-  it("覆盖 41 张 archetype，语义字段与研究锚透传在座，建议组件组合节全量在座", () => {
+  it("覆盖 42 张 archetype，语义字段与研究锚透传在座，建议组件组合节全量在座", () => {
     const out = tempRoot("arch");
     try {
       const { count, files } = generateArchetypePages(out);
-      expect(count).toBe(41);
-      expect(files.length).toBe(41);
+      expect(count).toBe(42);
+      expect(files.length).toBe(42);
       for (const file of files) {
         const mdx = readFileSync(file, "utf8");
         expect(mdx).toContain("responsibility");
         expect(mdx).toContain("when_to_use");
         expect(mdx).toContain("when_not_to_use");
         expect(mdx).toContain("## 组合（composition）");
-        // S4 正向呈现：映射层「建议组件组合」节（41 卡全量在座，缺卡生成即抛错）。
+        // S4 正向呈现：映射层「建议组件组合」节（42 卡全量在座，缺卡生成即抛错）。
         expect(mdx).toContain("## 建议组件组合（studio 映射层）");
         expect(mdx).toContain("映射依据（逐条溯源）");
         expect(mdx).toContain("## 研究锚（x-research-anchors）");
@@ -82,12 +82,12 @@ describe("studio generators · archetype 语义卡（catalog/archetypes）", () 
 });
 
 describe("studio generators · S4 archetype↔组件映射层（数据钉测）", () => {
-  it("41 卡全量在座、无重复、映射逐条有依据标注、组件词形收敛在 71 族清单内", () => {
+  it("42 卡全量在座、无重复、映射逐条有依据标注、组件词形收敛在 71 族清单内", () => {
     const map = readArchetypeComponentMap();
     const catalogFiles = readdirSync(join(STUDIO_ROOT, "..", "..", "catalog", "archetypes"))
       .filter((name) => name.endsWith(".json"))
       .sort();
-    expect(catalogFiles.length).toBe(41);
+    expect(catalogFiles.length).toBe(42);
     const byFile = indexArchetypeMapByFile(map);
     // 全量在座 + 无映射表外 archetype（双向闭合）。
     for (const file of catalogFiles) expect(byFile.has(file), `映射表缺 ${file}`).toBe(true);
@@ -118,6 +118,56 @@ describe("studio generators · S4 archetype↔组件映射层（数据钉测）"
           `${file} 引用了不在 71 族内的词形: ${mapping.component}`,
         ).toContain(mapping.component);
       }
+    }
+  });
+
+  it("TASK_UNIT 映射与语义页：既有 TASK/CLM、实际 artifact 绑定，只读文档不替换为 runtime", () => {
+    const fileName = "archetype.governance.task_unit.json";
+    const map = readArchetypeComponentMap();
+    const mappings = indexArchetypeMapByFile(map).get(fileName);
+    expect(mappings?.map((mapping) => mapping.component)).toEqual(["Descriptions", "Typography"]);
+    for (const mapping of mappings ?? []) {
+      expect(mapping.basis).toContain("semantic.responsibility");
+      expect(mapping.basis).toContain("NON-AUTHORITATIVE");
+      expect(mapping.basis).toContain("只读");
+    }
+    expect(mappings?.[0]?.basis).toContain("intent/acceptance");
+    expect(mappings?.[0]?.basis).toContain("CLM");
+    expect(mappings?.[0]?.basis).toContain("artifact");
+    expect(mappings?.[1]?.basis).toContain("实际 kickoff、场景计划和 generation 文件");
+    expect(mappings?.[1]?.basis).toContain("TASK→目录 INSTANCE_OF");
+    const mapFiles = map.entries.map((entry) => entry.archetype);
+    expect(mapFiles).toEqual([...mapFiles].sort());
+
+    const out = tempRoot("task-unit");
+    try {
+      generateArchetypePages(out);
+      const mdx = readFileSync(join(out, "archetype.governance.task_unit.mdx"), "utf8");
+      expect(mdx).toContain('<Meta title="Archetype 语义卡/governance/已签规划轮次的治理任务单元" />');
+      expect(mdx).toContain("ARCHETYPE.GOVERNANCE.TASK_UNIT");
+      expect(mdx).toContain("承载既有 TASK 的意图、验收及关联 CLM");
+      expect(mdx).toContain("绑定实际 kickoff、场景计划和 generation 文件");
+      expect(mdx).toContain("TASK→目录 INSTANCE_OF");
+      expect(mdx).toContain("不得代表任意业务实体、一般 job 状态、调度器或运行时任务引擎");
+      const rest = JSON.parse(mdx.match(/```json\n([\s\S]*?)\n```/)?.[1] ?? "null");
+      expect(rest.instantiation).toEqual({
+        truth_kind: "task_object",
+        axis_profile: "task_default",
+        constructor: "plan scenarios",
+        lanes: ["contract", "db", "be", "fe"],
+        claim_subject: "TASK",
+        artifact_roles: ["kickoff", "scenario_plan", "generation"],
+      });
+      expect(mdx).toContain("NON-AUTHORITATIVE");
+      expect(mdx).toContain("只读渲染");
+      for (const component of ["Descriptions", "Typography"]) expect(mdx).toContain(`\`${component}\``);
+      expect(mdx).not.toMatch(/RUNTIME_ARCHETYPE\.|archetype\.runtime\.|ENVIRONMENT_PARITY|OBSERVABILITY_BINDING/);
+      expect(mdx.match(/^import .*$/gm)).toEqual(["import { Meta } from '@storybook/addon-docs/blocks';"]);
+      expect(mdx.match(/^<[A-Z].*$/gm)).toEqual([
+        '<Meta title="Archetype 语义卡/governance/已签规划轮次的治理任务单元" />',
+      ]);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
     }
   });
 
@@ -314,10 +364,10 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const a = snapshotTree(first);
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      // 总文件数 = 41 + 71 + 21 + 1 + 1 + 1（B6H 增 h5 overlay 页、B8-VNEXT 增 react / tailwind overlay 页；六类页面分母：
+      // 总文件数 = 42 + 71 + 21 + 1 + 1 + 1（B6H 增 h5 overlay 页、B8-VNEXT 增 react / tailwind overlay 页；六类页面分母：
       // S5 增 Database Struct 占位分区；F-M2 增 Foundations/Design Tokens seed 只读渲染 story）+ 规范分区 175（总览 1 + 统一骨架的
-      // 174 个领域，含待补；设计规范预设与骨架同源生成）= 311。
-      expect(a.size).toBe(311);
+      // 174 个领域，含待补；设计规范预设与骨架同源生成）= 312。
+      expect(a.size).toBe(312);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;

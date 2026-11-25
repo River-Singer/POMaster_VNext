@@ -58,6 +58,7 @@ export const ANCHOR_KINDS = [
   "source_snapshot",
   "permit_scope",
   "keybinding",
+  "truth_body",
   "pomaster-layers",
 ] as const;
 export type AnchorKind = (typeof ANCHOR_KINDS)[number];
