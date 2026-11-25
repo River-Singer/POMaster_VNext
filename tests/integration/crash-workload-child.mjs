@@ -35,7 +35,8 @@ const store = await createStore(root);
 // Optional deterministic fault seam lives only in this child process. The real
 // kernel still owns pending intent, writes and journal; no production fault flag.
 const stage = process.argv[4];
-if (stage !== undefined && !["before-index-swap", "after-index-swap"].includes(stage)) {
+let secondTransaction;
+if (stage !== undefined && !["before-index-swap", "after-index-swap", "empty-pending-publication", "truncated-pending-publication"].includes(stage)) {
   throw new Error(`unknown interruption stage: ${stage}`);
 }
 const fault = process.argv[5];
@@ -75,12 +76,38 @@ if (stage) {
       writeSync(1, `INDEX_RETRY_SUCCEEDED ${committed.generation.seq}\n`);
     }
   };
+  if (stage === "empty-pending-publication" || stage === "truncated-pending-publication") {
+    const write = fs.writeFileSync;
+    const pendingPath = resolve(root, ".pomaster/state/pending-admission.json");
+    fs.writeFileSync = (path, data, options) => {
+      if (typeof path === "string" && resolve(path) === pendingPath) {
+        const bytes = Buffer.from(data);
+        const pending = JSON.parse(bytes.toString("utf8"));
+        // Compare with the actual loop transaction, not a fabricated pending intent.
+        if (secondTransaction && JSON.stringify(pending.transaction) === JSON.stringify(secondTransaction)) {
+          if (pending.pid !== process.pid || options?.flag !== "wx") {
+            throw new Error("pending publication must retain the actual owner and exclusive-create flag");
+          }
+          // Leave a genuine JSON prefix ending just before the transaction value.
+          const transactionStart = bytes.indexOf('"transaction":') + Buffer.byteLength('"transaction":');
+          const publishedBytes = stage === "empty-pending-publication" ? 0 : transactionStart;
+          write(path, bytes.subarray(0, publishedBytes), options);
+          writeSync(1, `PENDING_PUBLICATION ${JSON.stringify({
+            pid: process.pid, serializedBase64: bytes.toString("base64"), publishedBytes,
+          })}\n`);
+          pauseForParentKill();
+        }
+      }
+      return write(path, data, options);
+    };
+  }
+  // The kernel's named fs imports must observe these child-only seams.
   syncBuiltinESMExports();
 }
 process.stdout.write("READY\n");
 
 for (let i = 1; i <= total; i += 1) {
-  await applyTransaction(store, {
+  const transaction = {
     ops: [
       {
         op: "upsert_object",
@@ -101,7 +128,9 @@ for (let i = 1; i <= total; i += 1) {
         },
       },
     ],
-  });
+  };
+  if (i === 2) secondTransaction = transaction;
+  await applyTransaction(store, transaction);
   process.stdout.write(`TX ${i}\n`);
 }
 process.stdout.write(`DONE ${total}\n`);

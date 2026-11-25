@@ -23,7 +23,7 @@
  *          tmp 碎片），逐时点精确断言；
  *   B 段 = 真实 SIGKILL 子进程（kernel dist 二进制跑真实事务循环，观测 READY/TX 1
  *          后 kill），断言重启后的全局不变量（快照 k 精确一致 / journal 前缀无洞且只
- *          落后不领先 / 碎片形状 / 恢复事务干净）。
+ *          落后不领先 / 碎片形状 / 健康 intent 精确恢复 / 损坏 pending 显式拒写）。
  */
 import { spawn } from "node:child_process";
 import {
@@ -87,7 +87,7 @@ function snapshotTree(base: string): Map<string, string> {
         walk(target);
         continue;
       }
-      snapshot.set(target.slice(base.length), readFileSync(target, "utf8"));
+      snapshot.set(target.slice(base.length), readFileSync(target).toString("base64"));
     }
   };
   walk(base);
@@ -460,17 +460,58 @@ async function interruptWorkload(stage?: string, retryFirstIndex = false) {
   return { child, stdoutText, stderrText };
 }
 
-async function recoverExactPending(reopened: Store, ownerPid: number | undefined): Promise<number> {
+type PendingRecoveryOutcome =
+  | { status: "no_pending"; seq: number }
+  | { status: "recovered"; seq: number }
+  | { status: "blocked_damaged_pending"; seq: number };
+
+async function recoverExactPending(reopened: Store, ownerPid: number | undefined): Promise<PendingRecoveryOutcome> {
   const path = statePath(root, "pending-admission.json");
   const rawK = (await loadTruthIndex(reopened)).generation.seq;
-  if (!existsSync(path)) return rawK;
+  if (!existsSync(path)) return { status: "no_pending", seq: rawK };
   // Actual store.ts PendingAdmission schema, not an inferred PAGE.K(k+1) tx:
   // an interrupted transaction can already have committed its index at rawK.
-  const pending = JSON.parse(readFileSync(path, "utf8")) as {
+  const pendingBytes = readFileSync(path);
+  const pendingText = pendingBytes.toString("utf8");
+  let pending: {
     pid: number; intent: string; transaction: Transaction;
     writes: { path: string; next: string; original: string | null }[];
     journal: string; journalBefore: string; consumptions: unknown[];
   };
+  try {
+    pending = JSON.parse(pendingText) as typeof pending;
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    // A present but torn exclusive-create publication is not a recoverable intent.
+    // Prove the real child is dead without guessing any fields from damaged bytes.
+    expect(ownerPid).toBeDefined();
+    expect(Number.isInteger(ownerPid) && ownerPid! > 0).toBe(true);
+    expect(() => process.kill(ownerPid!, 0)).toThrowError(expect.objectContaining({ code: "ESRCH" }));
+    const base = join(root, ".pomaster");
+    const crashState = snapshotTree(base);
+    const indexBytes = readFileSync(statePath(root, "truth-index.json"));
+    const probes: Transaction[] = [
+      { ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }] },
+      { ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.K1", "damaged pending update probe") as never }] },
+    ];
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const probeStore = await createStore(root);
+      expect(snapshotTree(base)).toEqual(crashState);
+      expect((await loadTruthIndex(probeStore)).generation.seq).toBe(rawK);
+      for (const probe of probes) {
+        await expect(applyTransaction(probeStore, probe)).rejects.toMatchObject({
+          code: "SCHEMA_INVALID", message: expect.stringContaining("Pending admission is damaged"),
+          details: { reason_code: "ADMISSION_RECOVERY_REQUIRED" },
+        });
+        expect(snapshotTree(base)).toEqual(crashState);
+        expect(existsSync(path)).toBe(true);
+        expect(readFileSync(path)).toEqual(pendingBytes);
+        expect(readFileSync(statePath(root, "truth-index.json"))).toEqual(indexBytes);
+        expect((await loadTruthIndex(probeStore)).generation.seq).toBe(rawK);
+      }
+    }
+    return { status: "blocked_damaged_pending", seq: rawK };
+  }
   expect(ownerPid).toBeDefined();
   expect(pending.pid).toBe(ownerPid);
   expect(pending.intent).toBe(sha256OfCanonical(pending.transaction));
@@ -507,12 +548,12 @@ async function recoverExactPending(reopened: Store, ownerPid: number | undefined
   const recoveredState = snapshotTree(join(root, ".pomaster"));
   expect((await applyTransaction(reopened, pending.transaction)).shortCircuited).toBe(true);
   expect(snapshotTree(join(root, ".pomaster"))).toEqual(recoveredState);
-  return index.generation.seq;
+  return { status: "recovered", seq: index.generation.seq };
 }
 
 describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意时点硬中断）", () => {
   it(
-    "B1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 0≤k-m≤1（journal 只落后不领先，幽灵行封死）+ 撕裂只许末行 + 碎片形状干净 + 恢复事务干净",
+    "B1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 0≤k-m≤1（journal 只落后不领先，幽灵行封死）+ 撕裂只许末行 + 碎片形状干净 + 健康 intent 精确恢复续写 / 损坏 pending 显式拒写且字节不变",
     async () => {
       // 若保证失效：kill 打断 rename 序列后 index 处于撕裂/混合态（第 i 个对象的新正文
       // 配第 j 个的旧索引），重启即 SCHEMA_INVALID 或静默混合快照——两阶段写入序破产。
@@ -603,14 +644,20 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
 
       // Raw crash invariants above stay at k. Only the real declared pending tx
       // may recover; index may already be committed, or recovery may add one beat.
-      const kAfterRecovery = await recoverExactPending(reopened, child.pid);
-      expect(kAfterRecovery >= k && kAfterRecovery <= k + 1).toBe(true);
-      const outcome = await applyTransaction(reopened, {
-        ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }],
-      });
-      expect(outcome.appliedSeq).toBe(kAfterRecovery + 1);
-      expect(outcome.shortCircuited).toBe(false);
-      expect(journalEvents(root).map(event => event["seq"])).toEqual(Array.from({ length: kAfterRecovery + 1 }, (_, i) => i + 1));
+      const recovery = await recoverExactPending(reopened, child.pid);
+      expect(recovery.seq >= k && recovery.seq <= k + 1).toBe(true);
+      if (recovery.status === "blocked_damaged_pending") {
+        // The helper proved repeated real kernel refusals and whole-tree zero writes.
+        expect(recovery.seq).toBe(k);
+      } else {
+        expect(["no_pending", "recovered"]).toContain(recovery.status);
+        const outcome = await applyTransaction(reopened, {
+          ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }],
+        });
+        expect(outcome.appliedSeq).toBe(recovery.seq + 1);
+        expect(outcome.shortCircuited).toBe(false);
+        expect(journalEvents(root).map(event => event["seq"])).toEqual(Array.from({ length: recovery.seq + 1 }, (_, i) => i + 1));
+      }
     },
     30000,
   );
@@ -645,7 +692,8 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
         expect(sha256OfCanonical(JSON.parse(readFileSync(join(root, ".pomaster", row.bodyRef), "utf8")))).toBe(row.bodySha256);
       }
       expect(journalEvents(root).map(event => event["seq"])).toEqual([1]);
-      const pending = JSON.parse(readFileSync(statePath(root, "pending-admission.json"), "utf8"));
+      const pendingBytes = readFileSync(statePath(root, "pending-admission.json"));
+      const pending = JSON.parse(pendingBytes.toString("utf8"));
       expect(pending.pid).toBe(child.pid);
       expect(pending.intent).toBe(sha256OfCanonical(pending.transaction));
       expect(pending.transaction).toEqual({
@@ -655,15 +703,90 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
       // the body/index pair but not journal. Neither permits unrelated recovery.
       const orphan = JSON.parse(readFileSync(bodyPath(root, "page-surface", "page.k2.json"), "utf8"));
       expect(orphan).toMatchObject({ id: "PAGE.K2", title_zh: "crash-probe-2" });
-      const kAfterRecovery = await recoverExactPending(reopened, child.pid);
-      expect(kAfterRecovery).toBe(2);
+      expect(readFileSync(statePath(root, "pending-admission.json"))).toEqual(pendingBytes);
+      const recovery = await recoverExactPending(reopened, child.pid);
+      expect(recovery.status).toBe("recovered");
+      expect(recovery.seq).toBe(2);
       const next = await applyTransaction(reopened, {
         ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.AFTER_CRASH", "重启后续写") as never }],
       });
-      expect(next.appliedSeq).toBe(kAfterRecovery + 1);
+      expect(next.appliedSeq).toBe(recovery.seq + 1);
       expect(next.shortCircuited).toBe(false);
       expect(journalEvents(root).map(event => event["seq"])).toEqual([1, 2, 3]);
       expect((await loadTruthIndex(reopened)).objects.map(row => row.id)).toEqual(["PAGE.K1", "PAGE.K2", "PAGE.AFTER_CRASH"]);
+    },
+    30000,
+  );
+
+  it.each(["empty-pending-publication", "truncated-pending-publication"] as const)(
+    "B3 deterministic SIGKILL during K2 %s retains real damaged bytes and refuses all mutations without writes",
+    async (stage) => {
+      expect(existsSync(kernelDistEntry), "real kernel dist prerequisite").toBe(true);
+      const { child, stdoutText } = await interruptWorkload(stage);
+      expect(stdoutText).toContain(`INTERRUPT ${stage}\n`);
+      expect(stdoutText).not.toContain("TX 2\n");
+      const publications = stdoutText.split("\n").filter(line => line.startsWith("PENDING_PUBLICATION "));
+      expect(publications).toHaveLength(1);
+      const publication = JSON.parse(publications[0]!.slice("PENDING_PUBLICATION ".length)) as {
+        pid: number; serializedBase64: string; publishedBytes: number;
+      };
+      const serialized = Buffer.from(publication.serializedBase64, "base64");
+      const actualPending = JSON.parse(serialized.toString("utf8")) as {
+        pid: number; intent: string; transaction: Transaction;
+        writes: { path: string; next: string; original: string | null }[]; journalBefore: string;
+      };
+      expect(publication.pid).toBe(child.pid);
+      expect(actualPending.pid).toBe(child.pid);
+      expect(actualPending.intent).toBe(sha256OfCanonical(actualPending.transaction));
+      expect(actualPending.transaction).toEqual({
+        ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.K2", "crash-probe-2") }],
+      });
+      expect(() => process.kill(actualPending.pid, 0)).toThrowError(expect.objectContaining({ code: "ESRCH" }));
+      expect(serialized.at(-1)).toBe(10); // Real kernel publication includes its trailing newline.
+      const persisted = readFileSync(statePath(root, "pending-admission.json"));
+      const expectedLength = stage === "empty-pending-publication" ? 0
+        : serialized.indexOf('"transaction":') + Buffer.byteLength('"transaction":');
+      expect(publication.publishedBytes).toBe(expectedLength);
+      expect(persisted).toEqual(serialized.subarray(0, expectedLength));
+      if (stage === "truncated-pending-publication") {
+        expect(persisted.length).toBeGreaterThan(0);
+        expect(persisted.length).toBeLessThan(serialized.length);
+      }
+      expect(() => JSON.parse(persisted.toString("utf8"))).toThrowError(SyntaxError);
+
+      // All raw crash-state assertions precede recovery/refusal: TX1 committed,
+      // K2 intent was exclusively published, but none of K2's effects committed.
+      const base = join(root, ".pomaster");
+      const before = snapshotTree(base);
+      const indexBytes = readFileSync(statePath(root, "truth-index.json"));
+      const reopened = await createStore(root);
+      expect(snapshotTree(base)).toEqual(before);
+      const raw = await loadTruthIndex(reopened);
+      expect(raw.generation.seq).toBe(1);
+      expect(raw.objects.map(row => row.id)).toEqual(["PAGE.K1"]);
+      for (const row of raw.objects) {
+        expect(sha256OfCanonical(JSON.parse(readFileSync(join(base, row.bodyRef), "utf8")))).toBe(row.bodySha256);
+      }
+      expect(existsSync(bodyPath(root, "page-surface", "page.k2.json"))).toBe(false);
+      expect(journalEvents(root).map(event => event["seq"])).toEqual([1]);
+      expect(actualPending.journalBefore).toBe(readJournal(root));
+      const plannedIndex = actualPending.writes.find(write => resolve(write.path) === resolve(statePath(root, "truth-index.json")));
+      expect(plannedIndex).toBeDefined();
+      expect(plannedIndex!.original).toBe(indexBytes.toString("utf8"));
+      expect(JSON.parse(plannedIndex!.next)).toMatchObject({ generation: { seq: 2 }, objects: [{ id: "PAGE.K1" }, { id: "PAGE.K2" }] });
+      expect([...before.keys()].filter(path => !path.endsWith(".json") && !path.endsWith(".jsonl") && !TMP_SUFFIX_PATTERN.test(path))).toEqual([]);
+
+      expect(await recoverExactPending(reopened, child.pid)).toEqual({ status: "blocked_damaged_pending", seq: 1 });
+      // Even the known real K2 transaction cannot supply/repair missing disk intent.
+      await expect(applyTransaction(reopened, actualPending.transaction)).rejects.toMatchObject({
+        code: "SCHEMA_INVALID", message: expect.stringContaining("Pending admission is damaged"),
+        details: { reason_code: "ADMISSION_RECOVERY_REQUIRED" },
+      });
+      expect(snapshotTree(base)).toEqual(before);
+      expect(await recoverExactPending(await createStore(root), child.pid)).toEqual({ status: "blocked_damaged_pending", seq: 1 });
+      expect(snapshotTree(base)).toEqual(before);
+      expect(readFileSync(statePath(root, "pending-admission.json"))).toEqual(persisted);
+      expect(readFileSync(statePath(root, "truth-index.json"))).toEqual(indexBytes);
     },
     30000,
   );
