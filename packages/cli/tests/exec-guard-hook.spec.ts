@@ -17,9 +17,9 @@
  *   （PERMIT_SCOPE_DENIED）/ 活跃 execution 显式无 permit（permit_ids 空——空
  *   scope 面任何映射不授予 in-scope，与 execution audit 同语义）/ permit 引用
  *   不存在（PERMIT_UNKNOWN——物理存在不构成放行的 unknown_permit 同族）；
- * - **(c) fail-open（exit 0 + stderr 显式声明）**：判卷器进程故障（CLI 入口缺席）/
- *   判卷系统码（store 台账损坏 → exec-guard NOT_INITIALIZED 族非 PERMIT_* 结论码）
- *   ——判卷器自身故障永不阻塞开发流，审计线索归 Detection 半边；
+ * - **(c) 故障边界（BE-4）**：普通非保护目标运行时故障 fail-open 并显式披露；
+ *   控制平面 / confirmed-root 故障 fail-closed（exit 2 + GUARD_FAULT_OBSERVED）；
+ *   CLI 仅从可信运行时定位，环境变量不能注入目标树 launcher；
  * - **Bash 粗筛边界（PRD Out of Scope）**：路径词形切词逐个判卷（op 恒
  *   upsert_object），不做 shell 语义分析——rm 形态命令同样按写语义判卷。
  * - **混合允许/越界目标（W1 R1-0 跨目标全称聚合）**：同一 Bash 调用多个 mapped
@@ -30,7 +30,7 @@
  *
  * - **常开防线（不看活跃 execution）**：治理控制平面（.pomaster/state、truth、evidence、
  *   executions、runtime … 与讨论机读文件）的确定写（文件工具 / apply_patch 补丁目标 /
- *   Bash 写意图）→ DENY；读命令放行；脚手架生成文件在无活跃 execution 时同样 DENY。
+ *   Bash 写意图）→ DENY；读命令放行；无活跃 execution 的源文件编辑（含脚手架）显式 advisory。
  * - **Codex 形态**：apply_patch（补丁在 tool_input.command，含 Edit / Write 别名）与 Bash。
  * - **Node launcher**：init 分发的 .mjs 找 Python 3 并原样转交 stdin / 退出码。
  *
@@ -45,12 +45,13 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { beginExecution, createStore, endExecution, type Store } from "@pomaster/kernel";
 import {
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
@@ -59,6 +60,13 @@ import {
   runInit,
   runPermitIssue,
 } from "@pomaster/cli";
+import { readGuardFaults } from "../src/guard-faults.js";
+import { renderExecGuardLauncher } from "../src/heavy-entry.js";
+import { createTrustedCliFixture, expectTrustedCliInstallation, type TrustedCliFixture } from "../../../tests/integration/trusted-cli-fixture.js";
+
+let trustedCli: TrustedCliFixture;
+beforeAll(() => { trustedCli = createTrustedCliFixture(); });
+afterAll(() => { trustedCli?.dispose(); });
 
 // ---------------------------------------------------------------------------
 // 被测脚本与 CLI 入口定位（repo 内相对锚——CI fresh clone 同构可达）
@@ -195,22 +203,20 @@ interface HookRun {
   readonly stderr: string;
 }
 
-/** 直驱 canonical hook（shim 转发面另有专测）；判卷 CLI 入口经 env 注入真实 dist。 */
+/** 直驱 canonical hook（shim 转发面另有专测）；CLI 入口由可信运行时定位，env 不授予信任。 */
 function runHook(payload: HookPayload, script: string = canonicalHook, envOverrides: Record<string, string> = {}): HookRun {
   if (!py.available) {
     return { spawned: false, exitCode: null, stdout: "", stderr: py.reason };
   }
-  const [file, ...rest] = py.cmd;
-  if (file === undefined) {
-    return { spawned: false, exitCode: null, stdout: "", stderr: "python cmd empty" };
+  const file = trustedCli.python;
+  if (file === null) {
+    return { spawned: false, exitCode: null, stdout: "", stderr: "Python 3.8+ prerequisite missing" };
   }
-  const res = spawnSync(file, [...rest, script], {
+  const res = spawnSync(file, [script], {
     input: JSON.stringify(payload),
     encoding: "utf8",
     env: {
-      ...process.env,
-      PYTHONIOENCODING: "utf-8",
-      POMASTER_CLI_ENTRY: cliEntry,
+      ...trustedCli.env,
       ...envOverrides,
     },
   });
@@ -233,7 +239,7 @@ function bashPayload(command: string): HookPayload {
 }
 
 function runLauncherWithoutInjectedCli(script: string, payload: HookPayload): HookRun {
-  const env: NodeJS.ProcessEnv = { ...process.env, PYTHONIOENCODING: "utf-8" };
+  const env: NodeJS.ProcessEnv = { ...trustedCli.env };
   delete env.POMASTER_CLI_ENTRY;
   const res = spawnSync(process.execPath, [script], {
     input: JSON.stringify(payload),
@@ -247,6 +253,49 @@ function runLauncherWithoutInjectedCli(script: string, payload: HookPayload): Ho
 }
 
 describe("exec-guard hook distribution installed by init", () => {
+  it("withoutCLI PATH exposes real Python/Node only, never original runtime directories or a colocated CLI", () => {
+    expect(trustedCli.python, "real Python prerequisite").not.toBeNull();
+    const env = trustedCli.withoutCliEnv;
+    expect(env.POMASTER_CLI_ENTRY).toBeUndefined();
+    const discovery = spawnSync(trustedCli.python!, ["-c", "import json, shutil; print(json.dumps(shutil.which('pomaster')))"], {
+      cwd: root, env, encoding: "utf8",
+    });
+    expect(discovery.error).toBeUndefined();
+    expect(discovery.status, discovery.stderr).toBe(0);
+    expect(JSON.parse(discovery.stdout)).toBeNull();
+    const runtimeDirs = env.PATH!.split(delimiter);
+    expect(runtimeDirs).toEqual([join(trustedCli.root, "runtime-bin")]);
+    expect(env.HOME).toBe(join(trustedCli.root, "home"));
+    expect(env.USERPROFILE).toBe(env.HOME);
+    expect(runtimeDirs).not.toContain(dirname(process.execPath));
+    expect(runtimeDirs).not.toContain(dirname(trustedCli.python!));
+    const node = spawnSync("node", ["--version"], { cwd: root, env, encoding: "utf8" });
+    expect(node.error).toBeUndefined();
+    expect(node.status, node.stderr).toBe(0);
+    expect(node.stdout.trim()).toBe(process.version);
+    const argv = ["path with spaces", "single'quote", 'double"quote', "semi;colon"];
+    const args = spawnSync("node", ["-e", "console.log(JSON.stringify(process.argv.slice(1)))", ...argv], {
+      cwd: root, env, encoding: "utf8",
+    });
+    expect(args.error).toBeUndefined();
+    expect(args.status, args.stderr).toBe(0);
+    expect(JSON.parse(args.stdout)).toEqual(argv);
+    if (process.platform === "win32") {
+      const prefix = spawnSync(trustedCli.python!, ["-I", "-c", "import sys; print(sys.prefix)"], { encoding: "utf8" });
+      expect(prefix.error).toBeUndefined();
+      expect(prefix.status, prefix.stderr).toBe(0);
+      expect(env.PYTHONHOME).toBe(prefix.stdout.trim());
+    }
+    const script = "import sys; assert sys.version_info >= (3, 8); print(sys.version)";
+    const python = spawnSync("python", ["-c", script], { cwd: root, env, encoding: "utf8" });
+    const actual = spawnSync(trustedCli.python!, ["-c", script], { cwd: root, env, encoding: "utf8" });
+    expect(python.error).toBeUndefined();
+    expect(actual.error).toBeUndefined();
+    expect(actual.status, actual.stderr).toBe(0);
+    expect(python.status, python.stderr).toBe(0);
+    expect(python.stdout).toBe(actual.stdout);
+  });
+
   it("clean external project path with spaces: launcher resolves CLI entry and delegates to canonical guard", async () => {
     if (!py.available) {
       expectPendingRecorded("distributed.launcher.python_missing", py.reason);
@@ -256,6 +305,7 @@ describe("exec-guard hook distribution installed by init", () => {
     try {
       const init = await runInit(externalRoot);
       expect(init.ok).toBe(true);
+      expectTrustedCliInstallation(trustedCli, externalRoot);
       const distributedHook = join(externalRoot, CLAUDE_EXEC_GUARD_HOOK_RELATIVE);
       const launcher = join(externalRoot, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
       expect(existsSync(distributedHook)).toBe(true);
@@ -302,6 +352,42 @@ describe("exec-guard hook distribution installed by init", () => {
       expect(run.exitCode).toBe(2);
       expect(run.stderr).toContain("PERMIT_UNKNOWN");
       expect(run.stderr).toContain("pomaster exec-guard hook");
+      expect(readGuardFaults(externalRoot)).toEqual({ events: [], errors: [] });
+
+      // Installed hook has no adjacent package. A target PATH entry and env entry
+      // must not hide the later genuine external installation or execute poison.
+      const poisonDir = join(externalRoot, "packages/cli/dist");
+      mkdirSync(poisonDir, { recursive: true });
+      writeFileSync(join(externalRoot, "packages/cli/package.json"), JSON.stringify({ name: "@pomaster/cli", type: "module" }));
+      const marker = join(externalRoot, "poison-executed");
+      const poison = join(poisonDir, "bin.js");
+      writeFileSync(poison, `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(marker)}, "executed"); throw new Error("target CLI executed");`);
+      writeFileSync(join(poisonDir, process.platform === "win32" ? "pomaster.cmd" : "pomaster"),
+        process.platform === "win32" ? `@"${process.execPath}" "${poison}" %*\r\n` : `#!/bin/sh\n"${process.execPath}" "${poison}" "$@"\n`, { mode: 0o755 });
+      const poisonedEnv = runHook({ tool_name: "Write", tool_input: { file_path: join(externalRoot, "src-target.ts") }, cwd: externalRoot }, distributedHook, {
+        PATH: [poisonDir, trustedCli.env.PATH].join(delimiter), POMASTER_CLI_ENTRY: poison,
+      });
+      expect(poisonedEnv.exitCode, poisonedEnv.stderr).toBe(2);
+      expect(poisonedEnv.stderr).toContain("PERMIT_UNKNOWN");
+      expect(poisonedEnv.stderr).not.toContain("GUARD_FAULT_OBSERVED");
+      expect(existsSync(marker)).toBe(false);
+      expect(readFileSync(join(externalRoot, "src-target.ts"), "utf8")).toBe("export const target = 1;\n");
+
+      // Removing the prerequisite is an honest protected fault, not permit DENY
+      // or a green ALLOW from the launcher's baked environment entry.
+      const missing = spawnSync(process.execPath, [launcher], {
+        input: JSON.stringify({ tool_name: "Write", tool_input: { file_path: join(externalRoot, "src-target.ts") }, cwd: externalRoot }),
+        encoding: "utf8", env: trustedCli.withoutCliEnv,
+      });
+      expect(missing.error).toBeUndefined();
+      expect(missing.status, missing.stderr).toBe(2);
+      expect(missing.stderr).toContain("Trusted package-local/PATH exec-guard launcher unavailable");
+      expect(missing.stderr).toContain("GUARD_FAULT_OBSERVED fail_closed");
+      expect(missing.stderr).not.toContain("ALLOW");
+      expect(missing.stderr).not.toContain("PERMIT_UNKNOWN");
+      expect(readGuardFaults(externalRoot).events).toHaveLength(1);
+      expect(readGuardFaults(externalRoot).events[0]).toMatchObject({ protected: true, disposition: "fail_closed" });
+      expect(existsSync(marker)).toBe(false);
     } finally {
       rmSync(externalRoot, { recursive: true, force: true });
     }
@@ -476,7 +562,7 @@ describe("exec-guard hook (b) DENY（exit 2 + permit 面指路）", () => {
 });
 
 // ---------------------------------------------------------------------------
-// (c) fail-open——判卷器自身故障两支（exit 0 + 显式声明，永不阻塞开发流）
+// 脚手架源文件：活跃执行照 permit 判卷，无执行则 advisory（控制平面仍常开）
 // ---------------------------------------------------------------------------
 
 describe("exec-guard hook 脚手架生成文件（11-01-storybook-scaffold S1-3，harness 约束 ④）", () => {
@@ -594,9 +680,9 @@ describe("exec-guard hook 常开防线：治理控制平面（无活跃 executio
     });
   }
 
-  it("脚手架生成文件：无活跃 execution 也 DENY 并指路改规格", () => {
+  it("脚手架源文件：无活跃 execution → 显式 advisory，不冒充 permit ALLOW", () => {
     if (!py.available) {
-      expectPendingRecorded("scaffold.no_execution", "脚手架常开防线断言");
+      expectPendingRecorded("scaffold.no_execution", "无活跃 execution 源文件 advisory 断言");
       return;
     }
     writeHostFile("backend/db/grants.sql", "-- generated\n");
@@ -607,10 +693,13 @@ describe("exec-guard hook 常开防线：治理控制平面（无活跃 executio
       patchPayload("*** Begin Patch\n*** Update File: backend/db/grants.sql\n@@\n-a\n+b\n*** End Patch\n"),
     ]) {
       const run = runHook(payload);
-      expect(run.exitCode, run.stderr.slice(0, 400)).toBe(2);
-      expect(run.stderr).toContain("脚手架生成文件不手改");
-      expect(run.stderr).toContain("CAPABILITY.SCAFFOLD.FLEET.DATABASE");
-      expect(run.stderr).toContain("pomaster scaffold generate");
+      expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
+      expect(run.exitCode, run.stderr.slice(0, 400)).toBe(0);
+      expect(run.stderr).toContain("ADVISORY");
+      expect(run.stderr).toContain("无活跃 execution");
+      expect(run.stderr).toContain("source edits allowed");
+      expect(run.stderr).not.toContain("DENY");
+      expect(run.stderr).not.toContain("ALLOW");
     }
     const read = runHook(bashPayload("cat backend/db/grants.sql"));
     expect(read.exitCode).toBe(0);
@@ -633,17 +722,17 @@ describe("exec-guard hook Node launcher（init 分发，Claude + Codex 同一份
             cwd: project,
           }),
           encoding: "utf8",
+          env: trustedCli.env,
         });
-        if (!py.available) {
-          expect(deny.status).toBe(0);
-          expect(deny.stderr).toContain("FAIL-OPEN: no Python 3.8+ found");
-          continue;
-        }
         expect(deny.status, deny.stderr.slice(0, 400)).toBe(2);
-        expect(deny.stderr).toContain("治理控制平面不直接编辑");
+        if (!py.available) {
+          expect(deny.stderr).toContain("DENY: no Python 3.8+ found");
+          expect(deny.stderr).toContain("GUARD_FAULT_OBSERVED fail_closed");
+        } else expect(deny.stderr).toContain("治理控制平面不直接编辑");
         const allow = spawnSync(process.execPath, [join(project, launcher)], {
           input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "ls" }, cwd: project }),
           encoding: "utf8",
+          env: trustedCli.env,
         });
         expect(allow.status, allow.stderr.slice(0, 400)).toBe(0);
       }
@@ -652,55 +741,458 @@ describe("exec-guard hook Node launcher（init 分发，Claude + Codex 同一份
     }
   });
 
-  it("找不到 Python 3 → 退出 0 并在 stderr 明说 FAIL-OPEN（不静默）", async () => {
+  it("可信分发 launcher 找不到 Python 3：普通源文件目标 → exit 0 + FAIL-OPEN（不静默）", async () => {
     const project = mkdtempSync(join(tmpdir(), "pomaster-exec-guard-nopy-"));
     try {
-      await runInit(project);
+      const init = await runInit(project);
+      expect(init.ok).toBe(true);
+      const target = join(project, "ordinary.ts");
+      const original = "export const ordinary = 1;\n";
+      writeFileSync(target, original, "utf8");
       const run = spawnSync(process.execPath, [join(project, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE)], {
-        input: "{}",
+        input: JSON.stringify({ tool_name: "Write", tool_input: { file_path: target }, cwd: project }),
         encoding: "utf8",
         env: { PATH: join(project, "no-such-bin"), SystemRoot: process.env.SystemRoot ?? "" },
       });
+      expect(run.error).toBeUndefined();
       expect(run.status).toBe(0);
       expect(run.stderr).toContain("FAIL-OPEN: no Python 3.8+ found");
+      expect(run.stderr).not.toContain("ALLOW");
+      expect(readFileSync(target, "utf8")).toBe(original);
+      const faults = readGuardFaults(project);
+      expect(faults.errors).toEqual([]);
+      expect(faults.events).toHaveLength(1);
+      expect(faults.events[0]).toMatchObject({ target, protected: false, disposition: "fail_open" });
     } finally {
       rmSync(project, { recursive: true, force: true });
     }
   });
 });
 
-describe("exec-guard hook (c) fail-open（exit 0 + stderr 显式声明）", () => {
-  it("判卷器进程故障（CLI 入口缺席）→ exit 0 + FAIL-OPEN 声明（注入面 env 确定性故障）", async () => {
+function runFaultLauncher(
+  payload: HookPayload | string | Buffer, launcher = renderExecGuardLauncher(null),
+  sibling: boolean | string = true, availablePython = false, executionCwd = root,
+): HookRun {
+  writeHostFile("launcher-fixture/exec-guard-launcher.mjs", launcher);
+  if (sibling) writeHostFile("launcher-fixture/exec-guard-hook.py", typeof sibling === "string" ? sibling : readFileSync(canonicalHook, "utf8"));
+  const res = spawnSync(process.execPath, [join(root, "launcher-fixture/exec-guard-launcher.mjs")], {
+    cwd: executionCwd,
+    input: typeof payload === "string" || Buffer.isBuffer(payload) ? payload : JSON.stringify(payload),
+    encoding: "utf8",
+    env: availablePython ? trustedCli.env
+      : { PATH: join(root, "no-such-bin"), SystemRoot: process.env.SystemRoot ?? "" },
+    timeout: 10000,
+  });
+  expect(res.error).toBeUndefined();
+  return { spawned: !res.error, exitCode: res.status, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
+}
+
+function expectLauncherFault(run: HookRun, target: string, protectedTarget: boolean): void {
+  expect(run.exitCode, run.stderr).toBe(protectedTarget ? 2 : 0);
+  expect(run.stdout).toBe("");
+  expect(run.stderr).toContain("GUARD_FAULT_OBSERVED");
+  expect(run.stderr).toContain(protectedTarget ? "DENY" : "FAIL-OPEN");
+  expect(run.stderr).not.toContain("ALLOW");
+  const faults = readGuardFaults(root);
+  expect(faults.errors).toEqual([]);
+  expect(faults.events).toContainEqual({
+    type: "GUARD_FAULT_OBSERVED", observed_at: expect.any(String), target,
+    reason: expect.any(String), protected: protectedTarget,
+    disposition: protectedTarget ? "fail_closed" : "fail_open",
+  });
+}
+
+describe("exec-guard Node launcher fault boundary (BE-4)", () => {
+  it("no Python: protected truth-index Write is DENY with genuine fault telemetry and unchanged bytes", () => {
+    const target = join(root, ".pomaster/state/truth-index.json");
+    const before = readFileSync(target);
+    const run = runFaultLauncher(writePayload(".pomaster/state/truth-index.json"));
+    expectLauncherFault(run, target, true);
+    expect(run.stderr).toContain("no Python 3.8+ found");
+    expect(readFileSync(target)).toEqual(before);
+  });
+
+  function directoryRoot(): void {
+    writeHostFile("protected/analysis.ipynb", '{"cells":[]}\n');
+    writeHostFile(".pomaster/truth/keybindings/directory.json", JSON.stringify({
+      id: "KEYBINDING.PAGE.PROTECTED", canonical_id: "PAGE.PROTECTED",
+      binding_class: "page_to_dir", physical_path: "protected", binding_status: "confirmed",
+      match_rule: "manual_confirmed", probe: { result: "not_probed" },
+    }));
+  }
+
+  const protectedCases: readonly { name: string; payload: () => HookPayload; target: string }[] = [
+    { name: "Edit file anchor", payload: () => ({ ...writePayload("src/in-scope.ts"), tool_name: "Edit" }), target: "src/in-scope.ts" },
+    { name: "MultiEdit file anchor", payload: () => ({ ...writePayload("src/in-scope.ts"), tool_name: "MultiEdit" }), target: "src/in-scope.ts" },
+    { name: "NotebookEdit physical directory", payload: () => ({ tool_name: "NotebookEdit", tool_input: { notebook_path: "protected/analysis.ipynb" }, cwd: root }), target: "protected/analysis.ipynb" },
+    { name: "patch Update", payload: () => patchPayload("*** Begin Patch\n*** Update File: protected/analysis.ipynb\n@@\n-a\n+b\n*** End Patch"), target: "protected/analysis.ipynb" },
+    { name: "patch Add new child", payload: () => patchPayload("*** Begin Patch\n*** Add File: protected/new.ts\n+export {};\n*** End Patch"), target: "protected/new.ts" },
+    { name: "patch Delete file", payload: () => patchPayload("*** Begin Patch\n*** Delete File: src/in-scope.ts\n*** End Patch"), target: "src/in-scope.ts" },
+    { name: "patch Move into root via Edit alias", payload: () => patchPayload("*** Begin Patch\n*** Update File: src/ordinary.ts\n*** Move to: protected/moved.ts\n@@\n-a\n+b\n*** End Patch", "Edit"), target: "protected/moved.ts" },
+    { name: "Bash physical directory coarse path", payload: () => bashPayload("cat protected/analysis.ipynb"), target: "protected/analysis.ipynb" },
+    { name: "Bash file anchor", payload: () => bashPayload("rm src/in-scope.ts"), target: "src/in-scope.ts" },
+    { name: "Bash quoted path with spaces", payload: () => bashPayload(`touch "${join(root, "protected/new file.ts")}"`), target: "protected/new file.ts" },
+    { name: "Bash redirection", payload: () => bashPayload("printf x > .pomaster/state/truth-index.json"), target: ".pomaster/state/truth-index.json" },
+    { name: "discovery machine metadata", payload: () => writePayload(".pomaster/discovery/scratchpads/T1/decision-graph.json"), target: ".pomaster/discovery/scratchpads/T1/decision-graph.json" },
+    { name: "generation manifest", payload: () => writePayload(".pomaster/scaffold/generation-manifest.json"), target: ".pomaster/scaffold/generation-manifest.json" },
+  ];
+  for (const test of protectedCases) it(`no Python: ${test.name} obeys the physical/control boundary`, () => {
+    directoryRoot();
+    seedStandardBindingTable();
+    const original = readFileSync(join(root, "protected/analysis.ipynb"));
+    expectLauncherFault(runFaultLauncher(test.payload()), join(root, test.target), true);
+    expect(readFileSync(join(root, "protected/analysis.ipynb"))).toEqual(original);
+  });
+
+  for (const tool of ["apply_patch", "MultiEdit", "Write"]) it(`no Python: mixed ${tool} targets retain both dispositions, protected wins`, () => {
+    directoryRoot();
+    const payload = tool === "apply_patch"
+      ? patchPayload("*** Begin Patch\n*** Update File: src/in-scope.ts\n@@\n-a\n+b\n*** Update File: protected/analysis.ipynb\n@@\n-a\n+b\n*** End Patch")
+      : tool === "MultiEdit"
+        ? { tool_name: tool, tool_input: { edits: [{ file_path: "src/in-scope.ts" }, { file_path: "protected/analysis.ipynb" }] }, cwd: root }
+        : { tool_name: tool, tool_input: { file_path: "src/in-scope.ts", notebook_path: "protected/analysis.ipynb", protected: false, pass: true }, cwd: root };
+    const run = runFaultLauncher(payload);
+    expectLauncherFault(run, join(root, "protected/analysis.ipynb"), true);
+    expect(readGuardFaults(root).events).toContainEqual(expect.objectContaining({ target: join(root, "src/in-scope.ts"), protected: false, disposition: "fail_open" }));
+  });
+
+  for (const status of ["derived", "stale", "confirmed-but-absent"]) it(`no Python: ${status} saved root label is not physical authority`, () => {
+    seedBindingRow("KEYBINDING.LABEL", "CAPABILITY.LABEL", "src/label.ts");
+    if (status !== "confirmed-but-absent") {
+      writeHostFile("src/label.ts", "original\n");
+      writeHostFile(".pomaster/truth/keybindings/keybinding.label.json", JSON.stringify({
+        id: "KEYBINDING.LABEL", binding_class: "capability_to_file", canonical_id: "CAPABILITY.LABEL",
+        physical_path: "src/label.ts", binding_status: status, probe: { result: "matched" },
+      }));
+    }
+    expectLauncherFault(runFaultLauncher(writePayload("src/label.ts")), join(root, "src/label.ts"), false);
+  });
+
+  it("no Python: file anchors do not protect sibling names or whole directories", () => {
+    seedBindingRow("KEYBINDING.CODE.IN_SCOPE", "CAPABILITY.AUDIT.IN_SCOPE", "src/in-scope.ts");
+    expectLauncherFault(runFaultLauncher(writePayload("src/in-scope.ts.bak")), join(root, "src/in-scope.ts.bak"), false);
+  });
+
+  it("no Python: physical directory prefixes respect path component boundaries", () => {
+    directoryRoot();
+    expectLauncherFault(runFaultLauncher(writePayload("protected-other/file.ts")), join(root, "protected-other/file.ts"), false);
+  });
+
+  const malformedMetadata = [
+    "{broken", "[]", JSON.stringify({ id: "KEYBINDING.X", binding_status: "confirmed" }),
+    JSON.stringify({ id: "KEYBINDING.X", binding_class: "page_to_dir", canonical_id: "PAGE.X", physical_path: "protected", binding_status: "confirmed", probe: { result: "missing" } }),
+    JSON.stringify({ id: "KEYBINDING.X", binding_class: "page_to_dir", canonical_id: "PAGE.X", physical_path: "../escape", binding_status: "confirmed", probe: { result: "matched" } }),
+    " ".repeat(1024 * 1024 + 1),
+    "\uFEFF" + JSON.stringify({ id: "KEYBINDING.BOM", binding_class: "capability_to_file", canonical_id: "CAPABILITY.BOM", physical_path: "src/in-scope.ts", binding_status: "derived" }),
+  ];
+  malformedMetadata.forEach((text, index) => it(`no Python: malformed/oversized root metadata ${index} cannot masquerade as unmapped`, () => {
+    writeHostFile(".pomaster/truth/keybindings/broken.json", text);
+    const run = runFaultLauncher(writePayload("src/in-scope.ts"));
+    expectLauncherFault(run, join(root, "src/in-scope.ts"), true);
+    expect(run.stderr).toContain("Protected root metadata unreadable");
+  }));
+
+  it("no Python: invalid UTF-8 in confirmed binding status is corrupt metadata, not an unprotected label", () => {
+    seedBindingRow("KEYBINDING.UTF8", "CAPABILITY.UTF8", "src/in-scope.ts");
+    const file = join(root, ".pomaster/truth/keybindings/keybinding.utf8.json");
+    const corrupt = readFileSync(file);
+    const status = corrupt.indexOf(Buffer.from('"binding_status": "confirmed"'));
+    expect(status).toBeGreaterThanOrEqual(0);
+    corrupt[status + Buffer.byteLength('"binding_status": "confi')] = 0xff;
+    writeFileSync(file, corrupt);
+    const run = runFaultLauncher(writePayload("src/in-scope.ts"));
+    expectLauncherFault(run, join(root, "src/in-scope.ts"), true);
+    expect(run.stderr).toContain("Malformed JSON metadata");
+    expect(readFileSync(file)).toEqual(corrupt);
+  });
+
+  it("no Python: metadata inventory overflow is unknown, not an incomplete allow", () => {
+    for (let n = 0; n < 513; n++) writeHostFile(`.pomaster/truth/keybindings/${n}.json`, JSON.stringify({ binding_class: "contract_operation_to_operationId" }));
+    expectLauncherFault(runFaultLauncher(writePayload("src/in-scope.ts")), join(root, "src/in-scope.ts"), true);
+  });
+
+  it("no Python: in-project physical aliases match confirmed roots", () => {
+    directoryRoot();
+    symlinkSync(join(root, "protected"), join(root, "alias"), process.platform === "win32" ? "junction" : "dir");
+    expectLauncherFault(runFaultLauncher(writePayload("alias/analysis.ipynb")), join(root, "alias/analysis.ipynb"), true);
+  });
+
+  it("no Python: a confirmed root escaping through a junction is unknown protected metadata", () => {
+    const outside = mkdtempSync(join(tmpdir(), "pomaster-root-escape-"));
+    try {
+      directoryRoot();
+      symlinkSync(outside, join(root, "escape"), process.platform === "win32" ? "junction" : "dir");
+      writeHostFile(".pomaster/truth/keybindings/directory.json", JSON.stringify({
+        id: "KEYBINDING.PAGE.PROTECTED", canonical_id: "PAGE.PROTECTED", binding_class: "page_to_dir",
+        physical_path: "escape", binding_status: "confirmed", probe: { result: "matched" },
+      }));
+      expectLauncherFault(runFaultLauncher(writePayload("src/in-scope.ts")), join(root, "src/in-scope.ts"), true);
+    } finally { rmSync(outside, { recursive: true, force: true }); }
+  });
+
+  const crossStoreCases = [
+    { name: "confirmed lexical root", lexical: "confirmed", physical: "ordinary", lexicalClosed: true, physicalClosed: false },
+    { name: "lexical control plane", lexical: "control", physical: "ordinary", lexicalClosed: true, physicalClosed: false },
+    { name: "corrupt lexical metadata", lexical: "corrupt", physical: "ordinary", lexicalClosed: true, physicalClosed: false },
+    { name: "corrupt physical metadata", lexical: "ordinary", physical: "corrupt", lexicalClosed: false, physicalClosed: true },
+    { name: "confirmed physical root", lexical: "ordinary", physical: "confirmed", lexicalClosed: false, physicalClosed: true },
+    { name: "ordinary lexical and physical roots", lexical: "ordinary", physical: "ordinary", lexicalClosed: false, physicalClosed: false },
+  ];
+  for (const test of crossStoreCases) it(`no Python: cross-store symlink preserves ${test.name} and honest per-store faults`, async () => {
+    const other = mkdtempSync(join(tmpdir(), "pomaster-launcher-other-store-"));
+    try {
+      await createStore(other);
+      const destination = join(other, "src");
+      mkdirSync(destination);
+      const physicalTarget = join(destination, "ordinary.ts");
+      writeFileSync(physicalTarget, "original target bytes\n", "utf8");
+      if (test.lexical === "confirmed") directoryRoot();
+      if (test.lexical === "corrupt") writeHostFile(".pomaster/truth/keybindings/broken.json", "{broken");
+      if (test.physical !== "ordinary") {
+        mkdirSync(join(other, ".pomaster/truth/keybindings"), { recursive: true });
+        writeFileSync(join(other, ".pomaster/truth/keybindings/root.json"), test.physical === "corrupt" ? "{broken" : JSON.stringify({
+          id: "KEYBINDING.PAGE.OTHER", canonical_id: "PAGE.OTHER", binding_class: "page_to_dir",
+          physical_path: "src", binding_status: "confirmed", match_rule: "manual_confirmed", probe: { result: "not_probed" },
+        }));
+      }
+      const link = join(root, test.lexical === "confirmed" ? "protected/redirect"
+        : test.lexical === "control" ? ".pomaster/state/redirect" : "redirect");
+      // Real directory links: junctions do not require Windows file-symlink privileges.
+      symlinkSync(destination, link, process.platform === "win32" ? "junction" : "dir");
+      const target = join(link, "ordinary.ts");
+      const before = [root, other].map(project => readFileSync(join(project, ".pomaster/state/truth-index.json")));
+      const run = runFaultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root });
+      expect(run.exitCode, run.stderr).toBe(test.lexicalClosed || test.physicalClosed ? 2 : 0);
+      expect(run.stdout).toBe("");
+      expect(run.stderr).not.toContain("ALLOW");
+      for (const [project, protectedTarget] of [[root, test.lexicalClosed], [other, test.physicalClosed]] as const) {
+        const faults = readGuardFaults(project);
+        expect(faults.errors).toEqual([]);
+        expect(faults.events).toHaveLength(1);
+        expect(faults.events[0]).toMatchObject({ target, protected: protectedTarget, disposition: protectedTarget ? "fail_closed" : "fail_open" });
+      }
+      expect(readFileSync(physicalTarget, "utf8")).toBe("original target bytes\n");
+      [root, other].forEach((project, index) => expect(readFileSync(join(project, ".pomaster/state/truth-index.json"))).toEqual(before[index]));
+      if (test.lexical === "corrupt") expect(readFileSync(join(root, ".pomaster/truth/keybindings/broken.json"), "utf8")).toBe("{broken");
+      if (test.physical === "corrupt") expect(readFileSync(join(other, ".pomaster/truth/keybindings/root.json"), "utf8")).toBe("{broken");
+    } finally { rmSync(other, { recursive: true, force: true }); }
+  });
+
+  for (const relative of ["src/in-scope.ts", "protected/new.ts", ".pomaster/state/truth-index.json"]) {
+    it.skipIf(process.platform !== "win32")(`no Python: Windows case-variant ${relative} retains protection`, () => {
+      directoryRoot();
+      seedStandardBindingTable();
+      const target = join(root, relative).toUpperCase();
+      expectLauncherFault(runFaultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root.toUpperCase() }), target, true);
+    });
+  }
+
+  it("no Python: Bash caller code and target-tree CLI artifacts never execute", () => {
+    const original = readFileSync(join(root, ".pomaster/state/truth-index.json"));
+    writeHostFile("malicious.js", 'throw new Error("target CLI executed");');
+    const run = runFaultLauncher(bashPayload('node -e \'require("fs").writeFileSync(".pomaster/state/truth-index.json", "tampered")\''), renderExecGuardLauncher(join(root, "malicious.js")));
+    expectLauncherFault(run, join(root, ".pomaster/state/truth-index.json"), true);
+    expect(readFileSync(join(root, ".pomaster/state/truth-index.json"))).toEqual(original);
+  });
+
+  it("no Python: nested target stores receive their own genuine fault rows", async () => {
+    const child = join(root, "child");
+    mkdirSync(child);
+    await createStore(child);
+    const target = join(child, ".pomaster/state/truth-index.json");
+    const run = runFaultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root });
+    expect(run.exitCode).toBe(2);
+    expect(readGuardFaults(child).events).toContainEqual(expect.objectContaining({ target, protected: true, disposition: "fail_closed" }));
+    expect(readGuardFaults(root).events).toEqual([]);
+  });
+
+  for (const metadata of ["{broken", "{}", JSON.stringify({ objects: "corrupt" })]) it(`no Python: corrupt store metadata ${metadata} is unknown, not ordinary unprotected authority`, () => {
+    writeHostFile(".pomaster/state/truth-index.json", metadata);
+    expectLauncherFault(runFaultLauncher(writePayload("src/in-scope.ts")), join(root, "src/in-scope.ts"), true);
+  });
+
+  it("no Python: an ordinary external target uses the existing cwd project's fault log, not its protection scope", () => {
+    const outside = mkdtempSync(join(tmpdir(), "pomaster-unprotected-external-"));
+    try {
+      const target = join(outside, "ordinary.ts");
+      expectLauncherFault(runFaultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: root }), target, false);
+    } finally { rmSync(outside, { recursive: true, force: true }); }
+  });
+
+  it("no Python: invalid UTF-8 is malformed input, not a fabricated unprotected path", () => {
+    const input = Buffer.concat([Buffer.from('{"tool_name":"Write","tool_input":{"file_path":"src/'), Buffer.from([0xff]), Buffer.from('.ts"}}')]);
+    expectLauncherFault(runFaultLauncher(input), "<unknown>", true);
+  });
+
+  const malformedInput = [
+    "{broken", "[]", "{}", JSON.stringify({ tool_name: "Write", tool_input: {} }),
+    JSON.stringify({ tool_name: "Edit", tool_input: { file_path: 123 } }),
+    JSON.stringify({ tool_name: "NotebookEdit", tool_input: { notebook_path: "" } }),
+    JSON.stringify({ tool_name: "Bash", tool_input: { command: [] } }),
+    JSON.stringify({ tool_name: "apply_patch", tool_input: { command: "*** Begin Patch\n*** Update File: src/in-scope.ts" } }),
+    JSON.stringify({ tool_name: "apply_patch", tool_input: { command: "*** Begin Patch\n*** Update File:\n*** End Patch" } }),
+    " ".repeat(1024 * 1024 + 1),
+  ];
+  malformedInput.forEach((text, index) => it(`no Python: malformed/oversized write input ${index} cannot exclude protected targets`, () => {
+    expectLauncherFault(runFaultLauncher(text), "<unknown>", true);
+  }));
+
+  it("no Python: target count is bounded and overflow is fail-closed", () => {
+    const patch = "*** Begin Patch\n" + Array.from({ length: 257 }, (_, n) => `*** Add File: src/${n}.ts\n+x`).join("\n") + "\n*** End Patch";
+    expectLauncherFault(runFaultLauncher(patchPayload(patch)), "<unknown>", true);
+  });
+
+  for (const tool of ["MultiEdit", "apply_patch"]) for (const protectedFirst of [true, false]) {
+    it(`no Python: ${tool} overflow with uninitialized cwd and absolute protected target ${protectedFirst ? "first" : "beyond bound"} is DENY`, () => {
+      const outside = mkdtempSync(join(tmpdir(), "pomaster-launcher-uninitialized-"));
+      try {
+        const target = join(root, ".pomaster/state/truth-index.json");
+        const before = readFileSync(target);
+        const paths = Array.from({ length: 257 }, (_, n) => join(outside, `${n}.ts`));
+        paths[protectedFirst ? 0 : 256] = target;
+        const payload = { tool_name: tool, cwd: outside, tool_input: tool === "MultiEdit"
+          ? { edits: paths.map(file_path => ({ file_path })) }
+          : { command: "*** Begin Patch\n" + paths.map(file => `*** Add File: ${file}\n+x`).join("\n") + "\n*** End Patch" } };
+        const run = runFaultLauncher(payload, renderExecGuardLauncher(null), true, false, outside);
+        expect(run.exitCode, run.stderr).toBe(2);
+        expect(run.stdout).toBe("");
+        expect(run.stderr).toContain("inventory budget exhausted");
+        expect(run.stderr).toContain("GUARD_FAULT_OBSERVED fail_closed");
+        expect(run.stderr).not.toContain("ALLOW");
+        const faults = readGuardFaults(root);
+        expect(faults.errors).toEqual([]);
+        if (protectedFirst) {
+          expect(faults.events).toContainEqual(expect.objectContaining({ target, protected: true, disposition: "fail_closed" }));
+          expect(faults.events).toContainEqual(expect.objectContaining({ target: "<unknown>", protected: true, disposition: "fail_closed" }));
+        } else {
+          expect(faults.events).toEqual([]);
+          expect(run.stderr).toContain("No initialized store found for fault telemetry");
+        }
+        expect(readFileSync(target)).toEqual(before);
+        expect(paths.filter(file => file !== target).every(file => !existsSync(file))).toBe(true);
+      } finally { rmSync(outside, { recursive: true, force: true }); }
+    });
+  }
+
+  it("no Python: uninitialized cwd does not blanket-deny an ordinary absolute target in another store", () => {
+    const outside = mkdtempSync(join(tmpdir(), "pomaster-launcher-ordinary-cwd-"));
+    try {
+      const target = join(root, "src/in-scope.ts");
+      expectLauncherFault(runFaultLauncher({ tool_name: "Write", tool_input: { file_path: target }, cwd: outside },
+        renderExecGuardLauncher(null), true, false, outside), target, false);
+    } finally { rmSync(outside, { recursive: true, force: true }); }
+  });
+
+  for (const command of ["git status", "ls", "npm test 2>&1 >/dev/null"]) it(`no Python: pathless harmless ${command} is not globally blocked`, () => {
+    writeHostFile(".pomaster/truth/keybindings/broken.json", "{broken");
+    expectLauncherFault(runFaultLauncher(bashPayload(command)), "<no-path>", false);
+  });
+
+  for (const protectedTarget of [true, false]) it(`missing sibling hook: ${protectedTarget ? "protected DENY" : "ordinary FAIL-OPEN"} after stdin classification`, () => {
+    const rel = protectedTarget ? ".pomaster/state/truth-index.json" : "src/in-scope.ts";
+    const run = runFaultLauncher(writePayload(rel), renderExecGuardLauncher(null), false);
+    expectLauncherFault(run, join(root, rel), protectedTarget);
+    expect(run.stderr).toContain("distributed exec-guard hook missing");
+  });
+
+  for (const result of [
+    '{ error: new Error("injected spawn EIO"), status: null }',
+    '{ status: null, signal: "SIGKILL" }',
+    '{ status: 3, signal: null }',
+  ]) for (const protectedTarget of [true, false]) it(`delegation ${result}: ${protectedTarget ? "protected DENY" : "ordinary FAIL-OPEN"}`, () => {
+    // Inert test seam in the generated fixture, never an executable from a target PATH or env flag.
+    const launcher = renderExecGuardLauncher(null).replace('import { spawnSync } from "node:child_process";',
+      `const spawnSync = (_command, args) => args.includes("-c") ? { status: 0 } : ${result};`);
+    const rel = protectedTarget ? ".pomaster/state/truth-index.json" : "src/in-scope.ts";
+    expectLauncherFault(runFaultLauncher(writePayload(rel), launcher), join(root, rel), protectedTarget);
+  });
+
+  it("unexpected synchronous delegation exception uses the same boundary", () => {
+    const launcher = renderExecGuardLauncher(null).replace('import { spawnSync } from "node:child_process";',
+      'const spawnSync = () => { throw new Error("injected exception"); };');
+    expectLauncherFault(runFaultLauncher(writePayload(".pomaster/state/truth-index.json"), launcher), join(root, ".pomaster/state/truth-index.json"), true);
+  });
+
+  it("fault log append failure is disclosed and cannot allow protected targets", () => {
+    mkdirSync(join(root, ".pomaster/state/guard-faults.jsonl"));
+    const run = runFaultLauncher(writePayload(".pomaster/state/truth-index.json"));
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("GUARD_FAULT_LOG_INVALID");
+    expect(run.stderr).toContain("GUARD_FAULT_OBSERVED fail_closed");
+    expect(run.stderr).not.toContain("ALLOW");
+  });
+
+  it("available Python: real hook process crash is a protected runtime fault", () => {
+    if (!py.available) { expectPendingRecorded("launcher.real_crash", py.reason); return; }
+    const run = runFaultLauncher(writePayload(".pomaster/state/truth-index.json"), renderExecGuardLauncher(null), "import os\nos._exit(3)\n", true);
+    expectLauncherFault(run, join(root, ".pomaster/state/truth-index.json"), true);
+    expect(run.stderr).toContain("terminated abnormally");
+  });
+
+  it("available Python: canonical stdin/exit/stderr stay unchanged and no launcher fault is forged", () => {
+    if (!py.available) { expectPendingRecorded("launcher.real_python_unchanged", py.reason); return; }
+    for (const payload of [writePayload(".pomaster/state/truth-index.json"), writePayload("src/in-scope.ts"), bashPayload("git status")]) {
+      const direct = runHook(payload);
+      const delegated = runFaultLauncher(payload, renderExecGuardLauncher(null), true, true);
+      expect(delegated.exitCode).toBe(direct.exitCode);
+      expect(delegated.stdout).toBe(direct.stdout);
+      expect(delegated.stderr).toBe(direct.stderr);
+    }
+    expect(readGuardFaults(root)).toEqual({ events: [], errors: [] });
+  });
+});
+
+describe("exec-guard hook (c) 可信运行时与保护目标故障边界（BE-4）", () => {
+  it("无效环境 CLI 入口不能注入可信 launcher，也不能把越界 DENY 变成 FAIL-OPEN", async () => {
     if (!py.available) {
-      expectPendingRecorded("failopen.cli_missing", "判卷器进程故障 fail-open 断言");
+      expectPendingRecorded("trust.env_cli_ignored", "环境 CLI 入口不授予信任断言");
       return;
     }
     seedStandardBindingTable();
     await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
-    const run = runHook(writePayload("src/in-scope.ts"), canonicalHook, {
+    const run = runHook(writePayload("src/out-scope.ts"), canonicalHook, {
       POMASTER_CLI_ENTRY: join(root, "definitely", "missing", "bin.js"),
     });
-    expect(run.exitCode).toBe(0);
-    expect(run.stderr).toContain("FAIL-OPEN");
-    expect(run.stderr).toContain("execution audit");
+    expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("DENY");
+    expect(run.stderr).toContain("PERMIT_SCOPE_DENIED");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.OUT");
+    expect(run.stderr).not.toContain("ALLOW");
+    expect(run.stderr).not.toContain("FAIL-OPEN");
   });
 
-  it("store 台账损坏（truth-index 非 JSON）→ 判卷系统码非 PERMIT_* → exit 0 + FAIL-OPEN", async () => {
+  it("confirmed-root 的 store 台账损坏（truth-index 非 JSON）→ exit 2 + fail_closed 故障证据", async () => {
     if (!py.available) {
-      expectPendingRecorded("failopen.corrupt_ledger", "store 台账损坏 fail-open 断言");
+      expectPendingRecorded("failclosed.corrupt_ledger", "保护目标 store 台账损坏 fail-closed 断言");
       return;
     }
     if (!existsSync(cliEntry)) {
-      expectPendingRecorded("failopen.corrupt_ledger", "cli dist 缺席（先 corepack pnpm build）");
+      expectPendingRecorded("failclosed.corrupt_ledger", "cli dist 缺席（先 corepack pnpm build）");
       return;
     }
     seedStandardBindingTable();
     await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
-    writeFileSync(join(root, ".pomaster", "state", "truth-index.json"), "{broken json", "utf8");
+    const indexPath = join(root, ".pomaster", "state", "truth-index.json");
+    writeFileSync(indexPath, "{broken json", "utf8");
     const run = runHook(writePayload("src/in-scope.ts"));
-    expect(run.exitCode).toBe(0);
-    expect(run.stderr).toContain("FAIL-OPEN");
+    expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("GUARD_FAULT_OBSERVED");
+    expect(run.stderr).toContain("fail_closed");
     expect(run.stderr).not.toContain("ALLOW");
+    expect(run.stderr).not.toContain("FAIL-OPEN");
+    const faults = readGuardFaults(root);
+    expect(faults.errors).toEqual([]);
+    expect(faults.events).toHaveLength(1);
+    expect(faults.events[0]).toMatchObject({
+      type: "GUARD_FAULT_OBSERVED",
+      target: join(root, "src", "in-scope.ts"),
+      protected: true,
+      disposition: "fail_closed",
+    });
+    expect(faults.events[0]?.reason).toContain("exec-guard 进程异常");
+    expect(readFileSync(indexPath, "utf8")).toBe("{broken json");
   });
 });
 
@@ -866,15 +1358,24 @@ describe("exec-guard hook NotebookEdit 与 shim 转发", () => {
       expectPendingRecorded("notebook.deny", "cli dist 缺席（先 corepack pnpm build）");
       return;
     }
+    const notebook = `${JSON.stringify({ cells: [], metadata: {}, nbformat: 4, nbformat_minor: 5 })}\n`;
+    writeHostFile("src/notebooks/analysis.ipynb", notebook);
+    seedStandardBindingTable();
     seedBindingRow("KEYBINDING.NB.OUT", "CAPABILITY.AUDIT.OUT", "src/notebooks/analysis.ipynb");
+    // 真 permit + 在册活跃 execution；物理 notebook 在座，confirmed binding 可重探测。
     await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
     const run = runHook({
       tool_name: "NotebookEdit",
       tool_input: { notebook_path: join(root, "src", "notebooks", "analysis.ipynb") },
       cwd: root,
     });
+    expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
     expect(run.exitCode).toBe(2);
     expect(run.stderr).toContain("DENY");
+    expect(run.stderr).toContain("PERMIT_SCOPE_DENIED");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.OUT");
+    expect(run.stderr).not.toContain("unmapped");
+    expect(readFileSync(join(root, "src", "notebooks", "analysis.ipynb"), "utf8")).toBe(notebook);
   });
 
   it("shim 转发面：ALLOW → exit 0 / DENY → exit 2 退出码与 stderr 逐字透传（缺席显式 pending）", async () => {

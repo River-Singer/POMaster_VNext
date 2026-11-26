@@ -32,6 +32,7 @@ import {
   applyTransaction,
   beginExecution,
   detectGatekeeperDrift,
+  issuePermit,
   GovernanceError,
   loadTruthIndex,
 } from "@pomaster/kernel";
@@ -144,7 +145,12 @@ describe("CRC-C：risk_score 类新治理语义只能 Proposal，不得自我激
         },
       ],
     } as never);
+    const permit = await issuePermit(store, {
+      subjectIds: [cid("PAGE.DASHBOARD")],
+      requestedBy: { actorType: "human", actor: "owner", selfAttested: false },
+    });
     const loneAgent = await beginExecution(store, {
+      permitIds: [permit.permitRef],
       role: "orchestrator",
       runtime: "claude-code",
       identityKind: "interactive",

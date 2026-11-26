@@ -678,6 +678,36 @@ export function detectGitleaks(
   );
 }
 
+/** dependency-check 探测（TS-3 依赖漏洞 Maven 腿；OWASP Dependency-Check CLI/脚本词形）。 */
+export function detectDependencyCheck(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  return detectSecurityPathTool(
+    "dependency-check.sh",
+    "dependency-check",
+    "依赖漏洞腿 Maven 面（TS-3；OWASP Dependency-Check NVD/CPE 对账）",
+    "安装建议：从 github.com/jeremylong/DependencyCheck/releases 下载 CLI 包解压入 PATH（dependency-check.sh / dependency-check.bat）；首次扫描要下载 NVD 库（5–10 分钟）",
+    facts,
+    options,
+  );
+}
+
+/** trivy 探测（TS-3 依赖漏洞 npm/容器腿；Trivy CLI 词形）。 */
+export function detectTrivy(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  return detectSecurityPathTool(
+    "trivy",
+    "trivy",
+    "依赖漏洞腿 npm/容器面（TS-3；Trivy GitHub Advisories/镜像扫描）",
+    "安装建议：brew install trivy，或从 github.com/aquasecurity/trivy/releases 下载二进制入 PATH；可完全离线（--offline-scan）",
+    facts,
+    options,
+  );
+}
+
 /** pip-audit 探测（P25 SECURITY 门禁 Python 依赖漏洞腿，B2-5；oasdiff 同款 PATH 线索形态）。 */
 export function detectPipAudit(
   facts: DetectorFacts,

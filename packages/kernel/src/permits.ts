@@ -193,12 +193,9 @@ function permitBase(request: PermitRequest): string {
  * 签发瞬间同时落五件套台账：capability_refs / acceptance_shape / baseline
  * （baseline 服务 G3 reconcile；closure——journal 无 axes 历史，事后不可重建）。
  */
-export async function issuePermit(
-  store: Store,
-  request: PermitRequest,
-): Promise<Permit> {
+export function preparePermitIssue(store: Store, request: PermitRequest, atSeq?: number) {
   const paths = pathsOf(store);
-  const currentSeq = readCurrentSeq(paths);
+  const currentSeq = atSeq ?? readCurrentSeq(paths);
   if (currentSeq === null) {
     throw new GovernanceError(
       "NOT_CONFIGURED",
@@ -287,36 +284,21 @@ export async function issuePermit(
     stolen_reason: null,
   };
   file.permits.push(record);
-  executeWrites([
-    {
-      path: paths.permitsPath,
-      next: `${JSON.stringify(file, null, 2)}\n`,
-      original: captureOriginal(paths.permitsPath),
-    },
-  ]);
-  // A2 journal 纪律：事件在台账 staged 批提交成功后 appendLine 原子追加（不再 RMW
-  // 覆写——会把并发 appendLine 家族刚写的整行抹掉）。顺序取舍：「台账先行、journal
-  // 缺行」是可检出残态（台账有签发记录可查缺事件），比「journal 有幽灵行、台账未
-  // 提交」诚实。
-  appendJournalLine(paths, {
-    type: "PERMIT_ISSUED",
-    seq: currentSeq,
-    permit_ref: permitRef,
-    expires_at_seq: expiresAtSeq,
-    change_ref: record.change_ref,
-    requested_by: record.requested_by,
-    capability_ids: capabilityRefs,
-    change_class: record.change_class,
-    governance_profile: record.governance_profile,
-  });
+  const permit: Permit = { permitRef, expiresAtSeq, scope: { subjectIds: [...subjectIds], writePolicy: PERMIT_WRITE_POLICY } };
   return {
-    permitRef,
-    expiresAtSeq,
-    scope: {
-      subjectIds: [...request.subjectIds] as readonly GovernedId[],
-      writePolicy: PERMIT_WRITE_POLICY,
-    },
+    permit, record, path: paths.permitsPath, next: `${JSON.stringify(file, null, 2)}\n`,
+    event: { type: "PERMIT_ISSUED", seq: currentSeq, permit_ref: permitRef, expires_at_seq: expiresAtSeq,
+      change_ref: record.change_ref, requested_by: record.requested_by, capability_ids: capabilityRefs,
+      change_class: record.change_class, governance_profile: record.governance_profile },
   };
+}
+
+/** Ordinary issue keeps its existing event semantics; admissions stage this same preparation. */
+export async function issuePermit(store: Store, request: PermitRequest): Promise<Permit> {
+  const prepared = preparePermitIssue(store, request);
+  executeWrites([{ path: prepared.path, next: prepared.next, original: captureOriginal(prepared.path) }]);
+  appendJournalLine(pathsOf(store), prepared.event);
+  return prepared.permit;
 }
 
 /** governed id 解析的 GovernanceError 包装（A5：FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR）。 */
@@ -395,6 +377,7 @@ export async function checkPermit(
   store: Store,
   permitRef: string,
   attempt: WriteAttempt,
+  options: { readonly observeExpiry?: boolean } = {},
 ): Promise<PermitCheckResult> {
   const paths = pathsOf(store);
   const currentSeq = readCurrentSeq(paths);
@@ -416,7 +399,7 @@ export async function checkPermit(
     // V2-1 去重：hook 每次 Edit 都会判卷，原实现每次都追加一行，journal 被刷屏。去重键 =
     // (permit_ref, expired_at_seq)——续期（V2-2）后再次到期是新的到期点，照常记一次。
     // 判卷器只写 journal（exec-guard「journal 之外零变化」契约不变）；已观察过 → 照旧返回 expired。
-    if (!expiryAlreadyObserved(paths, permitRef, permit.expires_at_seq)) {
+    if (options.observeExpiry !== false && !expiryAlreadyObserved(paths, permitRef, permit.expires_at_seq)) {
       appendJournalLine(paths, {
         type: "PERMIT_EXPIRED_OBSERVED",
         seq: currentSeq,

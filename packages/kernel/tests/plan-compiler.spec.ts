@@ -319,17 +319,59 @@ describe("未声明 face 保留 unknown（REQ-04：无法判断不默认不适�
 // ============================================================
 
 describe("词形闭包（SP 提案词形；TODO(vocab-pr)）", () => {
-  it("applicability 三值 / face 十类 / capability 十三词（W3-S2 起 + static_analysis）", () => {
+  it("applicability 三值 / face 十类 / capability 十五词（BE-2 显式 mutation_check）", () => {
     expect(PLAN_APPLICABILITY_VALUES).toEqual(["REQUIRED", "NOT_REQUIRED", "NOT_APPLICABLE"]);
     expect(PLAN_CHANGE_FACE_KINDS).toHaveLength(10);
-    expect(PLAN_CAPABILITY_WORDS).toHaveLength(14);
+    expect(PLAN_CAPABILITY_WORDS).toHaveLength(15);
     expect(PLAN_CAPABILITY_WORDS).toContain("static_analysis");
     expect(PLAN_CAPABILITY_WORDS).toContain("control_data_flow");
     expect(PLAN_CAPABILITY_GATE_NAMES.control_data_flow).toEqual(["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"]);
+    expect(PLAN_CAPABILITY_GATE_NAMES.mutation_check).toEqual(["MUTATION"]);
+    expect(PLAN_CAPABILITY_GATE_NAMES.unit_behavior).toEqual(["BUILD"]);
   });
 
   it("NOT_APPLICABLE 复用 baseline 既有词形（baselineGrounding 同源）", () => {
     expect(PLAN_APPLICABILITY_VALUES).toContain("NOT_APPLICABLE");
+  });
+});
+
+describe("BE-2 显式 mutation_check 义务（不从档位或普通行为推导）", () => {
+  const pit: PlanToolBinding = {
+    binding_id: "project.jvm.pit", tool_id: "gauntlet:pit", gate: "MUTATION",
+    gate_def: "POLICY.GATE.MUTATION@0.1.0", capabilities: ["unit_behavior"],
+    source_ref: "binding:project.jvm.pit", version: "3.9.6", available: true, availability_reason: "native PIT ready",
+  };
+  function input(requires: PlanAcceptanceItem["requires"]): VerificationPlanInput {
+    const base = c1Input();
+    return { ...base,
+      acceptance: { ...base.acceptance, value: [{ ref: A1_REF, statement: "Changed-code mutation", oracle_ref: null, requires, exclusions: [] }] },
+      toolBindings: { ...base.toolBindings, value: [pit] },
+    };
+  }
+  it("原生 unit_behavior+MUTATION binding 满足显式 mutation_check；同输入换档不改 REQUIRED 分母", () => {
+    const base = compileVerificationPlan(input(["mutation_check"]));
+    const item = findItem(base, A1_REF, "mutation_check");
+    expect(item).toMatchObject({ applicability: "REQUIRED", resolved_tool: "gauntlet:pit", tool_gap: null,
+      resolved_bindings: [{ binding_id: pit.binding_id, tool: pit.tool_id, gate: "MUTATION", gate_def: pit.gate_def }] });
+    expect(item?.evidence_requirement).toContain("policy_skip 不满足 REQUIRED");
+    const hardened = compileVerificationPlan({ ...input(["mutation_check"]), informational: { governance_profile: "HARDENING" } });
+    expect(hardened.items).toEqual(base.items);
+    expect(hardened.inputs_fingerprint).not.toBe(base.inputs_fingerprint);
+  });
+  it("只有普通 unit_behavior 时不会新增 mutation_check；PIT 不顶替缺失 BUILD", () => {
+    const plan = compileVerificationPlan(input(["unit_behavior"]));
+    expect(plan.items.some(item => item.capability === "mutation_check")).toBe(false);
+    expect(findItem(plan, A1_REF, "unit_behavior")?.resolved_bindings).toEqual([]);
+    expect(findItem(plan, A1_REF, "unit_behavior")?.tool_gap).toContain("BUILD");
+  });
+  it("mutation_check 的 BUILD 同能力 binding 不顶 MUTATION；不可用 PIT 仍保留 REQUIRED", () => {
+    const base = input(["mutation_check"]);
+    const build = compileVerificationPlan({ ...base, toolBindings: { ...base.toolBindings, value: [{ ...pit, gate: "BUILD" }] } });
+    expect(findItem(build, A1_REF, "mutation_check")?.resolved_bindings).toEqual([]);
+    expect(findItem(build, A1_REF, "mutation_check")?.tool_gap).toContain("MUTATION");
+    const unavailable = compileVerificationPlan({ ...base, toolBindings: { ...base.toolBindings, value: [{ ...pit, available: false }] } });
+    expect(findItem(unavailable, A1_REF, "mutation_check")?.applicability).toBe("REQUIRED");
+    expect(findItem(unavailable, A1_REF, "mutation_check")?.tool_gap).toContain("不可用");
   });
 });
 

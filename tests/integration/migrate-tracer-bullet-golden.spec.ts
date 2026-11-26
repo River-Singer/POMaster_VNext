@@ -9,7 +9,7 @@
  * ② 迁移分类清单的 DEPRECATED/DUPLICATE/REJECTED 候选只进「名称退场清单」（§92.6）
  *    呈现、无任何自动落库通路——golden 以 analyze 跑前后 catalog/ 目录字节快照一致 +
  *    项目根零 .pomaster + spec 树字节快照一致三重钉死；
- * ③ migrate 命令 --apply 词形结构性不存在——命令注册表全树无 apply/propose/diff 命令、
+ * ③ migrate 命令 --apply 词形结构性不存在——migrate 子树无 apply/propose/diff 命令、
  *    trellis-spec 选项注册表无 --propose/--diff/--apply 词形；传入 --apply 走
  *    unknown-option 拦截面显式提示 COMMAND_DEFERRED + exit 1（非静默吞参）。
  */
@@ -110,8 +110,8 @@ function treeSha(root: string): string {
   return createHash("sha256").update(rows.join("\n")).digest("hex");
 }
 
-/** 命令注册表全树命令名（递归；commander 隐式 help 除外）。 */
-function walkCommandNames(): readonly string[] {
+/** 指定命令子树的命令名（递归；commander 隐式 help 除外）。 */
+function walkCommandNames(rootCommand: ReturnType<typeof createProgram>): readonly string[] {
   const names: string[] = [];
   const visit = (command: ReturnType<typeof createProgram>): void => {
     for (const child of command.commands) {
@@ -120,7 +120,7 @@ function walkCommandNames(): readonly string[] {
       visit(child as unknown as ReturnType<typeof createProgram>);
     }
   };
-  visit(createProgram());
+  visit(rootCommand);
   return names;
 }
 
@@ -196,15 +196,17 @@ describe("§96 golden ②：退场分类只进名称退场清单呈现，零自�
 });
 
 describe("§96 golden ③：--apply 词形结构性不存在（注册表无此命令/此选项）", () => {
-  it("命令注册表全树无 apply/propose/diff 命令；migrate 恰一子命令 trellis-spec", () => {
-    const names = walkCommandNames();
-    for (const forbidden of ["apply", "propose", "diff"]) {
-      expect(names).not.toContain(forbidden);
-    }
+  it("migrate 子树无 apply/propose/diff 命令；migrate 恰一子命令 trellis-spec", () => {
     const program = createProgram();
     const migrate = program.commands.find((command) => command.name() === "migrate");
     expect(migrate).toBeDefined();
-    expect(migrate?.commands.map((child) => child.name())).toEqual(["trellis-spec"]);
+    if (!migrate) throw new Error("migrate command missing");
+    const names = walkCommandNames(migrate);
+    for (const forbidden of ["apply", "propose", "diff"]) {
+      expect(names).not.toContain(forbidden);
+    }
+    expect(migrate.commands.map((child) => child.name())).toEqual(["trellis-spec"]);
+    expect(migrate.options.map((option) => option.long)).not.toContain("--apply");
   });
 
   it("trellis-spec 选项注册表无 --propose/--diff/--apply 词形（deferred 词形未注册）", () => {

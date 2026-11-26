@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
+import { applyTransaction, beginExecution, createStore, issuePermit, type GovernedId } from "@pomaster/kernel";
 import type { ToolBindingRecord } from "@pomaster/gauntlet-lite";
 import {
   judgeRuntimeObligations,
@@ -14,6 +14,7 @@ import {
   runFinalizeReplayAdjudicate,
   runFinalizeStatus,
   runReconImportGraph,
+  runRecordGateRun,
   runScopeReviewAdopt,
   scanBrowserLegGrnBacked,
 } from "@pomaster/cli";
@@ -96,7 +97,53 @@ function controlDataFlowRuntimeBinding(): ToolBindingRecord {
   };
 }
 
-async function fixture(): Promise<string> {
+async function bootstrapPlanTask(taskId: string, acceptance: unknown[]): Promise<void> {
+  const defaultFacts = { titleZh: "计划执行器测试", intent: "执行静态分析双 obligation", hits: 0, regressionCaseRef: "GRN-PLAN" };
+  const factsByTask: Record<string, typeof defaultFacts> = {
+    "TASK.STATIC.SCEN": { titleZh: "复选框三态场景任务", intent: "三态场景分母执行", hits: 0, regressionCaseRef: "GRN-SCEN" },
+    "TASK.CDF.RUNNER": { titleZh: "控件数据流计划执行", intent: "审计控件数据链", hits: 1, regressionCaseRef: "GRN-CDF" },
+    "TASK.W5.JUDGE": { titleZh: "W5 runtime 义务判定", intent: "W5 runtime 场景义务判定", hits: 1, regressionCaseRef: "GRN-W5" },
+  };
+  const facts = factsByTask[taskId] ?? defaultFacts;
+  await applyTransaction(await createStore(root), { ops: [{
+    op: "upsert_object",
+    envelope: {
+      id: taskId, kind: "task_object", axisProfile: "task_default",
+      axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+      titleZh: facts.titleZh, authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+      payload: {
+        intent: facts.intent,
+        class_scan_result: { scope: "src/**", hits: facts.hits, fixed_count: facts.hits, regression_case_ref: facts.regressionCaseRef },
+        acceptance,
+      },
+    } as never,
+  }] });
+}
+
+async function ownedExecution(
+  taskId: string,
+  role: "orchestrator" | "qa" = "orchestrator",
+  actor = "implementer",
+  startedAt = "2026-09-23T00:00:00.000Z",
+) {
+  const store = await createStore(root);
+  const permit = await issuePermit(store, {
+    subjectIds: [taskId as GovernedId],
+    requestedBy: { actorType: "agent", actor, selfAttested: true },
+  });
+  expect(permit.scope.subjectIds).toEqual([taskId]);
+  return beginExecution(store, {
+    role, runtime: "claude-code", identityKind: "interactive",
+    taskId, permitIds: [permit.permitRef], startedAt,
+  });
+}
+
+// Bootstrap only the requested existing target before live execution; creation
+// during a live execution belongs to the real NewEntity admission contract.
+async function fixture(
+  taskId = "TASK.STATIC.RUNNER",
+  acceptance: unknown[] = [{ criterion: "类型与 lint 都须通过", claim: null, requires: ["static_analysis"] }],
+): Promise<string> {
   writeFileSync(join(root, "package.json"), JSON.stringify({
     name: "plan-runner-fixture",
     devDependencies: { typescript: "^5.7.3", eslint: "^9.18.0" },
@@ -135,32 +182,8 @@ async function fixture(): Promise<string> {
       controlDataFlowRuntimeBinding(),
     ],
   }));
-  const store = await createStore(root);
-  await applyTransaction(store, {
-    ops: [{
-      op: "upsert_object",
-      envelope: {
-        id: "TASK.STATIC.RUNNER",
-        kind: "task_object",
-        axisProfile: "task_default",
-        axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
-        titleZh: "计划执行器测试",
-        authority: { owner: "BOOTSTRAP_OWNER", delegates: [] },
-        origin: "natural",
-        payload: {
-          intent: "执行静态分析双 obligation",
-          class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-PLAN" },
-          acceptance: [{ criterion: "类型与 lint 都须通过", claim: null, requires: ["static_analysis"] }],
-        },
-      } as never,
-    }],
-  });
-  const execution = await beginExecution(store, {
-    role: "orchestrator",
-    runtime: "claude-code",
-    identityKind: "interactive",
-    startedAt: "2026-09-23T00:00:00.000Z",
-  });
+  await bootstrapPlanTask(taskId, acceptance);
+  const execution = await ownedExecution(taskId);
   return execution.execution_id;
 }
 
@@ -239,15 +262,9 @@ const CHECKBOX_SCENARIOS = [
   },
 ];
 
-/** 在 fixture 之上播种三态场景任务（TASK.STATIC.SCEN；默认单 acceptance，可注入变体）。 */
-async function seedScenarioTask(acceptance?: unknown[]): Promise<void> {
-  const store = await createStore(root);
-  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
-    id: "TASK.STATIC.SCEN", kind: "task_object", axisProfile: "task_default",
-    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
-    titleZh: "复选框三态场景任务", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
-    payload: { intent: "三态场景分母执行", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-SCEN" }, acceptance: acceptance ?? [{ criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS }] },
-  } as never }] });
+/** Bootstrap the scenario target before issuing its owned, task-only permit. */
+async function scenarioFixture(acceptance?: unknown[]): Promise<string> {
+  return fixture("TASK.STATIC.SCEN", acceptance ?? [{ criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS }]);
 }
 
 function grnPath(grn: string): string {
@@ -263,8 +280,7 @@ function grnNote(grn: string): string {
 
 describe("plan run（W1-FR04 场景化分母）", () => {
   it("场景化 plan run：gates×场景全分母执行，rows/GRN note 逐场景对账", async () => {
-    const executionId = await fixture();
-    await seedScenarioTask();
+    const executionId = await scenarioFixture();
     const outcome = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
     expect(outcome.ok).toBe(true);
     expect(outcome.result).toMatchObject({ obligations_total: 6, recorded: 6, passed: 6 });
@@ -281,8 +297,7 @@ describe("plan run（W1-FR04 场景化分母）", () => {
   });
 
   it("复用身份含场景：同场景同指纹复用；缺失场景不被同 gate 其他场景的 passed 覆盖（重跑补执行）", async () => {
-    const executionId = await fixture();
-    await seedScenarioTask();
+    const executionId = await scenarioFixture();
     const first = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
     expect(first.ok).toBe(true);
     const grnByKey = new Map(first.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn]));
@@ -305,8 +320,7 @@ describe("plan run（W1-FR04 场景化分母）", () => {
   });
 
   it("finalize cohort 键含场景：缺场景 GRN → VERIFY_BLOCKED（同 gate 多场景不互相覆盖）；补齐后恢复", async () => {
-    const executionId = await fixture();
-    await seedScenarioTask();
+    const executionId = await scenarioFixture();
     const first = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
     expect(first.ok).toBe(true);
     const grnByKey = new Map(first.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn]));
@@ -335,8 +349,7 @@ describe("plan run（W1-FR04 场景化分母）", () => {
 
 /** 全量三态回放底座：fixture + 场景任务 + 一次全分母 plan run。 */
 async function runScenarioPlan(acceptance?: unknown[]): Promise<{ executionId: string; grnByKey: Map<string, string> }> {
-  const executionId = await fixture();
-  await seedScenarioTask(acceptance);
+  const executionId = await scenarioFixture(acceptance);
   const outcome = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
   expect(outcome.ok).toBe(true);
   return { executionId, grnByKey: new Map(outcome.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn])) };
@@ -455,6 +468,90 @@ describe("Case C 回放（复选框三态；PR-W1.3）", () => {
   });
 });
 
+describe("BE4 plan/record owned permit attribution", () => {
+  const taskRef = "TASK.STATIC.RUNNER";
+
+  function gateInput(executionId?: string): string {
+    const from = join(root, "permit-gate-input.json");
+    writeFileSync(from, JSON.stringify({
+      gate: "BUILD", gate_def: "POLICY.GATE.BUILD@0.1.0", verdict: "passed",
+      metric_dialect: "build:exit_code", subject_id: taskRef, denominator_refs: [],
+      counts: { scanned: 2, applicable_scanned: 2, violations: 0, not_applicable: 0 },
+      trust: { asserted: null, recomputed: { violations: 0, matches_asserted: true } },
+      duration_ms: { self: 1, external: 0 },
+      ...(executionId === undefined ? {} : { execution_id: executionId }),
+    }));
+    return from;
+  }
+
+  function permitsText(): string {
+    return readFileSync(join(root, ".pomaster", "state", "permits.json"), "utf8");
+  }
+
+  it("unpermitted worker cannot borrow the live owner's permit; owner still records normally", async () => {
+    const owner = await fixture();
+    const borrower = await beginExecution(await createStore(root), {
+      role: "orchestrator", runtime: "claude-code", identityKind: "interactive", taskId: taskRef,
+      startedAt: "2026-09-23T01:00:00.000Z",
+    });
+    const before = permitsText();
+    const runsBefore = readdirSync(join(root, ".pomaster", "evidence", "runs"));
+    const denied = await runPlanRun(root, { taskRef, executionId: borrower.execution_id, changed: ["src/a.ts"], faces });
+    expect(denied.ok).toBe(false);
+    expect(denied.errors[0]?.code).toBe("PERMIT_SCOPE_DENIED");
+    expect(denied.result.recorded).toBe(0);
+    const recordDenied = await runRecordGateRun(root, { from: gateInput(owner), executionId: borrower.execution_id });
+    expect(recordDenied.ok).toBe(false);
+    expect(recordDenied.errors[0]?.code).toBe("PERMIT_SCOPE_DENIED");
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toEqual(runsBefore);
+    expect(permitsText()).toBe(before);
+    const allowed = await runPlanRun(root, { taskRef, executionId: owner, changed: ["src/a.ts"], faces });
+    expect(allowed.ok).toBe(true);
+    expect(allowed.result.recorded).toBe(2);
+  });
+
+  it("public record uses the explicitly registered writer instead of file provenance with two live workers", async () => {
+    const provenance = await fixture();
+    const writer = await ownedExecution(taskRef, "qa", "verifier", "2026-09-23T01:00:00.000Z");
+    const recorded = await runRecordGateRun(root, { from: gateInput(provenance), executionId: writer.execution_id });
+    expect(recorded.errors).toEqual([]);
+    expect(recorded.ok).toBe(true);
+    expect(recorded.result.change).toBe("APPLIED");
+    expect(recorded.result.execution_id).toBe(writer.execution_id);
+    expect(JSON.parse(readFileSync(grnPath(recorded.result.grn as string), "utf8")).execution_id).toBe(writer.execution_id);
+  });
+
+  it("public record without attribution denies ambiguous live workers without GRN or permit writes", async () => {
+    await fixture();
+    await ownedExecution(taskRef, "qa", "verifier", "2026-09-23T01:00:00.000Z");
+    const before = permitsText();
+    const runsBefore = readdirSync(join(root, ".pomaster", "evidence", "runs"));
+    const denied = await runRecordGateRun(root, { from: gateInput() });
+    expect(denied.ok).toBe(false);
+    expect(denied.errors[0]?.code).toBe("PERMIT_SCOPE_DENIED");
+    expect(denied.errors[0]?.message).toContain("Multiple active workers");
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toEqual(runsBefore);
+    expect(permitsText()).toBe(before);
+  });
+
+  it("public record cannot broaden an unrelated worker's task-only permit or borrow the target owner's", async () => {
+    await runInit(root);
+    const acceptance = [{ criterion: "验收静态分析", claim: null, requires: ["static_analysis"] }];
+    await bootstrapPlanTask(taskRef, acceptance);
+    await bootstrapPlanTask("TASK.OTHER.RUNNER", acceptance);
+    await ownedExecution(taskRef);
+    const unrelated = await ownedExecution("TASK.OTHER.RUNNER", "qa", "other-verifier", "2026-09-23T01:00:00.000Z");
+    const before = permitsText();
+    const runsBefore = readdirSync(join(root, ".pomaster", "evidence", "runs"));
+    const denied = await runRecordGateRun(root, { from: gateInput(), executionId: unrelated.execution_id });
+    expect(denied.ok).toBe(false);
+    expect(denied.errors[0]?.code).toBe("PERMIT_SCOPE_DENIED");
+    expect(denied.errors[0]?.message).toContain(taskRef);
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toEqual(runsBefore);
+    expect(permitsText()).toBe(before);
+  });
+});
+
 describe("plan run", () => {
   it("finalize 在工具启动前拒绝 verification execution/主体与 claim 断言侧重合", async () => {
     const implementationExecutionId = await fixture();
@@ -478,7 +575,7 @@ describe("plan run", () => {
     expect(sameExecution.errors[0]?.code).toBe("VERIFICATION_SUBJECT_NOT_INDEPENDENT");
     expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(0);
 
-    const independentExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T01:00:00.000Z" });
+    const independentExecution = await ownedExecution("TASK.STATIC.RUNNER", "qa", "implementer", "2026-09-23T01:00:00.000Z");
     const sameActor = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: independentExecution.execution_id, verifier: "agent:implementer", reviewRange: "HEAD~1..HEAD", changed: ["src/a.ts"], faces });
     expect(sameActor.ok).toBe(false);
     expect(sameActor.errors[0]?.code).toBe("VERIFICATION_SUBJECT_NOT_INDEPENDENT");
@@ -486,14 +583,7 @@ describe("plan run", () => {
   });
 
   it("control_data_flow 经受信 binding 执行并以 CONTROL_DATA_FLOW GRN 入账", async () => {
-    const executionId = await fixture();
-    const store = await createStore(root);
-    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
-      id: "TASK.CDF.RUNNER", kind: "task_object", axisProfile: "task_default",
-      axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
-      titleZh: "控件数据流计划执行", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
-      payload: { intent: "审计控件数据链", class_scan_result: { scope: "src/**", hits: 1, fixed_count: 1, regression_case_ref: "GRN-CDF" }, acceptance: [{ criterion: "控件结构链闭合", claim: null, requires: ["control_data_flow"] }] },
-    } as never }] });
+    const executionId = await fixture("TASK.CDF.RUNNER", [{ criterion: "控件结构链闭合", claim: null, requires: ["control_data_flow"] }]);
     const outcome = await runPlanRun(root, { taskRef: "TASK.CDF.RUNNER", executionId, changed: ["src/App.tsx"], faces });
     expect(outcome.ok).toBe(true);
     expect(outcome.result).toMatchObject({ obligations_total: 2, recorded: 2, passed: 2 });
@@ -526,7 +616,7 @@ describe("plan run", () => {
     const sameCohortReviewer = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", planFingerprint: pending.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "block-closeout" });
     expect(sameCohortReviewer.ok).toBe(false);
     expect(sameCohortReviewer.errors[0]?.code).toBe("REPLAY_REVIEWER_NOT_INDEPENDENT");
-    const reviewerExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.CDF.RUNNER", startedAt: "2026-09-23T02:00:00.000Z" });
+    const reviewerExecution = await ownedExecution("TASK.CDF.RUNNER", "qa", "independent-reviewer", "2026-09-23T02:00:00.000Z");
     const blockedReceipt = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.CDF.RUNNER", executionId: reviewerExecution.execution_id, reviewRange: "HEAD~1..HEAD", planFingerprint: pending.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "block-closeout" });
     expect(blockedReceipt.ok).toBe(true);
     expect(blockedReceipt.result.receipt_ref).toMatch(/^sha256:/);
@@ -967,7 +1057,7 @@ describe("Case D 回放（并行终验归属；PR-W2.3）", () => {
     for (const row of worker.result.rows) {
       expect((JSON.parse(readFileSync(grnPath(row.grn), "utf8")) as Record<string, unknown>)["evidence_purpose"]).toBe("worker_local");
     }
-    const finalExecution = await beginExecution(await createStore(root), { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T01:00:00.000Z" });
+    const finalExecution = await ownedExecution("TASK.STATIC.RUNNER", "qa", "verifier", "2026-09-23T01:00:00.000Z");
     const finalRun = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId: finalExecution.execution_id, changed: ["src/a.ts"], faces, verificationPurpose: "final_stable" });
     expect(finalRun.ok).toBe(true);
     for (const row of finalRun.result.rows) {
@@ -995,8 +1085,7 @@ describe("Case D 回放（并行终验归属；PR-W2.3）", () => {
 
     // 编排器在稳定窗口启动 final-stable cohort（独立 verification AGX；finalize 强制
     // final_stable 用途）→ 机器验证绿。
-    const store = await createStore(root);
-    const verifierExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T02:00:00.000Z" });
+    const verifierExecution = await ownedExecution("TASK.STATIC.RUNNER", "qa", "verifier", "2026-09-23T02:00:00.000Z");
     writeFileSync(
       join(root, "tsc-fake.mjs"),
       "process.stdout.write('src/a.ts' + String.fromCharCode(10) + 'src/b.ts');",
@@ -1016,7 +1105,7 @@ describe("Case D 回放（并行终验归属；PR-W2.3）", () => {
     }
 
     // 独立 replay 裁决 + receipt 回放 → 推进到 NEW_CLAIM_REQUIRED（机器验证链已过闸）。
-    const reviewerExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T03:00:00.000Z" });
+    const reviewerExecution = await ownedExecution("TASK.STATIC.RUNNER", "qa", "independent-reviewer", "2026-09-23T03:00:00.000Z");
     const receipt = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.STATIC.RUNNER", executionId: reviewerExecution.execution_id, reviewRange: "HEAD~1..HEAD", planFingerprint: finalized.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "allow-closeout" });
     expect(receipt.ok).toBe(true);
     const replayed = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: verifierExecution.execution_id, reviewRange: "HEAD~1..HEAD", replayReceipt: receipt.result.receipt_ref as string, changed: ["src/a.ts"], faces });
@@ -1091,7 +1180,7 @@ async function w5Fixture(
   scenarios: unknown[],
   manifestStaticRef = "react:src/App.tsx:1:1:onClick",
 ): Promise<string> {
-  const executionId = await fixture();
+  const executionId = await fixture("TASK.W5.JUDGE", [{ criterion: "保存后重读可见 + seam 双腿语义一致", claim: null, requires: ["control_data_flow"], scenarios }]);
   writeFileSync(join(root, "cdf-runtime-v2-fake.mjs"), W5_V2_FAKE);
   // v1 fake 的 task_ref/静态 ref 对齐 W5 任务（normalize 的 subject 对账与 manifest
   // 对账都要求同源——fixture() 的 TASK.CDF.RUNNER 报文不适用本 describe）。
@@ -1125,13 +1214,6 @@ async function w5Fixture(
     registry.bindings.push(runtimeBinding(id, seamRole, command));
   }
   writeFileSync(registryPath, JSON.stringify(registry));
-  const store = await createStore(root);
-  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
-    id: "TASK.W5.JUDGE", kind: "task_object", axisProfile: "task_default",
-    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
-    titleZh: "W5 runtime 义务判定", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
-    payload: { intent: "W5 runtime 场景义务判定", class_scan_result: { scope: "src/**", hits: 1, fixed_count: 1, regression_case_ref: "GRN-W5" }, acceptance: [{ criterion: "保存后重读可见 + seam 双腿语义一致", claim: null, requires: ["control_data_flow"], scenarios }] },
-  } as never }] });
   return executionId;
 }
 
@@ -1157,8 +1239,10 @@ describe("W5 runtime 场景义务判定（编排层 cap——工具真实 verdic
     // 升级 v2 全链（trace 五段 + visible=true）：oracle 义务满足 → 行绿（静态复用）。
     const registryPath = join(root, ".pomaster", "tools", "bindings.json");
     const registry = JSON.parse(readFileSync(registryPath, "utf8")) as { bindings: ToolBindingRecord[] };
-    const leg = registry.bindings.find((row) => row.id === "project.w5.runtime.leg");
-    leg!.execution = { command: "node cdf-runtime-v2-fake.mjs --preset ok", cwd: ".", probe_manifest: "cdf-runtime-probe.json" };
+    expect(registry.bindings.some((row) => row.id === "project.w5.runtime.leg")).toBe(true);
+    registry.bindings = registry.bindings.map((row) => row.id === "project.w5.runtime.leg"
+      ? { ...row, execution: { command: "node cdf-runtime-v2-fake.mjs --preset ok", cwd: ".", probe_manifest: "cdf-runtime-probe.json" } }
+      : row);
     writeFileSync(registryPath, JSON.stringify(registry));
     const second = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
     expect(second.ok).toBe(true);
@@ -1222,8 +1306,10 @@ describe("W5 runtime 场景义务判定（编排层 cap——工具真实 verdic
     // 修复（real 腿落库语义对齐 mock）：双腿一致 → seam 义务满足，两行绿。
     const registryPath = join(root, ".pomaster", "tools", "bindings.json");
     const registry = JSON.parse(readFileSync(registryPath, "utf8")) as { bindings: ToolBindingRecord[] };
-    const realLeg = registry.bindings.find((row) => row.id === "project.w5.runtime.real");
-    realLeg!.execution = { command: "node cdf-runtime-v2-fake.mjs --preset ok --seam-persisted true", cwd: ".", probe_manifest: "cdf-runtime-probe.json" };
+    expect(registry.bindings.some((row) => row.id === "project.w5.runtime.real")).toBe(true);
+    registry.bindings = registry.bindings.map((row) => row.id === "project.w5.runtime.real"
+      ? { ...row, execution: { command: "node cdf-runtime-v2-fake.mjs --preset ok --seam-persisted true", cwd: ".", probe_manifest: "cdf-runtime-probe.json" } }
+      : row);
     writeFileSync(registryPath, JSON.stringify(registry));
     const repaired = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
     expect(repaired.ok).toBe(true);
@@ -1310,8 +1396,7 @@ describe("plan run --requalify：只重跑过期 / 缺失义务，仍新鲜的�
   const GOOD_ESLINT = "process.stdout.write(JSON.stringify([{filePath:'src/a.ts',messages:[],errorCount:0,warningCount:0,fatalErrorCount:0}]));";
 
   async function secondExecution(role: "orchestrator" | "qa" = "orchestrator"): Promise<string> {
-    const store = await createStore(root);
-    return (await beginExecution(store, { role, runtime: "claude-code", identityKind: "interactive", startedAt: "2026-10-31T00:00:00.000Z" })).execution_id;
+    return (await ownedExecution(TASK_REF, role, "verifier", "2026-10-31T00:00:00.000Z")).execution_id;
   }
 
   /** AGX-1：TYPECHECK passed、LINT 工具输出畸形 → not_run；随后修好工具（源码不动）。 */

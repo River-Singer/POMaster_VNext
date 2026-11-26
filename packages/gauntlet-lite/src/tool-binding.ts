@@ -33,8 +33,8 @@
  * 已锁（vocab-lock presentation_axes.tool_detection_status），本模块零扩值。
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { isAbsolute, join as pathJoin, resolve } from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
+import { isAbsolute, join as pathJoin, relative, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import type {
   DetectionResult,
@@ -54,7 +54,14 @@ import {
   createBuildAdapter,
   VITEST_TOOL_ID,
 } from "./build-adapter.js";
+import { SUREFIRE_FORMAT, SUREFIRE_PARSER_REF, SUREFIRE_TOOL_ID } from "./maven-leg.js";
 import { PYTEST_TOOL_ID } from "./pytest-leg.js";
+import { createMutationAdapter } from "./mutation-adapter.js";
+import { MUTATION_GATE_NAME, MUTATION_GATE_DEF } from "./mutation-leg.js";
+import { createArchitectureAdapter, ARCHITECTURE_GATE_NAME, ARCHITECTURE_GATE_DEF } from "./architecture-adapter.js";
+import { buildPitCommand, detectPit, PIT_TOOL_ID, PIT_METRIC_DIALECT } from "./pit-leg.js";
+import { buildArchUnitCommand, detectArchUnit, ARCHUNIT_TOOL_ID, ARCHUNIT_METRIC_DIALECT } from "./archunit-leg.js";
+import { isJvmMavenInvoker, type JvmReportIO } from "./jvm-report.js";
 import {
   createLintAdapter,
   createTypecheckAdapter,
@@ -164,10 +171,12 @@ export interface TrustedBindingAdapterDecl {
   /** gateAdapters 键形（状态机呈现/来源留痕用）。 */
   readonly adapterKey: string;
   /** 受信执行半边（prepare/run/normalize——detect 走 detectorFor 单工具口径）。 */
-  readonly createAdapter: () => Pick<
+  readonly createAdapter?: () => Pick<
     GateAdapter<DetectionResult, GatePlan, ToolRunOutput>,
     "prepare" | "run" | "normalize"
   >;
+  /** Native four-phase adapters with non-BUILD plan/output types, not a new judge. */
+  readonly runBinding?: (binding: ToolBindingRecord, context: BindingGateContext, deps: BindingGateDeps) => BindingGateOutcome;
   /** 能力声明闭包（binding.capabilities ⊆ 本集才算 validated；宁少勿多——W1 wired 最小诚实声明）。 */
   readonly capabilities: readonly string[];
   /** 报告格式闭包（report_contract.format ∈ 本集）。 */
@@ -192,19 +201,21 @@ const BUILD_DECL: TrustedBindingAdapterDecl = {
   // 能力声明 = W1 wired 闭环最小诚实集（load_test 等归 PERFORMANCE 专项 adapter——
   // 冒领即防线失效；扩声明走受信注册表修订，禁绑定侧自扩）。
   capabilities: ["unit_behavior"],
-  accepted_formats: ["vitest-json-stdout", "pytest-junit-xml"],
+  accepted_formats: ["vitest-json-stdout", "pytest-junit-xml", SUREFIRE_FORMAT],
   accepted_parser_refs: [
     "builtin.gauntlet-lite.build/vitest-json",
     "builtin.gauntlet-lite.build/pytest-junit",
+    SUREFIRE_PARSER_REF,
   ],
   accepted_metric_dialects: ["test:assertion_count"],
-  accepted_tool_ids: [VITEST_TOOL_ID, PYTEST_TOOL_ID],
+  accepted_tool_ids: [VITEST_TOOL_ID, PYTEST_TOOL_ID, SUREFIRE_TOOL_ID],
   detectorFor: (toolId) => {
-    if (toolId !== VITEST_TOOL_ID && toolId !== PYTEST_TOOL_ID) {
+    if (toolId !== VITEST_TOOL_ID && toolId !== PYTEST_TOOL_ID && toolId !== SUREFIRE_TOOL_ID) {
       return null;
     }
     return (facts) => {
       const detection = createBuildAdapter().detect(facts);
+      if (toolId === SUREFIRE_TOOL_ID) return detection.maven;
       return toolId === VITEST_TOOL_ID ? detection.vitest : detection.pytest;
     };
   },
@@ -279,6 +290,23 @@ const CONTROL_DATA_FLOW_RUNTIME_DECL: TrustedBindingAdapterDecl = {
     : null,
 };
 
+export const MUTATION_BINDING_ADAPTER_REF = "builtin.gauntlet-lite.mutation";
+export const ARCHITECTURE_BINDING_ADAPTER_REF = "builtin.gauntlet-lite.architecture";
+const MUTATION_DECL: TrustedBindingAdapterDecl = {
+  ref: MUTATION_BINDING_ADAPTER_REF, adapterKey: "mutation", runBinding: runJvmBinding,
+  capabilities: ["unit_behavior"], accepted_formats: ["pit-xml"],
+  accepted_parser_refs: ["builtin.gauntlet-lite.mutation/pit-xml"],
+  accepted_metric_dialects: [PIT_METRIC_DIALECT], accepted_tool_ids: [PIT_TOOL_ID],
+  detectorFor: tool => tool === PIT_TOOL_ID ? detectPit : null,
+};
+const ARCHITECTURE_DECL: TrustedBindingAdapterDecl = {
+  ref: ARCHITECTURE_BINDING_ADAPTER_REF, adapterKey: "architecture", runBinding: runJvmBinding,
+  capabilities: ["dependency_check"], accepted_formats: [SUREFIRE_FORMAT],
+  accepted_parser_refs: ["builtin.gauntlet-lite.architecture/archunit-junit"],
+  accepted_metric_dialects: [ARCHUNIT_METRIC_DIALECT], accepted_tool_ids: [ARCHUNIT_TOOL_ID],
+  detectorFor: tool => tool === ARCHUNIT_TOOL_ID ? detectArchUnit : null,
+};
+
 /**
  * 受信 adapter 注册表（adapter_ref → 声明）。增长通道 = 发行包代码 + schema 23
  * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。W3-S2 起含 TS 族双
@@ -286,6 +314,8 @@ const CONTROL_DATA_FLOW_RUNTIME_DECL: TrustedBindingAdapterDecl = {
  */
 export const TRUSTED_BINDING_ADAPTERS: Readonly<Record<string, TrustedBindingAdapterDecl>> = {
   [BUILD_DECL.ref]: BUILD_DECL,
+  [MUTATION_DECL.ref]: MUTATION_DECL,
+  [ARCHITECTURE_DECL.ref]: ARCHITECTURE_DECL,
   [TYPECHECK_DECL.ref]: TYPECHECK_DECL,
   [LINT_DECL.ref]: LINT_DECL,
   [CONTROL_DATA_FLOW_DECL.ref]: CONTROL_DATA_FLOW_DECL,
@@ -354,6 +384,10 @@ export function bindingAdapterContractMatches(
       );
     }
   }
+  if (binding.adapter_ref === MUTATION_BINDING_ADAPTER_REF || binding.adapter_ref === ARCHITECTURE_BINDING_ADAPTER_REF) {
+    const mutation = binding.adapter_ref === MUTATION_BINDING_ADAPTER_REF;
+    if (binding.gate !== (mutation ? MUTATION_GATE_NAME : ARCHITECTURE_GATE_NAME) || binding.gate_def !== (mutation ? MUTATION_GATE_DEF : ARCHITECTURE_GATE_DEF) || binding.report_contract?.parser_version !== "0.1.0") reasons.push("JVM binding gate/gate_def/parser version differs from the native adapter contract");
+  }
   if (reasons.length === 0) {
     return { ok: true };
   }
@@ -416,12 +450,14 @@ export interface BindingGateContext {
   readonly subjectId?: string;
   readonly denominatorRefs?: readonly GateDenominatorRefInput[];
   readonly trigger?: GatePolicy["trigger"];
+  readonly gateTier?: GatePolicy["gateTier"];
 }
 
 /** 测试/编排注入面（缺省 = 真实 PATH 探针 + adapter 默认 spawn）。 */
 export interface BindingGateDeps {
   readonly spawnFn?: SpawnFn;
   readonly executableProbe?: ExecutableProbeFn;
+  readonly jvmReportIO?: JvmReportIO;
 }
 
 export interface BindingGateOutcome {
@@ -447,6 +483,47 @@ function resolveCommandLine(execution: ToolBindingExecution): string {
     "绑定 execution 缺 command 且缺 argv（schema 23 anyOf 违例——执行合同缺席禁猜测）",
     "补齐 execution.command（单串词形）或 execution.argv（SP-W1-h 结构化词形）后重试",
   );
+}
+
+/** Adapt only binding execution inputs; native prepare/run/normalize retain all judgment. */
+function runJvmBinding(binding: ToolBindingRecord, context: BindingGateContext, deps: BindingGateDeps): BindingGateOutcome {
+  const command = resolveCommandLine(binding.execution);
+  const rejected = (message: string): never => { throw new GateAdapterError("runner_not_ready", message, "Use a Maven invoker and matching local gate config; do not erase pinned goals or report scope"); };
+  if (!isJvmMavenInvoker(command)) return rejected("JVM binding command must be a Maven invoker, not arbitrary goals or shell composition");
+  const root = resolve(context.projectRoot);
+  const cwd = resolve(root, binding.execution.cwd ?? ".");
+  const rel = relative(realpathSync(root), realpathSync(cwd));
+  if (rel === ".." || rel.startsWith("../") || rel.startsWith("..\\") || isAbsolute(rel)) return rejected("JVM binding cwd escapes the project");
+  const policy: GatePolicy = { grn: context.grn, ranAtSeq: context.ranAtSeq, expectedToolVersion: binding.tool_version_anchor,
+    ...(context.trigger !== undefined ? { trigger: context.trigger } : {}),
+    ...(context.gateTier !== undefined ? { gateTier: context.gateTier } : {}),
+    ...(binding.execution.timeout_ms !== undefined ? { timeoutMs: binding.execution.timeout_ms } : {}) };
+  const scope: GateScope = { projectRoot: cwd, ...(context.subjectId !== undefined ? { subjectId: context.subjectId } : {}), ...(context.denominatorRefs !== undefined ? { denominatorRefs: context.denominatorRefs } : {}) };
+  const spawn = binding.execution.env_allowlist !== undefined && binding.execution.env_allowlist.length > 0 ? allowlistSpawn(binding.execution.env_allowlist) : deps.spawnFn;
+  const normalizeContext = { declaredVerdict: null, isFixture: context.subjectId?.startsWith("TEST.") ?? false };
+  let plan: GatePlan;
+  let record: GateResultRecord;
+  if (binding.tool === PIT_TOOL_ID) {
+    const adapter = createMutationAdapter({ executableProbe: deps.executableProbe, reportIO: deps.jvmReportIO });
+    let native = adapter.prepare(scope, policy);
+    if (native.absenceKind === null) {
+      if (native.runner !== "pit" || native.pitVersion === undefined) return rejected("Selected PIT binding cannot execute a sibling mutation runner");
+      native = { ...native, command: buildPitCommand(command, native.changedFiles, native.pitVersion, native.reportPath) };
+    } else native = { ...native, tool: binding.tool };
+    record = adapter.normalize(adapter.run(native, spawn), normalizeContext);
+    plan = { ...native, runner: "maven", cwd };
+  } else {
+    const adapter = createArchitectureAdapter({ archunitExecutableProbe: deps.executableProbe, archunitReportIO: deps.jvmReportIO });
+    let native = adapter.prepare(scope, policy);
+    if (native.declared) {
+      if (native.mode !== "archunit" || !native.archunitPlan) return rejected("Selected ArchUnit binding cannot execute a sibling architecture runner");
+      native = { ...native, archunitPlan: { ...native.archunitPlan, command: buildArchUnitCommand(command, native.archunitPlan.architectureTests) } };
+    } else native = { ...native, tool: binding.tool };
+    record = adapter.normalize(adapter.run(native, spawn), normalizeContext);
+    plan = { ...native, runner: "maven", cwd, command: native.archunitPlan?.command ?? "", timeoutMs: native.archunitPlan?.timeoutMs ?? policy.timeoutMs ?? 600_000 };
+  }
+  if (record.tool !== binding.tool || record.gate !== binding.gate || record.gateDef !== binding.gate_def) return rejected("JVM binding result identity differs from selected tool/gate");
+  return { binding_id: binding.id, plan, record: { ...record, scopeNote: `${record.scopeNote ?? ""}; ${BINDING_ANNOTATION_PREFIX}${binding.id}` } };
 }
 
 /**
@@ -479,6 +556,7 @@ export function runBindingGate(
     );
   }
 
+  if (decl.runBinding !== undefined) return decl.runBinding(binding, context, deps);
   const commandLine = resolveCommandLine(binding.execution);
   const executable = binding.execution.executable ?? firstCommandToken(commandLine);
   const probe = (deps.executableProbe ?? platformExecutableProbe)(executable);
@@ -490,6 +568,7 @@ export function runBindingGate(
     );
   }
 
+  if (decl.createAdapter === undefined) throw new GateAdapterError("runner_not_ready", "Trusted binding has no execution pipeline", "Register a native adapter pipeline first");
   const adapter = decl.createAdapter();
   const policy: GatePolicy = {
     grn: context.grn,

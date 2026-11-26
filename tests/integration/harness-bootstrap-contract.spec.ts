@@ -18,7 +18,7 @@ import {
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AGENTS_MD_RELATIVE,
   CLAUDE_EXEC_GUARD_COMMAND,
@@ -29,6 +29,11 @@ import {
 } from "@pomaster/cli";
 import type { CliEnvelope } from "@pomaster/cli";
 import { envelopeOf, runJsonStep, type StepRecord } from "./fixture-chain-lib.js";
+import { createTrustedCliFixture, expectTrustedCliInstallation, type TrustedCliFixture } from "./trusted-cli-fixture.js";
+
+let trustedCli: TrustedCliFixture;
+beforeAll(() => { trustedCli = createTrustedCliFixture(); });
+afterAll(() => { trustedCli?.dispose(); });
 
 let root: string;
 
@@ -209,7 +214,7 @@ function runInstalledHook(command: string, filePath: string): { readonly status:
     }),
     encoding: "utf8",
     shell: true,
-    env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    env: trustedCli.env,
   });
   return { status: run.status, stderr: run.stderr ?? "" };
 }
@@ -350,6 +355,7 @@ describe("fresh external project harness bootstrap contract", () => {
     const init = await runJsonStep(root, ["init"]);
     expect(init.code).toBe(0);
     const command = installedPreToolUseCommand();
+    expectTrustedCliInstallation(trustedCli, root);
 
     writeProjectFile("src/Button.tsx", "export const Button = () => null;\n");
     writeProjectFile("src/Outside.tsx", "export const Outside = () => null;\n");

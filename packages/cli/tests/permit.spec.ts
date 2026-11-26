@@ -11,7 +11,7 @@
  *   过滤缺省不静默、台账/journal 损坏 → SCHEMA_INVALID。
  * 确定性纪律：TTL 只按 seq 拍判定（append_denominator 合法 tx 推 seq），禁墙钟。
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -552,6 +552,43 @@ describe("permit steal（显式接管）", () => {
 // ============================================================
 
 describe("permit list（台账纯读）", () => {
+  it.each(["permits.json", "journal.jsonl"])("DF-DISPATCH-METADATA unreadable %s is not absent; list remains read-only", async name => {
+    await seedStore();
+    await issueDashboard();
+    const path = join(root, ".pomaster", "state", name);
+    const backup = `${path}.saved`;
+    const original = readFileSync(path);
+    const indexPath = join(root, ".pomaster", "state", "truth-index.json");
+    const indexBefore = readFileSync(indexPath);
+    renameSync(path, backup);
+    mkdirSync(path);
+    try {
+      const outcome = await runPermitList(root, {});
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+      expect(outcome.errors[0]?.hint).toContain(name);
+      expect(readFileSync(backup)).toEqual(original);
+      expect(readFileSync(indexPath)).toEqual(indexBefore);
+    } finally {
+      rmSync(path, { recursive: true });
+      renameSync(backup, path);
+    }
+    expect((await runPermitList(root, {})).result.permits).toHaveLength(1);
+    expect(readFileSync(path)).toEqual(original);
+  });
+
+  it.each(["missing", "empty"])("DF-DISPATCH-METADATA legitimately %s ledger remains an empty list", async state => {
+    await seedStore();
+    const path = join(root, ".pomaster", "state", "permits.json");
+    if (state === "missing") rmSync(path);
+    const indexPath = join(root, ".pomaster", "state", "truth-index.json");
+    const before = readFileSync(indexPath);
+    const outcome = await runPermitList(root, {});
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
+    expect(outcome.result.permits).toEqual([]);
+    expect(readFileSync(indexPath)).toEqual(before);
+  });
+
   it("status/beats_remaining 机械派生：active 与 expired 并存、过滤缺省不静默", async () => {
     await seedStore();
     await issueDashboard({ changeRef: "CHANGE.MIGRATION_001" });

@@ -268,10 +268,12 @@ describe("威胁类 4：部分写入失败伪装成功（无半写状态、不�
     const journalPath = join(root, ".pomaster", "state", "journal.jsonl");
     const indexBefore = readFileSync(indexPath, "utf8");
     const journalBefore = readFileSync(journalPath, "utf8");
-    // applyTransaction staged 写入集 = [正文…, index]（A2 journal 纪律后 journal 不在
-    // 批内——TX_APPLIED 在 index 提交后才 appendLine）；同进程 pid 预先占住第 2 个
-    //（index 的）tmp 路径。
-    const planted = `${indexPath}.tmp-${process.pid}-1`;
+    const dashboardPath = join(root, ".pomaster", "truth", "objects", "page-surface", "page.dashboard.json");
+    const dashboardBefore = readFileSync(dashboardPath, "utf8");
+    // commitAdmission 逐文件调用 executeWrites([write])：每次 tmp 序号均为 0。
+    // 正文已 swap 后才到 index；占住实际 index tmp，验证 admission 回滚已写正文。
+    // journal 在全部文件提交后才追加，staged 失败不能留下 TX_APPLIED。
+    const planted = `${indexPath}.tmp-${process.pid}-0`;
     mkdirSync(planted);
     try {
       await expect(
@@ -292,14 +294,18 @@ describe("威胁类 4：部分写入失败伪装成功（无半写状态、不�
             },
           ],
         }),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ code: "EISDIR", path: planted });
       // 零字节变化：index/正文原样；journal 亦原样——A2 journal 纪律下 journal 不在
       // staged 批，staged 失败时 TX_APPLIED 零追加（正向断言，非仅「恰好没写」）。
       expect(readFileSync(indexPath, "utf8")).toBe(indexBefore);
       expect(readFileSync(journalPath, "utf8")).toBe(journalBefore);
       expect(journalEvents(root).filter((event) => event["type"] === "TX_APPLIED")).toHaveLength(1);
       expect(existsSync(join(root, ".pomaster", "truth", "objects", "page-surface", "page.settings.json"))).toBe(false);
-      expect(readFileSync(join(root, ".pomaster", "truth", "objects", "page-surface", "page.dashboard.json"), "utf8")).toContain("仪表盘");
+      expect(readFileSync(dashboardPath, "utf8")).toBe(dashboardBefore);
+      const index = await loadTruthIndex(store);
+      expect(index.objects.map((object) => object.id)).toEqual(["PAGE.DASHBOARD"]);
+      expect(index.generation.seq).toBe(1);
+      expect(existsSync(join(root, ".pomaster", "state", "pending-admission.json"))).toBe(false);
     } finally {
       if (existsSync(planted)) {
         rmSync(planted, { recursive: true, force: true });

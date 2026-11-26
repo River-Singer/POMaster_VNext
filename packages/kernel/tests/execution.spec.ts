@@ -24,6 +24,7 @@ import {
   appendImplementationHandoff,
   assertExecutionAttachable,
   beginExecution,
+  issuePermit,
   endExecution,
   EXECUTIONS_RELATIVE,
   EXECUTION_ID_PATTERN,
@@ -35,7 +36,12 @@ import {
   type Store,
 } from "@pomaster/kernel";
 import { pathsOf } from "../src/paths.js";
-import { AGENT, makeStore } from "./helpers.js";
+import { AGENT, gid, makeStore, pageEnvelope } from "./helpers.js";
+
+async function beginPermittedExecution(store: Store, input: Parameters<typeof beginExecution>[1]): Promise<ExecutionRecord> {
+  const permit = await issuePermit(store, { subjectIds: [gid("PAGE.DASHBOARD"), gid("PAGE.OTHER")], requestedBy: AGENT });
+  return beginExecution(store, { ...input, permitIds: [permit.permitRef] });
+}
 
 /**
  * 并发窗口注入器（store.spec.ts 同款 vi.mock 委托式 hook）：默认 null = 纯透传
@@ -376,7 +382,7 @@ describe("record op 透传（执行身份贯穿证据链 kernel 闸门）", () =
 
   it("record_claim 携带已登记 execution_id → 落盘 claim 带 execution_id 键（canonical 键序位：clm 之后）", async () => {
     await seedObject();
-    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    const record = await beginPermittedExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
     await applyTransaction(store, {
       ops: [{
         op: "record_claim",
@@ -426,7 +432,7 @@ describe("record op 透传（执行身份贯穿证据链 kernel 闸门）", () =
 describe("事务级 execution 盖章（Transaction.executionId → TX_APPLIED 事件）", () => {
   it("携带已登记 execution_id → TX_APPLIED 事件带 execution_id 键（§25.4 事务级审计兑现）", async () => {
     await seedObject();
-    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    const record = await beginPermittedExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
     await applyTransaction(store, {
       ops: [
         {
@@ -495,8 +501,8 @@ describe("事务级 execution 盖章（Transaction.executionId → TX_APPLIED �
 
   it("盖章不进 inputs_fingerprint：同 ops 重放换身份 → 仍幂等短路（provenance ≠ 变更输入；字节稳定纪律不破）", async () => {
     await seedObject();
-    const first = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
-    const second = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:01:00.000Z" });
+    const first = await beginPermittedExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    const second = await beginPermittedExecution(store, { ...BASE, startedAt: "2026-08-30T00:01:00.000Z" });
     const tx = {
       ops: [
         {
@@ -523,7 +529,7 @@ describe("事务级 execution 盖章（Transaction.executionId → TX_APPLIED �
 
   it("已封口执行的盖章允许（事后补录合法通路——与 record op 同裁定，不伪造时间围栏）", async () => {
     await seedObject();
-    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    const record = await beginPermittedExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
     await endExecution(store, record.execution_id);
     // 盖章事务须有真实变化（零变化事务零写入零事件——GOLDEN-L8-4，无事件可盖）。
     await applyTransaction(store, {
@@ -554,6 +560,8 @@ describe("事务级 execution 盖章（Transaction.executionId → TX_APPLIED �
 // ============================================================
 
 async function seedObject(): Promise<void> {
+  // Creation is predevelopment fixture setup, not an unproven governed worker write.
+  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.OTHER"), titleZh: "Fixture baseline" }) as never }] });
   await applyTransaction(store, {
     ops: [
       {

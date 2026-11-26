@@ -21,6 +21,7 @@ import {
   applyTransaction,
   attachSession,
   beginExecution,
+  issuePermit,
   detectGatekeeperDrift,
   GATEKEEPER_THRESHOLD_DEFAULT,
   GATEKEEPER_WINDOW_DAYS_DEFAULT,
@@ -88,7 +89,8 @@ function gateResultFixture(grn: string, verdict: string): Record<string, unknown
 }
 
 async function beginAt(startedAt: string): Promise<string> {
-  const record = await beginExecution(store, { ...BASE, startedAt });
+  const permit = await issuePermit(store, { subjectIds: [gid("PAGE.DASHBOARD")], requestedBy: { actorType: "agent", actor: "fixture", selfAttested: true } });
+  const record = await beginExecution(store, { ...BASE, startedAt, permitIds: [permit.permitRef] });
   return record.execution_id;
 }
 
@@ -206,8 +208,9 @@ describe("分母与对位", () => {
   it("proposal 与 ALLOW 分属两个 execution（分身纪律成立）→ 无漂移", async () => {
     await seedObject();
     await attachSession(store, { sessionKey: "claude_a", harness: "claude-code", now: T0 });
+    const permit = await issuePermit(store, { subjectIds: [gid("PAGE.DASHBOARD")], requestedBy: { actorType: "agent", actor: "fixture", selfAttested: true } });
     const proposer = await beginExecution(store, {
-      ...BASE, sessionKey: "claude_a", harness: "claude-code", startedAt: "2026-08-30T08:00:00.000Z",
+      ...BASE, permitIds: [permit.permitRef], sessionKey: "claude_a", harness: "claude-code", startedAt: "2026-08-30T08:00:00.000Z",
     });
     await attachSession(store, { sessionKey: "codex_b", harness: "codex", now: T0 });
     const gatekeeper = await beginExecution(store, {

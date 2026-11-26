@@ -126,16 +126,29 @@ function profileJson(profile: ArchitectureProfile): string {
   return `${JSON.stringify(profile, null, 2)}\n`;
 }
 
-/** Write both the machine profile and its human governance projection, seed-once. */
-export async function writeArchitectureProfile(
+interface ArchitectureProfileOptions {
+  readonly source?: ArchitectureProfile["source"];
+  readonly confirmedTaskRef?: string;
+}
+
+type ArchitectureProfilePreflight =
+  | {
+      readonly ok: true;
+      readonly profile: ArchitectureProfile;
+      readonly targets: readonly {
+        readonly relative: string;
+        readonly content: string;
+        readonly value: string | null;
+      }[];
+    }
+  | Extract<ArchitectureProfileWrite, { readonly ok: false }>;
+
+/** Read-only, exact-content check of both seed-once targets before any init writes. */
+export async function preflightArchitectureProfile(
   rootDir: string,
   id: ArchitectureId,
-  files: InitFileReport[],
-  options: {
-    readonly source?: ArchitectureProfile["source"];
-    readonly confirmedTaskRef?: string;
-  } = {},
-): Promise<ArchitectureProfileWrite> {
+  options: ArchitectureProfileOptions = {},
+): Promise<ArchitectureProfilePreflight> {
   const profile = architectureProfile(id, options.source, options.confirmedTaskRef);
   const definition = architectureDefinition(id);
   const targets = [
@@ -160,7 +173,19 @@ export async function writeArchitectureProfile(
       hint: "核对已有 profile 后重跑；需要换型时走显式治理变更，不让 init 静默覆盖。",
     };
   }
-  for (const { relative, content, value } of existing) {
+  return { ok: true, profile, targets: existing };
+}
+
+/** Write both projections, revalidating the same contract at the actual write boundary. */
+export async function writeArchitectureProfile(
+  rootDir: string,
+  id: ArchitectureId,
+  files: InitFileReport[],
+  options: ArchitectureProfileOptions = {},
+): Promise<ArchitectureProfileWrite> {
+  const preflight = await preflightArchitectureProfile(rootDir, id, options);
+  if (!preflight.ok) return preflight;
+  for (const { relative, content, value } of preflight.targets) {
     if (value === content) {
       files.push({ file: relative, action: "unchanged" });
       continue;
@@ -170,5 +195,5 @@ export async function writeArchitectureProfile(
     await writeFile(path, content, "utf8");
     files.push({ file: relative, action: "created" });
   }
-  return { ok: true, profile };
+  return { ok: true, profile: preflight.profile };
 }

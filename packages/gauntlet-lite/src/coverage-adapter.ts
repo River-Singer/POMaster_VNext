@@ -43,6 +43,7 @@ import type {
   SpawnFn,
 } from "./adapter-types.js";
 import { GAUNTLET_LITE_VERSION } from "./adapter-types.js";
+import { JACOCO_RUN_COMMAND, pomDeclaresJacoco } from "./maven-leg.js";
 import {
   DEFAULT_GATE_TIER,
   GATE_TIER_VALUES,
@@ -50,6 +51,8 @@ import {
 } from "./adapter-types.js";
 import {
   buildC8Command,
+  JACOCO_TOOL_ID,
+  JACOCO_METRIC_DIALECT,
   buildPytestCovCommand,
   c8ReportsDirAbsolute,
   COVERAGE_ADAPTER_TOOL_ID,
@@ -119,7 +122,7 @@ export interface CoverageCrapConfig {
 }
 
 export interface CoverageGateConfig {
-  readonly runner: "c8" | "pytest-cov";
+  readonly runner: "c8" | "pytest-cov" | "jacoco";
   /** c8 腿：被包裹的测试命令（必填）。 */
   readonly testCommand: string | null;
   /** pytest-cov 腿：--cov 目标（必填）。 */
@@ -213,10 +216,10 @@ export function readCoverageGateConfig(facts: DetectorFacts): CoverageConfigRead
     };
   }
   const runner = parsed["runner"];
-  if (runner !== "c8" && runner !== "pytest-cov") {
+  if (runner !== "c8" && runner !== "pytest-cov" && runner !== "jacoco") {
     return {
       ok: false,
-      reason: `${COVERAGE_GATE_CONFIG_FILE} 的 runner 必须是 "c8" 或 "pytest-cov"（D17：pytest-cov 先行；JaCoCo 属 Java 第二波 deferred）`,
+      reason: `${COVERAGE_GATE_CONFIG_FILE} 的 runner 必须是 "c8"、"pytest-cov" 或 "jacoco"（BE-1：JaCoCo/Java 第二波到货）`,
       installHint: `词形见：${COVERAGE_CONFIG_HINT}`,
     };
   }
@@ -406,6 +409,23 @@ export function createCoverageAdapter(
           ? { ...tool, reason: `coverage-gate.json 声明 runner=c8 但 ${tool.reason}` }
           : tool;
       }
+      if (read.config.runner === "jacoco") {
+        // BE-1：pom.xml 声明 jacoco = READY（配置驱动画，同 pytest 的 [tool.pytest] 口径）。
+        if (pomDeclaresJacoco(facts.projectRoot)) {
+          return {
+            status: "READY",
+            tool: JACOCO_TOOL_ID,
+            detectedVersion: null,
+            evidence: `${read.evidence}；pom.xml 声明 jacoco（mvn -B verify 产 target/site/jacoco/jacoco.xml）`,
+          };
+        }
+        return {
+          status: "NOT_INSTALLED",
+          tool: JACOCO_TOOL_ID,
+          reason: `coverage-gate.json 声明 runner=jacoco 但 pom.xml 未声明 jacoco 插件`,
+          installHint: "pom.xml 加 jacoco-maven-plugin（report goal 产 target/site/jacoco/jacoco.xml）后重跑",
+        };
+      }
       const tool = detectPytestCov(facts);
       if (tool.status === "READY") {
         return {
@@ -486,8 +506,8 @@ export function createCoverageAdapter(
       const thresholds = config.thresholds ?? resolveCoverageProvisionalThresholdsForTier(tier);
       const thresholdsProvisional = config.thresholds === null;
       const metricDialect =
-        runner === "c8" ? C8_METRIC_DIALECT : PYTEST_COV_METRIC_DIALECT;
-      const tool = runner === "c8" ? C8_TOOL_ID : PYTEST_COV_TOOL_ID;
+        runner === "c8" ? C8_METRIC_DIALECT : runner === "jacoco" ? JACOCO_METRIC_DIALECT : PYTEST_COV_METRIC_DIALECT;
+      const tool = runner === "c8" ? C8_TOOL_ID : runner === "jacoco" ? JACOCO_TOOL_ID : PYTEST_COV_TOOL_ID;
       const coverageReportPath = resolveCoverageReportPath(runner, config.coverageReport);
       const planBase = {
         tool,
@@ -540,6 +560,38 @@ export function createCoverageAdapter(
           versionProbeCommand: C8_VERSION_PROBE_COMMAND,
           executable: coverageLegExecutable("c8"),
           expectedToolVersion: policy.expectedToolVersion ?? null,
+        };
+      }
+
+      // —— jacoco 腿（BE-1）：pom.xml 声明 jacoco = READY（配置驱动画）；版本锚 policy 供给
+      //（mvn 版本无法从 pom.xml 可靠探测），run 期 mvn --version 实测对账（pytest 腿同款纪律）。
+      if (runner === "jacoco") {
+        const jacocoReady = pomDeclaresJacoco(resolved.projectRoot);
+        if (!jacocoReady) {
+          return {
+            ...planBase,
+            command: "",
+            versionProbeCommand: "",
+            executable: coverageLegExecutable("jacoco"),
+            expectedToolVersion: null,
+            absenceKind: "tool_absent",
+            absentReason: "pom.xml 未声明 jacoco 插件（jacoco:maven 的 report+xml 报告形态需要）",
+            absentHint: "pom.xml 加 jacoco-maven-plugin（report goal 产 target/site/jacoco/jacoco.xml）后重跑",
+          };
+        }
+        if (policy.expectedToolVersion === null || policy.expectedToolVersion === undefined) {
+          throw new Error(
+            "jacoco 腿就绪但 policy.expectedToolVersion 缺失（maven 版本无法从 pom.xml 可靠探测）——" +
+              '由编排层从 catalog/profile 锁供给 maven 版本锚（如 "3.9.6"）；run 期以 mvn --version 实测对账，失配降级 warning（pytest 腿同款纪律）',
+          );
+        }
+        return {
+          ...planBase,
+          toolVersion: policy.expectedToolVersion,
+          command: JACOCO_RUN_COMMAND,
+          versionProbeCommand: "mvn --version",
+          executable: coverageLegExecutable("jacoco"),
+          expectedToolVersion: policy.expectedToolVersion,
         };
       }
 

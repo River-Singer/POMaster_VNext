@@ -403,7 +403,22 @@ describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
     appendLineTo(".pomaster/baseline/backend/architecture.md", "- Owner 确认后又改一行");
     const supplement = await baselineGateAssessment(dir);
     expect(supplement.errors).toEqual([]);
-    expect(supplement.warnings.map((warning) => warning.code)).toEqual(["BASELINE_SUPPLEMENT_CHANGED"]);
+    const supplementWarnings = supplement.warnings.filter((warning) => warning.code === "BASELINE_SUPPLEMENT_CHANGED");
+    expect(supplementWarnings).toHaveLength(1);
+    expect(supplementWarnings[0]?.message).toContain("baseline/backend/architecture.md");
+    expect(supplementWarnings[0]?.message).toContain("权威取值未变，不计漂移");
+    // BE-4 内容发现只在 warnings 面披露；既有错误闸与补充变更告警保持。
+    const contentWarnings = supplement.warnings.filter((warning) => warning.code !== "BASELINE_SUPPLEMENT_CHANGED");
+    expect(contentWarnings.length).toBeGreaterThan(0);
+    const advisoryCodes = new Set([
+      "BASELINE_SECTION_INCOMPLETE",
+      "BASELINE_LAYER_DIRECTORY_UNDECLARED",
+      "BASELINE_SUPPLEMENT_STACK_SUGGESTION",
+    ]);
+    for (const warning of contentWarnings) {
+      expect(advisoryCodes.has(warning.code), warning.code).toBe(true);
+      expect(warning.hint).toContain("supplement suggestions are not adopted stack facts");
+    }
     // 改 H2 节取值 → 既有快照检出（BASELINE_DRIFT）。
     overwrite(
       ".pomaster/baseline/backend/architecture.md",

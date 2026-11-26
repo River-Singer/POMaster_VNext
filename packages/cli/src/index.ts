@@ -292,7 +292,23 @@ import { readHookRouteInput } from "./hook-input.js";
 import { runAlerts } from "./alerts.js";
 import { runSessionOverview } from "./session.js";
 import { runInspect } from "./inspect.js";
-import { runMaintain } from "./maintain.js";
+import { runMaintain, runTruthBodyAdvance, type BreakGlassSpec } from "./maintain.js";
+import * as ajvModule from "ajv";
+import type { ValidateFunction } from "ajv";
+import { GovernanceError, GovernedIdParseError, loadStoreReadOnly, parseGovernedId, truthBodyAdvanceSubject, type ObjectEnvelopeInput } from "@pomaster/kernel";
+import { keybindingSchema, TRUTH_BODY_KINDS } from "@pomaster/schemas";
+import { BOOTSTRAP_OWNER } from "./init.js";
+import { parseActorArgv, governanceErrorToCliError, parseErrorToCliError } from "./permit.js";
+import { runBindingsSync, runBindingsDeclare, bindingDeclarationSubject } from "./bindings.js";
+import { runFactAdd } from "./fact.js";
+import { bootstrapTrustedWrites } from "./trusted-write-bootstrap.js";
+export { runBindingsSync, runBindingsDeclare, bindingDeclarationSubject, prepareBindingDeclaration } from "./bindings.js";
+export type { BindingsSyncInput, BindingsSyncResult } from "./bindings.js";
+export { runFactAdd, prepareFactAdd, FACT_PERMIT_MAX_TTL_BEATS } from "./fact.js";
+export type { FactAddInput } from "./fact.js";
+export { bootstrapTrustedWrites } from "./trusted-write-bootstrap.js";
+export { breakGlassSubject, verifyBreakGlass, runTruthBodyAdvance } from "./maintain.js";
+export type { BreakGlassSpec } from "./maintain.js";
 import { runContextCompile, runContextExplain } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runPortabilityBootstrap, runPortabilityCheck } from "./portability.js";
@@ -360,12 +376,26 @@ import {
   runPresetPreview,
 } from "./preset-probe.js";
 import { runPlanCompile } from "./plan.js";
+import { runPlanScenarios } from "./plan-scenarios.js";
 import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import { runToolsInit } from "./tools-init.js";
-import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify } from "./trust.js";
+import { runSitBuild, runSitUp, runSitRun, runSitDown } from "./sit.js";
+import { runPerfBuild, runPerfRun } from "./perf.js";
+import { runSitZap } from "./zap.js";
+import { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, statementSubject } from "./trust.js";
+import { runSkillsCatalog, runSkillsRecommend, runSkillsAudit, runSkillsLock, runSkillsCheck } from "./skill-recommendations.js";
+import { skillCard, validatePin, type SkillPin } from "./skills-catalog.js";
+import { readLocalJson, record as localJsonRecord, SkillsError, skillsError } from "./skills-local.js";
+import { runAutopilotReviewView, runAutopilotReviewDraft, runAutopilotReviewDecide, projectReviewStatement, reviewError, type ProjectVerdict, type ReviewCandidate } from "./autopilot-review.js";
+import { runAutopilotReviewApply } from "./autopilot-closeout.js";
 import { runKickoffConfirm, runKickoffDraft, runKickoffStatus } from "./kickoff.js";
+import { runAutopilotBudgetRecord, runAutopilotDispatch, runAutopilotResume, runAutopilotStatus, runAutopilotSuspend } from "./autopilot-dispatch.js";
+import { runAutopilotEscalateList, runAutopilotEscalateRecord } from "./autopilot-escalate.js";
+import { runAutopilotHookInstall, runAutopilotHookStop, runAutopilotHookUninstall, runAutopilotRun } from "./autopilot-run.js";
+import { runAutopilotRevisionAdopt, runAutopilotRevisionAssess, runAutopilotStaleCheck } from "./autopilot-revision.js";
+import { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise } from "./qa-cases.js";
 import { attachToolchain, runToolsPrepare } from "./toolchain.js";
 import {
   runBrainstormDecide,
@@ -426,6 +456,9 @@ export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { resolveCliVersion } from "./version.js";
 export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
+export * from "./perf.js";
+export * from "./zap.js";
+export * from "./sit.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
 // 裁决 19③（Owner 2026-09-09，owner-adjudications.md#裁决19）TRIAGE 引擎物理删除：
@@ -1391,6 +1424,20 @@ export {
 export { packageRunner, runToolsInit } from "./tools-init.js";
 export { runTrustEnroll, runTrustRequest, runTrustSign, runTrustStatus, runTrustVerify, requireHumanSignoff, loadRegistry, SIGNOFF_KINDS } from "./trust.js";
 export { runKickoffConfirm, runKickoffDraft, runKickoffStatus, KICKOFF_SHEET_SCHEMA, KICKOFF_CURRENT_SCHEMA } from "./kickoff.js";
+export { runQaCasesCheck, runQaCasesDraft, runQaCasesFreeze, runQaCasesRevise, QA_CASES_SCHEMA, QA_CURRENT_SCHEMA, QA_CATEGORIES, deriveCases, reviewSources, casesFingerprint } from "./qa-cases.js";
+export { runAutopilotEscalateRecord, runAutopilotEscalateList, ESCALATION_SCHEMA, ESCALATION_CONTEXTS } from "./autopilot-escalate.js";
+export { runAutopilotDispatch, runAutopilotStatus, runAutopilotSuspend, runAutopilotResume, runAutopilotBudgetRecord, DISPATCH_SCHEMA, AUTOPILOT_STOP_CONSECUTIVE_FAILURES } from "./autopilot-dispatch.js";
+export { runAutopilotRun, runAutopilotHookStop, runAutopilotHookInstall, runAutopilotHookUninstall, ROUND_SCHEMA, AUTOPILOT_DRIVERS, ROUND_DEFAULT_TIMEOUT_SECONDS, buildRoundPrompt } from "./autopilot-run.js";
+export { runAutopilotRevisionAssess, runAutopilotRevisionAdopt, runAutopilotStaleCheck, REVISION_SCHEMA, assessRevisionDiff } from "./autopilot-revision.js";
+export { runSkillsCatalog, runSkillsRecommend, runSkillsAudit, runSkillsLock, runSkillsCheck } from "./skill-recommendations.js";
+export type { SkillsRecommendInput, SkillsRecommendResult, SkillProjectContext, SkillRecommendation } from "./skill-recommendations.js";
+export type { SkillCard, SkillPin } from "./skills-catalog.js";
+export type { SkillFile, SkillFinding, SkillAuditReceipt, SkillsAuditInput, SkillsAuditResult, SkillDifference, SkillCheck } from "./skill-integrity.js";
+export { runAutopilotReviewView, runAutopilotReviewDraft, runAutopilotReviewDecide, projectReviewStatement, readReviewBlob, validateProjectReview, PROJECT_REVIEW_SCHEMA, PROJECT_DECISION_SCHEMA } from "./autopilot-review.js";
+export type { ReviewViewResult, ProjectVerdict, ReviewCandidate, PreparedReviewCandidate, ReviewTask, ProjectReviewSnapshot, ProjectDecision, ReviewDraftInput, ReviewDraftResult, ReviewDecisionResult } from "./autopilot-review.js";
+export { runAutopilotReviewApply } from "./autopilot-closeout.js";
+export type { ProjectApplyResult } from "./autopilot-closeout.js";
+export { statementSubject } from "./trust.js";
 export { verifySshsig, parsePublicKeyLine } from "./sshsig.js";
 export { attachToolchain, runToolsPrepare, loadToolchainReceipt, TOOLCHAIN_RECEIPT_SCHEMA, TOOLCHAIN_RECEIPT_RELATIVE } from "./toolchain.js";
 export { TOOLCHAIN_LOCK, lockIdOf } from "./toolchain-lock.js";
@@ -1722,10 +1769,61 @@ function resolveDir(command: Command): string {
   return process.cwd();
 }
 
+/** Collect singleton options too, so repeated flags cannot silently replace earlier input. */
+function singleLocalOption(value: string[] | undefined, flag: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (value.length !== 1 || !value[0]?.trim()) {
+    throw new SkillsError("SCHEMA_INVALID", `${flag} requires exactly one nonempty value.`, "Read this command's --help; repeated singleton options are not accepted.");
+  }
+  return value[0];
+}
+
+function reviewVerdict(value: string[] | undefined): ProjectVerdict {
+  const verdict = singleLocalOption(value, "--verdict");
+  if (verdict !== "ACCEPT" && verdict !== "REWORK" && verdict !== "REJECT") {
+    throw new SkillsError("SCHEMA_INVALID", "--verdict must be ACCEPT, REWORK or REJECT.");
+  }
+  return verdict;
+}
+
 /**
  * 组装 commander 程序（六命令；--dir 指定项目根，缺省当前目录）。
  * runs 非空时，每个 action 把执行记录推入其中（供 runCli 汇总退出码与测试断言）。
  */
+// 02b-kind-payloads.md §1 official profile suggestions; no invented payload fields.
+const FACT_AXIS_PROFILES = {
+  capability: "capability_default", component: "component_default", contract_operation: "contract_default",
+  error_term: "error_default", field_definition: "field_default", page_surface: "page_default",
+  knowledge_entry: "knowledge_default", business_rule: "rule_default", change_object: "change_default", task_object: "task_default",
+} as const;
+function publicWriteError(error: unknown) {
+  if (error instanceof GovernanceError) return governanceErrorToCliError(error);
+  if (error instanceof GovernedIdParseError) return parseErrorToCliError(error);
+  if (error instanceof SkillsError) return skillsError(error);
+  return { code: "PUBLIC_INPUT_OR_WRITE_FAILED", message: error instanceof Error ? error.message : String(error), hint: "Inspect the actual error and bounded project-relative JSON; fact payload requirements must be supplied via --from. No write authority was granted by this command." };
+}
+function publicGovernedId(value: string): ObjectEnvelopeInput["id"] {
+  parseGovernedId(value);
+  return value as ObjectEnvelopeInput["id"];
+}
+let publicBindingValidator: ValidateFunction | undefined;
+function localBindingRows(root: string, path: string) {
+  const value = readLocalJson(root, path);
+  const rows = Array.isArray(value) ? value : [value];
+  if (rows.length === 0 || rows.length > 1024) throw new SkillsError("SCHEMA_INVALID", "Expected 1..1024 binding rows.");
+  if (publicBindingValidator === undefined) {
+    const AjvCtor = ajvModule.default as unknown as new (options: { strict: boolean; allErrors: boolean }) => ajvModule.default;
+    publicBindingValidator = new AjvCtor({ strict: false, allErrors: true }).compile(keybindingSchema);
+  }
+  for (const row of rows) if (!publicBindingValidator(row)) throw new SkillsError("SCHEMA_INVALID", `KEYBINDING: ${JSON.stringify(publicBindingValidator.errors)}`, "Follow the production schema 04; dry-run is not permission to accept malformed rows.");
+  return rows as Parameters<typeof bindingDeclarationSubject>[0];
+}
+function localBreakGlassSpec(root: string, path: string): BreakGlassSpec {
+  const value = localJsonRecord(readLocalJson(root, path));
+  if (!Array.isArray(value.ops) || !Array.isArray(value.subjectIds) || value.subjectIds.some(id => typeof id !== "string") || !Number.isInteger(value.issuedAtSeq) || !Number.isInteger(value.expiresAtSeq) || typeof value.nonce !== "string" || Object.keys(value).some(key => !["ops", "subjectIds", "issuedAtSeq", "expiresAtSeq", "nonce"].includes(key))) throw new SkillsError("SCHEMA_INVALID", "Expected exact BreakGlassSpec JSON (ops, subjectIds, issuedAtSeq, expiresAtSeq, nonce).", "Use production breakGlassSubject with exact operations and scope; no --force bypass exists.");
+  return value as unknown as BreakGlassSpec;
+}
+
 export function createProgram(
   runs?: CommandRun[],
   io: CliIo = defaultIo,
@@ -1738,7 +1836,14 @@ export function createProgram(
           emitCommand(run, io);
         };
 
+  const recordPublic = async (command: Command, name: string, produce: () => Promise<CommandOutcome<unknown>>): Promise<void> => {
+    let outcome: CommandOutcome<unknown>;
+    try { outcome = await produce(); }
+    catch (error) { outcome = failOutcome(name, null, [publicWriteError(error)], []); }
+    record({ command: name, outcome, asJson: command.optsWithGlobals().json === true });
+  };
   const program = new Command();
+  program.hook("preAction", () => bootstrapTrustedWrites());
   // exitOverride：commander 的用法错误/帮助路径一律改为 throw（CommanderError），
   // 由 runCli 统一捕获——退出码语义收敛到 runCli 返回值，且 stderr 提示保留 commander 原文。
   program.exitOverride();
@@ -2652,6 +2757,99 @@ export function createProgram(
     });
 
   // —— 受控变更 / pre-dev 链编排（PRD §44.4；A2+A3：判卷权威在 kernel，CLI 只编排呈现） ——
+  const bindings = program.command("bindings").description("受控物理绑定：只读预览/精确逐行 SSH 声明；复用生产事务判卷");
+  bindings.command("sync")
+    .option("--from <file>", "bounded project-relative KeybindingRow or row array JSON", collectValues)
+    .option("--dry-run", "read-only merged rows/conflicts; no transaction or signature consumption")
+    .option("--permit-ref <ref>", "existing scoped permit", collectValues)
+    .option("--execution-id <id>", "registered execution", collectValues)
+    .option("--signoff-refs <file>", "bounded JSON map of row id to exact per-row signature", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "bindings sync", async () => {
+      const root = resolveDir(command), from = singleLocalOption(opts.from, "--from"), refs = singleLocalOption(opts.signoffRefs, "--signoff-refs");
+      const signoffRefs = refs === undefined ? undefined : localJsonRecord(readLocalJson(root, refs));
+      if (signoffRefs && Object.values(signoffRefs).some(ref => typeof ref !== "string" || !ref)) throw new SkillsError("SCHEMA_INVALID", "--signoff-refs must map row IDs to nonempty signature references.");
+      const result = await runBindingsSync(root, { dryRun: opts.dryRun === true, ...(from === undefined ? {} : { rows: localBindingRows(root, from) }), ...(signoffRefs === undefined ? {} : { signoffRefs: signoffRefs as Record<string, string> }), permitRef: singleLocalOption(opts.permitRef, "--permit-ref"), executionId: singleLocalOption(opts.executionId, "--execution-id") });
+      return okOutcome("bindings sync", result, [JSON.stringify(result, null, 2)]);
+    }));
+  bindings.command("declare")
+    .requiredOption("--from <file>", "bounded project-relative single KeybindingRow JSON", collectValues)
+    .option("--signoff <ref>", "exact per-row Owner SSH signature", collectValues)
+    .option("--permit-ref <ref>", "existing scoped permit", collectValues)
+    .option("--execution-id <id>", "registered execution", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "bindings declare", async () => {
+      const root = resolveDir(command), rows = localBindingRows(root, singleLocalOption(opts.from, "--from")!);
+      if (rows.length !== 1) throw new SkillsError("KEYBINDING_BATCH_SIGNOFF_UNAVAILABLE", "declare requires exactly one signed row.", "Sign each row with its production bindings statement; no batch authorization.");
+      const signoff = singleLocalOption(opts.signoff, "--signoff");
+      const result = await runBindingsDeclare(root, rows[0]!, { ...(signoff === undefined ? {} : { signoffRefs: { [rows[0]!.id]: signoff } }), permitRef: singleLocalOption(opts.permitRef, "--permit-ref"), executionId: singleLocalOption(opts.executionId, "--execution-id") });
+      return okOutcome("bindings declare", result, [JSON.stringify(result, null, 2)]);
+    }));
+  bindings.command("statement")
+    .requiredOption("--from <file>", "bounded project-relative single row JSON; production signature subject", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "bindings statement", async () => {
+      const rows = localBindingRows(resolveDir(command), singleLocalOption(opts.from, "--from")!);
+      if (rows.length !== 1) throw new SkillsError("KEYBINDING_BATCH_SIGNOFF_UNAVAILABLE", "Only a single row has a consumable declaration signature.", "Prepare and sign each exact row separately.");
+      const subject = bindingDeclarationSubject(rows);
+      return okOutcome("bindings statement", subject, [JSON.stringify(subject, null, 2)]);
+    }));
+  program.command("fact").description("PROPOSED 候选单命令入账：真实 New Entity Gate + 单 ID 短 TTL permit；非任意扩权")
+    .command("add")
+    .requiredOption("--kind <kind>", "official truth body kind", collectValues)
+    .requiredOption("--id <id>", "candidate governed ID", collectValues)
+    .requiredOption("--title <text>", "candidate title", collectValues)
+    .option("--from <file>", "bounded project-relative payload or exact ObjectEnvelopeInput (camelCase) JSON; no invented kind payload defaults", collectValues)
+    .requiredOption("--reason <text>", "actual New Entity need/reason", collectValues)
+    .requiredOption("--by <type>:<name>", "explicit actor (self-attested label, not authority)", collectValues)
+    .option("--change-ref <ref>", "existing change attribution", collectValues)
+    .option("--ttl-beats <n>", "narrow permit sequence TTL 1..3 (default 3)", collectValues)
+    .option("--execution-id <id>", "registered execution", collectValues)
+    .option("--permit-ref <ref>", "existing scoped parent/candidate permit", collectValues)
+    .option("--parent-ref <id>", "existing framed parent", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "fact add", async () => {
+      const root = resolveDir(command), kind = singleLocalOption(opts.kind, "--kind")!, id = publicGovernedId(singleLocalOption(opts.id, "--id")!), title = singleLocalOption(opts.title, "--title")!;
+      if (!(TRUTH_BODY_KINDS as readonly string[]).includes(kind)) throw new SkillsError("SCHEMA_INVALID", `Unknown fact kind: ${kind}`);
+      const actor = parseActorArgv(singleLocalOption(opts.by, "--by")!);
+      if ("error" in actor) return failOutcome("fact add", null, [actor.error], []);
+      const from = singleLocalOption(opts.from, "--from");
+      if (from === undefined) throw new SkillsError("FACT_PAYLOAD_REQUIRED", "No kind-specific payload is inferred from the title.", "Supply --from <project-relative.json> containing the required kind payload or exact ObjectEnvelopeInput.");
+      const value = localJsonRecord(readLocalJson(root, from));
+      const full = "id" in value || "axes" in value || "axisProfile" in value;
+      if (full && (value.id !== id || value.kind !== kind || value.titleZh !== title)) throw new SkillsError("SCHEMA_INVALID", "Exact envelope id/kind/titleZh must match --id/--kind/--title.", "Use --from with an exact PROPOSED ObjectEnvelopeInput; flags do not overwrite its payload or axes.");
+      const envelope = full ? value as unknown as ObjectEnvelopeInput : { id, kind: kind as ObjectEnvelopeInput["kind"], axisProfile: FACT_AXIS_PROFILES[kind as keyof typeof FACT_AXIS_PROFILES], titleZh: title, axes: { lifecycle: "PROPOSED", confidence: "UNRESOLVED", evidence: "PLANNED", change: "STABLE" }, authority: { owner: BOOTSTRAP_OWNER, delegates: [] }, origin: "natural", payload: value } satisfies ObjectEnvelopeInput;
+      const ttl = singleLocalOption(opts.ttlBeats, "--ttl-beats"), parent = singleLocalOption(opts.parentRef, "--parent-ref");
+      const result = await runFactAdd(root, { envelope, need: singleLocalOption(opts.reason, "--reason")!, actor: actor.actor, changeRef: singleLocalOption(opts.changeRef, "--change-ref"), ...(ttl === undefined ? {} : { ttlBeats: Number(ttl) }), executionId: singleLocalOption(opts.executionId, "--execution-id"), permitRef: singleLocalOption(opts.permitRef, "--permit-ref"), ...(parent === undefined ? {} : { parentRef: publicGovernedId(parent) }) });
+      if (result.status === "denied") return failOutcome("fact add", result, [{ code: "FACT_ADMISSION_DENIED", message: "Production New Entity Gate denied admission.", hint: result.next_action }], [JSON.stringify(result, null, 2)]);
+      const presented = result.status === "admitted" ? { ...result, next_action: `VERIFY ${id}: pomaster inspect ${id}; compile the containing TASK verification plan and record actual independent evidence before any closeout. Candidate admission is not completion.` } : result;
+      return okOutcome("fact add", presented, [JSON.stringify(presented, null, 2)]);
+    }));
+  const truthBody = program.command("truth-body").description("真实外部正文审阅陈述/ADVANCE；只消费现盘锚与独立证据，不编辑正文、不伪造 gate");
+  truthBody.command("statement")
+    .requiredOption("--id <id>", "observed truth body ID", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "truth-body statement", async () => {
+      const subject = truthBodyAdvanceSubject(loadStoreReadOnly(resolveDir(command)), singleLocalOption(opts.id, "--id")!);
+      return okOutcome("truth-body statement", subject, [JSON.stringify(subject, null, 2)]);
+    }));
+  truthBody.command("advance")
+    .requiredOption("--id <id>", "observed truth body ID", collectValues)
+    .requiredOption("--by <type>:<name>", "explicit reviewer", collectValues)
+    .requiredOption("--reason <text>", "actual non-placeholder review reason", collectValues)
+    .requiredOption("--evidence <ref>", "actual independent evidence references (repeatable)", collectValues)
+    .requiredOption("--evidence-sha256 <hex>", "actual evidence digest", collectValues)
+    .option("--signoff <ref>", "Owner signature for exact current production statement", collectValues)
+    .option("--permit-ref <ref>", "existing in-scope permit", collectValues)
+    .option("--execution-id <id>", "registered execution", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => recordPublic(command, "truth-body advance", async () => {
+      const by = singleLocalOption(opts.by, "--by")!, actor = parseActorArgv(by);
+      if ("error" in actor) return failOutcome("truth-body advance", null, [actor.error], []);
+      const result = await runTruthBodyAdvance(resolveDir(command), { id: singleLocalOption(opts.id, "--id")!, actor: by, reason: singleLocalOption(opts.reason, "--reason")!, evidenceRefs: opts.evidence as string[], evidenceSha256: singleLocalOption(opts.evidenceSha256, "--evidence-sha256")!, signoffRef: singleLocalOption(opts.signoff, "--signoff") }, { permitRef: singleLocalOption(opts.permitRef, "--permit-ref"), executionId: singleLocalOption(opts.executionId, "--execution-id") });
+      return okOutcome("truth-body advance", result, [JSON.stringify(result, null, 2)]);
+    }));
+
   program
     .command("maintain")
     .description(
@@ -2665,6 +2863,9 @@ export function createProgram(
       "--execution-id <AGX-n>",
       "事务级执行身份盖章（§25.4）：携带即校验词形+档案存在性（S1 禁自造身份）并盖进 TX_APPLIED 事件（P21-Enforcement）",
     )
+    .option("--permit-ref <ref>", "existing permit attached to the selected execution")
+    .option("--break-glass-signoff <ref>", "exact current Owner-signed emergency request; not a bypass")
+    .option("--break-glass-spec <file>", "bounded project-relative exact BreakGlassSpec JSON", collectValues)
     .option("--phase <phase>", "编排链模式：pre-dev（permit issue→context compile 二步；in-dev/post-dev 未落地显式拒绝）")
     .option("--subject <governed-id>", "pre-dev 链：permit 范围对象（可重复，≥1）", collectValues)
     .option("--actor <type>:<name>", "pre-dev 链：permit 主体（type ∈ agent/human/tool/kernel）")
@@ -2673,8 +2874,12 @@ export function createProgram(
     .option("--ttl-beats <n>", "pre-dev 链：TTL 拍数（正整数；缺省 168）")
     .option("--role <role>", "pre-dev 链：投影角色 lane（缺省不发明，必填）")
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (changeOrTask: string, opts, command) => {
-      const outcome = await runMaintain(resolveDir(command), {
+    .action(async (changeOrTask: string, opts, command) => recordPublic(command, "maintain", async () => {
+      const spec = singleLocalOption(opts.breakGlassSpec, "--break-glass-spec");
+      return runMaintain(resolveDir(command), {
+        permitRef: opts.permitRef as string | undefined,
+        breakGlassSignoff: opts.breakGlassSignoff as string | undefined,
+        ...(spec === undefined ? {} : { breakGlassSpec: localBreakGlassSpec(resolveDir(command), spec) }),
         changeOrTask,
         opsFile: opts.ops as string | undefined,
         authorityRef: opts.authorityRef as string | undefined,
@@ -2688,12 +2893,7 @@ export function createProgram(
         ttlBeats: opts.ttlBeats as string | undefined,
         role: opts.role as string | undefined,
       });
-      record({
-        command: "maintain",
-        outcome,
-        asJson: command.opts().json === true,
-      });
-    });
+    }));
 
   // —— 八拍⑦ COMPACT：episode 折叠为单次 store 事务（G4；设计 docs/eight-beat-carriers-design.md §4.3） ——
   program
@@ -2739,6 +2939,7 @@ export function createProgram(
       "--from <file>",
       "gate 运行结果 JSON 文件（gate_result.result 内嵌形态或 GateResult 直落顶层均可）",
     )
+    .option("--dispatch <ref>", "original dispatch/version anchor; forwarded to production evidence qualification")
     .option("--grn <GRN-n>", "显式指定 GRN（同号重放按 pending 字节判定：等价→跳过，有变→canonical 化）")
     .option("--trigger <type>", "运行触发方式（run_trigger 五值闭包；缺省 on_demand；文件信封 trigger.type 优先于缺省）")
     .option("--tool <id>", "执行工具标识（缺省 pomaster-cli；文件 tool_snapshot 优先）")
@@ -2756,6 +2957,7 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runRecordGateRun(resolveDir(command), {
+        ...(opts.dispatch === undefined ? {} : { dispatchRef: opts.dispatch as string }),
         from: opts.from as string,
         grn: opts.grn as string | undefined,
         trigger: opts.trigger as string | undefined,
@@ -3947,12 +4149,29 @@ export function createProgram(
     });
 
   plan
+    .command("scenarios")
+    .description(
+      "PL-1 场景规划（11-11-agent-autopilot D-6）：消费生效中的启动确认单与已确认领域规格，编译场景依赖候选、跑 scaffold generate 并把 contract/DB/BE/FE 单元落成 TASK 对象（kernel applyTransaction 唯一写路径；journal PLAN_COMPILED）",
+    )
+    .option("--name <ws>", "需求读取工作区名（缺省取生效确认单上的工作区）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPlanScenarios(resolveDir(command));
+      record({
+        command: "plan scenarios",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  plan
     .command("run")
     .description(
       "按 task Verification Plan 的 resolved_bindings 串行执行全部 REQUIRED obligations，并逐项 append-only 入账 GRN；仅全 passed 返回成功，不自动 claim/verify/closeout",
     )
     .requiredOption("--task <task-id>", "验收义务来源 TASK.*")
     .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .option("--dispatch <DISP-ref>", "派发任务的原始 DISP 包锚（不可自动取最新包）")
     .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
     .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
     .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
@@ -3965,6 +4184,7 @@ export function createProgram(
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runPlanRun(resolveDir(command), {
+        ...(opts.dispatch !== undefined ? { dispatchRef: opts.dispatch as string } : {}),
         ...(opts.requalify === true ? { requalify: true } : {}),
         ...(opts.by !== undefined ? { by: opts.by as string } : {}),
         taskRef: opts.task as string,
@@ -4119,6 +4339,520 @@ export function createProgram(
   // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
   // 授权（红线）。registry 落点 .pomaster/tools/bindings.json（SP-W1-e 提案待追认；
   // 命令名/错误码 = SP 提案待 Owner 追认）。
+  // —— QA 用例集命令面（TC-1a/TC-1b；11-11-agent-autopilot D-7 / code-spec qa-cases.md） ——
+  // D-2 留存隔离边界：intake / truth / plan 面纯读，唯一写口 = .pomaster/qa/ 平面。
+  // draft = 原文复核三查（files sha256 / blocks 覆盖 / items 回溯，C-08 防线）+ 12 类
+  // 分母推导（tagsOf/nfrHints 既有词表零新词族）；freeze = 不可变冻结 + current.json
+  // 指针（唯一生效凭证；isolation 如实标 not_isolated，AP-0b 接独立会话）；revise =
+  // 活输入变化后的替代修订（replaces/retired 谱系，祖先字节零改动留谱系）；check =
+  // digest 对账（含 parent 链逐级验祖——重生成文件、换 QA 身份不能豁免，AC-08 同款
+  // fail-closed：未冻结/被篡改 exit 1）。
+  const qa = program
+    .command("qa")
+    .description(
+      "QA 用例集命令面（TC-1）：draft = 完整分母用例 + 原文复核（12 类逐类有场景或有依据不适用；N/A 不覆盖生效义务），freeze = 不可变用例版本冻结（需求版本+场景+预期结果；实现者只读），revise = 活输入变化的替代修订（旧用例留谱系、替代关系带需求差异），check = 对账（digest 锚 + 谱系链，身份无关）。错误码：QA_KICKOFF_NOT_IN_FORCE / QA_CASES_REVISION_AHEAD / QA_CASES_PLAN_MISSING / QA_CASES_SOURCE_DRIFT / QA_CASES_ORIGIN_BROKEN / QA_CASES_DRAFT_MISSING / QA_CASES_INPUTS_DRIFTED / QA_CASES_REVIEW_OPEN / QA_CASES_FREEZE_INCOMPLETE / QA_CASES_ALREADY_FROZEN / QA_CASES_REVISE_SAME_ROUND / QA_CASES_NOT_FROZEN / QA_CASES_TAMPERED",
+    );
+  const qaCases = qa.command("cases").description("QA 用例集（.pomaster/qa/<轮次>/；冻结集是实现者只读的验收真值）");
+  qaCases
+    .command("draft")
+    .description(
+      "编译用例草案：生效确认单 + 已提交 plan 轮次 + intake 修订快照 → 原文复核三查 → 12 类分母推导（CASE-#### 连号、每条带出处 source_refs）→ .pomaster/qa/<轮次>/cases.json（可重跑覆盖）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases draft", outcome: runQaCasesDraft(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
+    .command("freeze")
+    .description(
+      "冻结用例集：指纹重算一致 + 复核收口（uncovered 清零）+ 分母逐类完备 + 未冻结过 → cases-frozen.json（write-once）+ qa/current.json 指针（isolation 如实标 not_isolated）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases freeze", outcome: runQaCasesFreeze(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
+    .command("revise")
+    .description(
+      "替代修订（活输入合法变化、新轮次增量重签后）：对新轮次过 freeze 全部门禁 + 谱系计算（replaces 按 source_ref 交集 / retired 带变更词形）→ 新冻结集（parent 锚旧 digest）；旧文件字节零改动留谱系；祖先被改拒绝续谱",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases revise", outcome: runQaCasesRevise(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+  qaCases
+    .command("check")
+    .description(
+      "对账（纯读零写入）：未冻结 / 冻结集字节 ≠ 指针 digest / 谱系祖先被改或缺席 → exit 1（重生成文件、换身份不能豁免）；草案漂移 / intake 修订超前 / 确认单字节漂移 → warning 不抬 exit",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "qa cases check", outcome: runQaCasesCheck(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+
+  // Local recommendation/integrity only: no installer, downloads or host changes.
+  const skills = program.command("skills").description("推荐外部技能与本地静态字节审计；不安装、不授信、不替代项目规范或许可");
+  const recordSkills = (command: Command, name: string, produce: () => CommandOutcome<unknown>): void => {
+    let outcome: CommandOutcome<unknown>;
+    try { outcome = produce(); }
+    catch (error) { outcome = failOutcome(name, null, [skillsError(error)], []); }
+    record({ command: name, outcome, asJson: command.optsWithGlobals().json === true });
+  };
+  skills.command("catalog")
+    .description("离线推荐目录：精确 revision 未知时不产生安装命令")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((_opts, command) => { recordSkills(command, "skills catalog", runSkillsCatalog); });
+  skills.command("recommend")
+    .description("只读项目感知推荐；--pins 是 skill-id → 独立来源 pin 的项目相对 JSON 文件")
+    .option("--pins <file>", "project-relative bounded JSON pin map", collectValues)
+    .option("--agent <agent>", "claude-code or codex (recommendation syntax only)", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const name = "skills recommend";
+      let outcome: CommandOutcome<unknown>;
+      try {
+        const root = resolveDir(command);
+        const pinsFile = singleLocalOption(opts.pins, "--pins");
+        const agent = singleLocalOption(opts.agent, "--agent");
+        if (agent !== undefined && agent !== "claude-code" && agent !== "codex") throw new SkillsError("SCHEMA_INVALID", "--agent must be claude-code or codex.");
+        const pins: Readonly<Record<string, SkillPin>> | undefined = pinsFile === undefined ? undefined : Object.fromEntries(
+          Object.entries(localJsonRecord(readLocalJson(root, pinsFile))).map(([id, pin]) => [id, validatePin(skillCard(id), pin)]),
+        );
+        outcome = await runSkillsRecommend(root, { ...(pins === undefined ? {} : { pins }), ...(agent === undefined ? {} : { agent }) });
+      } catch (error) { outcome = failOutcome(name, null, [skillsError(error)], []); }
+      record({ command: name, outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  skills.command("audit")
+    .description("有界审计项目内已选目录；静态字节回执不是安全证明或安装授权")
+    .requiredOption("--skill <id>", "catalog skill id", collectValues)
+    .requiredOption("--directory <path>", "selected project-relative local skill directory", collectValues)
+    .option("--pin <file>", "project-relative bounded JSON containing one exact pin", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      recordSkills(command, "skills audit", () => {
+        const root = resolveDir(command);
+        const skill = singleLocalOption(opts.skill, "--skill")!;
+        const directory = singleLocalOption(opts.directory, "--directory")!;
+        const pinFile = singleLocalOption(opts.pin, "--pin");
+        const pin = pinFile === undefined ? undefined : validatePin(skillCard(skill), readLocalJson(root, pinFile));
+        return runSkillsAudit(root, { skill, directory, ...(pin === undefined ? {} : { pin }) });
+      });
+    });
+  skills.command("lock")
+    .description("重审当前字节后 write-once 锁清单；异内容不覆写，静态完整性不授信")
+    .requiredOption("--skill <id>", "catalog skill id", collectValues)
+    .requiredOption("--audit <ref>", "actual content-addressed audit receipt", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => { recordSkills(command, "skills lock", () => runSkillsLock(resolveDir(command), {
+      skill: singleLocalOption(opts.skill, "--skill")!, audit: singleLocalOption(opts.audit, "--audit")!,
+    })); });
+  skills.command("check")
+    .description("只读核对锁清单与当前字节；空清单、漂移、损坏均非绿色")
+    .option("--skill <id>", "check one skill (otherwise all locked manifests)", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => { recordSkills(command, "skills check", () => {
+      const skill = singleLocalOption(opts.skill, "--skill");
+      return runSkillsCheck(resolveDir(command), skill === undefined ? {} : { skill });
+    }); });
+
+  // —— 自驱流程命令面（TC-1b + AP-2；D-7/D-8） ——
+  // dispatch = 协调器派发（D-8：消费既有 WorkflowRouteProjection/授权/上下文/任务
+  // 事实；派发包带 task/session/run、route、actor、必读 skill/spec 引用、context/
+  // permit、版本面、执行编号、允许写范围、必需产物、退出义务、失败恢复；必读缺失
+  // 阻断该单元；幂等靠包指纹；QA 真值被改全拒）。status = 纯读呈现（单元状态表/
+  // 预算/熔断/下一动作）。suspend/resume = 局部挂起账。budget record = 驱动轮次/
+  // 墙钟/花费/失败记账（花费不可测显式 unknown；连续失败 ≥3 熔断该单元）。
+  // escalate = 追加式纠错出口台账（D-7：有依据的呈报；不等于实现失败；不能抹已有
+  // 失败/删测试/绕授权；处置在人侧队列）。削弱检查链复用 audit test-weakening
+  // （判定权威在 kernel，AC-08）：audit 命中 → driver 链 escalate record 挂账。
+  const autopilot = program
+    .command("autopilot")
+    .description(
+      "自驱流程命令面（AP-2/TC-1b）：dispatch = 协调器派发（消费既有路由；派发包字段面见 code-spec autopilot-dispatch.md；幂等派发账 DISP-####），status = 纯读状态呈现（单元/预算/熔断/下一动作），suspend/resume = 局部挂起（只挂受影响单元，其余继续），budget record = 预算/失败记账（花费不可测显式 unknown），escalate = 纠错出口台账（append-only）。错误码：AUTOPILOT_PLAN_MISSING / AUTOPILOT_EXECUTION_NOT_FOUND / AUTOPILOT_INTAKE_MISSING / AUTOPILOT_REVISION_AHEAD / AUTOPILOT_BUDGET_EXHAUSTED / AUTOPILOT_STOP_REQUIRED / AUTOPILOT_READING_MISSING / AUTOPILOT_PERMIT_ABSENT(warning)",
+    );
+  const projectReview = autopilot.command("review").description("项目机器审阅 + 单次 Human ACCEPT；不可变进度报告不等于就绪，普通 closeout 规则不变");
+  const recordReview = async (command: Command, name: string, produce: () => Promise<CommandOutcome<unknown>>): Promise<void> => {
+    let outcome: CommandOutcome<unknown>;
+    try { outcome = await produce(); }
+    catch (error) { outcome = failOutcome(name, null, [reviewError(error)], []); }
+    record({ command: name, outcome, asJson: command.optsWithGlobals().json === true });
+  };
+  projectReview.command("draft")
+    .description("按真实机器判卷编译不可变审阅；必须显式声明最终 code/build，阻断项保留为进度快照")
+    .requiredOption("--execution <agx-id>", "registered project review execution", collectValues)
+    .requiredOption("--code <path>", "final project-relative code surface (repeatable)", collectValues)
+    .requiredOption("--build <path>", "final project-relative build surface (repeatable)", collectValues)
+    .option("--candidates <file>", "project-relative bounded JSON candidate array, validated by the real review API", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => { await recordReview(command, "autopilot review draft", async () => {
+      const root = resolveDir(command);
+      const executionId = singleLocalOption(opts.execution, "--execution")!;
+      const candidateFile = singleLocalOption(opts.candidates, "--candidates");
+      const candidates = candidateFile === undefined ? undefined : readLocalJson(root, candidateFile);
+      if (candidates !== undefined && !Array.isArray(candidates)) throw new SkillsError("SCHEMA_INVALID", "--candidates JSON must be an array.");
+      return runAutopilotReviewDraft(root, { executionId, codePaths: opts.code as string[], buildPaths: opts.build as string[], ...(candidates === undefined ? {} : { candidates: candidates as ReviewCandidate[] }) });
+    }); });
+  projectReview.command("show")
+    .description("只读不可变快照并重验新鲜度；保留阻断进度，stale/invalid 不冒充 ready")
+    .requiredOption("--review <ref>", "content-addressed review reference", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => { await recordReview(command, "autopilot review show", async () => {
+      const root = resolveDir(command);
+      const ref = singleLocalOption(opts.review, "--review")!;
+      const outcome = await runAutopilotReviewView(root, { reviewRef: ref });
+      return { ...outcome, result: outcome.result === null ? null : {
+        ...outcome.result,
+        ready: outcome.result.current && outcome.result.snapshot.ready,
+        validation: outcome.result.current ? "current" : outcome.errors.some(error => error.code === "AUTOPILOT_REVIEW_STALE") ? "stale" : "invalid",
+        required_final_paths: outcome.result.snapshot.required_final_paths,
+        required_project_checks: outcome.result.snapshot.required_project_checks,
+        requirement_review: outcome.result.snapshot.requirement_review,
+      } };
+    }); });
+  projectReview.command("statement")
+    .description("只输出 decide 同源 canonical 陈述与 subject ref/sha256；不读私钥、不签名、不消费签名")
+    .requiredOption("--review <ref>", "content-addressed review reference", collectValues)
+    .requiredOption("--verdict <verdict>", "ACCEPT, REWORK or REJECT", collectValues)
+    .option("--affected <task-id>", "affected task for REWORK (repeatable; canonical sorted unique)", collectValues)
+    .option("--reason <text>", "decision reason (trimmed canonically)", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => { await recordReview(command, "autopilot review statement", async () => {
+      // This is a statement builder, not acceptance: decide revalidates live authority and signature.
+      const ref = singleLocalOption(opts.review, "--review")!;
+      const verdict = reviewVerdict(opts.verdict);
+      const reason = singleLocalOption(opts.reason, "--reason") ?? "";
+      const affected = (opts.affected ?? []) as string[];
+      if (!/^sha256:[0-9a-f]{64}$/.test(ref)) throw new SkillsError("SCHEMA_INVALID", "--review must be a content-addressed sha256 reference.");
+      const statement = projectReviewStatement(ref, verdict, affected, reason);
+      return okOutcome("autopilot review statement", { statement, ...statementSubject(statement) }, [statement]);
+    }); });
+  projectReview.command("decide")
+    .description("验证真实项目审阅 + Owner 签名；缺签名非绿色，ACCEPT 不可缩小任务分母")
+    .requiredOption("--review <ref>", "content-addressed review reference", collectValues)
+    .requiredOption("--verdict <verdict>", "ACCEPT, REWORK or REJECT", collectValues)
+    .option("--affected <task-id>", "affected task for REWORK (repeatable)", collectValues)
+    .option("--reason <text>", "decision reason", collectValues)
+    .option("--signoff <so-id>", "existing Owner-signed generic accept request", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => { await recordReview(command, "autopilot review decide", async () => {
+      const reviewRef = singleLocalOption(opts.review, "--review")!;
+      const verdict = reviewVerdict(opts.verdict);
+      const reason = singleLocalOption(opts.reason, "--reason");
+      const signoff = singleLocalOption(opts.signoff, "--signoff");
+      return runAutopilotReviewDecide(resolveDir(command), { reviewRef, verdict, affectedUnits: (opts.affected ?? []) as string[], ...(reason === undefined ? {} : { reason }), ...(signoff === undefined ? {} : { signoff }) });
+    }); });
+  projectReview.command("apply")
+    .description("只消费签名 ACCEPT decision ref，条件式可恢复幂等应用；无旁路、无任意写入参数")
+    .requiredOption("--decision <ref>", "content-addressed signed ACCEPT decision", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => { await recordReview(command, "autopilot review apply", async () => runAutopilotReviewApply(resolveDir(command), {
+      decisionRef: singleLocalOption(opts.decision, "--decision")!,
+    })); });
+  autopilot
+    .command("dispatch")
+    .description(
+      "协调器派发：生效确认单 + plan 已提交 + QA 冻结 digest 对账 → 预算熔断筛 → 逐单元（挂起筛/指纹幂等筛/路由投影+必读 skill paths 存在性）→ .pomaster/autopilot/dispatches/DISP-####.json + 账（append-only；换代 supersedes）",
+    )
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>（S1 禁自造；pomaster execution begin 登记）")
+    .option("--unit <task-id>", "只派一个单元（TASK.*；缺省派 plan 全部未挂起单元）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotDispatch(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+      });
+      record({ command: "autopilot dispatch", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("status")
+    .description(
+      "纯读呈现：生效轮次 + QA 冻结 digest 态 + 逐单元状态表（PENDING/DISPATCHED/SUSPENDED/STOP_REQUIRED）+ 预算（caps vs 已用；花费不可测显式 unknown）+ 熔断态 + escalations open + 下一动作（正常续跑不需要用户再发一句话）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot status", outcome: runAutopilotStatus(resolveDir(command)), asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("suspend")
+    .description("局部挂起：--unit TASK.* + --reason 有依据 → suspensions.jsonl 账行（append-only；该单元暂停派发，其余照常）")
+    .requiredOption("--unit <task-id>", "挂起的单元 TASK.*")
+    .requiredOption("--reason <text>", "挂起依据（呈现面要能回答为什么挂）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot suspend", outcome: runAutopilotSuspend(resolveDir(command), { unit: opts.unit as string, reason: opts.reason as string }), asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("resume")
+    .description("恢复挂起单元：--unit TASK.* → 账行 resume（历史保留；该单元重新可派）")
+    .requiredOption("--unit <task-id>", "恢复的单元 TASK.*")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot resume", outcome: runAutopilotResume(resolveDir(command), { unit: opts.unit as string }), asJson: command.optsWithGlobals().json === true });
+    });
+  const budget = autopilot.command("budget").description("预算/失败记账（.pomaster/autopilot/budget.jsonl；append-only；caps 来自确认单 budget 字段）");
+  budget
+    .command("record")
+    .description(
+      "驱动记账：spend = --rounds/--minutes/--cost-known/--cost-unknown（花费不可测显式 unknown，禁伪造精确成本）；failure = --unit + --reason（连续失败 ≥3 → STOP_REQUIRED 该单元拒绝再派）",
+    )
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .option("--rounds <n>", "本轮驱动轮数", parsePositiveInt)
+    .option("--minutes <n>", "墙钟分钟", parsePositiveInt)
+    .option("--cost-known <text>", "可计量花费（原文申报）")
+    .option("--cost-unknown", "花费不可计量（显式未知）")
+    .option("--failure", "记单元失败（须 --unit + --reason）")
+    .option("--unit <task-id>", "失败锚定单元 TASK.*")
+    .option("--reason <text>", "失败依据（失败面与证据引用）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runAutopilotBudgetRecord(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.rounds !== undefined ? { rounds: opts.rounds as number } : {}),
+        ...(opts.minutes !== undefined ? { minutes: opts.minutes as number } : {}),
+        ...(opts.costKnown !== undefined ? { costKnown: opts.costKnown as string } : {}),
+        costUnknown: opts.costUnknown === true,
+        failure: opts.failure === true,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+        ...(opts.reason !== undefined ? { reason: opts.reason as string } : {}),
+      });
+      record({ command: "autopilot budget record", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  // —— AP-3 无头驱动与 Stop hook（D-8：一次性 spawn 记账退出，不驻留进程不建 daemon；
+  // worker 租约 = kernel unit_write 锁——blocked 显式拒，同一单元不重复调度；交付判定
+  // 归既有 handoff/plan run 判卷，worker 文字声明与 exit 0 不作完成依据） ——
+  autopilot
+    .command("run")
+    .description(
+      "无头轮次驱动（--driver claude-code|codex|script；runtime 词表同源）：目标单元已派发 → 轮次预算（caps = max_rework_rounds+1）→ unit_write 锁租约（blocked = 重复调度防护）→ spawn（claude -p dontAsk / codex exec / 有界命令）→ RND-#### 轮账 + budget 记账 → 释放锁；verdict completed|failed|timeout 如实，driver 缺席诚实 UNAVAILABLE 零伪造轮次。错误码：AUTOPILOT_UNIT_NOT_DISPATCHED / AUTOPILOT_UNIT_LOCKED / AUTOPILOT_UNIT_NOT_ATTACHED / AUTOPILOT_DRIVER_UNAVAILABLE / AUTOPILOT_CMD_REQUIRED / AUTOPILOT_BUDGET_EXHAUSTED",
+    )
+    .requiredOption("--driver <driver>", "驱动词形：claude-code | codex | script（runtime 词表同源）")
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .requiredOption("--session-key <key>", "worker 会话（必须已 attach——租约锚定会话）")
+    .option("--unit <task-id>", "目标单元 TASK.*（缺省取首个已派发未跑单元）")
+    .option("--round-timeout <seconds>", "单轮超时秒（缺省 600；到点杀进程 verdict=timeout）", parsePositiveInt)
+    .option("--cmd <command>", "script 驱动的有界命令（必填 when --driver script）")
+    .option("--sandbox <mode>", "codex 沙箱档透传（-s）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRun(resolveDir(command), {
+        driver: opts.driver as string,
+        executionId: opts.executionId as string,
+        sessionKey: opts.sessionKey as string,
+        ...(opts.unit !== undefined ? { unit: opts.unit as string } : {}),
+        ...(opts.roundTimeout !== undefined ? { roundTimeout: opts.roundTimeout as number } : {}),
+        ...(opts.cmd !== undefined ? { cmd: opts.cmd as string } : {}),
+        ...(opts.sandbox !== undefined ? { sandbox: opts.sandbox as string } : {}),
+      });
+      record({ command: "autopilot run", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("hook-stop")
+    .description(
+      "宿主 Stop hook 回灌入口（受控 Ralph；纯读零写）：路由重查 + 轮次账 → {action: refeed|complete}——连续失败 ≥3 / QA 真值异常 / 出口达成 → complete（带原因）；否则按原 DISP 包 prompt 回灌。宿主 hook 协议侧只消费 stdout JSON",
+    )
+    .requiredOption("--session-key <key>", "worker 会话键（rounds 账按会话归属）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotHookStop(resolveDir(command), { sessionKey: opts.sessionKey as string });
+      record({ command: "autopilot hook-stop", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  const hook = autopilot.command("hook").description("Stop hook 配置接线（tools prepare 同款合并纪律：保留人改字段；同命令幂等；异命令冲突显式拒）");
+  hook
+    .command("install")
+    .description("把 Stop hook（pomaster autopilot hook-stop）合并进宿主配置：claude → .claude/settings.json；codex → .codex/hooks.json（matcher-group JSON 同构）；--dry-run 零写")
+    .option("--host <host>", "claude | codex（缺省 claude）")
+    .option("--dry-run", "只列将做的合并，零写")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot hook install", outcome: runAutopilotHookInstall(resolveDir(command), { host: opts.host as string | undefined, dryRun: opts.dryRun === true }), asJson: command.optsWithGlobals().json === true });
+    });
+  hook
+    .command("uninstall")
+    .description("从宿主配置移除 autopilot hook-stop 条目（人改字段保留；幂等 NO_CHANGE）")
+    .option("--host <host>", "claude | codex（缺省 claude）")
+    .option("--dry-run", "只列将做的移除，零写")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({ command: "autopilot hook uninstall", outcome: runAutopilotHookUninstall(resolveDir(command), { host: opts.host as string | undefined, dryRun: opts.dryRun === true }), asJson: command.optsWithGlobals().json === true });
+    });
+  // —— IN-3 活输入修订面（D-1b：assess 纯读影响传播+分流；adopt 两阶段可恢复记录
+  // （SCOPE_CHANGE 自动挂起受影响单元 + escalate 呈报；阶段 2 编排既有链 qa draft/
+  // revise/freeze + dispatch——幂等续跑）；stale-check 迟到拒收对账） ——
+  const revision = autopilot.command("revision").description("活输入修订面（D-1b；RVC-#### 可恢复变更记录）：assess 纯读（差异/影响四层/分流 verdict），adopt 两阶段（登记 → Owner 增量重签后编排既有链）。错误码：AUTOPILOT_REVISION_NONE / AUTOPILOT_REVISION_AWAITING_SIGNOFF / AUTOPILOT_RECORD_NOT_FOUND");
+  revision
+    .command("assess")
+    .description(
+      "纯读评估：生效确认单修订快照 vs 当前修订逐 REQ 对比（changed/added/carried——缺席不等于删除）→ 语义/排版/范围三分（新增 module 或超规格实体 = SCOPE_CHANGE）→ 影响传播四层（REQ/单元/用例/证据）→ 增量重签路标",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRevisionAssess(resolveDir(command));
+      record({ command: "autopilot revision assess", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  revision
+    .command("adopt")
+    .description(
+      "两阶段接线（RVC-#### append-only）：无 --confirm-round = 登记（SCOPE_CHANGE 自动挂起受影响单元 + escalate 呈报）；--confirm-round <新KO> = Owner 增量重签生效后编排既有链（qa cases draft → revise/freeze 谱系接旧锚 → autopilot dispatch 换代 supersedes；每步按状态幂等跳过，中断重跑不漏步不重复扣账）",
+    )
+    .option("--execution-id <agx-id>", "已登记执行身份（阶段 2 必填——dispatch 同执行身份）")
+    .option("--confirm-round <ko-id>", "阶段 2：Owner 重签后生效的新轮次 KO-…")
+    .option("--record <rvc-id>", "阶段 2：变更记录（缺省取最新 awaiting_resign）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotRevisionAdopt(resolveDir(command), {
+        ...(opts.executionId !== undefined ? { executionId: opts.executionId as string } : {}),
+        ...(opts.confirmRound !== undefined ? { confirmRound: opts.confirmRound as string } : {}),
+        ...(opts.record !== undefined ? { record: opts.record as string } : {}),
+      });
+      record({ command: "autopilot revision adopt", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  autopilot
+    .command("stale-check")
+    .description(
+      "迟到拒收对账（纯读）：DISP 包 versions 对当前输入面逐项比对（sheet sha/plan 指纹/QA digest/intake revision）→ OK/STALE + supersedes 链；STALE = 该包轮次结果按 evidence-qualification 既有轴判失效",
+    )
+    .requiredOption("--disp <disp-id>", "派发包号 DISP-####")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runAutopilotStaleCheck(resolveDir(command), { disp: opts.disp as string });
+      record({ command: "autopilot stale-check", outcome, asJson: command.optsWithGlobals().json === true });
+    });
+  const escalate = autopilot
+    .command("escalate")
+    .description(
+      "escalation 台账（.pomaster/autopilot/escalations.jsonl；append-only）：record 追加一行（seq 连号、status 恒 open），list 纯读呈现。错误码：AUTOPILOT_ESCALATE_SUBJECT_REQUIRED / AUTOPILOT_ESCALATE_REASON_REQUIRED / SCHEMA_INVALID（context 越界）/ NOT_INITIALIZED",
+    );
+  escalate
+    .command("record")
+    .description(
+      "记账呈报：--context 闭集 qa/plan/execution/test-weakening/other + --subject 指向具体对象 + --reason 有依据（写清发现什么、为何超出 agent 权限、建议人怎么裁）；可重复 --ref 挂关联 id",
+    )
+    .option("--context <context>", "词形闭集：qa | plan | execution | test-weakening | other（缺席 = other）")
+    .option("--subject <ref>", "呈报对象（CASE-… / TASK.… / 文件 / 代码位）")
+    .option("--reason <text>", "依据（发现什么、为何超出 agent 权限、建议人怎么裁）")
+    .option("--ref <id>", "关联 id（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "autopilot escalate record",
+        outcome: runAutopilotEscalateRecord(resolveDir(command), {
+          context: opts.context as string | undefined,
+          subject: opts.subject as string | undefined,
+          reason: opts.reason as string | undefined,
+          ...(opts.ref !== undefined ? { refs: opts.ref as string[] } : {}),
+        }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  escalate
+    .command("list")
+    .description("纯读呈现：全部或 --open 仅 open；空台账显式呈现（非空白假绿）")
+    .option("--open", "只列 status=open（当前全部条目都恒 open——TC-1b 无 resolve 写口）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      record({
+        command: "autopilot escalate list",
+        outcome: runAutopilotEscalateList(resolveDir(command), { open: opts.open === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+
+  const sit = program
+    .command("sit")
+    .description(
+      "一次性 SIT 环境与跨层场景证据（TS-1）：build = 最终合并构建（mvn package 双 jar + 前端 build，产物指纹落 build.json）；up = 起 MySQL 8.4 容器（专用端口）+建库建号+Flyway 迁移+整份授权（幂等复用）；run = 起双 jar 跑通用跨层不变量（鉴权/权限/校验/版本并发/KEYSET/ETag）+ 接口→DB 一致性断言（docker exec mysql 回查），SIT-#### 轮账+逐轮明细；down = 拆容器（台账与明细留存）。前置 docker+mvn+java，缺席各自诚实报错；GRN 接线归 AC-1",
+    );
+  sit
+    .command("build")
+    .description("最终合并构建：backend mvn -DskipTests package（找双 jar 记 sha256）+ frontend/admin build（在座时）→ .pomaster/sit/build.json（artifacts 指纹，run 侧对账锚）")
+    .option("--skip-frontend", "跳过前端构建（纯后端轮次）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit build",
+        outcome: await runSitBuild(resolveDir(command), { skipFrontend: opts.skipFrontend === true }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("up")
+    .description("起一次性环境：docker run mysql:8.4（宿主 33306→3306，--port 覆盖）→ 等健康 → 建库三账号 → grants 迁移账号子集 → Flyway migrate → 整份 grants → env.json；容器已在跑且健康 → 幂等 NO_CHANGE")
+    .option("--port <n>", "宿主 MySQL 端口（缺省 33306）", parseInt)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit up",
+        outcome: await runSitUp(resolveDir(command), { ...(opts.port !== undefined && !Number.isNaN(opts.port) ? { port: opts.port as number } : {}) }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("run")
+    .description("跨层场景证据：build.json 产物指纹对账（陈旧拒跑）→ 起双 jar 等 health → 通用不变量矩阵（manifest 驱动零硬编码实体：401/403/201/409/400/版本并发/KEYSET/ETag/停用可见）+ 接口→DB 一致性断言（docker exec mysql 回查行）→ finally 停 jar → SIT-#### 台账+明细；有 failed → exit 1 证据不粉饰")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit run",
+        outcome: await runSitRun(resolveDir(command), {}),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  sit
+    .command("down")
+    .description("拆环境：docker rm -f 容器 + 摘 env.json（幂等；runs 台账与明细不删——证据不随环境走；无指针按确定性容器名兜底清）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "sit down",
+        outcome: await runSitDown(resolveDir(command), {}),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+
+
+  const zap = sit.command("zap").description("ZAP 动态扫描腿（TS-3）：baseline 被动扫（两基址）/ api OpenAPI 导入主动扫（逐面）——只对一次性 SIT 环境跑（主动扫会改数据）；ZAP-#### 轮落 .pomaster/sit/ 台账；security-zap.json 逐插件 IGNORE/WARN/FAIL 映射判卷（缺省 riskcode>=3 → FAIL），gate SECURITY；zap 脚本退出码非判卷锚（报告重算同律）");
+  for (const mode of ["baseline", "api"] as const) {
+    zap
+      .command(mode)
+      .description(mode === "baseline" ? "被动基线扫：起双 jar 等 health → zap-baseline.py 扫 admin/public 两基址 → JSON 报告 alerts × 规则映射判卷" : "主动 API 扫：消费 api/openapi/<面>.openapi.json 逐面主动测试（会改数据——只对一次性环境）→ 同上判卷")
+      .option("--duration <minutes>", "扫描时长上限（分钟，透传 zap）", parseInt)
+      .option("--json", "machine-readable JSON output (§45)")
+      .action(async (opts, command) => {
+        record({
+          command: `sit zap ${mode}`,
+          outcome: await runSitZap(resolveDir(command), { mode, ...(opts.duration !== undefined && !Number.isNaN(opts.duration) ? { durationMinutes: opts.duration as number } : {}) }),
+          asJson: command.optsWithGlobals().json === true,
+        });
+      });
+  }
+
+  const perf = program
+    .command("perf")
+    .description(
+      "后端性能（TS-2；Gatling）：build = 生成/复用独立 perf/ 模块（manifest 驱动基准负载仿真，首次生成后归项目；自动发现在座 *Simulation.scala）+ test-compile + 清单指纹；run = 消费 SIT 环境与合并构建产物（指纹对账陈旧拒跑）→ 起双 jar → capacity 种子（词形命中时 docker exec 批量灌）→ 逐仿真 gatling:test → stats.json 摘要 vs 确认单阈值结构化词形（concurrency= / capacity= / p95<=ms / p99<=ms / rps>= / error_rate<%）判卷；零可判阈值 → verdict=recorded（负载照跑指标照记，呈现不猜）。PERF-#### 台账 + PERFORMANCE gate（AC-1 同面聚合）",
+    );
+  perf
+    .command("build")
+    .description("生成/复用 perf/ 模块 + 发现在座仿真 + mvn test-compile → .pomaster/perf/build.json（sims + 指纹）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({ command: "perf build", outcome: await runPerfBuild(resolveDir(command), {}), asJson: command.optsWithGlobals().json === true });
+    });
+  perf
+    .command("run")
+    .description("负载 + 判卷：SIT env.json / sit build 产物指纹对账 → 起双 jar → capacity 种子 → 逐仿真 gatling:test（BASE_URL/CONCURRENCY/DURATION 注入）→ stats.json 合同解析 → 四类阈值判定（p95/p99/rps/error_rate）→ PERF-#### 台账 + 明细；judged-failed → exit 1；零判定 → recorded + THRESHOLDS_UNDETERMINED warning")
+    .option("--duration <seconds>", "负载时长秒（缺省 60）", parseInt)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      record({
+        command: "perf run",
+        outcome: await runPerfRun(resolveDir(command), { ...(opts.duration !== undefined && !Number.isNaN(opts.duration) ? { durationSeconds: opts.duration as number } : {}) }),
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   const tools = program
     .command("tools")
     .description(
@@ -4127,7 +4861,7 @@ export function createProgram(
   tools
     .command("init")
     .description(
-      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、maven…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
+      "按项目已声明的工具写出起步注册面 .pomaster/tools/bindings.json：只登记受信 adapter 能执行的 vitest / vue-tsc / tsc / eslint（探测同 tools list 的 detect 判定式，命令按锁文件选包管理器）；已有绑定原样保留只补缺；探测到但无受信 adapter 的工具（playwright、pytest、gradle…）只列出不登记；一个都没探测到时不写文件。登记 ≠ 调用授权",
     )
     .option("--dry-run", "只列出将登记的绑定，不写文件")
     .option("--json", "machine-readable JSON output (§45)")
@@ -5174,9 +5908,11 @@ export function createProgram(
     .option("--check <text>", "已真实运行的局部检查（可重复；未运行不得写 passed）", collectValues)
     .option("--known-gap <text>", "已知缺口（可重复）", collectValues)
     .option("--verify <text>", "待验证事项（可重复）", collectValues)
+    .option("--dispatch <ref>", "original dispatch/version anchor; related late work is rejected by production qualifier")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (executionId: string, opts, command) => {
       const outcome = await runExecutionHandoff(resolveDir(command), executionId, {
+        ...(opts.dispatch === undefined ? {} : { dispatchRef: opts.dispatch as string }),
         taskId: opts.task as string,
         changedPaths: opts.changed as string[],
         summary: opts.summary as string,
@@ -5814,6 +6550,15 @@ export function createProgram(
  */
 function collectValues(value: string, previous: string[] | undefined): string[] {
   return [...(previous ?? []), value];
+}
+
+/** 正整数 argv 解析（autopilot budget record 的 --rounds/--minutes；非法词形在 option 解析层即拒）。 */
+function parsePositiveInt(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`须为正整数：${value}`);
+  }
+  return parsed;
 }
 
 /**

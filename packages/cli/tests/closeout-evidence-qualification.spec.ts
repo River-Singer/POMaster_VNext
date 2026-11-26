@@ -28,10 +28,12 @@ import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   applyTransaction,
+  attachPermit,
   beginExecution,
   checkPermit,
   createStore,
   issuePermit,
+  loadTruthIndex,
   qualifyEvidence,
 } from "@pomaster/kernel";
 import { runCloseout, runCheckGates, readBaselineConfirmation, buildBaselineDependencyDeclaration, baselineTargetsForLanes, BASELINE_CONFIRM_TARGETS, type CloseoutResult } from "@pomaster/cli";
@@ -410,29 +412,51 @@ describe("closeout 证据绑定资格链（W1 R1-5）", () => {
 
   it("V2-1（VX-WRITE-03）：证据产生于许可到期之前 → 许可此后到期不追溯作废，closeout COMPLETED", async () => {
     await initStore();
+    await seedTask(); // TASK 先在座，运行期不绕过 New Entity 准入。
     const store = await createStore(root);
+    const ranAtSeq = (await loadTruthIndex(store)).generation.seq;
     const permit = await issuePermit(store, {
       subjectIds: ["TASK.T0001"],
       requestedBy: { actorType: "agent", actor: "demo-planner" },
-      ttlBeats: 1, // expires_at_seq = 1
+      ttlBeats: 1, // seedTask 后签发：expires_at_seq = ranAtSeq + 1
     });
     const execution = await beginExecution(store, {
       role: "implementer",
       runtime: "claude-code",
       identityKind: "interactive",
+      taskId: "TASK.T0001",
       permitIds: [permit.permitRef],
     });
-    seedRun({ executionId: execution.execution_id, ranAtSeq: 0 }); // 许可有效期内产出（0 < 1）
-    await seedTask(); // tx → seq 1 = expires_at_seq，许可此后过期
+    expect(ranAtSeq).toBeLessThan(permit.expiresAtSeq);
+    expect((await checkPermit(store, permit.permitRef, { op: "transition_object", id: "TASK.T0001" })).outcome).toBe("allowed");
+    seedRun({ executionId: execution.execution_id, ranAtSeq });
+    const advanced = await applyTransaction(store, {
+      executionId: execution.execution_id,
+      permitRef: permit.permitRef,
+      ops: [{ op: "transition_object", id: "TASK.T0001", patch: { confidence: "LOCKED" }, reasonShort: "Freeze the existing task contract while the permit is live" }],
+    });
+    expect(advanced.appliedSeq).toBe(permit.expiresAtSeq); // 合法在座 TASK 操作推进到到期拍。
     for (let i = 0; i < 3; i += 1) {
       // hook 每次 Edit 都会判卷：过期观察事件只记一次（V2-1 去重），且不作废既有证据。
       expect((await checkPermit(store, permit.permitRef, { op: "upsert_object", id: "TASK.T0001" })).outcome).toBe("expired");
     }
     const journalText = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
     expect(journalText.split("\n").filter((line) => line.includes("\"PERMIT_EXPIRED_OBSERVED\""))).toHaveLength(1);
+    expect(qualifyEvidence({
+      ref: "GRN-0001", surface: "run", captured_at_seq: ranAtSeq,
+      gate: "BUILD", gate_def: "POLICY.GATE.BUILD@0.1.0", oracle_ref: null,
+      execution_id: execution.execution_id, subject: "TASK.T0001",
+    }, await readEvidenceQualificationRequirement(root)).verdict).toBe("QUALIFIED");
     seedClaim({});
     seedAcceptReceipt();
 
+    // 旧证据仍合格 ≠ 到期许可可写；closeout 用新签发且明确挂载的同 TASK 许可。
+    const closeoutPermit = await issuePermit(store, {
+      subjectIds: ["TASK.T0001"], requestedBy: { actorType: "agent", actor: "demo-planner" }, ttlBeats: 2,
+    });
+    const attached = await attachPermit(store, execution.execution_id, closeoutPermit.permitRef,
+      { actorType: "agent", actor: "demo-planner" }, "Authorize closeout of the existing task without renewing expired evidence authority");
+    expect(attached.record.permit_ids).toEqual([permit.permitRef, closeoutPermit.permitRef]);
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.errors).toEqual([]);
     expect(outcome.ok).toBe(true);

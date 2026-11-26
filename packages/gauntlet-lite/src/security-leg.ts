@@ -89,6 +89,8 @@ export const SECURITY_GATE_CONFIG_FILE = "security-gate.json";
 export const GITLEAKS_TOOL_ID = "gauntlet:gitleaks";
 export const PIP_AUDIT_TOOL_ID = "gauntlet:pip-audit";
 export const SEMGREP_TOOL_ID = "gauntlet:semgrep";
+export const DEPENDENCY_CHECK_TOOL_ID = "gauntlet:dependency-check";
+export const TRIVY_TOOL_ID = "gauntlet:trivy";
 
 /**
  * 三腿 metric_dialect（横切纪律 2：adapter 结果必带度量口径；三腿三口径——
@@ -97,6 +99,8 @@ export const SEMGREP_TOOL_ID = "gauntlet:semgrep";
 export const GITLEAKS_METRIC_DIALECT = "security:gitleaks_secrets";
 export const PIP_AUDIT_METRIC_DIALECT = "security:pip_audit_vulnerabilities";
 export const SEMGREP_METRIC_DIALECT = "security:semgrep_findings";
+export const DEPENDENCY_CHECK_METRIC_DIALECT = "security:dependency_check_vulnerabilities";
+export const TRIVY_METRIC_DIALECT = "security:trivy_vulnerabilities";
 /** 缺席记录的机器可辨口径轴（P12c policy_skip 映射同款；verdict=not_run + notApplicable=1）。 */
 export const SECURITY_POLICY_SKIP_METRIC_DIALECT = "security:policy_skip";
 /** 配置缺席态（not_configured）的口径轴词形（缺席原因可机器归类的显式留痕位）。 */
@@ -105,20 +109,37 @@ export const SECURITY_METRIC_DIALECT_UNDECLARED = "security:undeclared";
 export const GITLEAKS_VERSION_PROBE_COMMAND = "gitleaks version";
 export const PIP_AUDIT_VERSION_PROBE_COMMAND = "pip-audit --version";
 export const SEMGREP_VERSION_PROBE_COMMAND = "semgrep --version";
+export const DEPENDENCY_CHECK_VERSION_PROBE_COMMAND = "dependency-check.sh --version";
+export const TRIVY_VERSION_PROBE_COMMAND = "trivy --version";
 
 export const GITLEAKS_DEFAULT_REPORT = "reports/security/gitleaks.json";
 export const PIP_AUDIT_DEFAULT_REPORT = "reports/security/pip-audit.json";
 export const SEMGREP_DEFAULT_REPORT = "reports/security/semgrep.json";
+export const DEPENDENCY_CHECK_DEFAULT_REPORT = "reports/security/dependency-check.json";
+export const TRIVY_DEFAULT_REPORT = "reports/security/trivy.json";
 
 export const DEFAULT_SECURITY_TIMEOUT_MS = 600_000;
 
 /** 三腿 runner 词形（security-gate.json 段键同名：gitleaks / pip-audit / semgrep）。 */
-export type SecurityLegRunner = "gitleaks" | "pip-audit" | "semgrep";
+export type SecurityLegRunner =
+  | "gitleaks"
+  | "pip-audit"
+  | "semgrep"
+  | "dependency-check"
+  | "trivy";
 export const SECURITY_LEG_RUNNERS: readonly SecurityLegRunner[] = [
   "gitleaks",
   "pip-audit",
   "semgrep",
+  "dependency-check",
+  "trivy",
 ];
+
+/**
+ * TS-3 依赖漏洞腿判卷口径（Owner 裁定 2026-11-19：默认 CRITICAL+HIGH fail，CVE 豁免
+ * 清单 suppress 配置化——dependency-check 误报偏多，调研 §5.1）。
+ */
+export const DEFAULT_SECURITY_FAIL_ON: readonly string[] = ["CRITICAL", "HIGH"];
 
 // ============================================================
 // 三类能力面 scopeNote 声明（每腿判卷记录恒携带——B2-5 如实标注纪律）
@@ -131,7 +152,14 @@ export const PIP_AUDIT_CAPABILITY_NOTE =
 export const SEMGREP_CAPABILITY_NOTE =
   "能力面=静态规则分析（PRD §26 SECURITY unsafe eval / XSS / CSRF 策略轴的工具面；semgrep 配置规则命中）——判卷分母=项目 semgrep 配置所载规则，配置未覆盖的规则面不在本腿判卷内（如实标注，非全量安全保证）；severity 口径披露：semgrep 报告的 severity（INFO/WARNING/ERROR）不解析、无差别计数——任何命中一律计 violations，不按 severity 分级（无裁定取最严可辩护方向，不因低 severity 洗白）";
 
+export const DEPENDENCY_CHECK_CAPABILITY_NOTE =
+  "能力面=Maven 依赖漏洞对账（TS-3；OWASP Dependency-Check NVD/CPE 对账）——不覆盖密钥扫描与静态规则面";
+export const TRIVY_CAPABILITY_NOTE =
+  "能力面=npm/容器依赖漏洞对账（TS-3；Trivy GitHub Advisories/镜像扫描）——不覆盖密钥扫描与静态规则面";
+
 export function securityCapabilityNote(runner: SecurityLegRunner): string {
+  if (runner === "dependency-check") return DEPENDENCY_CHECK_CAPABILITY_NOTE;
+  if (runner === "trivy") return TRIVY_CAPABILITY_NOTE;
   return runner === "gitleaks"
     ? GITLEAKS_CAPABILITY_NOTE
     : runner === "pip-audit"
@@ -200,6 +228,10 @@ export interface SecurityLegPlan extends RecordPlanFields {
   readonly reportPath: string;
   /** 版本锚（policy 供给——版本无法从配置文件可靠探测，pytest-cov/mutmut 腿同款）。 */
   readonly expectedToolVersion: string;
+  /** 判卷口径（TS-3 依赖腿：failOn 严重级闭包，缺省 DEFAULT_SECURITY_FAIL_ON）。 */
+  readonly failOn?: readonly string[];
+  /** CVE 豁免清单（dependency-check 误报偏多——suppress 命中的发现不进 violations）。 */
+  readonly suppress?: readonly string[];
 }
 
 export interface SecurityLegOutput {
@@ -570,7 +602,92 @@ export function parseSemgrepReport(text: string): SemgrepReport | null {
   return { findings, errors };
 }
 
-/** 按 runner 分派报告解析（单一分派点——三腿词形互异，禁混用解析器）。 */
+// ============================================================
+// TS-3 依赖漏洞腿报告词形（dependency-check JSON / trivy JSON）
+// ============================================================
+
+export interface DependencyCheckFinding {
+  readonly name: string;
+  readonly severity: string;
+  readonly fileName: string | null;
+  readonly description: string | null;
+}
+
+export interface TrivyFinding {
+  readonly id: string;
+  readonly severity: string;
+  readonly target: string;
+  readonly pkgName: string | null;
+  readonly fixedVersion: string | null;
+}
+
+/** OWASP Dependency-Check JSON：{"dependencies":[{"fileName":…,"vulnerabilities":[{"name","severity",…}]}]}。 */
+export function parseDependencyCheckReport(text: string): readonly DependencyCheckFinding[] | null {
+  let root: unknown;
+  try {
+    root = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (root === null || typeof root !== "object" || Array.isArray(root)) return null;
+  const rawDependencies = (root as Record<string, unknown>)["dependencies"];
+  if (!Array.isArray(rawDependencies)) return null;
+  const findings: DependencyCheckFinding[] = [];
+  for (const entry of rawDependencies) {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const record = entry as Record<string, unknown>;
+    const fileName = typeof record["fileName"] === "string" ? record["fileName"] : null;
+    const vulns = record["vulnerabilities"];
+    if (vulns === undefined || vulns === null) continue;
+    if (!Array.isArray(vulns)) return null;
+    for (const vuln of vulns) {
+      if (vuln === null || typeof vuln !== "object" || Array.isArray(vuln)) return null;
+      const vulnRecord = vuln as Record<string, unknown>;
+      const name = typeof vulnRecord["name"] === "string" ? vulnRecord["name"] : null;
+      const severity = typeof vulnRecord["severity"] === "string" ? vulnRecord["severity"] : null;
+      if (name === null || severity === null) return null;
+      const description = typeof vulnRecord["description"] === "string" ? vulnRecord["description"] : null;
+      findings.push({ name, severity, fileName, description });
+    }
+  }
+  return findings;
+}
+
+/** Trivy JSON：{"Results":[{"Target":…,"Vulnerabilities":[{"VulnerabilityID","Severity",…}]}]}（Vulnerabilities 可 null=无漏洞）。 */
+export function parseTrivyReport(text: string): readonly TrivyFinding[] | null {
+  let root: unknown;
+  try {
+    root = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (root === null || typeof root !== "object" || Array.isArray(root)) return null;
+  const rawResults = (root as Record<string, unknown>)["Results"];
+  if (!Array.isArray(rawResults)) return null;
+  const findings: TrivyFinding[] = [];
+  for (const entry of rawResults) {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const record = entry as Record<string, unknown>;
+    const target = typeof record["Target"] === "string" ? record["Target"] : null;
+    if (target === null) return null;
+    const vulns = record["Vulnerabilities"];
+    if (vulns === undefined || vulns === null) continue;
+    if (!Array.isArray(vulns)) return null;
+    for (const vuln of vulns) {
+      if (vuln === null || typeof vuln !== "object" || Array.isArray(vuln)) return null;
+      const vulnRecord = vuln as Record<string, unknown>;
+      const id = typeof vulnRecord["VulnerabilityID"] === "string" ? vulnRecord["VulnerabilityID"] : null;
+      const severity = typeof vulnRecord["Severity"] === "string" ? vulnRecord["Severity"] : null;
+      if (id === null || severity === null) return null;
+      const pkgName = typeof vulnRecord["PkgName"] === "string" ? vulnRecord["PkgName"] : null;
+      const fixedVersion = typeof vulnRecord["FixedVersion"] === "string" ? vulnRecord["FixedVersion"] : null;
+      findings.push({ id, severity, target, pkgName, fixedVersion });
+    }
+  }
+  return findings;
+}
+
+/** 按 runner 分派报告解析（单一分派点——腿词形互异，禁混用解析器）。 */
 export function parseSecurityReport(
   runner: SecurityLegRunner,
   text: string,
@@ -578,6 +695,8 @@ export function parseSecurityReport(
   | { readonly kind: "gitleaks"; readonly findings: readonly GitleaksFinding[] }
   | { readonly kind: "pip-audit"; readonly packages: readonly PipAuditPackage[] }
   | { readonly kind: "semgrep"; readonly report: SemgrepReport }
+  | { readonly kind: "dependency-check"; readonly findings: readonly DependencyCheckFinding[] }
+  | { readonly kind: "trivy"; readonly findings: readonly TrivyFinding[] }
   | null {
   if (runner === "gitleaks") {
     const findings = parseGitleaksReport(text);
@@ -586,6 +705,14 @@ export function parseSecurityReport(
   if (runner === "pip-audit") {
     const packages = parsePipAuditReport(text);
     return packages === null ? null : { kind: "pip-audit", packages };
+  }
+  if (runner === "dependency-check") {
+    const findings = parseDependencyCheckReport(text);
+    return findings === null ? null : { kind: "dependency-check", findings };
+  }
+  if (runner === "trivy") {
+    const findings = parseTrivyReport(text);
+    return findings === null ? null : { kind: "trivy", findings };
   }
   const report = parseSemgrepReport(text);
   return report === null ? null : { kind: "semgrep", report };
@@ -708,6 +835,34 @@ export function normalizeSecurityLeg(raw: SecurityLegOutput, selfMs: number): Ga
     }
     violations = items.length;
     exitNote = `runner=pip-audit exit=${String(raw.exitCode)}（漏洞退出码语义非本 gate 判卷锚——判卷锚=报告重算）`;
+  } else if (parsed.kind === "dependency-check") {
+    scanned = parsed.findings.length;
+    const failOn = plan.failOn ?? DEFAULT_SECURITY_FAIL_ON;
+    const suppress = plan.suppress ?? [];
+    for (const finding of parsed.findings) {
+      const suppressed = suppress.includes(finding.name);
+      items.push({
+        rule: finding.name,
+        location: finding.fileName ?? "dependency-check report",
+        message: `severity=${finding.severity}${suppressed ? "；已豁免（suppress）" : ""}${finding.description === null ? "" : `；${truncate(finding.description)}`}`,
+      });
+    }
+    violations = parsed.findings.filter((finding) => !suppress.includes(finding.name) && failOn.includes(finding.severity.toUpperCase())).length;
+    exitNote = `runner=dependency-check exit=${String(raw.exitCode)}（判卷口径 failOn=[${failOn.join("/")}] suppress=${String(suppress.length)} 项；依赖漏洞退出码语义非本 gate 判卷锚——判卷锚=报告重算）`;
+  } else if (parsed.kind === "trivy") {
+    scanned = parsed.findings.length;
+    const failOn = plan.failOn ?? DEFAULT_SECURITY_FAIL_ON;
+    const suppress = plan.suppress ?? [];
+    for (const finding of parsed.findings) {
+      const suppressed = suppress.includes(finding.id);
+      items.push({
+        rule: finding.id,
+        location: finding.pkgName === null ? finding.target : `${finding.target} ${finding.pkgName}`,
+        message: `severity=${finding.severity}${suppressed ? "；已豁免（suppress）" : ""}${finding.fixedVersion === null ? "" : `；修复版本: ${finding.fixedVersion}`}`,
+      });
+    }
+    violations = parsed.findings.filter((finding) => !suppress.includes(finding.id) && failOn.includes(finding.severity.toUpperCase())).length;
+    exitNote = `runner=trivy exit=${String(raw.exitCode)}（判卷口径 failOn=[${failOn.join("/")}] suppress=${String(suppress.length)} 项；依赖漏洞退出码语义非本 gate 判卷锚——判卷锚=报告重算）`;
   } else {
     for (const finding of parsed.report.findings) {
       items.push({
@@ -801,7 +956,11 @@ export function securityLegExecutable(runner: SecurityLegRunner): string {
       ? GITLEAKS_VERSION_PROBE_COMMAND
       : runner === "pip-audit"
         ? PIP_AUDIT_VERSION_PROBE_COMMAND
-        : SEMGREP_VERSION_PROBE_COMMAND;
+        : runner === "dependency-check"
+          ? DEPENDENCY_CHECK_VERSION_PROBE_COMMAND
+          : runner === "trivy"
+            ? TRIVY_VERSION_PROBE_COMMAND
+            : SEMGREP_VERSION_PROBE_COMMAND;
   return firstCommandToken(probe);
 }
 
@@ -815,7 +974,11 @@ export function resolveSecurityReportPath(
       ? GITLEAKS_DEFAULT_REPORT
       : runner === "pip-audit"
         ? PIP_AUDIT_DEFAULT_REPORT
-        : SEMGREP_DEFAULT_REPORT;
+        : runner === "dependency-check"
+          ? DEPENDENCY_CHECK_DEFAULT_REPORT
+          : runner === "trivy"
+            ? TRIVY_DEFAULT_REPORT
+            : SEMGREP_DEFAULT_REPORT;
   return (configValue ?? fallback).replaceAll("\\", "/");
 }
 
@@ -826,6 +989,8 @@ export function securityReportAbsolutePath(projectRoot: string, relativePath: st
 
 /** 三腿 version 探测命令（prepare 组装 versionProbeCommand 用）。 */
 export function securityVersionProbeCommand(runner: SecurityLegRunner): string {
+  if (runner === "dependency-check") return DEPENDENCY_CHECK_VERSION_PROBE_COMMAND;
+  if (runner === "trivy") return TRIVY_VERSION_PROBE_COMMAND;
   return runner === "gitleaks"
     ? GITLEAKS_VERSION_PROBE_COMMAND
     : runner === "pip-audit"

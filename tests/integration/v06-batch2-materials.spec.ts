@@ -319,12 +319,12 @@ describe("研究锚纪律（防「无锚物料」回潮）", () => {
     }
   });
 
-  it("12 份批次 2 新物料全部经 kernel 读取面在册（repo 分母现 41：批次 1 十 + 批次 2 十二 + 批次 3 十七 + 批次 4 二）", () => {
+  it("12 份批次 2 新物料全部经 kernel 读取面在册（repo 分母现 42：批次 1 十 + 批次 2 十二 + 批次 3 十七 + 批次 4 二 + Owner 批准 TASK_UNIT 一）", () => {
     const batch2Ids = [...STATE_IDS, ...FRONTEND_IDS];
     expect(batch2Ids.length).toBe(12);
     for (const id of batch2Ids) {
       expect(byId.has(id), `${id} 在册`).toBe(true);
     }
-    expect(materials.length).toBe(41);
+    expect(materials.length).toBe(42);
   });
 });

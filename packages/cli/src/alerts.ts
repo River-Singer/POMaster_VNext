@@ -28,6 +28,7 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { readGuardFaults, type GuardFaultAssessment } from "./guard-faults.js";
 import { CHANGE_VALUES } from "@pomaster/schemas";
 import {
   EIGHT_BEAT_ENFORCEMENT_LINES,
@@ -78,6 +79,7 @@ export interface AlertItem {
 }
 
 export interface AlertsResult {
+  readonly guard_faults: GuardFaultAssessment;
   readonly initialized: boolean;
   readonly current_seq: number | null;
   /** 台账内未盗取且未过期（current_seq < expires_at_seq）的许可数（活性速览）。 */
@@ -368,7 +370,10 @@ export async function runAlerts(
     breadcrumb = renderBreadcrumb(nextAction, snapshot);
     routing = renderWorkflowRouting(nextAction, snapshot);
   }
+  const guardFaults = readGuardFaults(rootDir);
+  const guardWarnings: CliWarning[] = [...guardFaults.errors, ...guardFaults.events.map(event => ({ code: event.type, message: `${event.target}: ${event.reason} (${event.disposition}, observed ${event.observed_at})`, hint: "Retained diagnostic only: inspect pomaster doctor and execution audit/evidence freshness. This is not a completion verdict or host-isolation assurance; do not erase telemetry." }))];
   const result: AlertsResult = {
+    guard_faults: guardFaults,
     initialized: derivation.initialized,
     current_seq: derivation.current_seq,
     permits_active: derivation.permits_active,
@@ -379,6 +384,7 @@ export async function runAlerts(
     workflow_route: workflowRoute,
     workflow_routing: routing,
   };
-  const warnings: CliWarning[] = [...derivation.warnings, ...breadcrumbWarnings];
-  return okOutcome("alerts", result, renderAlertsHuman(derivation.alerts, routing), warnings);
+  const warnings: CliWarning[] = [...derivation.warnings, ...breadcrumbWarnings, ...guardWarnings];
+  const human = renderAlertsHuman(derivation.alerts, routing);
+  return okOutcome("alerts", result, guardWarnings.length === 0 ? human : capPlainOutput([...human, ...guardWarnings.map(warning => `POMaster diagnostic ${warning.code}: ${warning.message}`)], ALERTS_OUTPUT_HARD_CAP).text.split("\n"), warnings);
 }

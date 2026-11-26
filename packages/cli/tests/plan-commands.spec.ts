@@ -17,9 +17,15 @@
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyTransaction } from "@pomaster/kernel";
-import { runInit, runPlanCompile, type PlanCompileResult } from "@pomaster/cli";
+import { runCli, runInit, runPlanCompile, type PlanCompileResult } from "@pomaster/cli";
+
+const planRunner = vi.hoisted(() => ({ run: vi.fn() }));
+vi.mock("../src/plan-runner.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../src/plan-runner.js")>();
+  return { ...actual, runPlanRun: planRunner.run };
+});
 
 let root: string;
 
@@ -105,6 +111,28 @@ function pomasterFingerprint(): string {
   files.sort();
   return files.join("\n");
 }
+
+describe("plan run original dispatch argv", () => {
+  it.each([undefined, "DISP-0017", "DISP-9999", "invalid-original"])("forwards --dispatch unchanged (%s), with no latest fallback", async dispatchRef => {
+    planRunner.run.mockReset();
+    planRunner.run.mockResolvedValue({
+      ok: false, command: "plan run", result: null, warnings: [], human: [],
+      errors: [{ code: "TEST_RUNNER_STOP", message: "argv-only regression", hint: "not execution evidence" }],
+    });
+    const stdout: string[] = [], stderr: string[] = [];
+    const code = await runCli([
+      "--dir", root, "plan", "run", "--task", "TASK.PLAN", "--execution-id", "AGX-2026-0017",
+      ...(dispatchRef === undefined ? [] : ["--dispatch", dispatchRef]), "--json",
+    ], { stdout: line => stdout.push(line), stderr: line => stderr.push(line) });
+    expect(planRunner.run, stderr.join("\n")).toHaveBeenCalledOnce();
+    const [actualRoot, input] = planRunner.run.mock.calls[0]!;
+    expect(actualRoot).toBe(root);
+    expect(input).toMatchObject({ taskRef: "TASK.PLAN", executionId: "AGX-2026-0017" });
+    expect(input.dispatchRef).toBe(dispatchRef);
+    expect(code).toBe(1);
+    expect(JSON.parse(stdout.join("\n"))).toMatchObject({ command: "plan run", errors: [{ code: "TEST_RUNNER_STOP" }] });
+  });
+});
 
 describe("plan compile（--task 事实生产通路）", () => {
   it("逐验收义务计划：vitest 解析在座 / 缺工具保持 REQUIRED+tool_gap / N-A 有据 / 排除显式", async () => {

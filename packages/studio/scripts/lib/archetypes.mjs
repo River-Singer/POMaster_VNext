@@ -54,7 +54,7 @@ export function collectArchetypes(dir = CATALOG_ARCHETYPES_DIR) {
 /** 「建议组件组合」节（S4 映射层正向呈现；mappings = [{ component, basis }]）。 */
 function renderComponentMappingSection(mappings) {
   if (!mappings || mappings.length === 0) {
-    throw new Error("archetype 映射表缺条目——41 卡必须逐卡在座（archetype-component-map.json）");
+    throw new Error("archetype 映射表缺条目——全部 archetype 必须逐卡在座（archetype-component-map.json）");
   }
   const lines = [];
   lines.push("## 建议组件组合（studio 映射层）");
@@ -190,7 +190,7 @@ export function generateArchetypePages(outDir, componentMapByFile = defaultCompo
     const target = join(outDir, `${fileName.replace(/\.json$/, "")}.mdx`);
     const mappings = componentMapByFile.get(fileName);
     if (!mappings) {
-      throw new Error(`archetype-component-map.json 缺 ${fileName} 条目（41 卡全量在座）`);
+      throw new Error(`archetype-component-map.json 缺 ${fileName} 条目（全部 archetype 必须逐卡在座）`);
     }
     writeFileEnsuringDir(target, renderArchetypePage(fileName, archetype, mappings));
     files.push(target);

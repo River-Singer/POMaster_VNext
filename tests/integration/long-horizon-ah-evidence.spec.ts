@@ -1066,7 +1066,7 @@ describe("R Case G：Resume——checkpoint 引用集 + 恢复先对账闸 + 引
       ],
     });
     const issued = await runPermitIssue(root, {
-      subjects: ["TASK.RESUME"],
+      subjects: ["TASK.RESUME", "TEST.RESUME.BUILD"],
       actor: "human:owner",
       changeRef: "CHANGE.RESUME",
     });

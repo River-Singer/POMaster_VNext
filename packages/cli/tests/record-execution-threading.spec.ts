@@ -22,9 +22,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { beginExecution, endExecution, type Store } from "@pomaster/kernel";
+import { beginExecution, endExecution, issuePermit, type Store } from "@pomaster/kernel";
 import { runCompact, runRecordClaim, runRecordGateRun, type CliEnvelope } from "@pomaster/cli";
-import { AGENT, gid, makeStore } from "../../../packages/kernel/tests/helpers.js";
+import { AGENT, HUMAN, gid, makeStore } from "../../../packages/kernel/tests/helpers.js";
 
 let root: string;
 let store: Store;
@@ -197,7 +197,12 @@ describe("record gate-run --execution-id（GRN 侧贯穿）", () => {
 describe("record claim --execution-id（CLM 侧贯穿）", () => {
   it("APPLIED：CLM 文件承载 execution_id + 信封回读；缺席 = 键缺席存量兼容", async () => {
     await seedObject();
+    const permit = await issuePermit(store, {
+      subjectIds: [gid("PAGE.DASHBOARD")],
+      requestedBy: HUMAN,
+    });
     const execution = await beginExecution(store, {
+      permitIds: [permit.permitRef],
       role: "implementer",
       runtime: "claude-code",
       identityKind: "subagent",
@@ -207,7 +212,7 @@ describe("record claim --execution-id（CLM 侧贯穿）", () => {
       from: writeInput(claimPayload()),
       executionId: execution.execution_id,
     });
-    expect(outcome.ok).toBe(true);
+    expect(outcome.ok, JSON.stringify(outcome.errors)).toBe(true);
     expect(envelopeOf(outcome as CliEnvelope<Record<string, unknown>>).execution_id).toBe(
       execution.execution_id,
     );
@@ -281,7 +286,12 @@ describe("compact 批量收编（身份键往返保全）", () => {
   it("手写 canonical 形态 + 未登记 AGX 不再借 already_canonical 快路径绕过（P20 红队发现 2）：compact malformed / record --grn 重放拒；登记后同文件回绿", async () => {
     await seedObject();
     // 真实 canonical 基线：登记执行 + record APPLIED，取 GRN/CLM 双平面 canonical 字节。
+    const permit = await issuePermit(store, {
+      subjectIds: [gid("PAGE.DASHBOARD")],
+      requestedBy: HUMAN,
+    });
     const execution = await beginExecution(store, {
+      permitIds: [permit.permitRef],
       role: "orchestrator", runtime: "claude-code", identityKind: "interactive",
       startedAt: "2026-08-30T00:00:00.000Z",
     });
@@ -294,7 +304,7 @@ describe("compact 批量收编（身份键往返保全）", () => {
       from: writeInput(claimPayload()),
       executionId: execution.execution_id,
     });
-    expect(claimOutcome.ok).toBe(true);
+    expect(claimOutcome.ok, JSON.stringify(claimOutcome.errors)).toBe(true);
 
     // 手写伪造：换号到未登记的 AGX-2099-9999（canonical 字节自洽——plan 重放恒等价）。
     const runsDir = join(root, ".pomaster", "evidence", "runs");

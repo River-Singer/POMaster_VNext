@@ -76,6 +76,11 @@ import {
   PYTEST_RUN_COMMAND,
   PYTEST_TOOL_ID,
 } from "./pytest-leg.js";
+import {
+  runSurefireLeg,
+  SUREFIRE_TOOL_ID,
+  SUREFIRE_RUN_COMMAND,
+} from "./maven-leg.js";
 
 // ============================================================
 // 口径常量（gate 名不属 vocab-lock 管辖；新增 gate 须经 gate_def 版本化登记）
@@ -144,6 +149,25 @@ function detectVitest(facts: DetectorFacts): DetectionResult {
     tool,
     reason: "package.json 未声明 vitest 依赖（devDependencies/dependencies 均无）",
     installHint: "安装建议：corepack pnpm add -D vitest（BUILD 门禁 test 腿）",
+  };
+}
+
+/** BE-1：pom.xml 在座 = Maven Surefire 腿 READY（版本锚 policy 供给，run 期 mvn --version 实测对账）。 */
+function detectMaven(facts: DetectorFacts): DetectionResult {
+  const tool = SUREFIRE_TOOL_ID;
+  if (facts.fileExists(facts.joinPath(facts.projectRoot, "pom.xml"))) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence: "pom.xml 命中（Maven 构建；surefire 报告 target/surefire-reports）",
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason: "未找到 pom.xml——Maven test 腿缺席",
+    installHint: "Maven 项目把 pom.xml 放项目根（BUILD 门禁 test 腿；run 期以 mvn --version 实测对账）",
   };
 }
 
@@ -400,17 +424,48 @@ export function createBuildAdapter(): GateAdapter<
     detect(facts: DetectorFacts): BuildToolDetection {
       const vitest = detectVitest(facts);
       const pytest = detectPytest(facts);
+      const maven = detectMaven(facts);
       const status: DetectionStatus =
-        vitest.status === "READY" || pytest.status === "READY"
+        vitest.status === "READY" || pytest.status === "READY" || maven.status === "READY"
           ? "READY"
           : "NOT_INSTALLED";
-      return { status, vitest, pytest };
+      return { status, vitest, pytest, maven };
     },
 
     prepare(scope: GateScope, policy: GatePolicy, facts?: DetectorFacts): GatePlan {
       const resolved = facts ?? platformDetectorFacts(scope.projectRoot);
       const detection = detectVitest(resolved);
       if (detection.status !== "READY") {
+        const maven = detectMaven(resolved);
+        if (maven.status === "READY") {
+          // maven 腿（BE-1）：版本锚 policy 供给（maven 版本无法从 pom.xml 可靠探测），
+          // run 期以 mvn --version 实测对账；禁伪造 semver。
+          if (policy.expectedToolVersion === null || policy.expectedToolVersion === undefined) {
+            throw new GateAdapterError(
+              "runner_not_ready",
+              "maven 腿就绪但 policy.expectedToolVersion 缺失（maven 版本无法从 pom.xml 可靠探测）",
+              '由编排层从 catalog/profile 锁供给 maven 版本锚（如 "3.9.6"）；run 期以 mvn --version 实测对账，失配降级 warning',
+            );
+          }
+          const triggerMaven: RunTriggerValue = policy.trigger ?? "on_demand";
+          return {
+            tool: SUREFIRE_TOOL_ID,
+            toolVersion: policy.expectedToolVersion,
+            gate: BUILD_GATE_NAME,
+            gateDef: BUILD_GATE_DEF,
+            metricDialect: TEST_METRIC_DIALECT,
+            runner: "maven",
+            command: SUREFIRE_RUN_COMMAND,
+            cwd: scope.projectRoot,
+            timeoutMs: policy.timeoutMs ?? DEFAULT_RUN_TIMEOUT_MS,
+            grn: policy.grn,
+            ranAtSeq: policy.ranAtSeq,
+            trigger: triggerMaven,
+            subjectId: scope.subjectId ?? null,
+            denominatorRefs: scope.denominatorRefs ?? [],
+            expectedToolVersion: policy.expectedToolVersion ?? null,
+          };
+        }
         const pytest = detectPytest(resolved);
         if (pytest.status === "READY") {
           // pytest 腿（G5）：版本无法从配置文件可靠探测——版本锚必须由 policy 供给
@@ -490,6 +545,11 @@ export function createBuildAdapter(): GateAdapter<
         // pytest 腿：版本探测 + junitxml 实跑 + 报告回读（PATH 消毒见 pytest-leg.ts）。
         return runPytestLeg(plan, spawnFn);
       }
+      if (plan.runner === "maven") {
+        // maven 腿（BE-1）：版本探测 + mvn -B test 实跑 + surefire TEST-*.xml 回读拼装
+        // （stdout 携带 XML——normalize 判卷锚与 pytest 腿同构，producer 词形 surefire-xml）。
+        return runSurefireLeg(plan, spawnFn);
+      }
       if (plan.runner !== "vitest") {
         throw new GateAdapterError(
           "runner_not_implemented",
@@ -526,6 +586,12 @@ export function createBuildAdapter(): GateAdapter<
       if (plan.runner === "pytest") {
         // pytest 腿：JUnit XML 判卷（spawn_failed / 不可解析 → not_run，腿内处理）。
         return normalizePytestLeg(plan, raw, selfMs);
+      }
+      if (plan.runner === "maven") {
+        // maven 腿（BE-1）：surefire XML = JUnit 家族词形——判卷 walker 单一锚复用
+        // normalizePytestLeg（recomputed 逐用例重算/asserted 孪生/全 skipped blindspot
+        // 同一条 C1/C5 线），legLabel 如实重标 maven（absence 文案不冒用 pytest 词形）。
+        return normalizePytestLeg(plan, raw, selfMs, "maven");
       }
       if (raw.kind === "spawn_failed") {
         // not_run 也是七态之一：缺席必须显式表达（counts 全零是显式零，非省略）；

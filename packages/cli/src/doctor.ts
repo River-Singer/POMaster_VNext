@@ -92,6 +92,7 @@ import {
   readBaselineConfirmationPresentation,
   type BaselineConfirmationPresentation,
 } from "./baseline.js";
+import { readGuardFaults, type GuardFaultAssessment } from "./guard-faults.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -113,6 +114,7 @@ export interface DoctorProbe {
 }
 
 export interface DoctorResult {
+  readonly guard_faults?: GuardFaultAssessment;
   readonly ok: boolean;
   readonly probes: readonly DoctorProbe[];
   /** Platform delivery layers stay separate; unknown trust/observation is never promoted to READY. */
@@ -322,19 +324,20 @@ export interface DoctorToolProbeDeps {
   readonly resolveHookExecutable?: HookExecutableResolver;
 }
 
-/** D22 一键引导文本：粘贴即完成 chrome-devtools MCP 配置（生成 .mcp.json 或并入现有 mcpServers）。 */
+/** Chrome DevTools MCP 恢复路标：显式准备锁定工具；配置、宿主信任与真实就绪分离。 */
 export const CHROME_DEVTOOLS_MCP_HINT =
-  '在项目根 .mcp.json 写入 {"mcpServers":{"chrome-devtools":{"command":"npx","args":["-y","chrome-devtools-mcp@latest"]}}} ' +
-  "（已存在 .mcp.json 时把 chrome-devtools 条目并入 mcpServers），然后重启 harness。";
+  "Chrome DevTools MCP 缺项：按宿主显式运行 pomaster tools prepare --host claude 或 pomaster tools prepare --host codex，使用兼容锁定版本；" +
+  "仅核验已有工具运行 pomaster tools prepare --host claude --check 或 pomaster tools prepare --host codex --check。" +
+  "Claude 项目 MCP 需宿主批准，Codex 项目需宿主信任，prepare 不代授信任；" +
+  "MCP 协议、浏览器 smoke、Playwright runner 与浏览器二进制分别核验。配置不代表就绪，宿主实际加载/调用仍需观察。";
 
-/**
- * playwright MCP 一键引导文本（P-v06 批次 2.6 Browser Eyes）：chrome-devtools 同款形态，
- * 官方包名 @playwright/mcp——粘贴即完成 playwright MCP 配置（生成 .mcp.json 或并入现有
- * mcpServers）。观测/验证分工语义见 catalog/knowledge/knowledge.web.browser.mcp_eyes.json。
- */
+/** Playwright MCP 恢复路标：交互 MCP 与确定性 runner 各自核验，不以配置冒充就绪。 */
 export const PLAYWRIGHT_MCP_HINT =
-  '在项目根 .mcp.json 写入 {"mcpServers":{"playwright":{"command":"npx","args":["-y","@playwright/mcp@latest"]}}} ' +
-  "（已存在 .mcp.json 时把 playwright 条目并入 mcpServers），然后重启 harness。";
+  "Playwright MCP 缺项：按宿主显式运行 pomaster tools prepare --host claude 或 pomaster tools prepare --host codex，使用兼容锁定版本；" +
+  "仅核验已有工具运行 pomaster tools prepare --host claude --check 或 pomaster tools prepare --host codex --check。" +
+  "Claude 项目 MCP 需宿主批准，Codex 项目需宿主信任，prepare 不代授信任；" +
+  "Playwright MCP 交互通道不等于 Playwright runner 确定性测试腿，MCP 协议、浏览器 smoke 与浏览器二进制分别核验。" +
+  "配置不代表就绪，宿主实际加载/调用仍需观察。";
 
 const KERNEL_PROBE_NAME = "kernel_doctor_probes";
 const MCP_PROBE_NAME = "chrome_devtools_mcp";
@@ -1182,6 +1185,15 @@ export async function runDoctor(
     });
   }
 
+  const guardFaults = readGuardFaults(rootDir);
+  probes.push({
+    probe: "guard_fault_telemetry",
+    status: guardFaults.errors.length > 0 ? "DEFECT" : "READY",
+    detail: guardFaults.errors.length > 0
+      ? guardFaults.errors.map(error => error.message).join("; ")
+      : `${guardFaults.events.length} retained guard fault(s); telemetry absent/parseable is not runtime health, recovery, or host isolation`,
+    hint: "Inspect original targets/timestamps and production execution audit/evidence freshness; retain the log. Historical diagnostics are not a permanent completion gate.",
+  });
   const ok = probes.every((p) => p.status === "READY");
   // 感知回执落盘计数（vNext Batch 2 R6 / C9）：加法呈现字段，不改 ok 语义；
   // kernel countObservationRecords 单一实现（目录缺席 = 0 显式缺席）。
@@ -1231,6 +1243,7 @@ export async function runDoctor(
     inspectHarnessIntegration(rootDir, "codex"),
   ]);
   const result: DoctorResult = {
+    guard_faults: guardFaults,
     ok,
     probes,
     harness_integrations: harnessIntegrations,

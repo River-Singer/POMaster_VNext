@@ -164,6 +164,7 @@ import {
 export * from "./adapter-types.js";
 export * from "./build-adapter.js";
 export * from "./pytest-leg.js";
+export * from "./maven-leg.js";
 export * from "./contract-adapter.js";
 export * from "./architecture-adapter.js";
 export * from "./browser-adapter.js";
@@ -179,6 +180,9 @@ export * from "./crap.js";
 export * from "./coverage-adapter.js";
 export * from "./mutation-leg.js";
 export * from "./mutation-adapter.js";
+export * from "./pit-leg.js";
+export * from "./archunit-leg.js";
+export * from "./jvm-report.js";
 export * from "./seed-mutants.js";
 export * from "./security-leg.js";
 export * from "./security-adapter.js";

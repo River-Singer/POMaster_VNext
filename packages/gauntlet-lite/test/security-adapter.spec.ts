@@ -33,9 +33,11 @@ import {
   SECURITY_GATE_CONFIG_FILE,
   SECURITY_METRIC_DIALECT_UNDECLARED,
   SECURITY_POLICY_SKIP_METRIC_DIALECT,
+  createDependencyCheckAdapter,
   createGitleaksAdapter,
   createPipAuditAdapter,
   createSemgrepAdapter,
+  createTrivyAdapter,
   detectGitleaks,
   detectPipAudit,
   detectSemgrep,
@@ -56,6 +58,7 @@ import {
   type GatePolicy,
   type GateResultRecord,
   type SecurityLegPlan,
+  type SecurityLegRunner,
   type SpawnFn,
   type SpawnOutcome,
 } from "@pomaster/gauntlet-lite";
@@ -159,6 +162,8 @@ interface LegPresence {
   readonly gitleaks?: boolean;
   readonly pipAudit?: boolean;
   readonly semgrep?: boolean;
+  readonly dependencyCheck?: boolean;
+  readonly trivy?: boolean;
 }
 
 /** security fake facts：三工具在位性按 opts 装配（PATH 线索）；config = security-gate.json 内容。 */
@@ -179,6 +184,14 @@ function securityFacts(
   }
   if (presence.semgrep !== false) {
     files[posixJoin(FAKE_TOOLS, "semgrep.exe")] = null;
+  }
+  if (presence.dependencyCheck !== false) {
+    files[posixJoin(FAKE_TOOLS, "dependency-check.sh.exe")] = null;
+    files[posixJoin(FAKE_TOOLS, "dependency-check.sh")] = null;
+  }
+  if (presence.trivy !== false) {
+    files[posixJoin(FAKE_TOOLS, "trivy.exe")] = null;
+    files[posixJoin(FAKE_TOOLS, "trivy")] = null;
   }
   return fakeFacts(projectRoot, { files, pathEnv: FAKE_TOOLS });
 }
@@ -237,7 +250,7 @@ function scriptedSpawn(
 
 /** 单腿全链路：prepare（fake facts）→ run（spawn/探针注入）→ normalize。 */
 function legPipeline(
-  runner: "gitleaks" | "pip-audit" | "semgrep",
+  runner: SecurityLegRunner,
   legPolicy: GatePolicy,
   facts: DetectorFacts,
   spawn: SpawnFn,
@@ -248,7 +261,11 @@ function legPipeline(
       ? createGitleaksAdapter({ spawnFn: spawn, executableProbe: probe })
       : runner === "pip-audit"
         ? createPipAuditAdapter({ spawnFn: spawn, executableProbe: probe })
-        : createSemgrepAdapter({ spawnFn: spawn, executableProbe: probe });
+        : runner === "dependency-check"
+          ? createDependencyCheckAdapter({ spawnFn: spawn, executableProbe: probe })
+          : runner === "trivy"
+            ? createTrivyAdapter({ spawnFn: spawn, executableProbe: probe })
+            : createSemgrepAdapter({ spawnFn: spawn, executableProbe: probe });
   const plan = adapter.prepare({ projectRoot: dir }, legPolicy, facts);
   const raw = adapter.run(plan);
   return adapter.normalize(raw, {});
@@ -903,11 +920,13 @@ function legsSpawn(
     gitleaks: "8.18.4",
     "pip-audit": "1.2.3",
     semgrep: "3.5.0",
+    "dependency-check": "12.1.0",
+    trivy: "0.55.0",
   },
 ): SpawnFn {
   return (command) => {
     if (command.includes("version")) {
-      const leg = ["gitleaks", "pip-audit", "semgrep"].find((name) =>
+      const leg = ["gitleaks", "pip-audit", "semgrep", "dependency-check", "trivy"].find((name) =>
         command.includes(name),
       );
       return {
@@ -918,7 +937,7 @@ function legsSpawn(
         externalMs: 5,
       };
     }
-    for (const leg of ["gitleaks", "pip-audit", "semgrep"] as const) {
+    for (const leg of ["gitleaks", "pip-audit", "semgrep", "dependency-check", "trivy"] as const) {
       if (command.includes(leg)) {
         const content = reports[leg];
         if (content !== undefined) {
@@ -935,13 +954,15 @@ const LEG_IDENTITIES = [
   { grn: "GRN-5001", ranAtSeq: 500 },
   { grn: "GRN-5002", ranAtSeq: 501 },
   { grn: "GRN-5003", ranAtSeq: 502 },
+  { grn: "GRN-5004", ranAtSeq: 503 },
+  { grn: "GRN-5005", ranAtSeq: 504 },
 ] as const;
 
 function runLegs(
   presence: LegPresence,
   config: string | null,
   reports: Partial<Record<"gitleaks" | "pip-audit" | "semgrep", string>>,
-): readonly [GateResultRecord, GateResultRecord, GateResultRecord] {
+): readonly GateResultRecord[] {
   return runSecurityGateLegs(
     { projectRoot: dir, subjectId: null, denominatorRefs: [] },
     LEG_IDENTITIES,
@@ -952,16 +973,18 @@ function runLegs(
         // 三道闸①a 的注入探针：按 fake facts 的在位性放行（gitleaks/pip-audit/semgrep）。
         executable === "gitleaks" ||
         executable === "pip-audit" ||
-        executable === "semgrep"
+        executable === "semgrep" ||
+        executable === "dependency-check.sh" ||
+        executable === "trivy"
           ? posixJoin(FAKE_TOOLS, executable)
           : null,
       gateTier: "STANDARD",
-      expectedToolVersions: { gitleaks: "8.18.4", pipAudit: "1.2.3", semgrep: "3.5.0" },
+      expectedToolVersions: { gitleaks: "8.18.4", pipAudit: "1.2.3", semgrep: "3.5.0", dependencyCheck: "12.1.0", trivy: "0.55.0" },
     },
   );
 }
 
-describe("runSecurityGateLegs：一次 check 跑三腿 = 三条 GRN 独立记录（B2-5 防假绿纪律）", () => {
+describe("runSecurityGateLegs：一次 check 跑全腿 = 逐腿 GRN 独立记录（B2-5 防假绿纪律；TS-3 起五腿）", () => {
   it("出口判据 2 场景「gitleaks 红 + pip-audit 绿 + semgrep not_run」：三条记录态各自正确、无聚合 ok", () => {
     const [gitleaks, pipAudit, semgrep] = runLegs(
       { semgrep: false },
@@ -994,7 +1017,7 @@ describe("runSecurityGateLegs：一次 check 跑三腿 = 三条 GRN 独立记录
       FULL_CONFIG,
       { gitleaks: GITLEAKS_CLEAN, "pip-audit": PIP_AUDIT_CLEAN, semgrep: JSON.stringify({ results: [], errors: [] }) },
     );
-    expect(Object.keys(tuple)).toEqual(["0", "1", "2"]);
+    expect(Object.keys(tuple)).toEqual(["0", "1", "2", "3", "4"]);
     expect((tuple as unknown as Record<string, unknown>)["verdict"]).toBeUndefined();
     expect((tuple as unknown as Record<string, unknown>)["ok"]).toBeUndefined();
     for (const record of [gitleaks, pipAudit, semgrep]) {
@@ -1384,5 +1407,128 @@ describe("security 三腿宿主真实 e2e（宿主未装则诚实 skip）", () =
       expect(["passed", "failed", "warning", "not_run"]).toContain(record.verdict);
       expectSchemaValid(record);
     }
+  });
+});
+
+
+// ============================================================
+// 6) TS-3 依赖腿（dependency-check / trivy；六腿六记录到货——Owner 裁定 2026-11-19）
+// ============================================================
+
+const DC_CONFIG = JSON.stringify({
+  "dependency-check": {
+    command:
+      "dependency-check.sh --project demo --scan . --format JSON --out reports/security/dependency-check.json",
+    failOn: ["HIGH"],
+    suppress: ["CVE-1111"],
+  },
+});
+
+const DC_REPORT = JSON.stringify({
+  dependencies: [
+    {
+      fileName: "lib/evil.jar",
+      vulnerabilities: [
+        { name: "CVE-1111", severity: "HIGH", description: "误报豁免样本" },
+        { name: "CVE-2222", severity: "HIGH", description: "真高危" },
+        { name: "CVE-3333", severity: "LOW", description: "低于口径" },
+        { name: "CVE-4444", severity: "MEDIUM", description: "低于口径" },
+      ],
+    },
+  ],
+});
+
+const TRIVY_CLEAN = JSON.stringify({
+  Results: [{ Target: "package-lock.json", Vulnerabilities: null }],
+});
+
+const TRIVY_FINDINGS = JSON.stringify({
+  Results: [
+    {
+      Target: "package-lock.json",
+      Vulnerabilities: [
+        { VulnerabilityID: "CVE-9999", PkgName: "lodash", Severity: "HIGH", FixedVersion: "4.17.21" },
+        { VulnerabilityID: "CVE-8888", PkgName: "axios", Severity: "LOW", FixedVersion: "1.6.1" },
+      ],
+    },
+  ],
+});
+
+describe("TS-3 依赖腿（dependency-check / trivy；六腿六记录）", () => {
+  it("dependency-check：failOn=[HIGH] + suppress CVE-1111 → violations=1（LOW/MEDIUM 不进口径、豁免不进）", () => {
+    const record = legPipeline(
+      "dependency-check",
+      policy("12.1.0"),
+      securityFacts(dir, {}, DC_CONFIG),
+      scriptedSpawn(
+        { stdout: "Dependency-Check core 12.1.0\n" },
+        {},
+        () => put("reports/security/dependency-check.json", DC_REPORT),
+      ),
+    );
+    expect(record.verdict).toBe("failed");
+    expect(record.counts.violations).toBe(1);
+    expect(record.counts.scanned).toBe(4);
+    expect(record.items?.some((item) => item.rule === "CVE-2222")).toBe(true);
+    expect(record.items?.find((item) => item.rule === "CVE-1111")?.message).toContain("已豁免");
+    expect(record.scopeNote).toContain("failOn=[HIGH]");
+  });
+
+  it("trivy：Vulnerabilities null → passed（无漏洞词形）；HIGH 发现 → failed（LOW 不进口径）", () => {
+    const clean = legPipeline(
+      "trivy",
+      policy("0.55.0"),
+      securityFacts(dir, {}, JSON.stringify({ trivy: { command: "trivy fs --format json --output reports/security/trivy.json ." } })),
+      scriptedSpawn({ stdout: "Version: 0.55.0\n" }, {}, () => put("reports/security/trivy.json", TRIVY_CLEAN)),
+    );
+    expect(clean.verdict).toBe("passed");
+    expect(clean.counts.violations).toBe(0);
+
+    const failed = legPipeline(
+      "trivy",
+      policy("0.55.0"),
+      securityFacts(dir, {}, JSON.stringify({ trivy: { command: "trivy fs --format json --output reports/security/trivy.json ." } })),
+      scriptedSpawn({ stdout: "Version: 0.55.0\n" }, {}, () => put("reports/security/trivy.json", TRIVY_FINDINGS)),
+    );
+    expect(failed.verdict).toBe("failed");
+    expect(failed.counts.violations).toBe(1);
+    expect(failed.items?.find((item) => item.rule === "CVE-9999")?.location).toContain("lodash");
+    expectSchemaValid(failed);
+  });
+
+  it("plan 携带判卷口径：failOn/suppress 从 security-gate.json 流入 plan", () => {
+    const adapter = createDependencyCheckAdapter();
+    const plan = adapter.prepare(
+      { projectRoot: dir },
+      policy("12.1.0"),
+      securityFacts(dir, {}, DC_CONFIG),
+    );
+    if (plan.absenceKind !== null) throw new Error(plan.absentReason ?? "plan absent");
+    expect(plan.failOn).toEqual(["HIGH"]);
+    expect(plan.suppress).toEqual(["CVE-1111"]);
+    expect(plan.metricDialect).toBe("security:dependency_check_vulnerabilities");
+    expect(plan.tool).toBe("gauntlet:dependency-check");
+  });
+
+  it("runSecurityGateLegs 五段全声明全 clean → passed×5（六腿纪律：零聚合位、逐腿独立）", () => {
+    const allClean = JSON.stringify({
+      gitleaks: { command: "gitleaks detect --report-format json --report-path reports/security/gitleaks.json" },
+      "pip-audit": { command: "pip-audit -r requirements.txt -f json -o reports/security/pip-audit.json" },
+      semgrep: { command: "semgrep --config auto --json --output reports/security/semgrep.json src/" },
+      "dependency-check": { command: "dependency-check.sh --format JSON --out reports/security/dependency-check.json", failOn: ["CRITICAL", "HIGH"], suppress: [] },
+      trivy: { command: "trivy fs --format json --output reports/security/trivy.json ." },
+    });
+    const reports = {
+      gitleaks: "[]",
+      "pip-audit": JSON.stringify([]),
+      semgrep: JSON.stringify({ results: [], errors: [] }),
+      "dependency-check": JSON.stringify({ dependencies: [] }),
+      trivy: TRIVY_CLEAN,
+    };
+    const records = runLegs({}, allClean, reports);
+    expect(records).toHaveLength(5);
+    expect(records.every((record) => record.verdict === "passed")).toBe(true);
+    expect(records.every((record) => record.gate === "SECURITY")).toBe(true);
+    expect(new Set(records.map((record) => record.metricDialect)).size).toBe(5);
   });
 });

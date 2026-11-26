@@ -287,6 +287,15 @@ export { loadTruthIndex } from "./store.js";
 
 // —— 事务操作集（op 判别联合） ——
 
+/** Existing schema-02 binding declarations; probes remain caller claims, never proof. */
+export interface ObjectKeyBindingInput {
+  readonly artifactType: string;
+  readonly value: string;
+  readonly expect?: Readonly<Record<string, unknown>>;
+  readonly probe?: Readonly<Record<string, unknown>>;
+  readonly matchRule?: "mechanical" | "manual_confirmed";
+}
+
 /** 02 对象正文信封（写入输入形态；rev/bodySha256 不由人给——事务分配/维护，D24+A4）。 */
 export interface ObjectEnvelopeInput {
   readonly id: GovernedId;
@@ -333,6 +342,10 @@ export interface ObjectEnvelopeInput {
   }[];
   /** 人类散文唯一合法入口；机器不得解析其内容做判卷（P9 教训）。 */
   readonly notesMd?: string | null;
+  readonly keyBindings?: {
+    readonly code?: readonly ObjectKeyBindingInput[];
+    readonly artifact?: readonly ObjectKeyBindingInput[];
+  };
 }
 
 /** evidence/claims/CLM-* 写入输入。assertedBy 是 CLAIMED——kernel 不判其真，只登记。 */
@@ -407,7 +420,13 @@ export interface VerifyClaimInput {
 export { VERIFICATION_METHOD_VALUES } from "./store.js";
 export type { VerificationMethodValue } from "./store.js";
 
+export { readKeybindings, probeKeybinding, keybindingConfirmationSubject, registerPersistedSignoffVerifier } from "./keybindings.js";
+export type { KeybindingRow, PersistedSignoffExpectation, PersistedSignoffVerifier } from "./keybindings.js";
+export { assessTruthBodyEdits, validateObjectEnvelope, validateFactCandidate, truthBodyAdvanceSubject, prepareTruthBodyAdvance, breakGlassConfirmationSubject, transactionMutationSubjects, readBreakGlassDisclosures, registerPlannerConstructionVerifier, plannerTaskArchetype, PLANNER_TASK_ARCHETYPE_ID } from "./store.js";
+export type { PlannerConstructionVerifier } from "./store.js";
+
 export type TransactionOp =
+  | { readonly op: "upsert_keybinding"; readonly row: import("./keybindings.js").KeybindingRow; readonly signoffRef?: string }
   | { readonly op: "upsert_object"; readonly envelope: ObjectEnvelopeInput }
   | {
       readonly op: "transition_object";
@@ -514,8 +533,10 @@ export interface AdvanceRecordInput {
   /** 事件 actor：CLI 只取显式 --actor，不从会话身份自动填。 */
   readonly actor: string;
   readonly reason: string;
-  /** 调用方按现状重算的当前锚；缺席 = 以段内 new_anchor 为准。 */
+  /** Legacy non-truth-body anchors may supply current state; truth_body always rederives it in kernel. */
   readonly currentAnchor?: VnextAnchor;
+  /** Consumed subject-bound SSH signoff; truth_body always derives its own actual current anchor. */
+  readonly signoffRef?: string;
   /** 同批退役条目（vnext lane 五种）。 */
   readonly retirements?: readonly Readonly<Record<string, unknown>>[];
   /**
@@ -525,8 +546,26 @@ export interface AdvanceRecordInput {
   readonly reinstatements?: readonly Readonly<Record<string, unknown>>[];
 }
 
+export interface BreakGlassRequest {
+  readonly signoffRef: string;
+  readonly subjectIds: readonly string[];
+  readonly issuedAtSeq: number;
+  readonly expiresAtSeq: number;
+  readonly nonce: string;
+}
+
 export interface Transaction {
   readonly ops: readonly TransactionOp[];
+  /** One candidate, with a kernel-prepared narrow permit; caller actor is provenance only. */
+  readonly factAdmission?: { readonly request: PermitRequest; readonly parentRef?: GovernedId };
+  /** Exact signed emergency statement; only scoped permit denial is overridden. */
+  readonly breakGlass?: BreakGlassRequest;
+  /** Trusted bootstrap rederives the bounded runtime construction from the consumed kickoff. */
+  readonly plannerConstruction?: { readonly signoffRef: string };
+  /** Explicit permit; never inferred from authorityRef or actor strings. */
+  readonly permitRef?: string;
+  /** Kernel reruns the real New Entity gate; this is input, not caller-authored proof. */
+  readonly newEntity?: import("./new-entity.js").NewEntityGateInput & { readonly catalogRoot: string };
   /** 审批/决策引用（DECISION.* / CHANGE.* / PERMIT.*，general_id 宽松词形）。 */
   readonly authorityRef?: string;
   readonly note?: string;
@@ -542,6 +581,7 @@ export interface Transaction {
 }
 
 export interface TransactionResult {
+  readonly issuedPermit?: Permit;
   /** 本事务分配的全局事件序号；幂等重放短路时 = 原 seq 不变。 */
   readonly appliedSeq: number;
   /** inputs_fingerprint 相等 → 零写入短路（幂等；字节稳定，rev 不空转递增）。 */

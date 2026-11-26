@@ -258,6 +258,13 @@
       ]
     },
     {
+      "archetype": "archetype.governance.task_unit.json",
+      "mappings": [
+        { "component": "Descriptions", "basis": "semantic.responsibility「承载既有 TASK 的意图、验收及关联 CLM」——intent/acceptance、CLM 与 artifact 引用详情以 Descriptions 只读呈现；仅 NON-AUTHORITATIVE 渲染建议，不定义任务操作或工作流" },
+        { "component": "Typography", "basis": "semantic.responsibility「绑定实际 kickoff、场景计划和 generation 文件，并通过 TASK→目录 INSTANCE_OF 留存确定性构造的采纳出处」——实际 binding/ref 文本与已声明 TASK/CLM 模型词形以 Typography 原样只读呈现；仅 NON-AUTHORITATIVE 渲染建议，不替换为运行时任务模型" }
+      ]
+    },
+    {
       "archetype": "archetype.page.analysis.json",
       "mappings": [
         { "component": "Card", "basis": "summary_zh「上下文→过滤→汇总→主分析面→下钻→导出的标准动线」——分析区块容器以 Card 承载" },

@@ -187,7 +187,7 @@ export interface CrapLegPlan extends RecordPlanFields {
   /** 覆盖率报告仓内相对路径（与 COVERAGE gate 同源解析）。 */
   readonly coverageReportPath: string;
   /** 覆盖率报告 runner（决定解析器分派；与 COVERAGE gate 同源）。 */
-  readonly coverageRunner: "c8" | "pytest-cov";
+  readonly coverageRunner: "c8" | "pytest-cov" | "jacoco";
   readonly maxCrap: number;
   /** true = maxCrap 来自出厂兜底（provisional 待 A4）；false = 配置显式供给。 */
   readonly maxCrapProvisional: boolean;

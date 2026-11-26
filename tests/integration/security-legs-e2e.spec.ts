@@ -238,12 +238,14 @@ const LEG_IDENTITIES = [
   { grn: "GRN-0001", ranAtSeq: 10 },
   { grn: "GRN-0002", ranAtSeq: 11 },
   { grn: "GRN-0003", ranAtSeq: 12 },
+  { grn: "GRN-0004", ranAtSeq: 13 },
+  { grn: "GRN-0005", ranAtSeq: 14 },
 ] as const;
 
 function runLegs(
   reports: Partial<Record<"gitleaks" | "pip-audit" | "semgrep", string>>,
   presence: LegPresence = {},
-): readonly [GateResultRecord, GateResultRecord, GateResultRecord] {
+): readonly GateResultRecord[] {
   return runSecurityGateLegs(
     { projectRoot: root, subjectId: null, denominatorRefs: [] },
     LEG_IDENTITIES,
@@ -324,25 +326,38 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
 
     // 落盘面：恰好三条 GRN 文件（无第四条聚合记录）。
     const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
-    expect(files).toEqual(["GRN-0001.json", "GRN-0002.json", "GRN-0003.json"]);
+    // TS-3 起五腿：新增 dependency-check/trivy 段未声明 → not_configured 各一记录（缺席显式非省略）。
+    expect(files).toEqual([
+      "GRN-0001.json",
+      "GRN-0002.json",
+      "GRN-0003.json",
+      "GRN-0004.json",
+      "GRN-0005.json",
+    ]);
 
-    // 逐文件三态 + 三件套随腿区分（缺席腿的口径 = 本腿真实口径轴——腿身份已知，
+    // 逐文件态 + 三件套随腿区分（缺席腿的口径 = 本腿真实口径轴——腿身份已知，
     // 「undeclared」只用于配置未定态，两者记录级可辨）。
     const inlines = files.map(readRunInline);
     expect(inlines.map((inline) => inline["verdict"])).toEqual([
       "failed",
       "passed",
       "not_run",
+      "not_configured",
+      "not_configured",
     ]);
     expect(inlines.map((inline) => inline["tool"])).toEqual([
       "gauntlet:gitleaks",
       "gauntlet:pip-audit",
       "gauntlet:semgrep",
+      "gauntlet:dependency-check",
+      "gauntlet:trivy",
     ]);
     expect(inlines.map((inline) => inline["metric_dialect"])).toEqual([
       "security:gitleaks_secrets",
       "security:pip_audit_vulnerabilities",
       "security:semgrep_findings",
+      "security:undeclared",
+      "security:undeclared",
     ]);
     // 红腿 violations 从报告重算（泄密位置在 items 不丢失——出口判据 4 的落盘面）。
     const gitleaks = inlines[0] as Record<string, unknown>;
@@ -381,7 +396,7 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
     });
     await ledgerIngest(records);
     const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
-    expect(files).toHaveLength(3);
+    expect(files).toHaveLength(5);
     for (const fileName of files) {
       const inline = readRunInline(fileName);
       // 聚合工具身份不存在（B2-5：无单一 "security ok" 绿灯的载体）。
@@ -392,7 +407,7 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
       );
     }
     const verdicts = files.map((f) => readRunInline(f)["verdict"]);
-    expect(verdicts).toEqual(["failed", "passed", "passed"]);
+    expect(verdicts).toEqual(["failed", "passed", "passed", "not_configured", "not_configured"]);
   });
 });
 
@@ -652,8 +667,8 @@ describe("⑥ 宿主真实双分支 E2E：探测在座→真跑判卷；探测�
       { runner: "pip-audit" as const, record: records[1] },
       { runner: "semgrep" as const, record: records[2] },
     ];
-    // 三 GRN 独立（缺席也是独立记录，非省略、非合并）。
-    expect(new Set(records.map((record) => record.grn)).size).toBe(3);
+    // GRN 独立（TS-3 起五腿；缺席也是独立记录，非省略、非合并）。
+    expect(new Set(records.map((record) => record.grn)).size).toBe(5);
 
     for (const { runner, record } of byRunner) {
       const note = record.scopeNote ?? "";
@@ -694,6 +709,8 @@ describe("⑥ 宿主真实双分支 E2E：探测在座→真跑判卷；探测�
     const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
-    expect(verdicts).toEqual(byRunner.map((leg) => leg.record.verdict));
+    expect(verdicts.slice(0, 3)).toEqual(byRunner.map((leg) => leg.record.verdict));
+    // 新增两腿段未声明 → not_configured 尾随（配置缺席诚实态，非省略）。
+    expect(verdicts.slice(3)).toEqual(["not_configured", "not_configured"]);
   });
 });

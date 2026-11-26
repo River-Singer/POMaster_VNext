@@ -6,11 +6,11 @@
  * 防假绿核心纪律（随版计划 B2-5 原文：「三个独立 adapter，禁止合并为单一
  * "security ok" 绿灯」）——本文件的结构性落实
  * ============================================================
- * - **三个独立 adapter**：createGitleaksAdapter / createPipAuditAdapter /
+ * - **独立 adapter**：createGitleaksAdapter / createPipAuditAdapter /
  *   createSemgrepAdapter 三工厂三实例，各自独立 detect/prepare/run/normalize；
  *   无「SECURITY 总 adapter」、无 runner 选择位（coverage/mutation 的单 runner
  *   形态在此刻意不采用——选位即合并点）；
- * - **三腿三记录**：runSecurityGateLegs 一次跑三腿 = 三条独立 GateResultRecord
+ * - **腿腿记录**：runSecurityGateLegs 一次跑全腿 = 逐腿独立 GateResultRecord
  *   （各自 grn/ranAtSeq/tool/metric_dialect/verdict），返回三元组——类型签名上
  *   不存在任何聚合 verdict 位；
  * - **无聚合呈现面**：ok 语义归编排/呈现层逐腿罗列（三行三态），任何把三腿
@@ -51,12 +51,16 @@ import type {
   SpawnFn,
 } from "./adapter-types.js";
 import { GAUNTLET_LITE_VERSION } from "./adapter-types.js";
-import { detectGitleaks, detectPipAudit, detectSemgrep, platformDetectorFacts, platformExecutableProbe } from "./detectors.js";
+import { detectDependencyCheck, detectGitleaks, detectPipAudit, detectSemgrep, detectTrivy, platformDetectorFacts, platformExecutableProbe } from "./detectors.js";
 import { absenceRecord, assertCommonGates } from "./normalize-common.js";
 import { resolveGateTier } from "./coverage-adapter.js";
 import { securitySpawn } from "./security-leg.js";
 import {
   DEFAULT_SECURITY_TIMEOUT_MS,
+  DEPENDENCY_CHECK_METRIC_DIALECT,
+  DEPENDENCY_CHECK_TOOL_ID,
+  TRIVY_METRIC_DIALECT,
+  TRIVY_TOOL_ID,
   GITLEAKS_METRIC_DIALECT,
   GITLEAKS_TOOL_ID,
   PIP_AUDIT_METRIC_DIALECT,
@@ -91,7 +95,9 @@ export const SECURITY_CONFIG_HINT =
   'Python 依赖漏洞腿 "pip-audit":{"command":"pip-audit -r requirements.txt -f json -o reports/security/pip-audit.json"}；' +
   '静态分析腿 "semgrep":{"command":"semgrep --config <cfg> --json --output reports/security/semgrep.json <target>"}；' +
   '各段可选 "report"（报告落点声明；缺省 reports/security/<工具名>.json——命令必须自行把 JSON 报告写到声明路径，报告回读是唯一判卷锚）；' +
-  "三腿三 adapter 三 GRN 独立入账，禁止合并为单一 \"security ok\" 绿灯（防假绿纪律，B2-5 原文）；" +
+  "六腿六 adapter 六 GRN 独立入账（TS-3 依赖腿到货，三腿词面扩六——独立 adapter 纪律不变），禁止合并为单一 \"security ok\" 绿灯（防假绿纪律，B2-5 原文）；" +
+  '依赖漏洞 Maven 腿 "dependency-check":{"command":"dependency-check.sh --project <p> --scan . --format JSON --out reports/security/dependency-check.json","failOn":["CRITICAL","HIGH"],"suppress":["CVE-…"]}（可选 failOn 判卷口径闭包缺省 CRITICAL+HIGH；可选 suppress CVE 豁免清单——误报偏多）；' +
+  '依赖漏洞 npm/容器腿 "trivy":{"command":"trivy fs --format json --output reports/security/trivy.json <target>","failOn":[…],"suppress":[…]}；' +
   "未声明段是诚实缺席（not_configured），不会被记为通过";
 
 /** 单腿配置段（段内两字段；report 缺省按 runner 固定落点）。 */
@@ -100,6 +106,10 @@ export interface SecurityLegToolConfig {
   readonly command: string;
   /** 报告落点声明（可选；null = runner 缺省 reports/security/<工具名>.json）。 */
   readonly report: string | null;
+  /** 判卷口径闭包（可选；依赖腿缺省 DEFAULT_SECURITY_FAIL_ON = CRITICAL+HIGH）。 */
+  readonly failOn: readonly string[] | null;
+  /** CVE 豁免清单（可选；命中的发现不进 violations）。 */
+  readonly suppress: readonly string[] | null;
 }
 
 /** 单腿配置段读取三态：declared（就绪）/ undeclared（段未声明——合法缺席）/ invalid（段坏形）。 */
@@ -117,6 +127,8 @@ export interface SecurityGateConfigState {
   readonly gitleaks: SecurityLegConfigState;
   readonly pipAudit: SecurityLegConfigState;
   readonly semgrep: SecurityLegConfigState;
+  readonly dependencyCheck: SecurityLegConfigState;
+  readonly trivy: SecurityLegConfigState;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -162,11 +174,35 @@ function readLegSection(
       installHint: `字段形态见：${SECURITY_CONFIG_HINT}`,
     };
   }
+  const failOn = raw["failOn"];
+  if (
+    failOn !== undefined &&
+    (!Array.isArray(failOn) || !failOn.every((entry) => typeof entry === "string"))
+  ) {
+    return {
+      kind: "invalid",
+      reason: `${SECURITY_GATE_CONFIG_FILE} 的 "${sectionKey}" 段 failOn 必须是字符串数组（判卷口径严重级闭包，如 ["CRITICAL","HIGH"]）`,
+      installHint: `字段形态见：${SECURITY_CONFIG_HINT}`,
+    };
+  }
+  const suppress = raw["suppress"];
+  if (
+    suppress !== undefined &&
+    (!Array.isArray(suppress) || !suppress.every((entry) => typeof entry === "string"))
+  ) {
+    return {
+      kind: "invalid",
+      reason: `${SECURITY_GATE_CONFIG_FILE} 的 "${sectionKey}" 段 suppress 必须是字符串数组（CVE 豁免清单）`,
+      installHint: `字段形态见：${SECURITY_CONFIG_HINT}`,
+    };
+  }
   return {
     kind: "declared",
     config: {
       command,
       report: typeof report === "string" ? report.replaceAll("\\", "/") : null,
+      failOn: Array.isArray(failOn) ? (failOn as string[]) : null,
+      suppress: Array.isArray(suppress) ? (suppress as string[]) : null,
     },
   };
 }
@@ -188,6 +224,8 @@ export function readSecurityGateConfig(facts: DetectorFacts): SecurityGateConfig
       gitleaks: { kind: "undeclared" },
       pipAudit: { kind: "undeclared" },
       semgrep: { kind: "undeclared" },
+      dependencyCheck: { kind: "undeclared" },
+      trivy: { kind: "undeclared" },
     };
   }
   let parsed: unknown;
@@ -203,6 +241,8 @@ export function readSecurityGateConfig(facts: DetectorFacts): SecurityGateConfig
       gitleaks: { kind: "undeclared" },
       pipAudit: { kind: "undeclared" },
       semgrep: { kind: "undeclared" },
+      dependencyCheck: { kind: "undeclared" },
+      trivy: { kind: "undeclared" },
     };
   }
   if (!isPlainObject(parsed)) {
@@ -215,6 +255,8 @@ export function readSecurityGateConfig(facts: DetectorFacts): SecurityGateConfig
       gitleaks: { kind: "undeclared" },
       pipAudit: { kind: "undeclared" },
       semgrep: { kind: "undeclared" },
+      dependencyCheck: { kind: "undeclared" },
+      trivy: { kind: "undeclared" },
     };
   }
   return {
@@ -227,6 +269,8 @@ export function readSecurityGateConfig(facts: DetectorFacts): SecurityGateConfig
     gitleaks: readLegSection(parsed, "gitleaks"),
     pipAudit: readLegSection(parsed, "pip-audit"),
     semgrep: readLegSection(parsed, "semgrep"),
+    dependencyCheck: readLegSection(parsed, "dependency-check"),
+    trivy: readLegSection(parsed, "trivy"),
   };
 }
 
@@ -235,6 +279,8 @@ export function readSecurityGateConfig(facts: DetectorFacts): SecurityGateConfig
 // ============================================================
 
 function legToolId(runner: SecurityLegRunner): string {
+  if (runner === "dependency-check") return DEPENDENCY_CHECK_TOOL_ID;
+  if (runner === "trivy") return TRIVY_TOOL_ID;
   return runner === "gitleaks"
     ? GITLEAKS_TOOL_ID
     : runner === "pip-audit"
@@ -243,6 +289,8 @@ function legToolId(runner: SecurityLegRunner): string {
 }
 
 function legMetricDialect(runner: SecurityLegRunner): string {
+  if (runner === "dependency-check") return DEPENDENCY_CHECK_METRIC_DIALECT;
+  if (runner === "trivy") return TRIVY_METRIC_DIALECT;
   return runner === "gitleaks"
     ? GITLEAKS_METRIC_DIALECT
     : runner === "pip-audit"
@@ -254,6 +302,8 @@ function legConfigState(
   state: SecurityGateConfigState,
   runner: SecurityLegRunner,
 ): SecurityLegConfigState {
+  if (runner === "dependency-check") return state.dependencyCheck;
+  if (runner === "trivy") return state.trivy;
   return runner === "gitleaks"
     ? state.gitleaks
     : runner === "pip-audit"
@@ -305,12 +355,15 @@ function createLegAdapterInner(
 ): GateAdapter<DetectionResult, SecurityLegPlan, SecurityLegOutput> {
   const spawnFn = options.spawnFn ?? securitySpawn;
   const executableProbe = options.executableProbe ?? platformExecutableProbe;
-  const detector = (facts: DetectorFacts): DetectionResult =>
-    runner === "gitleaks"
+  const detector = (facts: DetectorFacts): DetectionResult => {
+    if (runner === "dependency-check") return detectDependencyCheck(facts);
+    if (runner === "trivy") return detectTrivy(facts);
+    return runner === "gitleaks"
       ? detectGitleaks(facts)
       : runner === "pip-audit"
         ? detectPipAudit(facts)
         : detectSemgrep(facts);
+  };
   const sectionKey = sectionKeyOf(runner);
 
   return {
@@ -497,6 +550,8 @@ function createLegAdapterInner(
         versionProbeCommand: securityVersionProbeCommand(runner),
         executable: securityLegExecutable(runner),
         expectedToolVersion: policy.expectedToolVersion,
+        ...(leg.config.failOn !== null ? { failOn: leg.config.failOn } : {}),
+        ...(leg.config.suppress !== null ? { suppress: leg.config.suppress } : {}),
       };
     },
 
@@ -584,6 +639,20 @@ export function createSemgrepAdapter(
   return createLegAdapterInner("semgrep", options);
 }
 
+/** TS-3 依赖漏洞 Maven 腿（六腿六记录纪律——独立 adapter 独立实例独立记录）。 */
+export function createDependencyCheckAdapter(
+  options: SecurityAdapterOptions = {},
+): GateAdapter<DetectionResult, SecurityLegPlan, SecurityLegOutput> {
+  return createLegAdapterInner("dependency-check", options);
+}
+
+/** TS-3 依赖漏洞 npm/容器腿（六腿六记录纪律——独立 adapter 独立实例独立记录）。 */
+export function createTrivyAdapter(
+  options: SecurityAdapterOptions = {},
+): GateAdapter<DetectionResult, SecurityLegPlan, SecurityLegOutput> {
+  return createLegAdapterInner("trivy", options);
+}
+
 // ============================================================
 // 一次 check 跑三腿：三记录编排（**无聚合 verdict 位**——B2-5 防假绿纪律）
 // ============================================================
@@ -606,6 +675,8 @@ export interface SecurityGateLegsDeps {
     readonly gitleaks?: string | null;
     readonly pipAudit?: string | null;
     readonly semgrep?: string | null;
+    readonly dependencyCheck?: string | null;
+    readonly trivy?: string | null;
   };
 }
 
@@ -621,9 +692,9 @@ export interface SecurityGateLegsDeps {
  */
 export function runSecurityGateLegs(
   scope: GateScope,
-  identities: readonly [SecurityLegIdentity, SecurityLegIdentity, SecurityLegIdentity],
+  identities: readonly SecurityLegIdentity[],
   deps: SecurityGateLegsDeps = {},
-): readonly [GateResultRecord, GateResultRecord, GateResultRecord] {
+): readonly GateResultRecord[] {
   const policyFor = (runner: SecurityLegRunner, identity: SecurityLegIdentity): GatePolicy => ({
     grn: identity.grn,
     ranAtSeq: identity.ranAtSeq,
@@ -631,11 +702,15 @@ export function runSecurityGateLegs(
     timeoutMs: deps.timeoutMs,
     gateTier: deps.gateTier,
     expectedToolVersion:
-      runner === "gitleaks"
-        ? (deps.expectedToolVersions?.gitleaks ?? null)
-        : runner === "pip-audit"
-          ? (deps.expectedToolVersions?.pipAudit ?? null)
-          : (deps.expectedToolVersions?.semgrep ?? null),
+      runner === "dependency-check"
+        ? (deps.expectedToolVersions?.dependencyCheck ?? null)
+        : runner === "trivy"
+          ? (deps.expectedToolVersions?.trivy ?? null)
+          : runner === "gitleaks"
+            ? (deps.expectedToolVersions?.gitleaks ?? null)
+            : runner === "pip-audit"
+              ? (deps.expectedToolVersions?.pipAudit ?? null)
+              : (deps.expectedToolVersions?.semgrep ?? null),
   });
 
   const records = SECURITY_LEG_RUNNERS.map((runner, index) => {
@@ -658,5 +733,5 @@ export function runSecurityGateLegs(
       );
     }
   });
-  return [records[0] as GateResultRecord, records[1] as GateResultRecord, records[2] as GateResultRecord];
+  return records;
 }

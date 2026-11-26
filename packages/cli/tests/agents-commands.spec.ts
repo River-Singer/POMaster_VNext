@@ -26,7 +26,7 @@ import {
   runRun,
   type CliEnvelope,
 } from "@pomaster/cli";
-import { AGENT, makeStore } from "../../../packages/kernel/tests/helpers.js";
+import { AGENT, HUMAN, gid, makeStore } from "../../../packages/kernel/tests/helpers.js";
 
 let root: string;
 let store: Store;
@@ -162,8 +162,13 @@ describe("agents status（§44.8 兑现：运行时观测面）", () => {
 
   it("DEF-GATEKEEPER 触发端到端：同 execution 既提 CLM 又出 GRN passed → warning + ok 恒 true（观测非阻断）", async () => {
     await seedObject();
-    const { beginExecution } = await import("@pomaster/kernel");
+    const { beginExecution, issuePermit } = await import("@pomaster/kernel");
+    const permit = await issuePermit(store, {
+      subjectIds: [gid("PAGE.DASHBOARD")],
+      requestedBy: HUMAN,
+    });
     const execution = await beginExecution(store, {
+      permitIds: [permit.permitRef],
       role: "orchestrator",
       runtime: "claude-code",
       identityKind: "interactive",
@@ -174,7 +179,7 @@ describe("agents status（§44.8 兑现：运行时观测面）", () => {
       from: claimIn,
       executionId: execution.execution_id,
     });
-    expect(claimOut.ok).toBe(true);
+    expect(claimOut.ok, JSON.stringify(claimOut.errors)).toBe(true);
     const gateIn = await writeInput(gatePayload());
     const gateOut = await runRecordGateRun(root, {
       from: gateIn,

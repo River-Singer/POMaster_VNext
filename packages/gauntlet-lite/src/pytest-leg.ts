@@ -230,13 +230,15 @@ export function normalizePytestLeg(
   plan: GatePlan,
   raw: ToolRunOutput,
   selfMs: number,
+  /** 腿标签（BE-1：surefire = JUnit 家族同构词形——判卷 walker 单一锚复用，文案如实重标）。 */
+  legLabel = "pytest",
 ): GateResultRecord {
   if (raw.kind === "spawn_failed") {
     // I3：failureReason 透传进 not_run 记录（缺席必须说清「为何没查」，禁 null 静默）。
     return absenceRecord(
       plan,
       "not_run",
-      `${raw.failureReason ?? "pytest 子进程不可执行"}（not_run，非绿非红，禁静默当通过）`,
+      `${raw.failureReason ?? `${legLabel} 子进程不可执行`}（not_run，非绿非红，禁静默当通过）`,
       selfMs,
       raw.externalMs,
     );
@@ -248,7 +250,7 @@ export function normalizePytestLeg(
     return absenceRecord(
       plan,
       "not_run",
-      `pytest 腿输出不可判卷：非合法/空 JUnit XML（崩溃/被杀/报告缺失）${raw.failureReason === null ? "" : `；run 期原因：${raw.failureReason}`}——判卷不可能，not_run 是终局性诚实报告（非绿非红，禁静默当通过）`,
+      `${legLabel} 腿输出不可判卷：非合法/空 JUnit XML（崩溃/被杀/报告缺失）${raw.failureReason === null ? "" : `；run 期原因：${raw.failureReason}`}——判卷不可能，not_run 是终局性诚实报告（非绿非红，禁静默当通过）`,
       selfMs,
       raw.externalMs,
     );

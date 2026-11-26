@@ -100,6 +100,8 @@ import { claimsDirPath, executionsDirPath, runsDirPath } from "./store-layout.js
 // ============================================================
 
 export interface RecordGateRunInput {
+  /** Required original version anchor for autopilot submissions (file and value entrypoints). */
+  readonly dispatchRef?: string;
   readonly from: string;
   readonly grn?: string;
   readonly trigger?: string;
@@ -356,6 +358,12 @@ async function recordGateRunFromSource(
     }
   };
 
+  // Version admission occurs before canonical replay, GRN allocation or transaction writes.
+  const submission = normalizeWith("GRN-0000");
+  if ("code" in submission) return gateRunFail(submission);
+  const { qualifyAutopilotSubmission } = await import("./autopilot-revision.js");
+  const stale = await qualifyAutopilotSubmission(rootDir, { executionId, tasks: [...new Set([...(input.subjects ?? []), ...(submission.subjectId === null ? [] : [submission.subjectId])])], dispatchRef: input.dispatchRef });
+  if (stale !== null) return gateRunFail(stale);
   const runsDir = runsDirPath(rootDir);
 
   // —— artifact_refs 解析（P0.5-2）：--from 自报在本层先反解（blob 分支收窄，畸形
@@ -476,8 +484,8 @@ async function recordGateRunFromSource(
   if ("code" in finalResult) return gateRunFail(finalResult);
   // 通过复核的绑定 → 入账注记（tx.note → journal TX_APPLIED 持久化；空集 = 无 note，
   // 与现状逐字节一致）。canonical 07 run 记录形态 FROZEN——绑定不住 run 记录本体。
-  const bindingNote =
-    bindingResolution === null ? null : subjectBindingsNote(bindingResolution.accepted);
+  const subjectNote = bindingResolution === null ? null : subjectBindingsNote(bindingResolution.accepted);
+  const bindingNote = input.dispatchRef === undefined ? subjectNote : [subjectNote, `autopilot_dispatch=${input.dispatchRef}`].filter(note => note !== null).join("; ");
   const tx: Transaction = {
     ops: [{
       op: "record_gate_run",

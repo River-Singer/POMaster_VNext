@@ -76,8 +76,8 @@ describe("批次 4 两物料全集（layer 分档：域形状=ARCHETYPE / 机制
     }
   });
 
-  it("批次 4 物料分母：repo archetypes 39→41（+2）", () => {
-    expect(materials.length).toBe(41);
+  it("批次 4 物料分母：repo archetypes 现值 42（批次 4 时点 39→41（+2）；Owner 批准 TASK_UNIT 41→42）", () => {
+    expect(materials.length).toBe(42);
   });
 
   it("刻意缺席裁定在场：OBSERVABILITY_BINDING 不登记 sensor 本体（无既有探测器/probe 键可引，登记即假绿——禁止空壳仪式）", () => {

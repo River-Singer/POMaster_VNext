@@ -172,6 +172,7 @@ import {
 import {
   architectureAnswers,
   parseArchitectureId,
+  preflightArchitectureProfile,
   writeArchitectureProfile,
   type ArchitectureId,
   type ArchitectureProfile,
@@ -1363,6 +1364,35 @@ export async function runInit(
   const modeDetection = detectInitMode(rootDir);
   const selectedArchitecture =
     modeDetection.kind === "brownfield_candidate" ? null : architectureSelection.id;
+  if (selectedArchitecture !== null) {
+    const preflight = await preflightArchitectureProfile(rootDir, selectedArchitecture);
+    if (!preflight.ok) {
+      return failOutcome<InitResult>(
+        "init",
+        {
+          change: "NO_CHANGE",
+          tool: INIT_TOOL_ID,
+          files: [],
+          platforms: [],
+          specPreplant: null,
+          baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+          presetDraft: ZERO_PRESET_DRAFT,
+          observation: ZERO_OBSERVATION,
+          mode: { detection: modeDetection.kind, summary: null, brownfield: null, recon: null },
+          architecture_profile: null,
+          project_identification: null,
+          capability_overview: CAPABILITY_OVERVIEW,
+          bootstrap_harness: null,
+        },
+        [{ code: preflight.code, message: preflight.message, hint: preflight.hint }],
+        [
+          `init: FAILED — ${preflight.code}`,
+          `  ${preflight.message}`,
+          `  hint: ${preflight.hint}`,
+        ],
+      );
+    }
+  }
   // 重入口产物面 = 平台选择非空（none = 显式最小形态，零平台产物；B7 裁定 2026-09-04：（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
   // init 单一重入口，无模式旗标）。
   const heavy = selectedPlatforms.length > 0;

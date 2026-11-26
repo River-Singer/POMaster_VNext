@@ -43,6 +43,7 @@ import {
   adjudicateResearchFindings,
   applyTransaction,
   beginExecution,
+  issuePermit,
   checkResearchWriteContract,
   compileProjection,
   detectGatekeeperDrift,
@@ -120,7 +121,8 @@ async function seedObject(): Promise<void> {
 }
 
 async function beginExecutionId(startedAt: string): Promise<string> {
-  const record = await beginExecution(store, { ...EXEC_BASE, startedAt });
+  const permit = await issuePermit(store, { subjectIds: [gid("PAGE.DASHBOARD")], requestedBy: { actorType: "agent", actor: "fixture", selfAttested: true } });
+  const record = await beginExecution(store, { ...EXEC_BASE, startedAt, permitIds: [permit.permitRef] });
   return record.execution_id;
 }
 

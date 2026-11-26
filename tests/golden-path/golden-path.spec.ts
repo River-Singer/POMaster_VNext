@@ -129,6 +129,8 @@ interface ChainRecords {
   readonly claimRef: string | null;
   /** record verification 挂的 GRN（evidence/runs 首个；GP-8 断言用）。 */
   readonly evidenceGrn: string | null;
+  /** 独立 qa 执行，持自己的 TASK 判定许可，不借实现执行的权限。 */
+  readonly verificationBegin: StepRecord;
   /** record verification 记录（claim/GRN 缺席时 = null 显式，链路坏损由 GREEN 金丝雀兜底）。 */
   readonly verification: StepRecord | null;
 }
@@ -400,6 +402,18 @@ beforeAll(async () => {
   const baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
   const routeAfterBaselineConfirm = await runJsonStep(root, ["status"]);
 
+  // PAGE 许可保留 GP-5 派生建议；TASK 元数据另获窄范围许可。
+  // 两者先于 context compile 固定（许可集合进入 manifest 指纹），在 handoff 前挂载。
+  const taskPermitIssue = await runJsonStep(root, [
+    "permit", "issue", "--subject", TASK_ID, "--actor", "agent:golden-path",
+    "--change-ref", TASK_ID,
+  ]);
+  expect(taskPermitIssue.code, taskPermitIssue.stdout).toBe(0);
+  const pagePermitRef = String(envelopeOf(permitIssue).result?.permit_ref);
+  const taskPermitRef = String(envelopeOf(taskPermitIssue).result?.permit_ref);
+  expect(pagePermitRef).toMatch(/^PERMIT\./);
+  expect(taskPermitRef).toMatch(/^PERMIT\./);
+
   // —— context compile（任务级 manifest；GP-6③/GP-7）。 ——
   const manifestCompile = await runJsonStep(root, [
     "context", "compile",
@@ -415,6 +429,8 @@ beforeAll(async () => {
     "--runtime", "script",
     "--identity-kind", "script",
     "--task-id", TASK_ID,
+    "--permit-id", pagePermitRef,
+    "--permit-id", taskPermitRef,
   ]);
   const routeAfterExecution = await runJsonStep(root, ["status"]);
   const implementationId = String(envelopeOf(executionBegin).result?.execution_id);
@@ -445,9 +461,21 @@ beforeAll(async () => {
     )}\n`,
     "utf8",
   );
-  const claimRecord = await runJsonStep(root, ["record", "claim", "--from", claimInputPath]);
+  const claimRecord = await runJsonStep(root, ["record", "claim", "--from", claimInputPath, "--execution-id", implementationId]);
   const claimResult = (claimRecord.envelope?.result ?? {}) as Record<string, unknown>;
   const claimRef = typeof claimResult["clm"] === "string" ? claimResult["clm"] : null;
+  const verificationPermit = await runJsonStep(root, [
+    "permit", "issue", "--subject", TASK_ID, "--actor", "tool:golden-verifier@1.0.0",
+    "--change-ref", TASK_ID,
+  ]);
+  expect(verificationPermit.code, verificationPermit.stdout).toBe(0);
+  const verificationBegin = await runJsonStep(root, [
+    "execution", "begin", "--role", "qa", "--runtime", "script", "--identity-kind", "script",
+    "--task-id", TASK_ID, "--permit-id", String(envelopeOf(verificationPermit).result?.permit_ref),
+  ]);
+  expect(verificationBegin.code, verificationBegin.stdout).toBe(0);
+  const verificationId = String(envelopeOf(verificationBegin).result?.execution_id);
+  expect(verificationId).not.toBe(implementationId);
   const verification =
     claimRef !== null && evidenceGrn !== null
       ? await runJsonStep(root, [
@@ -457,6 +485,7 @@ beforeAll(async () => {
           "--method", "recompute",
           "--evidence", evidenceGrn,
           "--authority-ref", TASK_ID,
+          "--execution-id", verificationId,
         ])
       : null;
 
@@ -492,6 +521,7 @@ beforeAll(async () => {
     claimRecord,
     claimRef,
     evidenceGrn,
+    verificationBegin,
     verification,
   };
 }, 240_000);
@@ -784,6 +814,12 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       expect(records_.executionBegin.code, "execution begin 应 exit 0").toBe(0);
       const beginResult = (envelopeOf(records_.executionBegin).result ?? {}) as Record<string, unknown>;
       expect(String(beginResult["execution_id"])).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
+      const execution = JSON.parse(readFileSync(join(records_.root, ".pomaster", "executions", `${beginResult["execution_id"]}.json`), "utf8")) as { permit_ids: string[] };
+      expect(execution.permit_ids).toHaveLength(2);
+      expect(execution.permit_ids).toContain(envelopeOf(records_.permitIssue).result?.permit_ref);
+      const permits = JSON.parse(readFileSync(join(records_.root, ".pomaster", "state", "permits.json"), "utf8")) as { permits: { permit_ref: string; scope: { subject_ids: string[] } }[] };
+      const subjects = permits.permits.filter((permit) => execution.permit_ids.includes(permit.permit_ref)).flatMap((permit) => permit.scope.subject_ids);
+      expect([...new Set(subjects)].sort()).toEqual(["PAGE.DASHBOARD", TASK_ID]);
       expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_EXECUTE_ENTRY");
       expect(records_.implementationHandoff.code, records_.implementationHandoff.stdout).toBe(0);
       expect(nextActionOf(records_.routeAfterHandoff)["route_id"]).toBe("R_VERIFY_ENTRY");
@@ -812,20 +848,22 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
     const runFiles = evidencePlaneFiles(records_.root, "runs");
     expect(runFiles.length, "GRN 应入账 evidence/runs/").toBeGreaterThanOrEqual(rows.length);
     // claim → 独立验证判定回写：record claim（UNVERIFIED 先立后证）→ record verification（VERIFIED）。
-    expect(records_.claimRecord.code).toBe(0);
+    expect(records_.claimRecord.code, records_.claimRecord.stdout).toBe(0);
     const claimResult = (envelopeOf(records_.claimRecord).result ?? {}) as Record<string, unknown>;
     expect(claimResult["change"]).toBe("APPLIED");
     const claimRef = records_.claimRef;
     expect(claimRef, "record claim 应分配 CLM").toMatch(/^CLM-[0-9]+$/);
     expect(records_.verification).not.toBeNull();
     const verification = records_.verification as StepRecord;
-    expect(verification.code).toBe(0);
+    expect(verification.code, verification.stdout).toBe(0);
+    expect(envelopeOf(records_.verificationBegin).result?.execution_id).not.toBe(envelopeOf(records_.executionBegin).result?.execution_id);
     const verificationResult = (envelopeOf(verification).result ?? {}) as Record<string, unknown>;
     expect(verificationResult["change"]).toBe("APPLIED");
     expect(verificationResult["verification"]).toBe("VERIFIED");
     const claimOnDisk = JSON.parse(
       readFileSync(join(records_.root, ".pomaster", "evidence", "claims", `${claimRef}.json`), "utf8"),
     ) as Record<string, unknown>;
+    expect(claimOnDisk["execution_id"]).toBe(envelopeOf(records_.executionBegin).result?.execution_id);
     const verificationBlock = (claimOnDisk["verification"] ?? {}) as Record<string, unknown>;
     expect(verificationBlock["verdict"]).toBe("VERIFIED");
     const evidenceRefs = JSON.stringify(claimOnDisk["evidence_refs"] ?? []);

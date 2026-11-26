@@ -975,6 +975,8 @@ export async function runExecutionAttachPermit(
 }
 
 export interface ExecutionHandoffInput {
+  /** Required original version anchor for autopilot-dispatched work; legacy work unchanged. */
+  readonly dispatchRef?: string;
   readonly taskId: string;
   readonly changedPaths: readonly string[];
   readonly summary: string;
@@ -1036,12 +1038,15 @@ export async function runExecutionHandoff(
     return notInitializedFail("execution handoff", wordForm.error, EMPTY_EXECUTION_HANDOFF);
   }
   try {
+    const { qualifyAutopilotSubmission } = await import("./autopilot-revision.js");
+    const stale = await qualifyAutopilotSubmission(rootDir, { executionId, tasks: [input.taskId], dispatchRef: input.dispatchRef });
+    if (stale !== null) return notInitializedFail("execution handoff", stale, EMPTY_EXECUTION_HANDOFF);
     const changedPaths = normalizeHandoffPaths(input.changedPaths);
     const sourceSnapshot = captureEvidenceSourceSnapshot(rootDir, { relevantPaths: changedPaths });
     const appended = appendImplementationHandoff(await createStore(rootDir), executionId, {
       taskId: input.taskId,
       changedPaths,
-      summary: input.summary,
+      summary: input.dispatchRef === undefined ? input.summary : `${input.summary}\nOriginal autopilot dispatch: ${input.dispatchRef}`,
       sourceSnapshot,
       ...(input.localChecks !== undefined ? { localChecks: input.localChecks } : {}),
       ...(input.knownGaps !== undefined ? { knownGaps: input.knownGaps } : {}),

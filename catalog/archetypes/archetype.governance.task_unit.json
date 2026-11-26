@@ -1,0 +1,44 @@
+{
+  "id": "ARCHETYPE.GOVERNANCE.TASK_UNIT",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "已签规划轮次的治理任务单元",
+  "summary_zh": "登记既有 task_object + intent/acceptance + TASK-subject CLM 模型：有限、已签 kickoff 下，按领域实体与 contract/db/be/fe 车道确定性编译任务，不新增任务引擎或业务概念。",
+  "semantic": {
+    "responsibility": "承载既有 TASK 的意图、验收及关联 CLM；绑定实际 kickoff、场景计划和 generation 文件，并通过 TASK→目录 INSTANCE_OF 留存确定性构造的采纳出处。相关受管产物仍由 generation KEYBINDING 标识，CLM 留在 evidence 平面。",
+    "when_to_use": "仅用于 plan scenarios 从已消费的真实签名、有限 kickoff、确认的领域与实际 generation 分母编译的确定性 lane/entity 单元；保持精确 task/claim 模板、短 TTL 范围许可与原子提交。",
+    "when_not_to_use": "不得代表任意业务实体、一般 job 状态、调度器或运行时任务引擎；不得据此创建任意 task_object、扩张已签范围、采纳 CLM truth 端点、授予人工接受或绕过 New Entity 的普通判卷。"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "instantiation": {
+    "truth_kind": "task_object",
+    "axis_profile": "task_default",
+    "constructor": "plan scenarios",
+    "lanes": ["contract", "db", "be", "fe"],
+    "claim_subject": "TASK",
+    "artifact_roles": ["kickoff", "scenario_plan", "generation"]
+  },
+  "constraints": [
+    "02 TASK 信封与 02b intent/acceptance/class_scan_result；每条验收关联 07 CLM，CLM subject 必须是该 TASK。",
+    "签名绑定真实 kickoff 字节并已由 kickoff confirm 消费；有效期受已签有限预算约束。",
+    "仅精确确定性 task/claim 操作集；不接受调用方自写边或 pass 证明。",
+    "INSTANCE_OF、实际文件 bindings、TASK、CLM、短 TTL permit 与构造回执在同一 staged admission 中提交。"
+  ],
+  "verification": [
+    "核验目录 allowed AND required、唯一 id/path、内容摘要及 instantiation 语义合同。",
+    "逐次重扫 artifact 文件字节与当前构造；重放核验实际 TASK/CLM、采纳回执和关系出处，无重复许可或边。",
+    "旧构造缺采纳证据时明确要求经现有签名通道重建，不追溯改写历史签名或 ops。"
+  ],
+  "sources": [
+    {"ref": "packages/schemas/assets/02b-kind-payloads.md#11-task_object任务对象", "basis": "既有 TASK 模型"},
+    {"ref": "packages/schemas/assets/02-object-envelope.schema.json#/$definitions/KeyBindings", "basis": "既有 artifact binding"},
+    {"ref": "packages/schemas/assets/07-evidence-records.schema.json", "basis": "既有 TASK-subject CLM evidence"},
+    {"ref": "packages/cli/src/plan-scenarios.ts", "basis": "既有确定性 producer/verifier"},
+    {"ref": "../.trellis/spec/pomaster/scenario-planning.md", "basis": "PL-1 lane/entity 与签名有限构造合同"},
+    {"ref": "../.trellis/tasks/11-11-agent-autopilot/prd.md", "basis": "本轮 Owner 原问答：是否批准新增 ARCHETYPE.GOVERNANCE.TASK_UNIT，作为既有 TASK/CLAIM 模型的目录声明，并补齐目录锁、INSTANCE_OF 与实际绑定？→批准补齐（推荐）。聊天目录批准，不是 kickoff SSH 签名。"}
+  ]
+}

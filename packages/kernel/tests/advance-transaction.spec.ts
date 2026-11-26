@@ -10,12 +10,16 @@
  * - 退役台账 append-only：同批写入、读 API 可查、重复退役拒绝；
  * - 存量 store（无新平面）读 API = 空集合（零迁移）。
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   GovernanceError,
   applyTransaction,
+  beginExecution,
+  issuePermit,
+  normalizeGateResult,
+  transactionMutationSubjects,
   buildAdvance,
   buildRejudge,
   digestValue,
@@ -28,9 +32,11 @@ import {
   pathsOf,
   readRetirementLedger,
   type Store,
+  type Transaction,
+  type TransactionOp,
   type VnextAnchor,
 } from "@pomaster/kernel";
-import { makeStore, pageEnvelope } from "./helpers.js";
+import { AGENT, HUMAN, gid, makeStore, pageEnvelope } from "./helpers.js";
 
 const OWNER = "human:owner";
 const REASON = "基线 Layers 取值变更后重新验证 CLM-0001";
@@ -353,6 +359,125 @@ describe("reassess_baseline_scope：任务 baseline 依赖范围重写（V2-7；
       .rejects.toMatchObject({ code: "SCHEMA_INVALID" });
     await expect(applyTransaction(store, { ops: [{ op: "reassess_baseline_scope", task: "TASK.NOPE" as never, declaration }] }))
       .rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+  });
+});
+
+describe("record_advance：GRN permit subject derivation", () => {
+  function runOp(grn = "GRN-0003", subjectId: string | null = "PAGE.DASHBOARD"): Extract<TransactionOp, { op: "record_gate_run" }> {
+    const result = normalizeGateResult({ value: {
+      grn, subject_id: subjectId, gate: "BUILD", gate_def: "POLICY.GATE.BUILD@1.0.0", verdict: "passed",
+      counts: { scanned: 1, applicable_scanned: 1, violations: 0, not_applicable: 0 },
+      blindspot: { scanned: 1, produced: 1 },
+    }, claimedBy: AGENT }, { tool: "test:build", toolVersion: "1.0.0", metricDialect: "test", ranAtSeq: 1, trigger: "on_demand" });
+    return { op: "record_gate_run", run: { grn, result, trigger: "on_demand" } };
+  }
+  function advanceOp(affectedIds = ["GRN-0003", "PAGE.DASHBOARD"]): Extract<TransactionOp, { op: "record_advance" }> {
+    return { op: "record_advance", record: { actor: OWNER, reason: REASON, advance: section(
+      anchor("before", { kind: "source_snapshot", ref: "PAGE.DASHBOARD#plan-cohort" }),
+      anchor("after", { kind: "source_snapshot", ref: "PAGE.DASHBOARD#plan-cohort" }),
+      { affected_ids: affectedIds },
+    ) } };
+  }
+  async function seed() {
+    const fixture = await makeStore();
+    await applyTransaction(fixture.store, { ops: [
+      { op: "upsert_object", envelope: pageEnvelope() as never },
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.OTHER") }) as never },
+    ] });
+    return fixture;
+  }
+  async function worker(store: Store, subjectId = "PAGE.DASHBOARD") {
+    const permit = await issuePermit(store, { subjectIds: [gid(subjectId)], requestedBy: HUMAN, ttlBeats: 30 });
+    const execution = await beginExecution(store, { role: "implementer", runtime: "claude-code", identityKind: "interactive", permitIds: [permit.permitRef] });
+    return { executionId: execution.execution_id, permitRef: permit.permitRef };
+  }
+  async function expectUnchanged(store: Store, tx: Transaction, code: string) {
+    const paths = pathsOf(store), seq = store.currentSeq;
+    const index = readFileSync(paths.indexPath, "utf8"), journal = readFileSync(paths.journalPath, "utf8");
+    await expect(applyTransaction(store, tx)).rejects.toMatchObject({ code });
+    expect(readFileSync(paths.indexPath, "utf8")).toBe(index);
+    expect(readFileSync(paths.journalPath, "utf8")).toBe(journal);
+    expect(store.currentSeq).toBe(seq);
+    expect(advanceFiles(store.rootDir)).toEqual([]);
+  }
+
+  it("maps persisted GRNs and claims together, deduplicates subjects, preserves actual ADVANCE IDs", async () => {
+    const { store } = await seed();
+    await applyTransaction(store, { ops: [runOp(), runOp("GRN-0004"), {
+      op: "record_claim", claim: { clm: "CLM-0001", subjectId: gid("PAGE.DASHBOARD"), assertion: "review", assertedBy: AGENT, evidenceRefs: [] },
+    }] });
+    const own = await worker(store);
+    const affectedIds = ["CLM-0001", "GRN-0003", "GRN-0004", "PAGE.DASHBOARD"];
+    const tx = { executionId: own.executionId, ops: [advanceOp(affectedIds)] };
+    expect(transactionMutationSubjects(store, tx)).toEqual(["PAGE.DASHBOARD"]);
+    await applyTransaction(store, tx);
+    expect(listAdvanceRecords(pathsOf(store))[0]?.advance.affected_ids).toEqual(affectedIds);
+    expect(readJournal(store).at(-1)?.affected_ids).toEqual(affectedIds);
+  });
+
+  it.each([false, true])("resolves same-transaction pending GRNs (ADVANCE first=%s) and commits both records", async advanceFirst => {
+    const { store } = await seed();
+    const own = await worker(store);
+    const ops = advanceFirst ? [advanceOp(), runOp()] : [runOp(), advanceOp()];
+    const tx = { executionId: own.executionId, ops };
+    expect(transactionMutationSubjects(store, tx)).toEqual(["PAGE.DASHBOARD"]);
+    await applyTransaction(store, tx);
+    expect(listAdvanceRecords(pathsOf(store))[0]?.advance.affected_ids).toEqual(["GRN-0003", "PAGE.DASHBOARD"]);
+    expect(existsSync(join(pathsOf(store).runsDir, "GRN-0003.json"))).toBe(true);
+  });
+
+  it.each([
+    ["invalid JSON", "{", "SCHEMA_INVALID"],
+    ["wrong envelope identity", JSON.stringify({ record_type: "run", grn: "GRN-9999", gate_result: { mode: "inline", result: { grn: "GRN-0003", subject_id: "PAGE.DASHBOARD" } } }), "SCHEMA_INVALID"],
+    ["wrong result identity", JSON.stringify({ record_type: "run", grn: "GRN-0003", gate_result: { mode: "inline", result: { grn: "GRN-9999", subject_id: "PAGE.DASHBOARD" } } }), "SCHEMA_INVALID"],
+    ["non-inline result", JSON.stringify({ record_type: "run", grn: "GRN-0003", gate_result: { mode: "ref", result: { grn: "GRN-0003", subject_id: "PAGE.DASHBOARD" } } }), "SCHEMA_INVALID"],
+    ["missing subject", JSON.stringify({ record_type: "run", grn: "GRN-0003", gate_result: { mode: "inline", result: { grn: "GRN-0003" } } }), "SCHEMA_INVALID"],
+    ["unbound subject", JSON.stringify({ record_type: "run", grn: "GRN-0003", gate_result: { mode: "inline", result: { grn: "GRN-0003", subject_id: null } } }), "REF_INTEGRITY_VIOLATION"],
+    ["evidence subject", JSON.stringify({ record_type: "run", grn: "GRN-0003", gate_result: { mode: "inline", result: { grn: "GRN-0003", subject_id: "GRN-0004" } } }), "FATAL_UNKNOWN_PREFIX"],
+  ])("rejects malformed persisted GRN: %s without mutation", async (_label, bytes, code) => {
+    const { store } = await seed();
+    const own = await worker(store);
+    writeFileSync(join(pathsOf(store).runsDir, "GRN-0003.json"), bytes);
+    await expectUnchanged(store, { executionId: own.executionId, ops: [advanceOp()] }, code);
+    expect(readFileSync(join(pathsOf(store).runsDir, "GRN-0003.json"), "utf8")).toBe(bytes);
+  });
+
+  it.each([
+    ["GRN-0003", "REF_INTEGRITY_VIOLATION"],
+    ["GRN-../escape", "GRN_INVALID"],
+    ["OBS-0001", "FATAL_UNKNOWN_PREFIX"],
+  ])("missing/malformed/arbitrary evidence identity %s never grants write permission", async (id, code) => {
+    const { store } = await seed();
+    const own = await worker(store);
+    await expectUnchanged(store, { executionId: own.executionId, ops: [advanceOp([id, "PAGE.DASHBOARD"])] }, code);
+  });
+
+  it.each([null, undefined, "GRN-0004"])("pending invalid subject %s fails closed rather than using the other affected ID", async subjectId => {
+    const { store } = await seed();
+    const own = await worker(store);
+    const op = runOp();
+    const pending = { ...op, run: { ...op.run, result: { ...op.run.result, subjectId } } } as TransactionOp;
+    await expectUnchanged(store, { executionId: own.executionId, ops: [pending, advanceOp()] }, subjectId === null ? "REF_INTEGRITY_VIOLATION" : subjectId === undefined ? "SCHEMA_INVALID" : "FATAL_UNKNOWN_PREFIX");
+    expect(existsSync(join(pathsOf(store).runsDir, "GRN-0003.json"))).toBe(false);
+  });
+
+  it.each([false, true])("unrelated GRN subject is denied even when another worker holds its permit (pending=%s)", async pending => {
+    const { store } = await seed();
+    if (!pending) await applyTransaction(store, { ops: [runOp("GRN-0003", "PAGE.OTHER")] });
+    const own = await worker(store), other = await worker(store, "PAGE.OTHER");
+    const ops = pending ? [runOp("GRN-0003", "PAGE.OTHER"), advanceOp()] : [advanceOp()];
+    await expectUnchanged(store, { executionId: own.executionId, ops }, "PERMIT_SCOPE_DENIED");
+    await expectUnchanged(store, { executionId: own.executionId, permitRef: other.permitRef, ops }, "PERMIT_SCOPE_DENIED");
+    if (pending) expect(existsSync(join(pathsOf(store).runsDir, "GRN-0003.json"))).toBe(false);
+  });
+
+  it("pending overwrite cannot hide a persisted out-of-scope subject", async () => {
+    const { store } = await seed();
+    await applyTransaction(store, { ops: [runOp("GRN-0003", "PAGE.OTHER")] });
+    const own = await worker(store);
+    await expectUnchanged(store, { executionId: own.executionId, ops: [{ ...runOp(), canonicalizeOverwrite: true }, advanceOp()] }, "PERMIT_SCOPE_DENIED");
+    const persisted = JSON.parse(readFileSync(join(pathsOf(store).runsDir, "GRN-0003.json"), "utf8"));
+    expect(persisted.gate_result.result.subject_id).toBe("PAGE.OTHER");
   });
 });
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -6,10 +6,15 @@ import {
   collectNextActionSnapshot,
   createProgram,
   evaluateNextAction,
+  LAYOUT_MANIFEST_RELATIVE,
+  runCli,
   runInit,
+  type CliEnvelope,
+  type InitResult,
   runProjectIdentificationConfirm,
   runProjectIdentificationReport,
 } from "@pomaster/cli";
+import { preflightArchitectureProfile, writeArchitectureProfile } from "../src/architecture-profile.js";
 import { runTrustEnroll, runTrustRequest } from "../src/trust.js";
 import { makeKey, opensshPrivateKeyText, signSshsig } from "./fixtures/trust/sshsig-signer.js";
 
@@ -43,6 +48,51 @@ function identificationBodies(): readonly Record<string, unknown>[] {
   });
 }
 
+/** Capture the entire fixture, including absent outputs and directory mtimes. */
+function relatedTree(): Record<string, { bytes: string | null; mtime_ns: string }> {
+  const tree: Record<string, { bytes: string | null; mtime_ns: string }> = {};
+  const walk = (relative: string): void => {
+    const absolute = join(dir, relative);
+    const stat = lstatSync(absolute, { bigint: true });
+    tree[relative || "."] = {
+      bytes: stat.isDirectory() ? null : readFileSync(absolute).toString("base64"),
+      mtime_ns: stat.mtimeNs.toString(),
+    };
+    if (stat.isDirectory()) {
+      for (const name of readdirSync(absolute).sort()) walk(relative ? `${relative}/${name}` : name);
+    }
+  };
+  walk("");
+  return tree;
+}
+
+function expectRelatedTreeUnchanged(before: ReturnType<typeof relatedTree>): void {
+  const after = relatedTree();
+  const paths = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
+  expect(paths.filter((path) => before[path]?.bytes !== after[path]?.bytes || before[path]?.mtime_ns !== after[path]?.mtime_ns)).toEqual([]);
+}
+
+async function initCli(architecture: "react" | "vue", platforms = "none") {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const code = await runCli(["--dir", dir, "init", "--architecture", architecture, "--platforms", platforms, "--json"], {
+    stdout: (text) => stdout.push(text),
+    stderr: (text) => stderr.push(text),
+  });
+  expect(stderr).toEqual([]);
+  expect(stdout).toHaveLength(1);
+  return { code, value: JSON.parse(stdout[0]!) as CliEnvelope<InitResult> };
+}
+
+function expectProfileConflict(outcome: Awaited<ReturnType<typeof initCli>>): void {
+  expect(outcome.code).toBe(1);
+  expect(outcome.value.command).toBe("init");
+  expect(outcome.value.ok).toBe(false);
+  expect(outcome.value.errors[0]?.code).toBe("ARCHITECTURE_PROFILE_CONFLICT");
+  expect(outcome.value.result.change).toBe("NO_CHANGE");
+  expect(outcome.value.result.files).toEqual([]);
+}
+
 const report = {
   taskId: "TASK.INIT_PROJECT_IDENTIFICATION",
   purpose: "面向运营人员的存量 Web 控制台",
@@ -53,6 +103,109 @@ const report = {
   evidence: ["package.json", "src/main.ts"],
   unknowns: ["生产部署拓扑"],
 } as const;
+
+describe("DF-INIT-01 public init architecture preflight", () => {
+  it.each([
+    ["react", "vue"],
+    ["vue", "react"],
+  ] as const)("rejects %s → %s before changing any related bytes or mtimes", async (first, second) => {
+    expect((await initCli(first)).code).toBe(0);
+    const before = relatedTree();
+    const conflict = await initCli(second, "claude,codex");
+    expectRelatedTreeUnchanged(before);
+    expectProfileConflict(conflict);
+  });
+
+  it("does not repair missing layout or entry outputs before rejecting a profile conflict", async () => {
+    expect((await initCli("react")).code).toBe(0);
+    rmSync(join(dir, "AGENTS.md"));
+    rmSync(join(dir, LAYOUT_MANIFEST_RELATIVE));
+    rmSync(join(dir, ".pomaster", "evidence", "runs", "README.md"));
+    const before = relatedTree();
+    const conflict = await initCli("vue", "claude,codex");
+    expectRelatedTreeUnchanged(before);
+    expectProfileConflict(conflict);
+  });
+
+  it.each([
+    [".pomaster/state/architecture-profile.json", "corrupt"],
+    [".pomaster/baseline/frontend/architecture-profile.md", "foreign"],
+    [".pomaster/state/architecture-profile.json", "unreadable"],
+    [".pomaster/baseline/frontend/architecture-profile.md", "unreadable"],
+    [".pomaster/state/architecture-profile.json", "invalid_utf8"],
+  ] as const)("rejects preexisting %s (%s) without materializing even a partial init", async (relative, kind) => {
+    if (kind === "unreadable") {
+      // A directory at the file target produces a deterministic read failure on Windows too.
+      hostFile(`${relative}/retained.txt`, "foreign directory content\n");
+    } else {
+      hostFile(relative, kind === "corrupt" ? "{broken\n" : "# Foreign architecture rules\n");
+      if (kind === "invalid_utf8") writeFileSync(join(dir, relative), Buffer.from([0xff, 0xfe]));
+    }
+    const before = relatedTree();
+    const conflict = await initCli("react", "claude,codex");
+    expectRelatedTreeUnchanged(before);
+    expectProfileConflict(conflict);
+  });
+
+  it.each([
+    ".pomaster/state/architecture-profile.json",
+    ".pomaster/baseline/frontend/architecture-profile.md",
+  ])("writer rechecks %s after an earlier successful read-only preflight", async (relative) => {
+    const empty = relatedTree();
+    expect((await preflightArchitectureProfile(dir, "react")).ok).toBe(true);
+    expectRelatedTreeUnchanged(empty);
+    hostFile(relative, "foreign bytes appearing after preflight\n");
+    const before = relatedTree();
+    const files: InitResult["files"][number][] = [];
+    const write = await writeArchitectureProfile(dir, "react", files);
+    expect(write.ok).toBe(false);
+    if (!write.ok) expect(write.code).toBe("ARCHITECTURE_PROFILE_CONFLICT");
+    expect(files).toEqual([]);
+    expectRelatedTreeUnchanged(before);
+  });
+
+  it.each(["react", "vue"] as const)("identical %s replays remain NO_CHANGE with identical tree bytes and mtimes", async (architecture) => {
+    expect((await initCli(architecture)).code).toBe(0);
+    const before = relatedTree();
+    for (let replay = 0; replay < 2; replay += 1) {
+      const outcome = await initCli(architecture);
+      expect(outcome.code).toBe(0);
+      expect(outcome.value.result.change).toBe("NO_CHANGE");
+      expect(outcome.value.result.files.every((file) => ["unchanged", "preserved"].includes(file.action))).toBe(true);
+      expectRelatedTreeUnchanged(before);
+    }
+  });
+
+  it("allows an explicit repair back to approved bytes without migrating the profile", async () => {
+    expect((await initCli("react")).code).toBe(0);
+    const relative = ".pomaster/baseline/frontend/architecture-profile.md";
+    const approved = readFileSync(join(dir, relative));
+    hostFile(relative, "# Foreign architecture rules\n");
+    const before = relatedTree();
+    expectProfileConflict(await initCli("react"));
+    expectRelatedTreeUnchanged(before);
+    writeFileSync(join(dir, relative), approved);
+    const repaired = relatedTree();
+    const replay = await initCli("react");
+    expect(replay.code).toBe(0);
+    expect(replay.value.result.change).toBe("NO_CHANGE");
+    expectRelatedTreeUnchanged(repaired);
+  });
+
+  it("brownfield --architecture still enters the identification task, not profile generation", async () => {
+    hostFile("package.json", '{"dependencies":{"vue":"^3.5.0"}}\n');
+    hostFile("src/main.ts", 'import { createApp } from "vue";\n');
+    const outcome = await initCli("react");
+    expect(outcome.code).toBe(0);
+    expect(outcome.value.result.mode?.detection).toBe("brownfield_candidate");
+    expect(outcome.value.result.architecture_profile).toBeNull();
+    expect(identificationBodies()).toHaveLength(1);
+    expect((identificationBodies()[0]?.payload as Record<string, unknown>).identification_status).toBe("pending");
+    expect(existsSync(join(dir, ".pomaster", "state", "architecture-profile.json"))).toBe(false);
+    expect(existsSync(join(dir, ".pomaster", "baseline", "frontend", "architecture-profile.md"))).toBe(false);
+    expect(readFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), "utf8")).toContain("framework: UNKNOWN");
+  });
+});
 
 describe("brownfield project identification", () => {
   it("公开命令面注册 report/confirm 两步", () => {
